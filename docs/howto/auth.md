@@ -55,7 +55,7 @@ curtain dog doll quiz leave mass saddle patch spirit pulp decide town coin uncle
 clean hip job gun deal grit hover absurd scrub total
 
 Have you backed up this recovery phrase (y/n)? y
-Do you want to publish your public key to the key server (api.keys.app) (Y/n)?
+Do you want to publish your public key to the key server (keys.pub) (Y/n)?
 
 Saving...
 Saved key V71SnjJ1JsqsNJj5Xt1atq4VMH5cYNorCPsgk63ZuUGa

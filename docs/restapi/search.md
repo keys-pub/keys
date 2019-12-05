@@ -10,7 +10,7 @@ Search.
 | limit   | Limit number of results. |
 
 ```shell
-curl https://api.keys.app/search?q=gabriel
+curl https://keys.pub/search?q=gabriel
 ```
 
 ```json

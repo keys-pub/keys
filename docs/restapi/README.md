@@ -1,6 +1,6 @@
 # REST API
 
-The API endpoint is [api.keys.app](https://api.keys.app/search).
+The API endpoint is [keys.pub](https://keys.pub/search).
 
 - [Search](search.md)
 - [Sigchain](sigchain.md)

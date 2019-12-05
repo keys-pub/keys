@@ -1,13 +1,13 @@
 # REST API (Sigchain)
 
-The _api.keys.app_ server provides an API for publishing and accessing sigchains (see [Sigchain](../sigchain.md)).
+The _keys.pub_ server provides an API for publishing and accessing sigchains (see [Sigchain](../sigchain.md)).
 
 ## GET /sigchain/:kid
 
 Get a sigchain for a user public key.
 
 ```shell
-curl https://api.keys.app/sigchain/GCyz8QoBP3tw3YzHMguLxoJJ8gKdYoLJbBE2PWkphGMm
+curl https://keys.pub/sigchain/GCyz8QoBP3tw3YzHMguLxoJJ8gKdYoLJbBE2PWkphGMm
 ```
 
 ```json
@@ -56,7 +56,7 @@ The body content should be a sigchain [Statement](../sigchain.md#Statement).
 
 ```shell
 curl -X PUT -d '{".sig":"cBkbRkMERy0yo436kRuWNF/O4E2OcVnbw9uy2o/D1Gc9+hXpIHkasnusqkknUyV+l9QMKVRbbLe121Ws5jeSBQ==","data":"4xsu+g26GIHBobmLN+kKEFOuYIBA3eY1FrGLDI9WEFc=","kid":"QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st","seq":1,"type":"bpk"}' \
-https://api.keys.app/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1
+https://keys.pub/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1
 ```
 
 It must be a valid signed sigchain statement by the sign key. If it exists already, returns 409 error.
@@ -74,7 +74,7 @@ The results are in order of the statements added, and is meant for sync'ing all 
 | include | strings ["md"] | Additional fields to include, "md" (metadata).                   |
 
 ```shell
-curl https://api.keys.app/sigchains?limit=2
+curl https://keys.pub/sigchains?limit=2
 ```
 
 ```json

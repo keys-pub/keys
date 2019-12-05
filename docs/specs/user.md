@@ -84,7 +84,7 @@ keys user add -kid "QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st" \
 Using the kid and seq (sigchain position), you can lookup the sigchain item to find the user signed statement:
 
 ```shell
-curl https://api.keys.app/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/2
+curl https://keys.pub/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/2
 ```
 
 ```json

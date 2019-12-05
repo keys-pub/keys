@@ -74,8 +74,8 @@ keys push -kid QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st
 Outputs remote sigchain locations.
 
 ```text
-https://api.keys.app/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1
-https://api.keys.app/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/2
+https://keys.pub/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1
+https://keys.pub/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/2
 ```
 
 ## `keys key show`
