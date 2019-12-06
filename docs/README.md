@@ -1,10 +1,10 @@
 # keys.pub
 
-|                                                                      |                                                                                                                                                                                                              |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [github.com/keys-pub/keys](https://github.com/keys-pub/keys)         | Cryptographic key management, signing and encryption, including [keys/saltpack](https://godoc.org/github.com/keys-pub/keys/saltpack) and [keys/keyring](https://godoc.org/github.com/keys-pub/keys/keyring). |
-| [github.com/keys-pub/keysd](https://github.com/keys-pub/keysd)       | Service (gRPC), command line client, DB, Firestore, REST API, etc.                                                                                                                                           |
-| [github.com/keys-pub/keys-app](https://github.com/keys-pub/keys-app) | Desktop app (in development).                                                                                                                                                                                |
+|                                                                |                                                                                                                                                                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [github.com/keys-pub/keys](https://github.com/keys-pub/keys)   | Cryptographic key management, signing and encryption, including [keys/saltpack](https://godoc.org/github.com/keys-pub/keys/saltpack) and [keys/keyring](https://godoc.org/github.com/keys-pub/keys/keyring). |
+| [github.com/keys-pub/keysd](https://github.com/keys-pub/keysd) | Service (gRPC), command line client, DB, Firestore, REST API, etc.                                                                                                                                           |
+| [github.com/keys-pub/app](https://github.com/keys-pub/app)     | Desktop app (in development).                                                                                                                                                                                |
 
 ☢ This project is in development and has not been audited or reviewed. Use at your own risk. ☢
 
