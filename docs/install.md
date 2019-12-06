@@ -16,7 +16,7 @@ brew install keys-pub/tap/keys
 To install via [scoop](https://scoop.sh/):
 
 ```shell
-scoop bucket add app https://github.com/keys-pub/scoop-bucket
+scoop bucket add keys.pub https://github.com/keys-pub/scoop-bucket
 scoop install keys
 ```
 
