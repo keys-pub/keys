@@ -6,7 +6,7 @@
 
 ## Documentation
 
-Visit **[keys.pub](https://keys.pub)**.
+Visit **[docs.keys.pub](https://docs.keys.pub)**.
 
 ## Repositories
 
