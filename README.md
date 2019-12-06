@@ -2,8 +2,6 @@
 
 [![GoDoc](https://godoc.org/github.com/keys-pub/keys?status.svg)](https://godoc.org/github.com/keys-pub/keys)
 
-[github.com/keys-pub/keys](https://github.com/keys-pub/keys) is a go package for cryptographic key management, signing and encryption. It supports the [Saltpack](https://saltpack.org) format.
-
 ☢ This project is in development and has not been audited or reviewed. Use at your own risk. ☢
 
 ## Documentation
