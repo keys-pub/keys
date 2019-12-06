@@ -1,8 +1,10 @@
-# What is Keys.pub
+# keys.pub
 
-Keys.pub is a go package ([github.com/keys-pub/keys](https://godoc.org/github.com/keys-pub/keys)) for cryptographic key management, signing and encryption. It supports the [Saltpack](https://saltpack.org) format.
-
-It also includes a [command line client](install.md), local (gRPC) service, local db, remote datastore, and [REST API](restapi/README.md).
+|                                                                      |                                                                                                                                                                                                              |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [github.com/keys-pub/keys](https://github.com/keys-pub/keys)         | Cryptographic key management, signing and encryption, including [keys/saltpack](https://godoc.org/github.com/keys-pub/keys/saltpack) and [keys/keyring](https://godoc.org/github.com/keys-pub/keys/keyring). |
+| [github.com/keys-pub/keysd](https://github.com/keys-pub/keysd)       | Service (gRPC), command line client, DB, Firestore, REST API, etc.                                                                                                                                           |
+| [github.com/keys-pub/keys-app](https://github.com/keys-pub/keys-app) | Desktop app (in development).                                                                                                                                                                                |
 
 ☢ This project is in development and has not been audited or reviewed. Use at your own risk. ☢
 
