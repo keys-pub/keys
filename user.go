@@ -195,7 +195,7 @@ func UserCheckWithKey(ctx context.Context, usr *User, spk SignPublicKey, req Req
 	return nil
 }
 
-var enabledServices = NewStringSet()
+var enabledServices = NewStringSet("twitter", "github")
 
 func validateServiceSupported(service string) error {
 	// TODO: gitlab

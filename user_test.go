@@ -12,8 +12,6 @@ import (
 // TODO: Mock http requests
 
 func TestNewUserForTwitterSigning(t *testing.T) {
-	EnableServices("twitter")
-	defer DisableServices()
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 	usr, err := NewUserForSigning(key.ID(), "twitter", "123456789012345")
@@ -26,8 +24,6 @@ func TestNewUserForTwitterSigning(t *testing.T) {
 }
 
 func TestNewUserMarshal(t *testing.T) {
-	EnableServices("twitter")
-	defer DisableServices()
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 	kid := key.ID()
@@ -72,8 +68,6 @@ func TestNewUserMarshal(t *testing.T) {
 }
 
 func TestUserCheckGithub(t *testing.T) {
-	EnableServices("github")
-	defer DisableServices()
 	clock := newClock()
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
@@ -182,8 +176,6 @@ func TestCheckNoUser(t *testing.T) {
 }
 
 func TestRequestTwitter(t *testing.T) {
-	EnableServices("twitter")
-	defer DisableServices()
 	surl := "https://twitter.com/boboloblaw/status/1202714310025236481"
 	u, err := url.Parse(surl)
 	require.NoError(t, err)
@@ -202,8 +194,6 @@ func TestRequestTwitter(t *testing.T) {
 }
 
 func TestVerifyUser(t *testing.T) {
-	EnableServices("github")
-	defer DisableServices()
 	key := GenerateKey()
 	kid := key.ID()
 	spk := key.PublicKey().SignPublicKey()
@@ -227,8 +217,6 @@ func TestVerifyUser(t *testing.T) {
 }
 
 func TestNewUser(t *testing.T) {
-	EnableServices("github", "twitter")
-	defer DisableServices()
 	key := GenerateKey()
 	kid := key.ID()
 
