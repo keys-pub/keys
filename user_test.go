@@ -216,6 +216,14 @@ func TestVerifyUser(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestServiceDefaults(t *testing.T) {
+	_, err := NewUser(GenerateKey().ID(), "test", "alice", "test://", 1)
+	require.EqualError(t, err, "test service is not enabled")
+
+	_, err = NewUser(GenerateKey().ID(), "test2", "alice", "test://", 1)
+	require.EqualError(t, err, "test2 service is not enabled")
+}
+
 func TestNewUser(t *testing.T) {
 	key := GenerateKey()
 	kid := key.ID()

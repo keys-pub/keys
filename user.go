@@ -306,7 +306,7 @@ func validateServiceAndName(service string, name string) error {
 	}
 
 	if !IsServiceEnabled(service) {
-		return errors.Errorf("service is not enabled")
+		return errors.Errorf("%s service is not enabled", service)
 	}
 
 	if len(name) == 0 {
