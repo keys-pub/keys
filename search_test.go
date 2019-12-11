@@ -16,6 +16,8 @@ var ctx = context.TODO()
 // TODO: Don't accept user names on server > some length
 
 func TestSearchUsers(t *testing.T) {
+	EnableServices("test", "test2")
+	defer DisableServices()
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
@@ -200,6 +202,8 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestExpired(t *testing.T) {
+	EnableServices("test")
+	defer DisableServices()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
 
@@ -241,6 +245,8 @@ func TestExpired(t *testing.T) {
 }
 
 func TestRevoke(t *testing.T) {
+	EnableServices("test")
+	defer DisableServices()
 	clock := newClock()
 	scs := NewSigchainStore(NewMem())
 
@@ -273,6 +279,8 @@ func saveUser(t *testing.T, scs SigchainStore, key Key, name string, service str
 }
 
 func TestGenerateStatement(t *testing.T) {
+	EnableServices("test")
+	defer DisableServices()
 	clock := newClock()
 	scs := NewSigchainStore(NewMem())
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
@@ -295,6 +303,8 @@ func TestGenerateStatement(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
+	EnableServices("test")
+	defer DisableServices()
 	clock := newClock()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)

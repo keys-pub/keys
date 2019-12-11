@@ -130,7 +130,7 @@ func newUser(kid ID, service string, name string, rawurl string) (*User, error) 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
 func NewUserForSigning(kid ID, service string, name string) (*User, error) {
 	name = normalizeName(service, name)
-	if err := validateServiceName(service, name); err != nil {
+	if err := validateServiceAndName(service, name); err != nil {
 		return nil, err
 	}
 	return &User{
@@ -193,6 +193,39 @@ func UserCheckWithKey(ctx context.Context, usr *User, spk SignPublicKey, req Req
 
 	logger.Infof("Verified %s", usr)
 	return nil
+}
+
+var enabledServices = NewStringSet()
+
+func validateServiceSupported(service string) error {
+	// TODO: gitlab
+	switch service {
+	case "twitter", "github", "test", "test2":
+	default:
+		return errors.Errorf("invalid service %s", service)
+	}
+	return nil
+}
+
+// EnableServices allows services.
+func EnableServices(services ...string) error {
+	for _, service := range services {
+		if err := validateServiceSupported(service); err != nil {
+			return err
+		}
+	}
+	enabledServices.AddAll(services)
+	return nil
+}
+
+// DisableServices disables all services.
+func DisableServices() {
+	enabledServices.Clear()
+}
+
+// IsServiceEnabled returns true if service enabled.
+func IsServiceEnabled(service string) bool {
+	return enabledServices.Contains(service)
 }
 
 // verifyURL verifies URL for service.
@@ -264,15 +297,23 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-func validateServiceName(service string, name string) error {
+func validateServiceAndName(service string, name string) error {
 	if len(service) == 0 {
 		return errors.Errorf("service is empty")
 	}
-	switch service {
-	case "twitter", "github", "test", "test2":
-	default:
-		return errors.Errorf("unknown service %s", service)
+
+	if err := validateServiceSupported(service); err != nil {
+		return err
 	}
+
+	if enabledServices.Size() == 0 {
+		return errors.Errorf("no services enabled")
+	}
+
+	if !IsServiceEnabled(service) {
+		return errors.Errorf("service is not enabled")
+	}
+
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
@@ -303,7 +344,7 @@ func validateServiceName(service string, name string) error {
 }
 
 func validateUser(usr *User) error {
-	if err := validateServiceName(usr.Service, usr.Name); err != nil {
+	if err := validateServiceAndName(usr.Service, usr.Name); err != nil {
 		return err
 	}
 	u, err := url.Parse(usr.URL)
