@@ -218,11 +218,6 @@ func EnableServices(services ...string) error {
 	return nil
 }
 
-// DisableServices disables all services.
-func DisableServices() {
-	enabledServices.Clear()
-}
-
 // IsServiceEnabled returns true if service enabled.
 func IsServiceEnabled(service string) bool {
 	return enabledServices.Contains(service)
