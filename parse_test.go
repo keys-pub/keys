@@ -2,6 +2,7 @@ package keys
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -40,4 +41,18 @@ func TestTrimMessage(t *testing.T) {
 	msg := trimMessage(">> abcdefghijklmnopqrstuvwxyz @@@ ABCXDEFGHIJKLMNOPQRSTUVWXYZ\n > 0123456789.    ")
 	expected := "abcdefghijklmnopqrstuvwxyzABCXDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	require.Equal(t, expected, msg)
+}
+
+func TestFindInTwitter(t *testing.T) {
+	b, err := ioutil.ReadFile("testdata/twitter/1202714310025236481")
+	require.NoError(t, err)
+
+	msg, err := findStringInHTML(string(b))
+	require.NoError(t, err)
+
+	t.Logf(msg)
+	s, err := trimHTML(msg)
+	require.NoError(t, err)
+	expected := `eb90A0en2hcwfYijYDez0uArQs3HYgOiJlOgVUIfSeipsu7JJcO6819zwug6n9639e2e18gwZtMCQlePtNVn9wTCKqLPKyEa7sfoHfnVB0hPvyKMbyjBGqHh7dz327KuwGT7OwwkMEmgjibmwuK6N31UwmaFLcDXRyz4c7NV5uSV1Msu2KjbMiH1JUIqH80eo7ux6O3uRXcb5ShhfqMJx`
+	require.Equal(t, expected, s)
 }

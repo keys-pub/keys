@@ -97,8 +97,8 @@ func (u *User) UnmarshalJSON(b []byte) error {
 }
 
 // NewUser returns User used in a signing statement.
-func NewUser(kid ID, service string, name string, rawurl string, seq int) (*User, error) {
-	usr, err := newUser(kid, service, name, rawurl)
+func NewUser(ctx *UserContext, kid ID, service string, name string, rawurl string, seq int) (*User, error) {
+	usr, err := newUser(ctx, kid, service, name, rawurl)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func NewUser(kid ID, service string, name string, rawurl string, seq int) (*User
 	return usr, nil
 }
 
-func newUser(kid ID, service string, name string, rawurl string) (*User, error) {
+func newUser(ctx *UserContext, kid ID, service string, name string, rawurl string) (*User, error) {
 	name = normalizeName(service, name)
 	url, err := normalizeURL(rawurl)
 	if err != nil {
@@ -121,16 +121,16 @@ func newUser(kid ID, service string, name string, rawurl string) (*User, error) 
 		Name:    name,
 		URL:     url,
 	}
-	if err := validateUser(usr); err != nil {
+	if err := ctx.validate(usr); err != nil {
 		return nil, err
 	}
 	return usr, nil
 }
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
-func NewUserForSigning(kid ID, service string, name string) (*User, error) {
+func NewUserForSigning(uc *UserContext, kid ID, service string, name string) (*User, error) {
 	name = normalizeName(service, name)
-	if err := validateServiceAndName(service, name); err != nil {
+	if err := uc.validateServiceAndName(service, name); err != nil {
 		return nil, err
 	}
 	return &User{
@@ -140,40 +140,85 @@ func NewUserForSigning(kid ID, service string, name string) (*User, error) {
 	}, nil
 }
 
-// UserCheck returns verified user statements URL in sigchain.
-func UserCheck(ctx context.Context, sc *Sigchain, req Requestor, nowFn func() time.Time) ([]*User, error) {
-	usrs := sc.Users()
-	for _, usr := range usrs {
-		if err := UserCheckWithKey(ctx, usr, sc.SignPublicKey(), req); err != nil {
+// UserContext is the environment for user checks.
+type UserContext struct {
+	req             Requestor
+	nowFn           func() time.Time
+	enabledServices *StringSet
+	testUnstable    int
+}
+
+// NewDefaultUserContext creates default UserContext.
+func NewDefaultUserContext() *UserContext {
+	services := []string{"twitter", "github"}
+	req := NewHTTPRequestor()
+	nowFn := time.Now
+	uc, err := NewUserContext(services, req, nowFn)
+	if err != nil {
+		panic(err)
+	}
+	return uc
+}
+
+// NewTestUserContext creates UserContext for testing.
+func NewTestUserContext(req Requestor, nowFn func() time.Time) *UserContext {
+	services := []string{"twitter", "github"}
+	uc, err := NewUserContext(services, req, nowFn)
+	if err != nil {
+		panic(err)
+	}
+	return uc
+}
+
+// NewUserContext creates UserContext.
+// Requestor, for example, on GCP this would use the urlfetch package.
+func NewUserContext(services []string, req Requestor, nowFn func() time.Time) (*UserContext, error) {
+	for _, service := range services {
+		if err := validateServiceSupported(service); err != nil {
 			return nil, err
 		}
-		usr.CheckedAt = nowFn()
+	}
+	return &UserContext{
+		enabledServices: NewStringSet(services...),
+		nowFn:           nowFn,
+		req:             req,
+	}, nil
+}
+
+// Now returns current time.
+func (u *UserContext) Now() time.Time {
+	return u.nowFn()
+}
+
+// Requestor ...
+func (u *UserContext) Requestor() Requestor {
+	return u.req
+}
+
+// Check returns verified user statements URL in sigchain.
+func (u *UserContext) Check(ctx context.Context, sc *Sigchain) ([]*User, error) {
+	usrs := sc.Users()
+	for _, usr := range usrs {
+		if err := u.CheckWithKey(ctx, usr, sc.SignPublicKey()); err != nil {
+			return nil, err
+		}
+		usr.CheckedAt = u.Now()
 	}
 	return usrs, nil
 }
 
-// UserCheckWithKey verified the user statement URL.
-func UserCheckWithKey(ctx context.Context, usr *User, spk SignPublicKey, req Requestor) error {
+// CheckWithKey verified the user statement URL.
+func (u *UserContext) CheckWithKey(ctx context.Context, usr *User, spk SignPublicKey) error {
 	if usr == nil {
 		return errors.Errorf("no user specified")
 	}
-	if req == nil {
-		req = NewHTTPRequestor()
-	}
-	u, err := url.Parse(usr.URL)
+	logger.Infof("Checking %s", usr.String())
+	ur, err := url.Parse(usr.URL)
 	if err != nil {
 		return err
 	}
-	logger.Infof("Checking %s", usr.String())
-
-	// Bypass test services
-	if (usr.Service == "test" || usr.Service == "test2") && u.Scheme == "test" {
-		logger.Infof("Bypassing user check for %s", usr.Service)
-		return nil
-	}
-
-	logger.Infof("Requesting %s", u)
-	body, err := req.RequestURL(ctx, u)
+	logger.Infof("Requesting %s", ur)
+	body, err := u.req.RequestURL(ctx, ur)
 	if err != nil {
 		return err
 	}
@@ -195,32 +240,14 @@ func UserCheckWithKey(ctx context.Context, usr *User, spk SignPublicKey, req Req
 	return nil
 }
 
-var enabledServices = NewStringSet("twitter", "github")
-
 func validateServiceSupported(service string) error {
 	// TODO: gitlab
 	switch service {
-	case "twitter", "github", "test", "test2":
+	case "twitter", "github":
 	default:
 		return errors.Errorf("invalid service %s", service)
 	}
 	return nil
-}
-
-// EnableServices allows services.
-func EnableServices(services ...string) error {
-	for _, service := range services {
-		if err := validateServiceSupported(service); err != nil {
-			return err
-		}
-	}
-	enabledServices.AddAll(services)
-	return nil
-}
-
-// IsServiceEnabled returns true if service enabled.
-func IsServiceEnabled(service string) bool {
-	return enabledServices.Contains(service)
 }
 
 // verifyURL verifies URL for service.
@@ -262,16 +289,6 @@ func verifyURL(service string, name string, u *url.URL) error {
 			return errors.Errorf("path invalid (name mismatch) for url %s", u)
 		}
 		return nil
-	case "test":
-		if u.Scheme != "test" {
-			return errors.Errorf("invalid scheme for url %s", u)
-		}
-		return nil
-	case "test2":
-		if u.Scheme != "test" {
-			return errors.Errorf("invalid scheme for url %s", u)
-		}
-		return nil
 	default:
 		return errors.Errorf("unknown service %s", service)
 	}
@@ -292,7 +309,7 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-func validateServiceAndName(service string, name string) error {
+func (u *UserContext) validateServiceAndName(service string, name string) error {
 	if len(service) == 0 {
 		return errors.Errorf("service is empty")
 	}
@@ -301,11 +318,11 @@ func validateServiceAndName(service string, name string) error {
 		return err
 	}
 
-	if enabledServices.Size() == 0 {
+	if u.enabledServices.Size() == 0 {
 		return errors.Errorf("no services enabled")
 	}
 
-	if !IsServiceEnabled(service) {
+	if !u.enabledServices.Contains(service) {
 		return errors.Errorf("%s service is not enabled", service)
 	}
 
@@ -338,15 +355,15 @@ func validateServiceAndName(service string, name string) error {
 	return nil
 }
 
-func validateUser(usr *User) error {
-	if err := validateServiceAndName(usr.Service, usr.Name); err != nil {
+func (u *UserContext) validate(usr *User) error {
+	if err := u.validateServiceAndName(usr.Service, usr.Name); err != nil {
 		return err
 	}
-	u, err := url.Parse(usr.URL)
+	ur, err := url.Parse(usr.URL)
 	if err != nil {
 		return err
 	}
-	if err := verifyURL(usr.Service, usr.Name, u); err != nil {
+	if err := verifyURL(usr.Service, usr.Name, ur); err != nil {
 		return err
 	}
 	return nil
@@ -382,8 +399,8 @@ func GenerateUserStatement(sc *Sigchain, usr *User, sk *SignKey, ts time.Time) (
 	return st, nil
 }
 
-// ValidateUserStatement returns error if statement is not a valid user statement.
-func ValidateUserStatement(st *Statement) error {
+// ValidateStatement returns error if statement is not a valid user statement.
+func (u *UserContext) ValidateStatement(st *Statement) error {
 	if st.Type != "user" {
 		return errors.Errorf("invalid user statement: %s != %s", st.Type, "user")
 	}
@@ -391,7 +408,7 @@ func ValidateUserStatement(st *Statement) error {
 	if err := json.Unmarshal(st.Data, &usr); err != nil {
 		return err
 	}
-	if err := validateUser(&usr); err != nil {
+	if err := u.validate(&usr); err != nil {
 		return err
 	}
 	return nil

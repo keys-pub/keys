@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +17,6 @@ var ctx = context.TODO()
 // TODO: Don't accept user names on server > some length
 
 func TestSearchUsers(t *testing.T) {
-	EnableServices("test", "test2")
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
@@ -25,8 +25,9 @@ func TestSearchUsers(t *testing.T) {
 	scs := newSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	search := NewSearch(dst, scs)
-	search.SetNowFn(clock.Now)
+	req := NewMockRequestor()
+	uc := NewTestUserContext(req, clock.Now)
+	search := NewSearch(dst, scs, uc)
 
 	results, err := search.Search(ctx, &SearchRequest{})
 	require.NoError(t, err)
@@ -37,8 +38,8 @@ func TestSearchUsers(t *testing.T) {
 	err = scs.SaveSigchain(GenerateSigchain(aliceTest, clock.Now()))
 	require.NoError(t, err)
 
-	// Add alice@test
-	saveUser(t, scs, aliceTest, "alice", "test", clock)
+	// Add alice@github
+	saveUser(t, uc, scs, aliceTest, "alice", "github", clock, req)
 
 	for i := 0; i < 5; i++ {
 		key, err := NewKey(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
@@ -47,7 +48,7 @@ func TestSearchUsers(t *testing.T) {
 		err = scs.SaveSigchain(sc)
 		require.NoError(t, err)
 		name := fmt.Sprintf("name%d", i)
-		saveUser(t, scs, key, name, "test", clock)
+		saveUser(t, uc, scs, key, name, "github", clock, req)
 		err = search.Update(ctx, sc.ID())
 		require.NoError(t, err)
 	}
@@ -70,21 +71,21 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 1, len(results[0].Users))
 	require.Equal(t, aliceTest.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alice", results[0].Users[0].Name)
-	require.Equal(t, "test", results[0].Users[0].Service)
-	require.Equal(t, "test:", results[0].Users[0].URL)
+	require.Equal(t, "github", results[0].Users[0].Service)
+	require.Equal(t, "https://gist.github.com/alice/1", results[0].Users[0].URL)
 	require.Equal(t, 2, results[0].Users[0].Seq)
 
 	res, err := search.Get(ctx, aliceTest.ID())
 	require.NoError(t, err)
 	require.Equal(t, 1, len(res.Users))
 	require.Equal(t, "alice", res.Users[0].Name)
-	require.Equal(t, "test", res.Users[0].Service)
-	require.Equal(t, "test:", res.Users[0].URL)
+	require.Equal(t, "github", res.Users[0].Service)
+	require.Equal(t, "https://gist.github.com/alice/1", res.Users[0].URL)
 	require.Equal(t, 2, res.Users[0].Seq)
 	require.Equal(t, TimeMs(1234567890046), TimeToMillis(res.Users[0].CheckedAt))
 
-	// Add alicenew@test
-	aliceNewSt := saveUser(t, scs, aliceTest, "alicenew", "test", clock)
+	// Add alicenew@github
+	aliceNewSt := saveUser(t, uc, scs, aliceTest, "alicenew", "github", clock, req)
 	err = search.Update(ctx, aliceTest.ID())
 	require.NoError(t, err)
 	results, err = search.Search(ctx, &SearchRequest{Query: "al"})
@@ -93,12 +94,12 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 2, len(results[0].Users))
 	require.Equal(t, aliceTest.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alice", results[0].Users[0].Name)
-	require.Equal(t, "test", results[0].Users[0].Service)
-	require.Equal(t, "test:", results[0].Users[0].URL)
+	require.Equal(t, "github", results[0].Users[0].Service)
+	require.Equal(t, "https://gist.github.com/alice/1", results[0].Users[0].URL)
 	require.Equal(t, 2, results[0].Users[0].Seq)
 	require.Equal(t, "alicenew", results[0].Users[1].Name)
-	require.Equal(t, "test", results[0].Users[1].Service)
-	require.Equal(t, "test:", results[0].Users[1].URL)
+	require.Equal(t, "github", results[0].Users[1].Service)
+	require.Equal(t, "https://gist.github.com/alicenew/1", results[0].Users[1].URL)
 	require.Equal(t, 3, results[0].Users[1].Seq)
 
 	// Revoke alice, update
@@ -113,16 +114,16 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 1, len(results[0].Users))
 	require.Equal(t, aliceTest.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alicenew", results[0].Users[0].Name)
-	require.Equal(t, "test", results[0].Users[0].Service)
-	require.Equal(t, "test:", results[0].Users[0].URL)
+	require.Equal(t, "github", results[0].Users[0].Service)
+	require.Equal(t, "https://gist.github.com/alicenew/1", results[0].Users[0].URL)
 	require.Equal(t, 3, results[0].Users[0].Seq)
 
-	// Add alice@test2
+	// Add alice@twitter
 	aliceTest2, err := NewKeyFromSeedPhrase(bobSeed, false)
 	require.NoError(t, err)
 	err = scs.SaveSigchain(GenerateSigchain(aliceTest2, clock.Now()))
 	require.NoError(t, err)
-	saveUser(t, scs, aliceTest2, "alice", "test2", clock)
+	saveUser(t, uc, scs, aliceTest2, "alice", "twitter", clock, req)
 	err = search.Update(ctx, aliceTest2.ID())
 	require.NoError(t, err)
 
@@ -132,15 +133,15 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 1, len(results[0].Users))
 	require.Equal(t, aliceTest2.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alice", results[0].Users[0].Name)
-	require.Equal(t, "test2", results[0].Users[0].Service)
+	require.Equal(t, "twitter", results[0].Users[0].Service)
 	require.Equal(t, 2, results[0].Users[0].Seq)
 	require.Equal(t, 1, len(results[1].Users))
 	require.Equal(t, aliceTest.ID(), results[1].Users[0].KID)
 	require.Equal(t, "alicenew", results[1].Users[0].Name)
-	require.Equal(t, "test", results[1].Users[0].Service)
+	require.Equal(t, "github", results[1].Users[0].Service)
 	require.Equal(t, 3, results[1].Users[0].Seq)
 
-	// Revoke alicenew@test
+	// Revoke alicenew@github
 	_, err = scs.RevokeStatement(aliceNewSt.Seq, aliceTest.SignKey())
 	require.NoError(t, err)
 	err = search.Update(ctx, aliceTest.ID())
@@ -151,21 +152,21 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 1, len(results))
 	require.Equal(t, aliceTest2.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alice", results[0].Users[0].Name)
-	require.Equal(t, "test2", results[0].Users[0].Service)
+	require.Equal(t, "twitter", results[0].Users[0].Service)
 
-	results, err = search.Search(ctx, &SearchRequest{Query: "alice@test2"})
+	results, err = search.Search(ctx, &SearchRequest{Query: "alice@twitter"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, aliceTest2.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alice", results[0].Users[0].Name)
-	require.Equal(t, "test2", results[0].Users[0].Service)
+	require.Equal(t, "twitter", results[0].Users[0].Service)
 
 	results, err = search.Search(ctx, &SearchRequest{Query: "KNLPD1zD35FpXx", KIDs: true})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results[0].Users))
 	require.Equal(t, aliceTest2.ID(), results[0].Users[0].KID)
 	require.Equal(t, "alice", results[0].Users[0].Name)
-	require.Equal(t, "test2", results[0].Users[0].Service)
+	require.Equal(t, "twitter", results[0].Users[0].Service)
 
 	results, err = search.Search(ctx, &SearchRequest{Query: "HX7DWqV9Ftk", KIDs: true})
 	require.NoError(t, err)
@@ -176,45 +177,34 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := Spew(iter, nil)
 	require.NoError(t, err)
-	require.Equal(t, `/kid/CsqTWvaEmrzVc8bgmnzLJdDzVp5gCLC7nayXzqQjKCLc {"kid":"CsqTWvaEmrzVc8bgmnzLJdDzVp5gCLC7nayXzqQjKCLc","users":[{"kid":"CsqTWvaEmrzVc8bgmnzLJdDzVp5gCLC7nayXzqQjKCLc","name":"name3","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.030-08:00"}]}
-/kid/FLRMd2Fb3e745YkkP9FVybgp68AV5ALSENjpzs1PfVj6 {"kid":"FLRMd2Fb3e745YkkP9FVybgp68AV5ALSENjpzs1PfVj6","users":[{"kid":"FLRMd2Fb3e745YkkP9FVybgp68AV5ALSENjpzs1PfVj6","name":"name4","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.037-08:00"}]}
-/kid/HX7DWqV9FtkXWJpXw656Uabtt98yjPH8iybGkfz2hvec {"kid":"HX7DWqV9FtkXWJpXw656Uabtt98yjPH8iybGkfz2hvec"}
-/kid/KNLPD1zD35FpXxP8q2B7JEWVqeJTxYH5RQKtGgrgNAtU {"kid":"KNLPD1zD35FpXxP8q2B7JEWVqeJTxYH5RQKtGgrgNAtU","users":[{"kid":"KNLPD1zD35FpXxP8q2B7JEWVqeJTxYH5RQKtGgrgNAtU","name":"alice","seq":2,"service":"test2","url":"test:","ucts":"2009-02-13T15:31:30.064-08:00"}]}
-/kid/QcCryFxU6wcYxQ4DME9PP1kbq76nf2YtAqk2GwHQqfqR {"kid":"QcCryFxU6wcYxQ4DME9PP1kbq76nf2YtAqk2GwHQqfqR","users":[{"kid":"QcCryFxU6wcYxQ4DME9PP1kbq76nf2YtAqk2GwHQqfqR","name":"name1","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.016-08:00"}]}
-/kid/bUCJPpR1ueFkKLS6RutSHUGviZ1UyXqU1FopbWhMCAoG {"kid":"bUCJPpR1ueFkKLS6RutSHUGviZ1UyXqU1FopbWhMCAoG"}
-/kid/ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu {"kid":"ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu","users":[{"kid":"ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu","name":"name0","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.009-08:00"}]}
-/kid/eP3FsGENP2WtyMqFH2udDhG2MLMeozZJUF6oZHt6Geo6 {"kid":"eP3FsGENP2WtyMqFH2udDhG2MLMeozZJUF6oZHt6Geo6","users":[{"kid":"eP3FsGENP2WtyMqFH2udDhG2MLMeozZJUF6oZHt6Geo6","name":"name2","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.023-08:00"}]}
-/kid/mJAHJmJZ5tMLENXJ4ZqyDA5JLp1TcfGn2uvgxfU2rbGf {"kid":"mJAHJmJZ5tMLENXJ4ZqyDA5JLp1TcfGn2uvgxfU2rbGf"}
-`, spew.String())
+	expected, err := ioutil.ReadFile("testdata/kid.spew")
+	require.NoError(t, err)
+	require.Equal(t, string(expected), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)
 	spew, err = Spew(iter, nil)
 	require.NoError(t, err)
-	require.Equal(t, `/user/alice@test2 {"kid":"KNLPD1zD35FpXxP8q2B7JEWVqeJTxYH5RQKtGgrgNAtU","users":[{"kid":"KNLPD1zD35FpXxP8q2B7JEWVqeJTxYH5RQKtGgrgNAtU","name":"alice","seq":2,"service":"test2","url":"test:","ucts":"2009-02-13T15:31:30.064-08:00"}]}
-/user/name0@test  {"kid":"ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu","users":[{"kid":"ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu","name":"name0","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.009-08:00"}]}
-/user/name1@test  {"kid":"QcCryFxU6wcYxQ4DME9PP1kbq76nf2YtAqk2GwHQqfqR","users":[{"kid":"QcCryFxU6wcYxQ4DME9PP1kbq76nf2YtAqk2GwHQqfqR","name":"name1","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.016-08:00"}]}
-/user/name2@test  {"kid":"eP3FsGENP2WtyMqFH2udDhG2MLMeozZJUF6oZHt6Geo6","users":[{"kid":"eP3FsGENP2WtyMqFH2udDhG2MLMeozZJUF6oZHt6Geo6","name":"name2","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.023-08:00"}]}
-/user/name3@test  {"kid":"CsqTWvaEmrzVc8bgmnzLJdDzVp5gCLC7nayXzqQjKCLc","users":[{"kid":"CsqTWvaEmrzVc8bgmnzLJdDzVp5gCLC7nayXzqQjKCLc","name":"name3","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.030-08:00"}]}
-/user/name4@test  {"kid":"FLRMd2Fb3e745YkkP9FVybgp68AV5ALSENjpzs1PfVj6","users":[{"kid":"FLRMd2Fb3e745YkkP9FVybgp68AV5ALSENjpzs1PfVj6","name":"name4","seq":2,"service":"test","url":"test:","ucts":"2009-02-13T15:31:30.037-08:00"}]}
-`, spew.String())
+	expected, err = ioutil.ReadFile("testdata/user.spew")
+	require.NoError(t, err)
+	require.Equal(t, string(expected), spew.String())
 }
 
 func TestExpired(t *testing.T) {
-	EnableServices("test")
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
 
 	clock := newClock()
-	search := NewSearch(dst, scs)
-	search.SetNowFn(clock.Now)
+	req := NewMockRequestor()
+	uc := NewTestUserContext(req, clock.Now)
+	search := NewSearch(dst, scs, uc)
 
-	aliceTest, aliceTeerr := NewKeyFromSeedPhrase(aliceSeed, false)
-	require.NoError(t, aliceTeerr)
-	err := scs.SaveSigchain(GenerateSigchain(aliceTest, clock.Now()))
+	aliceTest, err := NewKeyFromSeedPhrase(aliceSeed, false)
+	require.NoError(t, err)
+	err = scs.SaveSigchain(GenerateSigchain(aliceTest, clock.Now()))
 	require.NoError(t, err)
 
-	saveUser(t, scs, aliceTest, "alice", "test", clock)
+	saveUser(t, uc, scs, aliceTest, "alice", "github", clock, req)
 
 	bob, err := NewKeyFromSeedPhrase(bobSeed, false)
 	require.NoError(t, err)
@@ -228,8 +218,8 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, 1, len(result.Users))
 	require.Equal(t, aliceTest.ID(), result.Users[0].KID)
 	require.Equal(t, "alice", result.Users[0].Name)
-	require.Equal(t, "test", result.Users[0].Service)
-	require.Equal(t, "test:", result.Users[0].URL)
+	require.Equal(t, "github", result.Users[0].Service)
+	require.Equal(t, "https://gist.github.com/alice/1", result.Users[0].URL)
 	require.Equal(t, 2, result.Users[0].Seq)
 	require.Equal(t, TimeFromMillis(1234567890004), result.Users[0].CheckedAt)
 
@@ -243,40 +233,57 @@ func TestExpired(t *testing.T) {
 }
 
 func TestRevoke(t *testing.T) {
-	EnableServices("test")
 	clock := newClock()
 	scs := NewSigchainStore(NewMem())
 
-	aliceTest, aliceTeerr := NewKeyFromSeedPhrase(aliceSeed, false)
-	require.NoError(t, aliceTeerr)
-	err := scs.SaveSigchain(GenerateSigchain(aliceTest, clock.Now()))
+	alice, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 
-	_ = saveUser(t, scs, aliceTest, "alice", "test", clock)
-	aliceSt2 := saveUser(t, scs, aliceTest, "alicenew", "test", clock)
-
-	_, err = scs.Sigchain(aliceTest.ID())
+	err = scs.SaveSigchain(GenerateSigchain(alice, clock.Now()))
 	require.NoError(t, err)
 
-	_, err = scs.RevokeStatement(aliceSt2.Seq, aliceTest.SignKey())
+	req := NewMockRequestor()
+	uc := NewTestUserContext(req, clock.Now)
+
+	_ = saveUser(t, uc, scs, alice, "alice", "github", clock, req)
+	st := saveUser(t, uc, scs, alice, "alicenew", "github", clock, req)
+
+	_, err = scs.Sigchain(alice.ID())
+	require.NoError(t, err)
+
+	_, err = scs.RevokeStatement(st.Seq, alice.SignKey())
 	require.NoError(t, err)
 }
 
-func saveUser(t *testing.T, scs SigchainStore, key Key, name string, service string, clock *clock) *Statement {
+func saveUser(t *testing.T, uc *UserContext, scs SigchainStore, key Key, name string, service string, clock *clock, mock *MockRequestor) *Statement {
 	sc, err := scs.Sigchain(key.ID())
 	require.NoError(t, err)
 	require.NotNil(t, sc)
-	usr, err := NewUser(key.ID(), service, name, "test://", sc.LastSeq()+1)
+	url := ""
+	switch service {
+	case "github":
+		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
+	case "twitter":
+		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
+	default:
+		t.Fatal("unsupported service in test")
+	}
+
+	usr, err := NewUser(uc, key.ID(), service, name, url, sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, usr, key.SignKey(), clock.Now())
 	require.NoError(t, err)
 	err = scs.AddStatement(st, key.SignKey())
 	require.NoError(t, err)
+
+	msg, err := usr.Sign(key.SignKey())
+	require.NoError(t, err)
+	mock.SetResponse(url, []byte(msg))
+
 	return st
 }
 
 func TestGenerateStatement(t *testing.T) {
-	EnableServices("test")
 	clock := newClock()
 	scs := NewSigchainStore(NewMem())
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
@@ -286,45 +293,48 @@ func TestGenerateStatement(t *testing.T) {
 	require.NoError(t, err)
 	sc, err := scs.Sigchain(kid)
 	require.NoError(t, err)
-	usr, err := NewUser(kid, "test", "alice", "test://", 2)
+	req := NewMockRequestor()
+	uc := NewTestUserContext(req, clock.Now)
+	usr, err := NewUser(uc, kid, "github", "alice", "https://gist.github.com/alice/1", 2)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, usr, key.SignKey(), clock.Now())
 	require.NoError(t, err)
 	require.Equal(t, st.Seq, usr.Seq)
 
-	usr, err = NewUser(kid, "test", "alice", "test://", 100)
+	usr, err = NewUser(uc, kid, "github", "alice", "https://gist.github.com/alice/1", 100)
 	require.NoError(t, err)
 	_, err = GenerateUserStatement(sc, usr, key.SignKey(), clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 }
 
 func TestSearch(t *testing.T) {
-	EnableServices("test")
 	clock := newClock()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
-	search := NewSearch(dst, scs)
+	req := NewMockRequestor()
+	uc := NewTestUserContext(req, clock.Now)
+	search := NewSearch(dst, scs, uc)
 
 	for i := 0; i < 10; i++ {
 		key := GenerateKey()
 		err := scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
 		require.NoError(t, err)
 		name := "a" + RandUsername(7)
-		saveUser(t, scs, key, name, "test", clock)
+		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
 	for i := 0; i < 10; i++ {
 		key := GenerateKey()
 		err := scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
 		require.NoError(t, err)
 		name := "b" + RandUsername(7)
-		saveUser(t, scs, key, name, "test", clock)
+		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
 	for i := 0; i < 10; i++ {
 		key := GenerateKey()
 		err := scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
 		require.NoError(t, err)
 		name := "c" + RandUsername(7)
-		saveUser(t, scs, key, name, "test", clock)
+		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
 
 	kids, kerr := scs.KIDs()

@@ -136,3 +136,38 @@ func (r requestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
 	}
 	return body, err
 }
+
+// MockRequestor ...
+type MockRequestor struct {
+	resp map[string][]byte
+}
+
+// NewMockRequestor with mocked responses.
+func NewMockRequestor() *MockRequestor {
+	return &MockRequestor{resp: map[string][]byte{}}
+}
+
+// SetResponse ...
+func (r *MockRequestor) SetResponse(url string, b []byte) {
+	r.resp[url] = b
+}
+
+// SetResponseFile ...
+func (r *MockRequestor) SetResponseFile(url string, path string) error {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	r.SetResponse(url, b)
+	return nil
+}
+
+// RequestURL ...
+func (r *MockRequestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
+	us := u.String()
+	b, ok := r.resp[us]
+	if !ok {
+		return nil, errors.Errorf("no mock for %s", us)
+	}
+	return b, nil
+}

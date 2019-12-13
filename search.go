@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,34 +11,18 @@ import (
 
 // Search index for sigchain information.
 type Search struct {
-	sync.Mutex
-	dst   DocumentStore
-	scs   SigchainStore
-	req   Requestor
-	nowFn func() time.Time
+	dst DocumentStore
+	scs SigchainStore
+	uc  *UserContext
 }
 
 // NewSearch creates a Search.
-func NewSearch(dst DocumentStore, scs SigchainStore) *Search {
+func NewSearch(dst DocumentStore, scs SigchainStore, uc *UserContext) *Search {
 	return &Search{
 		dst: dst,
 		scs: scs,
-		req: NewHTTPRequestor(),
-		nowFn: func() time.Time {
-			return time.Now()
-		},
+		uc:  uc,
 	}
-}
-
-// SetRequestor sets the Requestor implementation.
-// For example, on GCP this would use the urlfetch package.
-func (s *Search) SetRequestor(req Requestor) {
-	s.req = req
-}
-
-// SetNowFn sets time.Now function.
-func (s *Search) SetNowFn(nowFn func() time.Time) {
-	s.nowFn = nowFn
 }
 
 // Get search result for KID.
@@ -67,7 +50,7 @@ func (s *Search) Update(ctx context.Context, kid ID) error {
 	}
 
 	logger.Infof("Checking users %s", kid)
-	usrs, err := UserCheck(ctx, sc, s.req, s.nowFn)
+	usrs, err := s.uc.Check(ctx, sc)
 	if err != nil {
 		return err
 	}
@@ -314,7 +297,7 @@ func (s *Search) Expired(ctx context.Context, dt time.Duration) ([]ID, error) {
 			return nil, err
 		}
 		for _, usr := range res.Users {
-			if usr.CheckedAt.IsZero() || s.nowFn().Sub(usr.CheckedAt) > dt {
+			if usr.CheckedAt.IsZero() || s.uc.Now().Sub(usr.CheckedAt) > dt {
 				kids = append(kids, usr.KID)
 				break
 			}
