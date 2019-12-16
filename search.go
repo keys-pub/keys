@@ -38,7 +38,11 @@ func (s *Search) Get(ctx context.Context, kid ID) (*SearchResult, error) {
 	if doc == nil {
 		return nil, nil
 	}
-	return unmarshalSearchResult(doc.Data)
+	var res SearchResult
+	if err := json.Unmarshal(doc.Data, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 // Update search index for sigchain KID.
@@ -153,7 +157,10 @@ const indexKID = "kid"
 const indexUser = "user"
 
 func (s *Search) index(ctx context.Context, res *SearchResult) error {
-	data := marshalSearchResult(res)
+	data, err := json.Marshal(res)
+	if err != nil {
+		return err
+	}
 
 	diff, err := s.diffUsers(ctx, res.KID, res.Users)
 	if err != nil {
@@ -191,49 +198,49 @@ func (s *Search) index(ctx context.Context, res *SearchResult) error {
 	return nil
 }
 
+// SearchField is fields to restrict search to.
+type SearchField string
+
+const (
+	// UserField user field.
+	UserField SearchField = "user"
+	// KIDField KID field.
+	KIDField SearchField = "kid"
+)
+
+// Contained returns true if this field is in fields.
+func (f SearchField) Contained(fields []SearchField) bool {
+	for _, field := range fields {
+		if field == f {
+			return true
+		}
+	}
+	return false
+}
+
 // SearchRequest ...
 type SearchRequest struct {
+	// Query to search for.
 	Query string
-	Index int
+	// Limit number of results.
 	Limit int
-	KIDs  bool
+	// Fields if set, restrict search to those fields.
+	Fields []SearchField
 }
 
 // SearchResult ...
 type SearchResult struct {
 	KID   ID           `json:"kid"`
-	Users []*UserCheck `json:"users"`
+	Users []*UserCheck `json:"users,omitempty"`
 }
 
-func marshalSearchResult(res *SearchResult) []byte {
-	b, _ := json.Marshal(res)
-	return b
-}
-
-func unmarshalSearchResult(b []byte) (*SearchResult, error) {
-	var val SearchResult
-	if err := json.Unmarshal(b, &val); err != nil {
-		return nil, err
-	}
-	return &val, nil
-}
-
-// Search for users.
-func (s *Search) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
-	logger.Infof("Search users, query=%q, index=%d, limit=%d, kids=%t", req.Query, req.Index, req.Limit, req.KIDs)
-	limit := req.Limit
-	if limit == 0 {
-		limit = 100
-	}
-
-	logger.Debugf("Searching users...")
-	iter, err := s.dst.Documents(ctx, indexUser, &DocumentsOpts{Prefix: req.Query, Index: req.Index, Limit: limit})
+func (s *Search) search(ctx context.Context, parent string, query string, limit int) ([]*SearchResult, error) {
+	logger.Infof("Searching %s", parent)
+	iter, err := s.dst.Documents(ctx, parent, &DocumentsOpts{Prefix: query, Limit: limit})
 	if err != nil {
 		return nil, err
 	}
-	kids := NewIDSet()
-	results := []*SearchResult{}
-
+	results := make([]*SearchResult, 0, limit)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -242,44 +249,57 @@ func (s *Search) Search(ctx context.Context, req *SearchRequest) ([]*SearchResul
 		if doc == nil {
 			break
 		}
-		res, err := unmarshalSearchResult(doc.Data)
-		if err != nil {
+		var res SearchResult
+		if err := json.Unmarshal(doc.Data, &res); err != nil {
 			return nil, err
 		}
-		if !kids.Contains(res.KID) {
-			results = append(results, res)
-			kids.Add(res.KID)
-		}
+		results = append(results, &res)
 	}
 	iter.Release()
+	return results, nil
+}
 
-	if req.KIDs {
-		logger.Debugf("Searching KIDs...")
-		iter, err = s.dst.Documents(ctx, indexKID, &DocumentsOpts{Prefix: req.Query})
-		if err != nil {
-			return nil, err
-		}
-		for {
-			if len(results) >= limit {
-				break
-			}
-			doc, err := iter.Next()
+// Search for users.
+func (s *Search) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
+	logger.Infof("Search users, query=%q, limit=%d", req.Query, req.Limit)
+	limit := req.Limit
+	if limit == 0 {
+		limit = 100
+	}
+
+	fields := req.Fields
+	if len(fields) == 0 {
+		fields = []SearchField{UserField, KIDField}
+	}
+
+	kids := NewIDSet()
+	results := []*SearchResult{}
+
+	for _, field := range fields {
+		switch field {
+		case UserField:
+			res, err := s.search(ctx, indexUser, req.Query, limit-len(results))
 			if err != nil {
 				return nil, err
 			}
-			if doc == nil {
-				break
+			for _, r := range res {
+				if !kids.Contains(r.KID) {
+					results = append(results, r)
+					kids.Add(r.KID)
+				}
 			}
-			res, err := unmarshalSearchResult(doc.Data)
+		case KIDField:
+			res, err := s.search(ctx, indexKID, req.Query, limit-len(results))
 			if err != nil {
 				return nil, err
 			}
-			if !kids.Contains(res.KID) {
-				results = append(results, res)
-				kids.Add(res.KID)
+			for _, r := range res {
+				if !kids.Contains(r.KID) {
+					results = append(results, r)
+					kids.Add(r.KID)
+				}
 			}
 		}
-		iter.Release()
 	}
 
 	return results, nil
@@ -300,8 +320,8 @@ func (s *Search) Expired(ctx context.Context, dt time.Duration) ([]ID, error) {
 		if doc == nil {
 			break
 		}
-		res, err := unmarshalSearchResult(doc.Data)
-		if err != nil {
+		var res SearchResult
+		if err := json.Unmarshal(doc.Data, &res); err != nil {
 			return nil, err
 		}
 		for _, user := range res.Users {

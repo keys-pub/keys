@@ -163,14 +163,19 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "alice", results[0].Users[0].User.Name)
 	require.Equal(t, "twitter", results[0].Users[0].User.Service)
 
-	results, err = search.Search(ctx, &SearchRequest{Query: "ELjdt5eDPyAB", KIDs: true})
+	results, err = search.Search(ctx, &SearchRequest{Query: "ELjdt5eDPyAB"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results[0].Users))
+	require.Equal(t, alice2.ID(), results[0].Users[0].User.KID)
+
+	results, err = search.Search(ctx, &SearchRequest{Query: "ELjdt5eDPyAB", Fields: []SearchField{KIDField}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results[0].Users))
 	require.Equal(t, alice2.ID(), results[0].Users[0].User.KID)
 	require.Equal(t, "alice", results[0].Users[0].User.Name)
 	require.Equal(t, "twitter", results[0].Users[0].User.Service)
 
-	results, err = search.Search(ctx, &SearchRequest{Query: "HX7DWqV9Ftk", KIDs: true})
+	results, err = search.Search(ctx, &SearchRequest{Query: "HX7DWqV9Ftk", Fields: []SearchField{KIDField}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, "HX7DWqV9FtkXWJpXw656Uabtt98yjPH8iybGkfz2hvec", results[0].KID.String())
@@ -194,7 +199,7 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestSearchUsersRequestErrors(t *testing.T) {
-	// SetLogger(NewLogger(DebugLevel))
+	SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
 	dst := NewMem()
@@ -237,6 +242,26 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
+	results, err = search.Search(ctx, &SearchRequest{})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	require.Equal(t, "HX7DWqV9FtkXWJpXw656Uabtt98yjPH8iybGkfz2hvec", results[0].KID.String())
+
+	// Check Documents
+	iter, err := dst.Documents(context.TODO(), "kid", nil)
+	require.NoError(t, err)
+	spew, err := Spew(iter, nil)
+	require.NoError(t, err)
+	expected, err := ioutil.ReadFile("testdata/kid2.spew")
+	require.NoError(t, err)
+	require.Equal(t, string(expected), spew.String())
+
+	iter, err = dst.Documents(context.TODO(), "user", nil)
+	require.NoError(t, err)
+	spew, err = Spew(iter, nil)
+	require.NoError(t, err)
+	require.Equal(t, "", spew.String())
+
 	// Unset error
 	req.SetResponse("https://gist.github.com/alice/1", data)
 	err = search.Update(ctx, alice.ID())
@@ -256,6 +281,10 @@ func TestExpired(t *testing.T) {
 	req := NewMockRequestor()
 	uc := NewTestUserContext(req, clock.Now)
 	search := NewSearch(dst, scs, uc)
+
+	ids, err := search.Expired(ctx, time.Hour)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(ids))
 
 	alice, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
@@ -282,7 +311,7 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, TimeFromMillis(1234567890005), result.Users[0].VerifiedAt)
 	require.Equal(t, TimeFromMillis(1234567890004), result.Users[0].Timestamp)
 
-	ids, err := search.Expired(ctx, time.Hour)
+	ids, err = search.Expired(ctx, time.Hour)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 
@@ -413,8 +442,4 @@ func TestSearch(t *testing.T) {
 	results, err = search.Search(ctx, &SearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 30, len(results))
-
-	results, err = search.Search(ctx, &SearchRequest{Index: 21})
-	require.NoError(t, err)
-	require.Equal(t, 9, len(results))
 }
