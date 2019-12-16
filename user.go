@@ -14,12 +14,20 @@ import (
 // User describes a name on a service with a signed statement at a
 // URL, signed into a sigchain at (KID, seq).
 type User struct {
-	Name      string
-	KID       ID
-	Seq       int
-	Service   string
-	URL       string
-	CheckedAt time.Time
+	Name    string
+	KID     ID
+	Seq     int
+	Service string
+	URL     string
+}
+
+// UserCheck is the result of a user check.
+type UserCheck struct {
+	Err        string     `json:"err,omitempty"`
+	Status     UserStatus `json:"status"`
+	Timestamp  time.Time  `json:"ts"`
+	User       *User      `json:"user"`
+	VerifiedAt time.Time  `json:"vts"`
 }
 
 func (u User) String() string {
@@ -40,10 +48,11 @@ func (u User) MarshalJSON() ([]byte, error) {
 
 // Bytes is a serialized User.
 func (u User) Bytes() []byte {
-	mes := []MarshalValue{
-		NewStringEntry("kid", u.KID.String()),
-		NewStringEntry("name", u.Name),
-	}
+	mes := []MarshalValue{}
+
+	mes = append(mes, NewStringEntry("kid", u.KID.String()))
+	mes = append(mes, NewStringEntry("name", u.Name))
+
 	if u.Seq != 0 {
 		mes = append(mes, NewIntEntry("seq", u.Seq))
 	}
@@ -51,62 +60,68 @@ func (u User) Bytes() []byte {
 	if u.URL != "" {
 		mes = append(mes, NewStringEntry("url", u.URL))
 	}
-	if !u.CheckedAt.IsZero() {
-		mes = append(mes, NewStringEntry("ucts", u.CheckedAt.Format(RFC3339Milli)))
-	}
 	return Marshal(mes)
 }
 
+// UserStatus is the status of the user statement.
+type UserStatus string
+
+const (
+	// UserStatusOK if user was found and verified.
+	UserStatusOK UserStatus = "ok"
+	// UserStatusResourceNotFound if resources was not found.
+	UserStatusResourceNotFound UserStatus = "resource-not-found"
+	// UserStatusContentNotFound if resource was found, but message was missing.
+	UserStatusContentNotFound UserStatus = "content-not-found"
+	// UserStatusConnFailure if there was a network connection failure.
+	UserStatusConnFailure UserStatus = "connection-fail"
+	// UserStatusFailure is any other failure.
+	UserStatusFailure UserStatus = "fail"
+	// UserStatusUnknown is unknown.
+	UserStatusUnknown UserStatus = "unknown"
+)
+
+// userFormat should stay ordered by JSON key names.
 type userFormat struct {
-	KID       string `json:"kid"`
-	Name      string `json:"name"`
-	Seq       int    `json:"seq"`
-	Service   string `json:"service"`
-	URL       string `json:"url"`
-	CheckedAt string `json:"ucts"`
+	KID     string `json:"kid"`
+	Name    string `json:"name"`
+	Seq     int    `json:"seq"`
+	Service string `json:"service"`
+	URL     string `json:"url"`
 }
 
 // UnmarshalJSON unmarshals a user from JSON.
 func (u *User) UnmarshalJSON(b []byte) error {
-	var usr userFormat
-	err := json.Unmarshal(b, &usr)
+	var user userFormat
+	err := json.Unmarshal(b, &user)
 	if err != nil {
 		return err
 	}
 
-	cts := time.Time{}
-	if usr.CheckedAt != "" {
-		t, err := time.Parse(RFC3339Milli, usr.CheckedAt)
-		if err != nil {
-			return err
-		}
-		cts = t
-	}
-	kid, err := ParseID(usr.KID)
+	kid, err := ParseID(user.KID)
 	if err != nil {
 		return err
 	}
 
-	u.Name = usr.Name
+	u.Name = user.Name
 	u.KID = kid
-	u.Seq = usr.Seq
-	u.Service = usr.Service
-	u.URL = usr.URL
-	u.CheckedAt = cts
+	u.Seq = user.Seq
+	u.Service = user.Service
+	u.URL = user.URL
 	return nil
 }
 
 // NewUser returns User used in a signing statement.
 func NewUser(ctx *UserContext, kid ID, service string, name string, rawurl string, seq int) (*User, error) {
-	usr, err := newUser(ctx, kid, service, name, rawurl)
+	user, err := newUser(ctx, kid, service, name, rawurl)
 	if err != nil {
 		return nil, err
 	}
 	if seq <= 0 {
 		return nil, errors.Errorf("invalid seq")
 	}
-	usr.Seq = seq
-	return usr, nil
+	user.Seq = seq
+	return user, nil
 }
 
 func newUser(ctx *UserContext, kid ID, service string, name string, rawurl string) (*User, error) {
@@ -115,16 +130,16 @@ func newUser(ctx *UserContext, kid ID, service string, name string, rawurl strin
 	if err != nil {
 		return nil, err
 	}
-	usr := &User{
+	user := &User{
 		KID:     kid,
 		Service: service,
 		Name:    name,
 		URL:     url,
 	}
-	if err := ctx.validate(usr); err != nil {
+	if err := ctx.validate(user); err != nil {
 		return nil, err
 	}
-	return usr, nil
+	return user, nil
 }
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
@@ -145,7 +160,6 @@ type UserContext struct {
 	req             Requestor
 	nowFn           func() time.Time
 	enabledServices *StringSet
-	testUnstable    int
 }
 
 // NewDefaultUserContext creates default UserContext.
@@ -195,49 +209,83 @@ func (u *UserContext) Requestor() Requestor {
 	return u.req
 }
 
-// Check returns verified user statements URL in sigchain.
-func (u *UserContext) Check(ctx context.Context, sc *Sigchain) ([]*User, error) {
-	usrs := sc.Users()
-	for _, usr := range usrs {
-		if err := u.CheckWithKey(ctx, usr, sc.SignPublicKey()); err != nil {
+// CheckSigchain returns user checks for users in the sigchain.
+func (u *UserContext) CheckSigchain(ctx context.Context, sc *Sigchain) ([]*UserCheck, error) {
+	users := sc.Users()
+	checked := make([]*UserCheck, 0, len(users))
+	for _, user := range users {
+		check, err := u.Check(ctx, user, sc.SignPublicKey())
+		if err != nil {
 			return nil, err
 		}
-		usr.CheckedAt = u.Now()
+		checked = append(checked, check)
 	}
-	return usrs, nil
+	return checked, nil
 }
 
-// CheckWithKey verified the user statement URL.
-func (u *UserContext) CheckWithKey(ctx context.Context, usr *User, spk SignPublicKey) error {
-	if usr == nil {
-		return errors.Errorf("no user specified")
+// Check checks and verifies the user statement URL.
+func (u *UserContext) Check(ctx context.Context, user *User, spk SignPublicKey) (*UserCheck, error) {
+	if user == nil {
+		return nil, errors.Errorf("no user specified")
 	}
-	logger.Infof("Checking %s", usr.String())
-	ur, err := url.Parse(usr.URL)
+	logger.Infof("Checking user %s", user.String())
+	ur, err := url.Parse(user.URL)
 	if err != nil {
-		return err
+		logger.Warningf("Failed to parse user url: %s", err)
+		return &UserCheck{
+			Err:       err.Error(),
+			Status:    UserStatusFailure,
+			Timestamp: u.Now(),
+			User:      user,
+		}, nil
 	}
 	logger.Infof("Requesting %s", ur)
 	body, err := u.req.RequestURL(ctx, ur)
 	if err != nil {
-		return err
+		if errHTTP, ok := errors.Cause(err).(ErrHTTP); ok && errHTTP.StatusCode == 404 {
+			return &UserCheck{
+				Err:    err.Error(),
+				Status: UserStatusResourceNotFound,
+				User:   user,
+			}, nil
+		}
+		return &UserCheck{
+			Err:       err.Error(),
+			Status:    UserStatusConnFailure,
+			Timestamp: u.Now(),
+			User:      user,
+		}, nil
 	}
 
-	msg, err := findStringInHTML(string(body))
-	if err != nil {
-		return err
-	}
+	msg := findStringInHTML(string(body))
 	if msg == "" {
-		return errors.Errorf("content not found")
+		logger.Warningf("User statement content not found")
+		return &UserCheck{
+			Err:       "user signed message content not found",
+			Status:    UserStatusContentNotFound,
+			Timestamp: u.Now(),
+			User:      user,
+		}, nil
 	}
 
-	_, err = VerifyUser(msg, spk, usr)
+	_, err = VerifyUser(msg, spk, user)
 	if err != nil {
-		return err
+		logger.Warningf("Failed to verify statement: %s", err)
+		return &UserCheck{
+			Err:       err.Error(),
+			Status:    UserStatusFailure,
+			Timestamp: u.Now(),
+			User:      user,
+		}, nil
 	}
 
-	logger.Infof("Verified %s", usr)
-	return nil
+	logger.Infof("Verified %s", user)
+	return &UserCheck{
+		Status:     UserStatusOK,
+		Timestamp:  u.Now(),
+		User:       user,
+		VerifiedAt: u.Now(),
+	}, nil
 }
 
 func validateServiceSupported(service string) error {
@@ -355,15 +403,15 @@ func (u *UserContext) validateServiceAndName(service string, name string) error 
 	return nil
 }
 
-func (u *UserContext) validate(usr *User) error {
-	if err := u.validateServiceAndName(usr.Service, usr.Name); err != nil {
+func (u *UserContext) validate(user *User) error {
+	if err := u.validateServiceAndName(user.Service, user.Name); err != nil {
 		return err
 	}
-	ur, err := url.Parse(usr.URL)
+	ur, err := url.Parse(user.URL)
 	if err != nil {
 		return err
 	}
-	if err := verifyURL(usr.Service, usr.Name, ur); err != nil {
+	if err := verifyURL(user.Service, user.Name, ur); err != nil {
 		return err
 	}
 	return nil
@@ -373,19 +421,19 @@ func (u *UserContext) validate(usr *User) error {
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
 // GenerateUserStatement for a user to add to the sigchain.
-func GenerateUserStatement(sc *Sigchain, usr *User, sk *SignKey, ts time.Time) (*Statement, error) {
-	if usr == nil {
+func GenerateUserStatement(sc *Sigchain, user *User, sk *SignKey, ts time.Time) (*Statement, error) {
+	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}
 	// Check if we have an existing user set with the same name and service
-	usrs := sc.Users()
-	for _, eusr := range usrs {
-		if eusr.Service == usr.Service && eusr.Name == usr.Name {
+	users := sc.Users()
+	for _, euser := range users {
+		if euser.Service == user.Service && euser.Name == user.Name {
 			return nil, ErrUserAlreadySet
 		}
 	}
 
-	b, err := json.Marshal(usr)
+	b, err := json.Marshal(user)
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +441,7 @@ func GenerateUserStatement(sc *Sigchain, usr *User, sk *SignKey, ts time.Time) (
 	if err != nil {
 		return nil, err
 	}
-	if st.Seq != usr.Seq {
+	if st.Seq != user.Seq {
 		return nil, errors.Errorf("user seq mismatch")
 	}
 	return st, nil
@@ -404,11 +452,11 @@ func (u *UserContext) ValidateStatement(st *Statement) error {
 	if st.Type != "user" {
 		return errors.Errorf("invalid user statement: %s != %s", st.Type, "user")
 	}
-	var usr User
-	if err := json.Unmarshal(st.Data, &usr); err != nil {
+	var user User
+	if err := json.Unmarshal(st.Data, &user); err != nil {
 		return err
 	}
-	if err := u.validate(&usr); err != nil {
+	if err := u.validate(&user); err != nil {
 		return err
 	}
 	return nil
@@ -429,9 +477,9 @@ func (u *User) Sign(key *SignKey) (string, error) {
 }
 
 // VerifyUser armored message for a user.
-// If usr is specified, we will verify it matches the User in the verified
+// If user is specified, we will verify it matches the User in the verified
 // message.
-func VerifyUser(msg string, spk SignPublicKey, usr *User) (*User, error) {
+func VerifyUser(msg string, spk SignPublicKey, user *User) (*User, error) {
 	trim, err := trimHTML(msg)
 	if err != nil {
 		return nil, err
@@ -447,31 +495,31 @@ func VerifyUser(msg string, spk SignPublicKey, usr *User) (*User, error) {
 		return nil, err
 	}
 
-	var usrDec User
-	if err := json.Unmarshal(bout, &usrDec); err != nil {
+	var userDec User
+	if err := json.Unmarshal(bout, &userDec); err != nil {
 		return nil, err
 	}
-	if usrDec.Name == "" {
+	if userDec.Name == "" {
 		return nil, errors.Errorf("user message invalid: no name")
 	}
-	if usrDec.KID == "" {
+	if userDec.KID == "" {
 		return nil, errors.Errorf("user message invalid: no kid")
 	}
-	if usrDec.Service == "" {
+	if userDec.Service == "" {
 		return nil, errors.Errorf("user message invalid: no service")
 	}
 
-	if usr != nil {
-		if usrDec.KID != usr.KID {
-			return nil, errors.Errorf("kid mismatch %s != %s", usr.KID, usrDec.KID)
+	if user != nil {
+		if userDec.KID != user.KID {
+			return nil, errors.Errorf("kid mismatch %s != %s", user.KID, userDec.KID)
 		}
-		if usrDec.Service != usr.Service {
-			return nil, errors.Errorf("service mismatch %s != %s", usr.Service, usrDec.Service)
+		if userDec.Service != user.Service {
+			return nil, errors.Errorf("service mismatch %s != %s", user.Service, userDec.Service)
 		}
-		if usrDec.Name != usr.Name {
-			return nil, errors.Errorf("name mismatch %s != %s", usr.Name, usrDec.Name)
+		if userDec.Name != user.Name {
+			return nil, errors.Errorf("name mismatch %s != %s", user.Name, userDec.Name)
 		}
 	}
 
-	return &usrDec, nil
+	return &userDec, nil
 }

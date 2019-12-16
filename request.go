@@ -127,29 +127,44 @@ func (r requestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
 	logger.Infof("Requesting URL %s", u)
 	_, body, err := doRequest(client(), "GET", u.String(), nil)
 	if err != nil {
-		logger.Warningf("Failed request %s", err)
-		if errHTTP, ok := errors.Cause(err).(ErrHTTP); ok {
-			if errHTTP.StatusCode == 404 {
-				err = NewErrTemporary(fmt.Sprintf("http not found %s", u))
-			}
-		}
+		logger.Warningf("Failed request: %s", err)
 	}
 	return body, err
 }
 
+type mockResponse struct {
+	data []byte
+	err  error
+}
+
 // MockRequestor ...
 type MockRequestor struct {
-	resp map[string][]byte
+	resp map[string]*mockResponse
 }
 
 // NewMockRequestor with mocked responses.
 func NewMockRequestor() *MockRequestor {
-	return &MockRequestor{resp: map[string][]byte{}}
+	return &MockRequestor{resp: map[string]*mockResponse{}}
 }
 
 // SetResponse ...
 func (r *MockRequestor) SetResponse(url string, b []byte) {
-	r.resp[url] = b
+	r.resp[url] = &mockResponse{data: b}
+}
+
+// Response returns mocked response.
+func (r *MockRequestor) Response(url string) ([]byte, error) {
+	resp, ok := r.resp[url]
+	if !ok {
+		return nil, errors.Errorf("no mock response for %s", url)
+	}
+	logger.Debugf("Mock response %s, data=%d; err=%s", url, len(resp.data), resp.err)
+	return resp.data, resp.err
+}
+
+// SetError ...
+func (r *MockRequestor) SetError(url string, err error) {
+	r.resp[url] = &mockResponse{err: err}
 }
 
 // SetResponseFile ...
@@ -164,10 +179,5 @@ func (r *MockRequestor) SetResponseFile(url string, path string) error {
 
 // RequestURL ...
 func (r *MockRequestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
-	us := u.String()
-	b, ok := r.resp[us]
-	if !ok {
-		return nil, errors.Errorf("no mock for %s", us)
-	}
-	return b, nil
+	return r.Response(u.String())
 }

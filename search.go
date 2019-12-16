@@ -43,14 +43,14 @@ func (s *Search) Get(ctx context.Context, kid ID) (*SearchResult, error) {
 
 // Update search index for sigchain KID.
 func (s *Search) Update(ctx context.Context, kid ID) error {
-	logger.Infof("Loading sigchain for %s", kid)
+	logger.Infof("Updating search index for %s", kid)
 	sc, err := s.scs.Sigchain(kid)
 	if err != nil {
 		return err
 	}
 
 	logger.Infof("Checking users %s", kid)
-	usrs, err := s.uc.Check(ctx, sc)
+	users, err := s.uc.CheckSigchain(ctx, sc)
 	if err != nil {
 		return err
 	}
@@ -60,10 +60,10 @@ func (s *Search) Update(ctx context.Context, kid ID) error {
 	se := &SearchResult{
 		KID: kid,
 		// BKIDs: bkids,
-		Users: usrs,
+		Users: users,
 	}
 
-	logger.Infof("Indexing %+v", se)
+	logger.Infof("Indexing %s, %+v", se.KID, se.Users)
 	if err := s.index(ctx, se); err != nil {
 		return err
 	}
@@ -88,27 +88,27 @@ func (s *Search) removeExistingUsers(ctx context.Context, kid ID) error {
 	if err != nil {
 		return err
 	}
-	for _, usr := range entry.Users {
-		if err := s.removeUser(ctx, usr); err != nil {
+	for _, user := range entry.Users {
+		if err := s.removeUser(ctx, user.User); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *Search) removeUser(ctx context.Context, usr *User) error {
-	name := fmt.Sprintf("%s@%s", usr.Name, usr.Service)
+func (s *Search) removeUser(ctx context.Context, user *User) error {
+	name := fmt.Sprintf("%s@%s", user.Name, user.Service)
 	namePath := Path(indexUser, name)
-	logger.Infof("Removing user %s: %s", usr.KID, name)
+	logger.Infof("Removing user %s: %s", user.KID, name)
 	if _, err := s.dst.Delete(ctx, namePath); err != nil {
 		return err
 	}
 	return nil
 }
 
-func containsUser(usrs []*User, usr *User) bool {
-	for _, u := range usrs {
-		if u.Service == usr.Service && u.Name == usr.Name {
+func containsUser(users []*UserCheck, user *UserCheck) bool {
+	for _, u := range users {
+		if u.User.Service == user.User.Service && u.User.Name == user.User.Name {
 			return true
 		}
 	}
@@ -116,30 +116,30 @@ func containsUser(usrs []*User, usr *User) bool {
 }
 
 type userDiff struct {
-	add    []*User
-	remove []*User
+	add    []*UserCheck
+	remove []*UserCheck
 }
 
-func (s *Search) diffUsers(ctx context.Context, kid ID, usrs []*User) (*userDiff, error) {
-	add := []*User{}
-	remove := []*User{}
+func (s *Search) diffUsers(ctx context.Context, kid ID, users []*UserCheck) (*userDiff, error) {
+	add := []*UserCheck{}
+	remove := []*UserCheck{}
 
 	result, err := s.Get(ctx, kid)
 	if err != nil {
 		return nil, err
 	}
-	existing := []*User{}
+	existing := []*UserCheck{}
 	if result != nil {
 		existing = result.Users
 	}
 
-	for _, a := range usrs {
+	for _, a := range users {
 		if !containsUser(existing, a) {
 			add = append(add, a)
 		}
 	}
 	for _, r := range existing {
-		if !containsUser(usrs, r) {
+		if !containsUser(users, r) {
 			remove = append(remove, r)
 		}
 	}
@@ -160,7 +160,7 @@ func (s *Search) index(ctx context.Context, res *SearchResult) error {
 		return err
 	}
 	for _, r := range diff.remove {
-		if err := s.removeUser(ctx, r); err != nil {
+		if err := s.removeUser(ctx, r.User); err != nil {
 			return err
 		}
 	}
@@ -171,12 +171,20 @@ func (s *Search) index(ctx context.Context, res *SearchResult) error {
 		return err
 	}
 
-	for _, usr := range res.Users {
-		name := fmt.Sprintf("%s@%s", usr.Name, usr.Service)
-		namePath := Path(indexUser, name)
-		logger.Infof("Indexing user %s %s", namePath, usr.KID)
-		if err := s.dst.Set(ctx, namePath, data); err != nil {
-			return err
+	for _, user := range res.Users {
+		if user.Status != UserStatusOK {
+			// TODO: Should we not remove on connection errors (or only if a temporary error persists)?
+			logger.Infof("Removing failed user %s", user.User)
+			if err := s.removeUser(ctx, user.User); err != nil {
+				return err
+			}
+		} else {
+			name := fmt.Sprintf("%s@%s", user.User.Name, user.User.Service)
+			namePath := Path(indexUser, name)
+			logger.Infof("Indexing user %s %s", namePath, user.User.KID)
+			if err := s.dst.Set(ctx, namePath, data); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -193,8 +201,8 @@ type SearchRequest struct {
 
 // SearchResult ...
 type SearchResult struct {
-	KID   ID      `json:"kid"`
-	Users []*User `json:"users,omitempty"`
+	KID   ID           `json:"kid"`
+	Users []*UserCheck `json:"users"`
 }
 
 func marshalSearchResult(res *SearchResult) []byte {
@@ -296,9 +304,9 @@ func (s *Search) Expired(ctx context.Context, dt time.Duration) ([]ID, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, usr := range res.Users {
-			if usr.CheckedAt.IsZero() || s.uc.Now().Sub(usr.CheckedAt) > dt {
-				kids = append(kids, usr.KID)
+		for _, user := range res.Users {
+			if user.Timestamp.IsZero() || s.uc.Now().Sub(user.Timestamp) > dt {
+				kids = append(kids, user.User.KID)
 				break
 			}
 		}

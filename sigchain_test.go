@@ -135,6 +135,58 @@ func TestSigchainJSON(t *testing.T) {
 	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
 }
 
+func TestSigchainUsers(t *testing.T) {
+	clock := newClock()
+	req := NewMockRequestor()
+	uc := NewTestUserContext(req, clock.Now)
+	alice, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	require.NoError(t, err)
+
+	sc := NewSigchain(alice.PublicKey)
+	require.Equal(t, 0, sc.Length())
+
+	users := sc.Users()
+	require.Equal(t, 0, len(users))
+
+	user, err := NewUser(uc, alice.ID, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	require.NoError(t, err)
+	st, err := GenerateUserStatement(sc, user, alice, clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st)
+	require.NoError(t, err)
+
+	users = sc.Users()
+	require.Equal(t, 1, len(users))
+	require.Equal(t, "alice", users[0].Name)
+	require.Equal(t, "github", users[0].Service)
+	require.Equal(t, "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", users[0].URL)
+	require.Equal(t, 1, users[0].Seq)
+
+	_, err = sc.Revoke(1, alice)
+	require.NoError(t, err)
+	users = sc.Users()
+	require.Equal(t, 0, len(users))
+
+	user2, err := NewUser(uc, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	require.NoError(t, err)
+	st2, err := GenerateUserStatement(sc, user2, alice, clock.Now())
+	require.EqualError(t, err, "user seq mismatch")
+
+	user2, err = NewUser(uc, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
+	require.NoError(t, err)
+	st2, err = GenerateUserStatement(sc, user2, alice, clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st2)
+	require.NoError(t, err)
+
+	users = sc.Users()
+	require.Equal(t, 1, len(users))
+	require.Equal(t, "alice", users[0].Name)
+	require.Equal(t, "github", users[0].Service)
+	require.Equal(t, "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", users[0].URL)
+	require.Equal(t, 3, users[0].Seq)
+}
+
 func ExampleNewSigchain() {
 	clock := newClock()
 	alice := GenerateKey()

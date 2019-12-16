@@ -358,16 +358,16 @@ func (s *Sigchain) PublicKey() PublicKey {
 // Users (statements) signed into the sigchain.
 func (s *Sigchain) Users() []*User {
 	sts := s.FindAll("user")
-	usrs := make([]*User, 0, len(sts))
+	users := make([]*User, 0, len(sts))
 	for _, st := range sts {
-		var usr User
-		if err := json.Unmarshal(st.Data, &usr); err != nil {
+		var user User
+		if err := json.Unmarshal(st.Data, &user); err != nil {
 			logger.Warningf("Invalid user in sigchain: %+v", err)
 			continue
 		}
-		usrs = append(usrs, &usr)
+		users = append(users, &user)
 	}
-	return usrs
+	return users
 }
 
 // GenerateSigchain ...

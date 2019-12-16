@@ -9,6 +9,7 @@ import (
 )
 
 const aliceSeed = "win rebuild update term layer transfer gain field prepare unique spider cool present argue grab trend eagle casino peace hockey loop seed desert swear"
+const aliceSeed2 = "negative limb swallow become sauce wrist payment vast salad snack bridge barrel case trim salute divorce female gift purchase three silk answer tackle evoke"
 const bobSeed = "crane chimney shell unique drink dynamic math pilot letter inflict tattoo curtain primary crystal live return affair husband general cargo chat vintage demand deer"
 
 func TestKeystoreSaveKey(t *testing.T) {

@@ -9,20 +9,16 @@ import (
 )
 
 func TestFindStringInHTML(t *testing.T) {
-	msg, err := findStringInHTML("")
-	require.NoError(t, err)
+	msg := findStringInHTML("")
 	require.Equal(t, "", msg)
 
-	msg2, err := findStringInHTML("??")
-	require.NoError(t, err)
+	msg2 := findStringInHTML("??")
 	require.Equal(t, "", msg2)
 
-	msg3, err := findStringInHTML("abc BEGIN MESSAGE.END MESSAGE. def")
-	require.NoError(t, err)
+	msg3 := findStringInHTML("abc BEGIN MESSAGE.END MESSAGE. def")
 	require.Equal(t, "BEGIN MESSAGE.END MESSAGE.", msg3)
 
-	msg4, err := findStringInHTML("abc BEGIN MESSAGE. ok END MESSAGE. def")
-	require.NoError(t, err)
+	msg4 := findStringInHTML("abc BEGIN MESSAGE. ok END MESSAGE. def")
 	require.Equal(t, "BEGIN MESSAGE. ok END MESSAGE.", msg4)
 }
 
@@ -47,8 +43,7 @@ func TestFindInTwitter(t *testing.T) {
 	b, err := ioutil.ReadFile("testdata/twitter/1202714310025236481")
 	require.NoError(t, err)
 
-	msg, err := findStringInHTML(string(b))
-	require.NoError(t, err)
+	msg := findStringInHTML(string(b))
 
 	t.Logf(msg)
 	s, err := trimHTML(msg)

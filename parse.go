@@ -34,36 +34,33 @@ func breakString(msg string, wordLen int, lineLen int) string {
 }
 
 // findStringInHTML finds string in HTML data.
-func findStringInHTML(body string) (string, error) {
+func findStringInHTML(body string) string {
 	logger.Debugf("Searching for statement in message (%d)", len(body))
-	msg, err := find(body, saltpackStart, saltpackEnd, true)
-	if err != nil {
-		return "", err
-	}
+	msg := find(body, saltpackStart, saltpackEnd, true)
 	if msg == "" {
-		return "", nil
+		return ""
 	}
 	if len(msg) < len(saltpackStart)+len(saltpackEnd) {
-		return "", nil
+		return ""
 	}
-	return msg, nil
+	return msg
 }
 
-func find(body string, start, end string, stripHTML bool) (string, error) {
+func find(body string, start, end string, stripHTML bool) string {
 	// TODO: Better parsing
 	idx := strings.Index(body, start)
 	if idx == -1 {
-		return "", nil
+		return ""
 	}
 	idx2 := strings.Index(body[idx:], end)
 	if idx2 == -1 {
-		return "", nil
+		return ""
 	}
 	msg := body[idx : idx+idx2+len(end)]
 	if stripHTML {
 		msg = stripTags(msg)
 	}
-	return msg, nil
+	return msg
 }
 
 func stripTags(body string) string {
