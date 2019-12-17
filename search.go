@@ -259,6 +259,21 @@ func (s *Search) search(ctx context.Context, parent string, query string, limit 
 	return results, nil
 }
 
+func dedupe(res []*SearchResult, limit int) []*SearchResult {
+	kids := NewIDSet()
+	results := make([]*SearchResult, 0, len(res))
+	for _, r := range res {
+		if !kids.Contains(r.KID) {
+			results = append(results, r)
+			kids.Add(r.KID)
+		}
+		if len(results) == limit {
+			break
+		}
+	}
+	return results
+}
+
 // Search for users.
 func (s *Search) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
 	logger.Infof("Search users, query=%q, limit=%d", req.Query, req.Limit)
@@ -272,35 +287,26 @@ func (s *Search) Search(ctx context.Context, req *SearchRequest) ([]*SearchResul
 		fields = []SearchField{UserField, KIDField}
 	}
 
-	kids := NewIDSet()
 	results := []*SearchResult{}
 
 	for _, field := range fields {
 		switch field {
 		case UserField:
-			res, err := s.search(ctx, indexUser, req.Query, limit-len(results))
+			res, err := s.search(ctx, indexUser, req.Query, limit)
 			if err != nil {
 				return nil, err
 			}
-			for _, r := range res {
-				if !kids.Contains(r.KID) {
-					results = append(results, r)
-					kids.Add(r.KID)
-				}
-			}
+			results = append(results, res...)
 		case KIDField:
-			res, err := s.search(ctx, indexKID, req.Query, limit-len(results))
+			res, err := s.search(ctx, indexKID, req.Query, limit)
 			if err != nil {
 				return nil, err
 			}
-			for _, r := range res {
-				if !kids.Contains(r.KID) {
-					results = append(results, r)
-					kids.Add(r.KID)
-				}
-			}
+			results = append(results, res...)
 		}
 	}
+
+	results = dedupe(results, limit)
 
 	return results, nil
 }

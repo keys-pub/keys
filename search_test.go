@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"testing"
 	"time"
 
@@ -199,7 +198,7 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestSearchUsersRequestErrors(t *testing.T) {
-	SetLogger(NewLogger(DebugLevel))
+	// SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
 	dst := NewMem()
@@ -396,6 +395,7 @@ func TestGenerateStatement(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
+	// SetLogger(NewLogger(DebugLevel))
 	clock := newClock()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
@@ -404,42 +404,55 @@ func TestSearch(t *testing.T) {
 	search := NewSearch(dst, scs, uc)
 
 	for i := 0; i < 10; i++ {
-		key := GenerateKey()
-		err := scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
+		key, err := NewKey(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		require.NoError(t, err)
-		name := "a" + RandUsername(7)
+		err = scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
+		require.NoError(t, err)
+		name := fmt.Sprintf("a%d", i)
 		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
-	for i := 0; i < 10; i++ {
-		key := GenerateKey()
-		err := scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
+	for i := 10; i < 20; i++ {
+		key, err := NewKey(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		require.NoError(t, err)
-		name := "b" + RandUsername(7)
+		err = scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
+		require.NoError(t, err)
+		name := fmt.Sprintf("b%d", i)
 		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
-	for i := 0; i < 10; i++ {
-		key := GenerateKey()
-		err := scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
+	for i := 20; i < 256; i++ {
+		key, err := NewKey(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		require.NoError(t, err)
-		name := "c" + RandUsername(7)
+		err = scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
+		require.NoError(t, err)
+		name := fmt.Sprintf("c%d", i)
 		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
 
 	kids, kerr := scs.KIDs()
 	require.NoError(t, kerr)
-	require.Equal(t, 30, len(kids))
+	require.Equal(t, 256, len(kids))
 	for _, kid := range kids {
 		err := search.Update(ctx, kid)
 		require.NoError(t, err)
 	}
 
-	results, err := search.Search(ctx, &SearchRequest{Query: "a"})
+	results, err := search.Search(ctx, &SearchRequest{Query: "a", Limit: 11})
 	require.NoError(t, err)
-	require.Equal(t, 10, len(results))
+	require.Equal(t, 11, len(results))
+	require.Equal(t, "ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu", results[0].KID.String())
 	require.Equal(t, 1, len(results[0].Users))
-	require.True(t, strings.HasPrefix(results[0].Users[0].User.Name, "a"))
+	require.Equal(t, "a0", results[0].Users[0].User.Name)
+	require.Equal(t, "aBMAH6R9eih6pdMNiDxJYUtprt9GLzWVTiXwHAqktXrj", results[10].KID.String())
 
-	results, err = search.Search(ctx, &SearchRequest{})
+	results, err = search.Search(ctx, &SearchRequest{Query: "a", Limit: 2})
 	require.NoError(t, err)
-	require.Equal(t, 30, len(results))
+	require.Equal(t, 2, len(results))
+	require.Equal(t, 1, len(results[0].Users))
+	require.Equal(t, "ddRZXkYg1VcHRhpR6zu5kPBzsSLV9sJTWkTdduCJu2yu", results[0].KID.String())
+	require.Equal(t, 1, len(results[0].Users))
+	require.Equal(t, "a0", results[0].Users[0].User.Name)
+
+	results, err = search.Search(ctx, &SearchRequest{Limit: 1000})
+	require.NoError(t, err)
+	require.Equal(t, 256, len(results))
 }
