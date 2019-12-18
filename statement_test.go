@@ -142,6 +142,6 @@ func TestStatementSpecificSerialization(t *testing.T) {
 
 func TestStatementPath(t *testing.T) {
 	kid := ID("PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah")
-	path := StatementKeyPath(kid, 1)
-	require.Equal(t, "/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001", path)
+	key := StatementKey(kid, 1)
+	require.Equal(t, "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001", key)
 }

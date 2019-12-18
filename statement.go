@@ -62,31 +62,31 @@ func newStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke 
 	return st
 }
 
-// KeyPath returns path for Statement in a key/value store.
-// If Seq is not set, then there is no key path.
-// Path looks like "/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001".
-func (s Statement) KeyPath() string {
-	return StatementKeyPath(s.KID, s.Seq)
+// Key for a Statement.
+// If Seq is not set, then there is no key.
+// Key looks like "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001".
+func (s Statement) Key() string {
+	return StatementKey(s.KID, s.Seq)
 }
 
-// StatementKeyPath returns path for Statement kid,seq in a key/value store.
-// If seq is <= 0, then there is no key path.
-// Path looks like "/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001".
-func StatementKeyPath(kid ID, seq int) string {
+// StatementKey returns key for Statement kid,seq.
+// If seq is <= 0, then there is no key.
+// Path looks like "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001".
+func StatementKey(kid ID, seq int) string {
 	if seq <= 0 {
 		return ""
 	}
-	return Path("sigchain", kid.WithSeq(seq))
+	return kid.WithSeq(seq)
 }
 
-// URLPath returns path for Statement in the HTTP API.
-// If Seq is not set, then there is no url path.
-// Path looks like "/sigchain/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1".
-func (s Statement) URLPath() string {
+// URL returns path string for a Statement in the HTTP API.
+// If Seq is not set, then there is no path.
+// Path looks like "QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1".
+func (s Statement) URL() string {
 	if s.Seq == 0 {
 		return ""
 	}
-	return Path("sigchain", s.KID, fmt.Sprintf("%d", s.Seq))
+	return s.KID.String() + "/" + fmt.Sprintf("%d", s.Seq)
 }
 
 type statementFormat struct {

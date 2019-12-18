@@ -3,6 +3,7 @@ package keys
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"testing"
 
@@ -216,9 +217,10 @@ func ExampleNewSigchain() {
 		log.Fatal(err)
 	}
 
-	// spew, err := Spew(sc.EntryIterator(URLPathType), nil)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println(spew.String())
+	// Spew
+	spew, err := sc.Spew()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(spew.String())
 }

@@ -87,7 +87,7 @@ func (s sigchainStore) KIDs() ([]ID, error) {
 
 func (s sigchainStore) SaveSigchain(sc *Sigchain) error {
 	for _, st := range sc.Statements() {
-		if err := s.dst.Set(context.TODO(), st.KeyPath(), st.Bytes()); err != nil {
+		if err := s.dst.Set(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
 			return err
 		}
 	}
@@ -152,7 +152,7 @@ func (s sigchainStore) AddStatement(st *Statement, sk *SignKey) error {
 	if err := sc.Verify(st, sc.Last()); err != nil {
 		return err
 	}
-	if err := s.dst.Create(context.TODO(), st.KeyPath(), st.Bytes()); err != nil {
+	if err := s.dst.Create(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -171,7 +171,7 @@ func (s sigchainStore) RevokeStatement(revoke int, sk *SignKey) (*Statement, err
 	if err := sc.Verify(st, sc.Last()); err != nil {
 		return nil, err
 	}
-	if err := s.dst.Create(context.TODO(), st.KeyPath(), st.Bytes()); err != nil {
+	if err := s.dst.Create(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
 		return nil, err
 	}
 	return st, nil
@@ -217,5 +217,5 @@ func (s sigchainStore) DeleteSigchain(kid ID) (bool, error) {
 }
 
 func (s sigchainStore) SigchainExists(kid ID) (bool, error) {
-	return s.dst.Exists(context.TODO(), StatementKeyPath(kid, 1))
+	return s.dst.Exists(context.TODO(), Path("sigchain", StatementKey(kid, 1)))
 }

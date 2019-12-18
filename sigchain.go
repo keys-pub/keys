@@ -72,7 +72,7 @@ func (s *Sigchain) Spew() (*bytes.Buffer, error) {
 	w := new(tabwriter.Writer)
 	w.Init(&out, 0, 8, 1, ' ', 0)
 	for _, st := range s.statements {
-		key := st.URLPath()
+		key := Path("sigchain", st.URL())
 		value := string(st.Bytes())
 		out.Write([]byte(key))
 		out.Write([]byte(" "))
