@@ -140,8 +140,17 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.Equal(t, revoke.serialized, stOut2.serialized)
 }
 
-func TestStatementPath(t *testing.T) {
-	kid := ID("PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah")
-	key := StatementKey(kid, 1)
-	require.Equal(t, "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001", key)
+func TestStatementKeyURL(t *testing.T) {
+	clock := newClock()
+	sk, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	require.NoError(t, err)
+
+	sc := NewSigchain(sk.PublicKey)
+	require.Equal(t, 0, sc.Length())
+
+	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
+	require.NoError(t, err)
+
+	require.Equal(t, "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001", st.Key())
+	require.Equal(t, "/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah/1", st.URL())
 }

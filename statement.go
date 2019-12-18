@@ -81,12 +81,12 @@ func StatementKey(kid ID, seq int) string {
 
 // URL returns path string for a Statement in the HTTP API.
 // If Seq is not set, then there is no path.
-// Path looks like "QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1".
+// Path looks like "/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1".
 func (s Statement) URL() string {
 	if s.Seq == 0 {
 		return ""
 	}
-	return s.KID.String() + "/" + fmt.Sprintf("%d", s.Seq)
+	return "/" + s.KID.String() + "/" + fmt.Sprintf("%d", s.Seq)
 }
 
 type statementFormat struct {
