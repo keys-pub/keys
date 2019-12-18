@@ -424,8 +424,6 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		err = scs.SaveSigchain(GenerateSigchain(key, clock.Now()))
 		require.NoError(t, err)
-		name := fmt.Sprintf("c%d", i)
-		saveUser(t, uc, scs, key, name, "github", clock, req)
 	}
 
 	kids, kerr := scs.KIDs()
@@ -455,4 +453,8 @@ func TestSearch(t *testing.T) {
 	results, err = search.Search(ctx, &SearchRequest{Limit: 1000})
 	require.NoError(t, err)
 	require.Equal(t, 256, len(results))
+	require.Equal(t, "h5MS7NL1JRuLnLbaE5eizCVHUKHbjRzxdEXLnLMsuADJ", results[19].KID.String())
+	require.Equal(t, 1, len(results[19].Users))
+	require.Equal(t, "1VPs615nkBW1shfar5FKe4mXGoEBSnXWzFnHR1r3ACex", results[20].KID.String())
+	require.Equal(t, 0, len(results[20].Users))
 }
