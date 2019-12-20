@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gabriel/go-keychain"
+	"github.com/keybase/go-keychain"
 	"github.com/pkg/errors"
 )
 
