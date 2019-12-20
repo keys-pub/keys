@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/keybase/go-keychain"
+	"github.com/gabriel/go-keychain"
 	"github.com/pkg/errors"
 )
 
@@ -187,7 +187,7 @@ func (k sys) ids(service string, prefix string, showHidden bool, showReserved bo
 	return ids, nil
 }
 
-func newPasswordItem(service string, id string, data []byte, desc string, access []string) keychain.Item {
+func newPasswordItem(service string, id string, data []byte, desc string) keychain.Item {
 	item := keychain.NewItem()
 	item.SetSecClass(keychain.SecClassGenericPassword)
 	item.SetService(service)
@@ -196,9 +196,6 @@ func newPasswordItem(service string, id string, data []byte, desc string, access
 	item.SetDescription(desc)
 	item.SetSynchronizable(keychain.SynchronizableNo)
 	item.SetAccessible(keychain.AccessibleWhenUnlocked)
-	if len(access) > 0 {
-		item.SetAccess(&keychain.Access{Label: service, TrustedApplications: access})
-	}
 	// if k.skc != nil {
 	// 	item.UseKeychain(*k.skc)
 	// }
@@ -214,6 +211,6 @@ func add(service string, id string, data []byte, desc string) error {
 	if len(data) == 0 {
 		return errors.Errorf("no data")
 	}
-	item := newPasswordItem(service, id, data, desc, nil)
+	item := newPasswordItem(service, id, data, desc)
 	return keychain.AddItem(item)
 }

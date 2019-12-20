@@ -5,9 +5,9 @@ go 1.12
 require (
 	github.com/danieljoos/wincred v1.0.2
 	github.com/davecgh/go-spew v1.1.1
+	github.com/gabriel/go-keychain v0.0.0-20191220021328-378d9d7f4318
 	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/keybase/go-codec v0.0.0-20180928230036-164397562123 // indirect
-	github.com/keybase/go-keychain v0.0.0-20191114153608-ccd67945d59e
 	github.com/keybase/saltpack v0.0.0-20190828020936-3f47e8e2e6ec
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.4.0
