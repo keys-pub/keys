@@ -67,3 +67,22 @@ func TestHasUpper(t *testing.T) {
 	ok2 := hasUpper("Ok")
 	require.True(t, ok2)
 }
+
+func TestSaltpackEncode(t *testing.T) {
+	b := bytes.Repeat([]byte{0x01}, 128)
+	msg := EncodeSaltpackMessage(b, "TEST")
+	expected := `BEGIN TEST MESSAGE.
+0El6XFXwsUFD8J2 vGxsaboW7rZYnQR BP5d9erwRwd290E l6XFXwsUFD8J2vG
+xsaboW7rZYnQRBP 5d9erwRwd290El6 XFXwsUFD8J2vGxs aboW7rZYnQRBP5d
+9erwRwd290El6XF XwsUFD8J2vGxsab oW7rZYnQRBP5d9e rwRwd29.
+END TEST MESSAGE.`
+	require.Equal(t, expected, msg)
+
+	msg = EncodeSaltpackMessage(b, "")
+	expected = `BEGIN MESSAGE.
+0El6XFXwsUFD8J2 vGxsaboW7rZYnQR BP5d9erwRwd290E l6XFXwsUFD8J2vG
+xsaboW7rZYnQRBP 5d9erwRwd290El6 XFXwsUFD8J2vGxs aboW7rZYnQRBP5d
+9erwRwd290El6XF XwsUFD8J2vGxsab oW7rZYnQRBP5d9e rwRwd29.
+END MESSAGE.`
+	require.Equal(t, expected, msg)
+}

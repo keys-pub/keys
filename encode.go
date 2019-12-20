@@ -155,6 +155,27 @@ func trimMessage(msg string) string {
 	return strings.Map(base62Only, msg)
 }
 
+// EncodeSaltpackMessage encodes bytes to saltpack message of the form:
+// BEGIN {brand} MESSAGE.
+// {content}
+// END {brand} MESSAGE.
+func EncodeSaltpackMessage(b []byte, brand string) string {
+	return saltpackStart(brand) + "\n" + encodeSaltpack(b) + "\n" + saltpackEnd(brand)
+}
+
+// DecodeSaltpackMessage decodes saltpack message.
+func DecodeSaltpackMessage(msg string, brand string) ([]byte, error) {
+	trim, err := trimSaltpackInHTML(msg, brand)
+	if err != nil {
+		return nil, err
+	}
+	b, err := Decode(trim, Base62)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode saltpack message")
+	}
+	return b, nil
+}
+
 func encodeSaltpack(b []byte) string {
 	out := MustEncode(b, Base62)
 	out = out + "."

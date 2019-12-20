@@ -257,7 +257,7 @@ func (u *UserContext) Check(ctx context.Context, user *User, spk SignPublicKey) 
 		}, nil
 	}
 
-	msg := findStringInHTML(string(body))
+	msg := findSaltpackMessageInHTML(string(body), "")
 	if msg == "" {
 		logger.Warningf("User statement content not found")
 		return &UserCheck{
@@ -469,10 +469,7 @@ func (u *User) Sign(key *SignKey) (string, error) {
 		return "", err
 	}
 	sig := key.Sign(b)
-	content := MustEncode(sig, Base62)
-	content = breakString(content, 15, 4)
-	content = content + "."
-	msg := saltpackStart + "\n" + content + "\n" + saltpackEnd
+	msg := EncodeSaltpackMessage(sig, "")
 	return msg, nil
 }
 
@@ -480,12 +477,7 @@ func (u *User) Sign(key *SignKey) (string, error) {
 // If user is specified, we will verify it matches the User in the verified
 // message.
 func VerifyUser(msg string, spk SignPublicKey, user *User) (*User, error) {
-	trim, err := trimHTML(msg)
-	if err != nil {
-		return nil, err
-	}
-	logger.Infof("Decoding %s", trim)
-	b, err := Decode(trim, Base62)
+	b, err := DecodeSaltpackMessage(msg, "")
 	if err != nil {
 		return nil, err
 	}

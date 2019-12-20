@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"fmt"
 	"html"
 	"regexp"
 	"strings"
@@ -9,10 +10,20 @@ import (
 )
 
 // saltpackStart start of a saltpack message.
-const saltpackStart = "BEGIN MESSAGE."
+func saltpackStart(brand string) string {
+	if brand == "" {
+		return "BEGIN MESSAGE."
+	}
+	return fmt.Sprintf("BEGIN %s MESSAGE.", brand)
+}
 
 // saltpackEnd end of a saltpack message.
-const saltpackEnd = "END MESSAGE."
+func saltpackEnd(brand string) string {
+	if brand == "" {
+		return "END MESSAGE."
+	}
+	return fmt.Sprintf("END %s MESSAGE.", brand)
+}
 
 func breakString(msg string, wordLen int, lineLen int) string {
 	words := []string{}
@@ -33,14 +44,16 @@ func breakString(msg string, wordLen int, lineLen int) string {
 	return strings.Join(lines, "\n")
 }
 
-// findStringInHTML finds string in HTML data.
-func findStringInHTML(body string) string {
+// findSaltpackMessageInHTML finds string in HTML data.
+func findSaltpackMessageInHTML(body string, brand string) string {
 	logger.Debugf("Searching for statement in message (%d)", len(body))
-	msg := find(body, saltpackStart, saltpackEnd, true)
+	start := saltpackStart(brand)
+	end := saltpackEnd(brand)
+	msg := find(body, start, end, true)
 	if msg == "" {
 		return ""
 	}
-	if len(msg) < len(saltpackStart)+len(saltpackEnd) {
+	if len(msg) < len(start)+len(end) {
 		return ""
 	}
 	return msg
@@ -68,16 +81,19 @@ func stripTags(body string) string {
 	return re.ReplaceAllString(body, "")
 }
 
-func trimHTML(msg string) (string, error) {
+func trimSaltpackInHTML(msg string, brand string) (string, error) {
 	msg = html.UnescapeString(msg)
 
-	if !strings.HasPrefix(msg, saltpackStart) {
-		return "", errors.Errorf("missing prefix")
+	start := saltpackStart(brand)
+	end := saltpackEnd(brand)
+
+	if !strings.HasPrefix(msg, start) {
+		return "", errors.Errorf("missing saltpack start")
 	}
-	if !strings.HasSuffix(msg, saltpackEnd) {
-		return "", errors.Errorf("missing suffix")
+	if !strings.HasSuffix(msg, end) {
+		return "", errors.Errorf("missing saltpack end")
 	}
-	msg = msg[len(saltpackStart) : len(msg)-len(saltpackEnd)]
+	msg = msg[len(start) : len(msg)-len(end)]
 	msg = trimMessage(msg)
 
 	return msg, nil

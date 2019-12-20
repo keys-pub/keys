@@ -8,18 +8,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFindStringInHTML(t *testing.T) {
-	msg := findStringInHTML("")
+func TestFindSaltpackStringInHTML(t *testing.T) {
+	msg := findSaltpackMessageInHTML("", "")
 	require.Equal(t, "", msg)
 
-	msg2 := findStringInHTML("??")
-	require.Equal(t, "", msg2)
+	msg = findSaltpackMessageInHTML("??", "")
+	require.Equal(t, "", msg)
 
-	msg3 := findStringInHTML("abc BEGIN MESSAGE.END MESSAGE. def")
-	require.Equal(t, "BEGIN MESSAGE.END MESSAGE.", msg3)
+	msg = findSaltpackMessageInHTML("abc BEGIN MESSAGE.END MESSAGE. def", "")
+	require.Equal(t, "BEGIN MESSAGE.END MESSAGE.", msg)
 
-	msg4 := findStringInHTML("abc BEGIN MESSAGE. ok END MESSAGE. def")
-	require.Equal(t, "BEGIN MESSAGE. ok END MESSAGE.", msg4)
+	msg = findSaltpackMessageInHTML("abc BEGIN MESSAGE. ok END MESSAGE. def", "")
+	require.Equal(t, "BEGIN MESSAGE. ok END MESSAGE.", msg)
+
+	msg = findSaltpackMessageInHTML("abc BEGIN TEST MESSAGE. ok END TEST MESSAGE. def", "TEST")
+	require.Equal(t, "BEGIN TEST MESSAGE. ok END TEST MESSAGE.", msg)
 }
 
 func TestBreakString(t *testing.T) {
@@ -43,10 +46,10 @@ func TestFindInTwitter(t *testing.T) {
 	b, err := ioutil.ReadFile("testdata/twitter/1202714310025236481")
 	require.NoError(t, err)
 
-	msg := findStringInHTML(string(b))
+	msg := findSaltpackMessageInHTML(string(b), "")
 
 	t.Logf(msg)
-	s, err := trimHTML(msg)
+	s, err := trimSaltpackInHTML(msg, "")
 	require.NoError(t, err)
 	expected := `eb90A0en2hcwfYijYDez0uArQs3HYgOiJlOgVUIfSeipsu7JJcO6819zwug6n9639e2e18gwZtMCQlePtNVn9wTCKqLPKyEa7sfoHfnVB0hPvyKMbyjBGqHh7dz327KuwGT7OwwkMEmgjibmwuK6N31UwmaFLcDXRyz4c7NV5uSV1Msu2KjbMiH1JUIqH80eo7ux6O3uRXcb5ShhfqMJx`
 	require.Equal(t, expected, s)

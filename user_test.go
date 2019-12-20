@@ -18,8 +18,13 @@ func TestNewUserForTwitterSigning(t *testing.T) {
 	require.NoError(t, err)
 	msg, err := user.Sign(key.SignKey())
 	require.NoError(t, err)
-	require.NotEqual(t, "", msg)
-	t.Logf("Length: %d", len(msg))
+	expected := `BEGIN MESSAGE.
+F8pnVjBCNl1gbVf CpGemfuVlpPHw3M qTy1tgvLingo507 8Qwbi3tp4XPZRrE
+K5KMmvK9DQUjz6j 7n6KLnN4cSnTCKq LPKyEa7TvubxC32 ySZNNqdsFMglqUJ
+cWB0dVKKKRYjJZ7 E4mQXtEUKFbpaLZ xQfnlg8YUkrxjVC EFQUsjaC8nxqYOk
+0zxoQsZmvmryHl4 MHNTX6DcdQ24Dei h673F0VNs5.
+END MESSAGE.`
+	require.Equal(t, expected, msg)
 	require.False(t, len(msg) > 280)
 }
 
@@ -68,8 +73,12 @@ func TestUserCheckGithub(t *testing.T) {
 	require.NoError(t, err)
 	msg, err := user.Sign(key.SignKey())
 	require.NoError(t, err)
-	require.NotEqual(t, "", msg)
-	// t.Logf("Message:\n%s", msg)
+	require.Equal(t, `BEGIN MESSAGE.
+KPpNM8qlY3jpcjg 7VBfJlM0hTcjY0T 5lBfeEHxj5sUPwN VWgOOQMJBW5AgXm
+BEmldbqYoKpeovL D2INh5u2jLmTCKq LPKyEa7TvubxC32 ySZNNqdsFMglqUJ
+cWB0dVKKKRYjJZ7 E4mQXtEUKFbpaLZ xQfnlg8YUkrxjVC EFQUvwi18UnUQXo
+FjEkFhTNbkI6qfC ziC4A2OluH.
+END MESSAGE.`, msg)
 
 	sc := GenerateSigchain(key, clock.Now())
 	stu, err := NewUser(uc, kid, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
@@ -169,8 +178,13 @@ func TestUserCheckTwitter(t *testing.T) {
 	require.NoError(t, err)
 	msg, err := user.Sign(key.SignKey())
 	require.NoError(t, err)
-	require.NotEqual(t, "", msg)
-	t.Logf("Message:\n%s", msg)
+	expected := `BEGIN MESSAGE.
+7Sseue3YV9YufOS Clh9m8VPeQ68YG2 kEgkVFvq2urgWBd rbeRye3cmrUkm0l
+ChVCyUJrEtPqCVU hr87rewNdiRTCKq LPKyEa7Vuj1godp KsHAmBCtd0d2bso
+t8wNZRPzqQt9djf aI70cqhq2gaa8vJ bkaj30PbHAwMg39 vgNDlsNFtgNCw8p
+fH061iGg5SzEDH5 Y4E6yxqv.
+END MESSAGE.`
+	require.Equal(t, expected, msg)
 
 	sc := GenerateSigchain(key, clock.Now())
 	stu, err := NewUser(uc, kid, "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
