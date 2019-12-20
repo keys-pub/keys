@@ -2,6 +2,7 @@ package keys
 
 import (
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
@@ -35,4 +36,27 @@ func openSecretBox(encrypted []byte, secretKey SecretKey) ([]byte, error) {
 		return nil, errors.Errorf("secretbox open failed")
 	}
 	return b, nil
+}
+
+// SealWithPassword encrypts bytes with a password.
+func SealWithPassword(b []byte, password string) []byte {
+	salt := Rand16()
+	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
+	encrypted := SecretBoxSeal(b, SecretKey(Bytes32(key)))
+	return bytesJoin(salt[:], encrypted)
+}
+
+// OpenWithPassword decrypts bytes with a password.
+func OpenWithPassword(encrypted []byte, password string) ([]byte, error) {
+	if len(encrypted) < 16 {
+		return nil, errors.Errorf("failed to decrypt with a password: not enough bytes")
+	}
+	salt := encrypted[0:16]
+	b := encrypted[16:]
+	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
+	out, err := SecretBoxOpen(b, SecretKey(Bytes32(key)))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decrypt with a password")
+	}
+	return out, nil
 }
