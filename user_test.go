@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,8 +14,10 @@ func TestNewUserForTwitterSigning(t *testing.T) {
 	require.NoError(t, err)
 	req := NewMockRequestor()
 	clock := newClock()
-	uc := NewTestUserContext(req, clock.Now)
-	user, err := NewUserForSigning(uc, key.ID(), "twitter", "123456789012345")
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
+	user, err := NewUserForSigning(ust, key.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	msg, err := user.Sign(key.SignKey())
 	require.NoError(t, err)
@@ -34,8 +37,10 @@ func TestNewUserMarshal(t *testing.T) {
 	kid := key.ID()
 	req := NewMockRequestor()
 	clock := newClock()
-	uc := NewTestUserContext(req, clock.Now)
-	user, err := NewUser(uc, kid, "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
+	user, err := NewUser(ust, kid, "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(user)
 	require.NoError(t, err)
@@ -50,26 +55,28 @@ func TestNewUserMarshal(t *testing.T) {
 	require.Equal(t, user.Service, userOut.Service)
 	require.Equal(t, user.URL, userOut.URL)
 
-	user, err = NewUserForSigning(uc, kid, "twitter", "123456789012345")
+	user, err = NewUserForSigning(ust, kid, "twitter", "123456789012345")
 	require.NoError(t, err)
 	b, err = json.Marshal(user)
 	require.NoError(t, err)
 	require.Equal(t, `{"kid":"HX7DWqV9FtkXWJpXw656Uabtt98yjPH8iybGkfz2hvec","name":"123456789012345","service":"twitter"}`, string(b))
 }
 
-func TestUserCheckGithub(t *testing.T) {
+func TestUserResultGithub(t *testing.T) {
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 	kid := key.ID()
 
 	clock := newClock()
 	req := NewMockRequestor()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 
 	err = req.SetResponseFile("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", "testdata/github/70281cc427850c272a8574af4d8564d9")
 	require.NoError(t, err)
 
-	user, err := NewUserForSigning(uc, kid, "github", "alice")
+	user, err := NewUserForSigning(ust, kid, "github", "alice")
 	require.NoError(t, err)
 	msg, err := user.Sign(key.SignKey())
 	require.NoError(t, err)
@@ -81,7 +88,7 @@ FjEkFhTNbkI6qfC ziC4A2OluH.
 END MESSAGE.`, msg)
 
 	sc := GenerateSigchain(key, clock.Now())
-	stu, err := NewUser(uc, kid, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	stu, err := NewUser(ust, kid, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, stu, key.SignKey(), clock.Now())
 	require.NoError(t, err)
@@ -91,25 +98,27 @@ END MESSAGE.`, msg)
 	_, err = GenerateUserStatement(sc, stu, key.SignKey(), clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	users, err := uc.CheckSigchain(context.TODO(), sc)
+	users, err := ust.checkSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(users))
 	require.Equal(t, "github", users[0].User.Service)
 	require.Equal(t, "alice", users[0].User.Name)
-	require.Equal(t, TimeFromMillis(1234567890005), users[0].VerifiedAt)
-	require.Equal(t, TimeFromMillis(1234567890004), users[0].Timestamp)
+	require.Equal(t, TimeMs(1234567890005), users[0].LastVerified)
+	require.Equal(t, TimeMs(1234567890004), users[0].Timestamp)
 }
 
-func TestUserCheckGithubWrongName(t *testing.T) {
+func TestUserResultGithubWrongName(t *testing.T) {
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 	kid := key.ID()
 
 	clock := newClock()
 	req := NewMockRequestor()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 
-	// user, err = NewUserForSigning(uc, kid, "github", "alice2")
+	// user, err = NewUserForSigning(ust, kid, "github", "alice2")
 	// require.NoError(t, err)
 	// msg, err = user.Sign(key.SignKey())
 	// require.NoError(t, err)
@@ -118,7 +127,7 @@ func TestUserCheckGithubWrongName(t *testing.T) {
 	sc := GenerateSigchain(key, clock.Now())
 	err = req.SetResponseFile("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7")
 	require.NoError(t, err)
-	user2, err := NewUser(uc, kid, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	user2, err := NewUser(ust, kid, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	b2, err := json.Marshal(user2)
 	require.NoError(t, err)
@@ -127,20 +136,22 @@ func TestUserCheckGithubWrongName(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	users, err := uc.CheckSigchain(context.TODO(), sc)
+	users, err := ust.checkSigchain(context.TODO(), sc)
 	require.Equal(t, 1, len(users))
 	require.Equal(t, UserStatusFailure, users[0].Status)
 	require.Equal(t, users[0].Err, "name mismatch alice != alice2")
 }
 
-func TestUserCheckGithubWrongService(t *testing.T) {
+func TestUserResultGithubWrongService(t *testing.T) {
 	key, err := NewKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 	kid := key.ID()
 
 	clock := newClock()
 	req := NewMockRequestor()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 	sc := GenerateSigchain(key, clock.Now())
 
 	// user = &User{KID: kid, Service: "github2", Name: "gabriel"}
@@ -150,7 +161,7 @@ func TestUserCheckGithubWrongService(t *testing.T) {
 	// t.Logf("Message:\n%s", msg)
 	err = req.SetResponseFile("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", "testdata/github/bd679134acba688cbcc0a65fa0890d76")
 	require.NoError(t, err)
-	user, err := NewUser(uc, kid, "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
+	user, err := NewUser(ust, kid, "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(user)
 	require.NoError(t, err)
@@ -159,22 +170,24 @@ func TestUserCheckGithubWrongService(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	users, err := uc.CheckSigchain(context.TODO(), sc)
+	users, err := ust.checkSigchain(context.TODO(), sc)
 	require.Equal(t, 1, len(users))
 	require.Equal(t, UserStatusFailure, users[0].Status)
 	require.Equal(t, users[0].Err, "service mismatch github != github2")
 }
 
-func TestUserCheckTwitter(t *testing.T) {
+func TestUserResultTwitter(t *testing.T) {
 	key, err := NewKeyFromSeedPhrase(bobSeed, false)
 	require.NoError(t, err)
 	kid := key.ID()
 
 	clock := newClock()
 	req := NewMockRequestor()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 
-	user, err := NewUserForSigning(uc, kid, "twitter", "bob")
+	user, err := NewUserForSigning(ust, kid, "twitter", "bob")
 	require.NoError(t, err)
 	msg, err := user.Sign(key.SignKey())
 	require.NoError(t, err)
@@ -187,7 +200,7 @@ END MESSAGE.`
 	require.Equal(t, expected, msg)
 
 	sc := GenerateSigchain(key, clock.Now())
-	stu, err := NewUser(uc, kid, "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
+	stu, err := NewUser(ust, kid, "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, stu, key.SignKey(), clock.Now())
 	require.NoError(t, err)
@@ -200,25 +213,55 @@ END MESSAGE.`
 	err = req.SetResponseFile("https://twitter.com/bob/status/1205589994380783616", "testdata/twitter/1205589994380783616")
 	require.NoError(t, err)
 
-	users, err := uc.CheckSigchain(context.TODO(), sc)
+	users, err := ust.checkSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(users))
 	require.NotNil(t, users[0].User)
 	require.Equal(t, "twitter", users[0].User.Service)
 	require.Equal(t, "bob", users[0].User.Name)
-	require.Equal(t, TimeFromMillis(1234567890005), users[0].VerifiedAt)
-	require.Equal(t, TimeFromMillis(1234567890004), users[0].Timestamp)
+	require.Equal(t, TimeMs(1234567890005), users[0].LastVerified)
+	require.Equal(t, TimeMs(1234567890004), users[0].Timestamp)
 }
 
-func TestCheckNoUser(t *testing.T) {
+func TestUserUnverified(t *testing.T) {
+	key, err := NewKeyFromSeedPhrase(bobSeed, false)
+	require.NoError(t, err)
+	kid := key.ID()
+
+	clock := newClock()
+	req := NewMockRequestor()
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
+
+	sc := GenerateSigchain(key, clock.Now())
+	stu, err := NewUser(ust, kid, "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
+	require.NoError(t, err)
+	st, err := GenerateUserStatement(sc, stu, key.SignKey(), clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st)
+	require.NoError(t, err)
+
+	req.SetError("https://twitter.com/bob/status/1", errors.Errorf("testing"))
+	require.NoError(t, err)
+
+	users, err := ust.checkSigchain(context.TODO(), sc)
+	require.NoError(t, err)
+	t.Logf("users: %+v", users)
+	// TODO: Fix test
+}
+
+func TestCheckNoUsers(t *testing.T) {
 	key := GenerateKey()
 	sc := NewSigchain(key.PublicKey().SignPublicKey())
 
 	req := NewMockRequestor()
 	clock := newClock()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 
-	users, err := uc.CheckSigchain(context.TODO(), sc)
+	users, err := ust.checkSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(users))
 }
@@ -230,9 +273,11 @@ func TestVerifyUser(t *testing.T) {
 
 	req := NewMockRequestor()
 	clock := newClock()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 
-	u, uerr := NewUserForSigning(uc, kid, "github", "gabriel")
+	u, uerr := NewUserForSigning(ust, kid, "github", "gabriel")
 	require.NoError(t, uerr)
 	require.NotNil(t, u)
 
@@ -253,54 +298,56 @@ func TestVerifyUser(t *testing.T) {
 func TestNewUser(t *testing.T) {
 	key := GenerateKey()
 	kid := key.ID()
-	uc := NewDefaultUserContext()
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewDefaultUserStore(dst, scs)
 
-	u, uerr := NewUser(uc, kid, "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	u, uerr := NewUser(ust, kid, "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.NoError(t, uerr)
 	require.NotNil(t, u)
 
-	u2, uerr := NewUser(uc, kid, "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
+	u2, uerr := NewUser(ust, kid, "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid host for url https://gist.githb.com/gabriel/deadbeef")
 	require.Nil(t, u2)
 
-	u3, uerr := NewUser(uc, kid, "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
+	u3, uerr := NewUser(ust, kid, "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid scheme for url http://gist.github.com/gabriel/deadbeef")
 	require.Nil(t, u3)
 
-	u4, uerr := NewUser(uc, kid, "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
+	u4, uerr := NewUser(ust, kid, "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
 	require.EqualError(t, uerr, "path invalid (name mismatch) gabril != gabriel")
 	require.Nil(t, u4)
 
-	u5, uerr := NewUser(uc, kid, "github", "gabriel", "https://gist.github.com/gabriel", 1)
+	u5, uerr := NewUser(ust, kid, "github", "gabriel", "https://gist.github.com/gabriel", 1)
 	require.EqualError(t, uerr, "path invalid [gabriel] for url https://gist.github.com/gabriel")
 	require.Nil(t, u5)
 
-	u6, uerr := NewUser(uc, kid, "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
+	u6, uerr := NewUser(ust, kid, "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "path invalid (name mismatch) gabriel != gab")
 	require.Nil(t, u6)
 
-	u7, uerr := NewUser(uc, kid, "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	u7, uerr := NewUser(ust, kid, "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid service git")
 	require.Nil(t, u7)
 
-	u8, uerr := NewUser(uc, kid, "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
+	u8, uerr := NewUser(ust, kid, "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "name is empty")
 	require.Nil(t, u8)
 
-	u9, uerr := NewUser(uc, kid, "twitter", "@gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	u9, uerr := NewUser(ust, kid, "twitter", "@gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
 	require.NoError(t, uerr)
 	require.NotNil(t, u9)
 	require.Equal(t, "gbrltest", u9.Name)
 
-	u10, uerr0 := NewUser(uc, kid, "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	u10, uerr0 := NewUser(ust, kid, "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr0, "user name should be lowercase")
 	require.Nil(t, u10)
 
-	u11, uerr1 := NewUser(uc, kid, "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
+	u11, uerr1 := NewUser(ust, kid, "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr1, "user name has non-ASCII characters")
 	require.Nil(t, u11)
 
-	u12, uerr := NewUser(uc, kid, "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
+	u12, uerr := NewUser(ust, kid, "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "invalid scheme for url twitter.com/gbrltest/status/1234")
 	require.Nil(t, u12)
 }

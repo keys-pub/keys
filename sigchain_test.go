@@ -139,7 +139,9 @@ func TestSigchainJSON(t *testing.T) {
 func TestSigchainUsers(t *testing.T) {
 	clock := newClock()
 	req := NewMockRequestor()
-	uc := NewTestUserContext(req, clock.Now)
+	dst := NewMem()
+	scs := NewSigchainStore(dst)
+	ust := NewTestUserStore(dst, scs, req, clock.Now)
 	alice, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
 	require.NoError(t, err)
 
@@ -149,7 +151,7 @@ func TestSigchainUsers(t *testing.T) {
 	users := sc.Users()
 	require.Equal(t, 0, len(users))
 
-	user, err := NewUser(uc, alice.ID, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	user, err := NewUser(ust, alice.ID, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, user, alice, clock.Now())
 	require.NoError(t, err)
@@ -168,12 +170,12 @@ func TestSigchainUsers(t *testing.T) {
 	users = sc.Users()
 	require.Equal(t, 0, len(users))
 
-	user2, err := NewUser(uc, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	user2, err := NewUser(ust, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	st2, err := GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 
-	user2, err = NewUser(uc, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
+	user2, err = NewUser(ust, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
 	require.NoError(t, err)
 	st2, err = GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.NoError(t, err)
