@@ -12,11 +12,11 @@ import (
 
 // UserResult is result of a user result.
 type UserResult struct {
-	Err          string     `json:"err,omitempty"`
-	Status       UserStatus `json:"status"`
-	Timestamp    TimeMs     `json:"ts"`
-	User         *User      `json:"user"`
-	LastVerified TimeMs     `json:"lvts"`
+	Err            string     `json:"err,omitempty"`
+	LastVerifiedAt TimeMs     `json:"lvts"`
+	Status         UserStatus `json:"status"`
+	Timestamp      TimeMs     `json:"ts"`
+	User           *User      `json:"user"`
 }
 
 type userResults struct {
@@ -82,17 +82,20 @@ func (u *UserStore) Requestor() Requestor {
 }
 
 // Update index for sigchain KID.
-func (u *UserStore) Update(ctx context.Context, kid ID) error {
+func (u *UserStore) Update(ctx context.Context, kid ID) ([]*UserResult, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
-		return err
+		return []*UserResult{}, err
+	}
+	if sc == nil {
+		return []*UserResult{}, nil
 	}
 
 	logger.Infof("Checking users %s", kid)
 	results, err := u.checkSigchain(ctx, sc)
 	if err != nil {
-		return err
+		return []*UserResult{}, err
 	}
 
 	res := &userResults{
@@ -102,10 +105,10 @@ func (u *UserStore) Update(ctx context.Context, kid ID) error {
 
 	logger.Infof("Indexing %s, %+v", res.KID, res.Results)
 	if err := u.index(ctx, res); err != nil {
-		return err
+		return []*UserResult{}, err
 	}
 
-	return nil
+	return results, nil
 }
 
 func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserResult, error) {
@@ -129,6 +132,17 @@ func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserRes
 	}
 
 	return results, nil
+}
+
+// Check a user. Doesn't index result.
+func (u *UserStore) Check(ctx context.Context, user *User, spk SignPublicKey) (*UserResult, error) {
+	res := &UserResult{
+		User: user,
+	}
+	if err := u.updateResult(ctx, res, spk); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk SignPublicKey) error {
@@ -178,7 +192,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 	logger.Infof("Verified %s", result)
 	result.Err = ""
 	result.Status = UserStatusOK
-	result.LastVerified = TimeToMillis(u.Now())
+	result.LastVerifiedAt = TimeToMillis(u.Now())
 	return nil
 }
 
@@ -195,6 +209,18 @@ func (u *UserStore) ValidateStatement(st *Statement) error {
 		return err
 	}
 	return nil
+}
+
+// Get users for KID.
+func (u *UserStore) Get(ctx context.Context, kid ID) ([]*UserResult, error) {
+	res, err := u.get(ctx, kid)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil {
+		return []*UserResult{}, nil
+	}
+	return res.Results, nil
 }
 
 func (u *UserStore) get(ctx context.Context, kid ID) (*userResults, error) {

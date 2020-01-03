@@ -103,7 +103,7 @@ END MESSAGE.`, msg)
 	require.Equal(t, 1, len(users))
 	require.Equal(t, "github", users[0].User.Service)
 	require.Equal(t, "alice", users[0].User.Name)
-	require.Equal(t, TimeMs(1234567890005), users[0].LastVerified)
+	require.Equal(t, TimeMs(1234567890005), users[0].LastVerifiedAt)
 	require.Equal(t, TimeMs(1234567890004), users[0].Timestamp)
 }
 
@@ -219,7 +219,7 @@ END MESSAGE.`
 	require.NotNil(t, users[0].User)
 	require.Equal(t, "twitter", users[0].User.Service)
 	require.Equal(t, "bob", users[0].User.Name)
-	require.Equal(t, TimeMs(1234567890005), users[0].LastVerified)
+	require.Equal(t, TimeMs(1234567890005), users[0].LastVerifiedAt)
 	require.Equal(t, TimeMs(1234567890004), users[0].Timestamp)
 }
 
@@ -264,6 +264,10 @@ func TestCheckNoUsers(t *testing.T) {
 	users, err := ust.checkSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(users))
+
+	res, err := ust.Update(context.TODO(), RandID())
+	require.NoError(t, err)
+	require.Equal(t, 0, len(res))
 }
 
 func TestVerifyUser(t *testing.T) {
