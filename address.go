@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Address is a list of recipient Ikeys.
+// Address is a list of IDs.
 type Address struct {
 	recipients []ID
 	idmap      map[ID]bool
