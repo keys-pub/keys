@@ -10,28 +10,29 @@ import (
 
 func TestStatement(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 
-	sc := NewSigchain(sk.PublicKey)
+	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
-	st2, err := NewStatement(st.Sig, st.Data, st.KID, st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	st2, err := NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.NoError(t, err)
 	require.Equal(t, st.Bytes(), st2.Bytes())
 
-	_, err = NewStatement(st.Sig, st.Data, RandID(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	rk := GenerateSignKey()
+	_, err = NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.EqualError(t, err, "verify failed")
 }
 
 func TestStatementJSON(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 
-	sc := NewSigchain(sk.PublicKey)
+	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
@@ -78,20 +79,20 @@ func TestStatementJSON(t *testing.T) {
 
 func TestStatementSpecificSerialization(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
-	sc := NewSigchain(sk.PublicKey)
+	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
 	data := statementBytesToSign(st)
-	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","seq":1,"ts":1234567890001,"type":"test"}`
+	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expected, string(data))
 
 	dataOut := st.Bytes()
-	expectedOut := `{".sig":"QZvoXDlq0iKdC08vayCtgr5yUdg2/VDb5gbrafdOUErtsk5L8vhwmSRCGtKnEbYDM9i1VScLXkXyM05bFmiwAg==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","seq":1,"ts":1234567890001,"type":"test"}`
+	expectedOut := `{".sig":"RfBktB0axROlrmq0++FxK7QHXt4Aq59VOL5tJzSHHi7MdwIEwjGQusB3NqDd3HRivWD4B0unNET68UswxTvSBQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expectedOut, string(dataOut))
 
 	require.Equal(t, expectedOut, string(st.Bytes()))
@@ -120,11 +121,11 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	data2 := statementBytesToSign(revoke)
-	expected2 := `{".sig":"","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"DDnsc5J6OOQq20OYaDIzX2IUDuDMHakTWSa4PjLXbWI=","revoke":1,"seq":2,"type":"revoke"}`
+	expected2 := `{".sig":"","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"+muAFil+RqSW0hTqfVTH+aFT4kX3+15yt5lKcnkbNhU=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expected2, string(data2))
 
 	dataOut2 := revoke.Bytes()
-	expectedOut2 := `{".sig":"heFGkRjrdk03URBk2GAZ2sGtPDKU6WTd8nrmUkd22CLe7+IfX/YaEcsjQyzJxJ/sFQ/aroe9S+Uu38xOOdVuCw==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"DDnsc5J6OOQq20OYaDIzX2IUDuDMHakTWSa4PjLXbWI=","revoke":1,"seq":2,"type":"revoke"}`
+	expectedOut2 := `{".sig":"7SzEDHKXUoEvZKicSdVx9ftBc9sdpUWlGtOCIRPDNFRM4/KWDVEoXAdcQtwxv7ccpaTDOA5GK3HkYYaAfVe6Cg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"+muAFil+RqSW0hTqfVTH+aFT4kX3+15yt5lKcnkbNhU=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expectedOut2, string(dataOut2))
 
 	require.Equal(t, expectedOut2, string(revoke.Bytes()))
@@ -142,15 +143,15 @@ func TestStatementSpecificSerialization(t *testing.T) {
 
 func TestStatementKeyURL(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 
-	sc := NewSigchain(sk.PublicKey)
+	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
-	require.Equal(t, "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001", st.Key())
-	require.Equal(t, "/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah/1", st.URL())
+	require.Equal(t, "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw-000000000000001", st.Key())
+	require.Equal(t, "/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/1", st.URL())
 }

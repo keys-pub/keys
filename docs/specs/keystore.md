@@ -1,60 +1,13 @@
 # Keystore
 
 The [Keystore](https://godoc.org/github.com/keys-pub/keys#Keystore) is capable
-of storing and retrieving keys, using key identifiers.
+of storing and retrieving key material, using identifiers.
 
 ```go
-package main
-
-import (
-    "fmt"
-    "log"
-
-    "github.com/keys-pub/keys"
-    "github.com/keys-pub/keys/keyring"
-    "github.com/keys-pub/keys/saltpack"
-)
-
-func main() {
-    alice := keys.GenerateKey()
-    bob := keys.GenerateKey()
-
-    // Alice's keystore, save alice's key
-    ksa := keys.NewKeystore()
-    ksa.SetKeyring(keyring.NewMem())
-    if err := ksa.SaveKey(alice, false); err != nil {
-        log.Fatal(err)
-    }
-    spa := saltpack.NewSaltpack(ksa)
-    msg := []byte("Hey bob, it's alice. The passcode is 12345.")
-    // Alice encrypts
-    encrypted, err := spa.Seal(msg, alice, bob.PublicKey())
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Bob's keystore, save bob's key and alice's public key
-    ksb := keys.NewKeystore()
-    ksb.SetKeyring(keyring.NewMem())
-    spb := saltpack.NewSaltpack(ksb)
-    if err := ksb.SaveKey(bob, false); err != nil {
-        log.Fatal(err)
-    }
-    // Bob decrypts
-    out, sender, err := spb.Open(encrypted)
-    if err != nil {
-        log.Fatal(err)
-    }
-    if sender != alice.ID() {
-        log.Fatalf("Sender not alice")
-    }
-    fmt.Printf("%s\n", string(out))
-    // Output:
-    // Hey bob, it's alice. The passcode is 12345.
-}
+// TODO: Example
 ```
 
-[Playground](https://play.golang.org/p/O3B_zYsKdY5)
+[Playground](https://play.golang.org/)
 
 ## Keyring
 
@@ -64,7 +17,7 @@ keyring, which is mostly useful for testing (or for ephemeral keys).
 To use a Keyring backed by the system with password auth:
 
 ```go
-kr, err := keyring.NewKeyring("Keys.pubTest", auth)
+kr, err := keyring.NewKeyring("KeysTest", auth)
 if err != nil {
     return err
 }

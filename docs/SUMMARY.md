@@ -21,7 +21,6 @@
 - [Keystore](specs/keystore.md)
 - [Saltpack](specs/saltpack.md)
 - [Sigchain](specs/sigchain.md)
-- [CryptoProvider](specs/cryptoprovider.md)
 - [User](specs/user.md)
 
 ## REST API

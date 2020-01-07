@@ -12,10 +12,10 @@ import (
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
-	alice, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 
-	sc := NewSigchain(alice.PublicKey)
+	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), alice, "test", clock.Now())
@@ -67,7 +67,7 @@ func TestSigchain(t *testing.T) {
 	require.EqualError(t, err, "no data")
 
 	_, err = GenerateStatement(sc, []byte{}, GenerateSignKey(), "", clock.Now())
-	require.EqualError(t, err, "invalid sigchain sign key")
+	require.EqualError(t, err, "invalid sigchain sign public key")
 
 	// Revoke invalid seq
 	_, err = sc.Revoke(0, alice)
@@ -87,20 +87,20 @@ func TestSigchain(t *testing.T) {
 
 	spew, err := sc.Spew()
 	require.NoError(t, err)
-	expected := `/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah/1 {".sig":"QZvoXDlq0iKdC08vayCtgr5yUdg2/VDb5gbrafdOUErtsk5L8vhwmSRCGtKnEbYDM9i1VScLXkXyM05bFmiwAg==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","seq":1,"ts":1234567890001,"type":"test"}
-/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah/2 {".sig":"heFGkRjrdk03URBk2GAZ2sGtPDKU6WTd8nrmUkd22CLe7+IfX/YaEcsjQyzJxJ/sFQ/aroe9S+Uu38xOOdVuCw==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"DDnsc5J6OOQq20OYaDIzX2IUDuDMHakTWSa4PjLXbWI=","revoke":1,"seq":2,"type":"revoke"}
-/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah/3 {".sig":"vWguJD5Z2Ob+D+m9Y3H+B55ubs18QfPj3GsIZuomo3yLx2kQBYn9RsRKUjWK6CkZUQsjlXpMOWu/ujYop/YVAw==","data":"AgICAgICAgICAgICAgICAg==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"hfb6HlovgFGVSlR5X9iHlo1wK9GNDq8JuQNzeq0X0oE=","seq":3,"ts":1234567890002,"type":"test"}
-/sigchain/PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah/4 {".sig":"5IGKfi9EDp0ObHr6P6AWdZlxKlcHazkrx89yWOAAYuoRnpot/+hMp6zmT244Ilp0vAYUS2jSl/qHAEq4Xa/9AA==","data":"AwMDAwMDAwMDAwMDAwMDAw==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"TAkV8beRWwzt1W5XdPgb7dJIjzalmaoJKxTylfg/ntc=","seq":4,"ts":1234567890003,"type":"test"}
+	expected := `/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/1 {".sig":"RfBktB0axROlrmq0++FxK7QHXt4Aq59VOL5tJzSHHi7MdwIEwjGQusB3NqDd3HRivWD4B0unNET68UswxTvSBQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001,"type":"test"}
+/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/2 {".sig":"7SzEDHKXUoEvZKicSdVx9ftBc9sdpUWlGtOCIRPDNFRM4/KWDVEoXAdcQtwxv7ccpaTDOA5GK3HkYYaAfVe6Cg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"+muAFil+RqSW0hTqfVTH+aFT4kX3+15yt5lKcnkbNhU=","revoke":1,"seq":2,"type":"revoke"}
+/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/3 {".sig":"PN5rJJpTSTtxU6TLHtsU01l7Q14uKidAG0jEvHheUmCT4ax6hJyar9ulMFbpWMjjilpYs3X0vul+sg8kv/abDQ==","data":"AgICAgICAgICAgICAgICAg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"OS4zWLgbHoqyO7oVRnovjuEz/qN9bfJXOIBLmNSSc3k=","seq":3,"ts":1234567890002,"type":"test"}
+/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/4 {".sig":"ZdJlZ+x882ABQrYazysbuPhoFGMiAujcYGo2+aDyLzCtpbaTJxPEa5msFtEcg0bqjWuNnTUmLKx8PLVvYnuBAw==","data":"AwMDAwMDAwMDAwMDAwMDAw==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"tCG8UeQh4iO0oSdw7EJ5YQ63dbdMXLFN/cXmyM5v9Fg=","seq":4,"ts":1234567890003,"type":"test"}
 `
 	require.Equal(t, expected, spew.String())
 }
 
 func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 
-	sc := NewSigchain(sk.PublicKey)
+	sc := NewSigchain(sk.PublicKey())
 
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
@@ -108,12 +108,12 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	st0 := sc.Statements()[0]
-	expectedStatement := `{".sig":"VdG/QyAxMIsKjgGWwOVdTjyeRzDzp0uaA3YD8xLbewqiAwA8lE7tRKy26mBi1/fUiDKqIlputJBDvvCySdK2DQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","seq":1,"ts":1234567890001}`
+	expectedStatement := `{".sig":"+NEHVE3zlc9AmC6uEwJF5MfAGGZcO7ZZZ1VI64ol6mXe/ZQ6fZEn9R1KWI05olHV03B9E8ofqep0d7Z2nCRHAQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001}`
 	require.Equal(t, expectedStatement, string(st0.Bytes()))
 
 	b, err := json.Marshal(st0)
 	require.NoError(t, err)
-	expectedEntry := `{".sig":"VdG/QyAxMIsKjgGWwOVdTjyeRzDzp0uaA3YD8xLbewqiAwA8lE7tRKy26mBi1/fUiDKqIlputJBDvvCySdK2DQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","seq":1,"ts":1234567890001}`
+	expectedEntry := `{".sig":"+NEHVE3zlc9AmC6uEwJF5MfAGGZcO7ZZZ1VI64ol6mXe/ZQ6fZEn9R1KWI05olHV03B9E8ofqep0d7Z2nCRHAQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001}`
 	require.Equal(t, expectedEntry, string(b))
 
 	stb, err := StatementFromBytes(b)
@@ -126,13 +126,13 @@ func TestSigchainJSON(t *testing.T) {
 	siErr2 := sc.Add(st2)
 	require.NoError(t, siErr2)
 	entry2 := sc.Statements()[1]
-	expectedStatement2 := `{".sig":"IptqT4CjkDPUGatk+Xze+47YQWsjo+F/3v9QfXtoKmdlToSh6lQNFsDeHEKvc8qG6Fi5ewJz0XOZy8aaJt8YAA==","data":"AgICAgICAgICAgICAgICAg==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"JHt8UTBGWjHh/jrfZUj2NVp4c7MOdyTdUoUIqt0vwhA=","seq":2,"ts":1234567890002}`
+	expectedStatement2 := `{".sig":"WhR7Vg55ho+ZImJVZolp/W7chnSHlS4x8WLpjUwmWq+taGV6G6j6iHqbAKTrHx1HyvQI6j9H0TRzemHX6m+3Cg==","data":"AgICAgICAgICAgICAgICAg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"QT9kn83lDKhROP1e5hm6gbNIn87g9qB+ENAeZIYlR5c=","seq":2,"ts":1234567890002}`
 	require.Equal(t, expectedStatement2, string(entry2.Bytes()))
 
 	_, siErr3 := sc.Revoke(2, sk)
 	require.NoError(t, siErr3)
 	entry3 := sc.Statements()[2]
-	expectedStatement3 := `{".sig":"hd+Yl286XevC417p7rnWjj2xXhlMBfUGeKnFWiszB8/gKECy2jFDnZJIJfs0GusWqOvzSKSV3BEdB7ECELVUCw==","kid":"PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah","prev":"h43YRzHdnFFjL+hl+7y8Tk8ikcDVcS9xkhctBrAGjZA=","revoke":2,"seq":3,"type":"revoke"}`
+	expectedStatement3 := `{".sig":"rAE1SMgKRGI4DpZZqZY0IbXfW7ebVR3X4flFsRZxKbpGApwUjcBGEN1csAEYn4aFP5DnctCAM320BQkPvYkcBw==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"RDcf+K1Hhy2f6ahA1rvaVB5Yfn5o9YB7C1k0Tg+rX/w=","revoke":2,"seq":3,"type":"revoke"}`
 	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
 }
 
@@ -141,17 +141,17 @@ func TestSigchainUsers(t *testing.T) {
 	req := NewMockRequestor()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
-	ust := NewTestUserStore(dst, scs, req, clock.Now)
-	alice, err := NewSignKeyFromSeedPhrase(aliceSeed, false)
+	ust := testUserStore(t, dst, scs, req, clock)
+	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 
-	sc := NewSigchain(alice.PublicKey)
+	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
 	users := sc.Users()
 	require.Equal(t, 0, len(users))
 
-	user, err := NewUser(ust, alice.ID, "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	user, err := NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, user, alice, clock.Now())
 	require.NoError(t, err)
@@ -170,12 +170,12 @@ func TestSigchainUsers(t *testing.T) {
 	users = sc.Users()
 	require.Equal(t, 0, len(users))
 
-	user2, err := NewUser(ust, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	user2, err := NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	st2, err := GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 
-	user2, err = NewUser(ust, alice.ID, "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
+	user2, err = NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
 	require.NoError(t, err)
 	st2, err = GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.NoError(t, err)
@@ -192,11 +192,11 @@ func TestSigchainUsers(t *testing.T) {
 
 func ExampleNewSigchain() {
 	clock := newClock()
-	alice := GenerateKey()
-	sc := NewSigchain(alice.PublicKey().SignPublicKey())
+	alice := GenerateSignKey()
+	sc := NewSigchain(alice.PublicKey())
 
 	// Create root statement
-	st, err := GenerateStatement(sc, []byte("hi! 🤓"), alice.SignKey(), "", clock.Now())
+	st, err := GenerateStatement(sc, []byte("hi! 🤓"), alice, "", clock.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -205,7 +205,7 @@ func ExampleNewSigchain() {
 	}
 
 	// Add 2nd statement
-	st2, err := GenerateStatement(sc, []byte("2nd message"), alice.SignKey(), "", clock.Now())
+	st2, err := GenerateStatement(sc, []byte("2nd message"), alice, "", clock.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func ExampleNewSigchain() {
 	}
 
 	// Revoke 2nd statement
-	_, err = sc.Revoke(2, alice.SignKey())
+	_, err = sc.Revoke(2, alice)
 	if err != nil {
 		log.Fatal(err)
 	}

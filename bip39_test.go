@@ -2,7 +2,6 @@ package keys
 
 import (
 	"encoding/hex"
-	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -31,19 +30,4 @@ func TestPhraseFromKey(t *testing.T) {
 	keyOut, err := PhraseToBytes(phrase, false)
 	require.NoError(t, err)
 	require.Equal(t, key, keyOut[:])
-}
-
-func TestSeedPhrase(t *testing.T) {
-	signKey := GenerateSignKey()
-	phrase := signKey.SeedPhrase()
-	require.NotEqual(t, "", phrase)
-
-	signKeyOut, err := NewSignKeyFromSeedPhrase(phrase, false)
-	require.NoError(t, err)
-	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
-
-	phrase2 := "   " + strings.Join(strings.Split(phrase, " "), "   ") + "  "
-	signKeyOut2, err := NewSignKeyFromSeedPhrase(phrase2, true)
-	require.NoError(t, err)
-	require.Equal(t, signKey.PrivateKey(), signKeyOut2.PrivateKey())
 }

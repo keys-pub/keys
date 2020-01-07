@@ -110,7 +110,7 @@ func list(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) 
 		if strings.HasPrefix(item.ID, hiddenPrefix) || strings.HasPrefix(item.ID, reservedPrefix) {
 			continue
 		}
-		if opts.Type != "" && opts.Type != item.Type {
+		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
 			continue
 		}
 		items = append(items, item)

@@ -4,7 +4,7 @@
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | [github.com/keys-pub/keys](https://godoc.org/github.com/keys-pub/keys)                   | The core package.                                                                                                                      |
 | [github.com/keys-pub/keys/keyring](https://godoc.org/github.com/keys-pub/keys/keyring)   | Secure key storage and access for any key type, implements [keys.Keyring](https://godoc.org/github.com/keys-pub/keys/keyring#Keyring). |
-| [github.com/keys-pub/keys/saltpack](https://godoc.org/github.com/keys-pub/keys/saltpack) | Saltpack implementation of a [CryptoProvider](specs/cryptoprovider.md).                                                                |
+| [github.com/keys-pub/keys/saltpack](https://godoc.org/github.com/keys-pub/keys/saltpack) | Saltpack integration.                                                                                                                  |
 
 While the version is less than 1.0, there may be breaking changes.
 

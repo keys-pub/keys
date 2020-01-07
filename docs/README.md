@@ -18,7 +18,7 @@ A [Keystore](specs/keystore.md) is a secure place to store and access keys.
 
 ## Saltpack
 
-[Saltpack](specs/saltpack.md) is the default [CryptoProvider](specs/cryptoprovider.md) used by Keys.pub and supports streaming, large message sizes, multiple recipients and armoring.
+[Saltpack](specs/saltpack.md) is the default format used by Keys.pub and supports streaming, large message sizes, multiple recipients and armoring.
 
 ## Sigchain
 

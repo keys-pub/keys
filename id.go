@@ -1,84 +1,42 @@
 package keys
 
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
 
+	"github.com/keys-pub/keys/bech32"
 	"github.com/pkg/errors"
 )
 
-// ID is a 32 byte Base58 (19/26-rate) encoded string of 44 characters
+// ID a bech32 encoded string.
 type ID string
-
-func encodeID(b []byte) (string, error) {
-	if len(b) != 32 {
-		return "", errors.Errorf("failed to encode ID: expecting 32 bytes (got %d)", len(b))
-	}
-	s := MustEncode(b[:], Base58)
-	if len(s) < 44 {
-		// s = s + strings.Repeat("1", 44-len(s))
-		return "", errors.Errorf("failed to encode ID: expecting 44 characters (got %d)", len(s))
-	}
-	return s, nil
-}
-
-func decodeID(s string) ([]byte, error) {
-	if len(s) != 44 {
-		return nil, errors.Errorf("failed to decode ID: expecting 44 characters (got %d)", len(s))
-	}
-	b, err := Decode(s, Base58)
-	if err != nil {
-		return nil, err
-	}
-	if len(b) > 32 {
-		return nil, errors.Errorf("failed to decode ID: too many bytes")
-	}
-	return b, nil
-}
 
 func (i ID) String() string {
 	return string(i)
 }
 
-// WithSeq returns ID with a sequence value appended
-func (i ID) WithSeq(seq int) string {
-	if seq == 0 {
-		panic("invalid seq")
-	}
-	return fmt.Sprintf("%s-%015d", i, seq)
+// Decode ID into HRP (human readable part) and bytes (data).
+func (i ID) Decode() (string, []byte, error) {
+	return bech32.Decode(i.String())
 }
 
-// Bytes ...
-func (i ID) Bytes() []byte {
-	b, err := decodeID(string(i))
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-
-// Index is first 4 bytes as uint32
-func (i ID) Index() uint32 {
-	return binary.BigEndian.Uint32(i.Bytes()[0:4])
-}
-
-// NewID creates ID from bytes
-func NewID(b []byte) (ID, error) {
-	s, err := encodeID(b)
+// NewID creates ID from HRP (human readable part) and bytes.
+func NewID(hrp string, b []byte) (ID, error) {
+	out, err := bech32.Encode(hrp, b)
 	if err != nil {
 		return "", err
 	}
-	return ID(s), nil
+	return ID(out), nil
 }
 
-// MustID returns ID from bytes, or panics if invalid.
-func MustID(b []byte) ID {
-	s, err := encodeID(b)
+// MustID returns ID from HRP (human readable part) and bytes, or panics if
+// invalid.
+func MustID(hrp string, b []byte) ID {
+	id, err := NewID(hrp, b)
 	if err != nil {
 		panic(err)
 	}
-	return ID(s)
+	return id
 }
 
 // ParseID parses a string and validates an ID.
@@ -86,27 +44,23 @@ func ParseID(s string) (ID, error) {
 	if s == "" {
 		return "", errors.Errorf("invalid ID: empty string")
 	}
-	b, err := decodeID(s)
+	_, _, err := bech32.Decode(s)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "invalid id")
 	}
-	out, err := encodeID(b)
-	if err != nil {
-		return "", err
-	}
-	return ID(out), nil
+	return ID(s), nil
 }
 
-// IsValidID returns true if string is a valid ID
+// IsValidID returns true if string is a valid ID.
 func IsValidID(s string) bool {
 	_, err := ParseID(s)
 	return err == nil
 }
 
 // RandID returns random ID
-func RandID() ID {
+func RandID(hrp string) ID {
 	b := randBytes(32)
-	return MustID(b[:])
+	return MustID(hrp, b[:])
 }
 
 // IDsToStrings returns []strings for []ID.
@@ -134,4 +88,12 @@ func ParseIDs(strs []string) ([]ID, error) {
 		ids = append(ids, id)
 	}
 	return ids, nil
+}
+
+// WithSeq returns string with a sequence value appended to the ID.
+func (i ID) WithSeq(seq int) string {
+	if seq == 0 {
+		panic("invalid seq")
+	}
+	return fmt.Sprintf("%s-%015d", i, seq)
 }

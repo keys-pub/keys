@@ -11,8 +11,8 @@ cryptographic operations by using platform keychain/credentials/keyring APIs. Th
 `keys auth` which uses the gRPC calls AuthSetup or AuthUnlock.
 
 For Windows and Linux, the underlying keyring is only secure at the user account level. All keyring items (except the
-salt value) are encrypted, using the password/salt derived key. This provides an important additional step of protecting
-keyring items.
+salt value) are encrypted, using a password/salt derived key. This provides an important additional step of protecting
+keyring items on these platforms.
 
 ## macOS
 

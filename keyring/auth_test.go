@@ -8,7 +8,7 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
@@ -66,7 +66,7 @@ func testAuth(t *testing.T, kr Keyring) {
 }
 
 func TestSystem(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	salt := bytes.Repeat([]byte{0x01}, 32)
@@ -76,12 +76,12 @@ func TestSystem(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test get internal raw
-	kh, err := system.get("Keys.pubTest", "#auth")
+	kh, err := system.get("KeysTest", "#auth")
 	require.NoError(t, err)
 	require.NotNil(t, kh)
 
 	// Test get raw error
-	err = system.set("Keys.pubTest", ".raw", []byte{0x01}, "")
+	err = system.set("KeysTest", ".raw", []byte{0x01}, "")
 	require.NoError(t, err)
 
 	_, err = kr.Get(".raw")

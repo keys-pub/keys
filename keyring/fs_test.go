@@ -8,7 +8,7 @@ import (
 )
 
 func testFS(t *testing.T) Keyring {
-	dir, err := ioutil.TempDir("", "Keys.pubTest.keyring")
+	dir, err := ioutil.TempDir("", "KeysTest.keyring")
 	require.NoError(t, err)
 	kr, err := NewFS(dir)
 	require.NoError(t, err)

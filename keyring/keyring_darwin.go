@@ -61,15 +61,9 @@ func (k *darwin) List(opts *ListOpts) ([]*Item, error) {
 		if item == nil {
 			continue
 		}
-		// item, err := DecodeItem(r.Data, k.key)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		if opts.Type != "" && opts.Type != item.Type {
+		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
 			continue
 		}
-
-		// logger.Infof("typ: %s, i.Type: %s", typ, i.Type)
 		items = append(items, item)
 	}
 

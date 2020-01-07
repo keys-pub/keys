@@ -16,10 +16,6 @@ type SigchainStore interface {
 
 	// Sigchain for kid.
 	Sigchain(kid ID) (*Sigchain, error)
-	// AddStatement adds to sigchain.
-	AddStatement(st *Statement, sk *SignKey) error
-	// RevokeStatement revokes a statement.
-	RevokeStatement(revoke int, sk *SignKey) (*Statement, error)
 
 	// SaveSigchain saves sigchain to the store.
 	SaveSigchain(sc *Sigchain) error
@@ -29,6 +25,7 @@ type SigchainStore interface {
 	// SigchainExists if true, has sigchain
 	SigchainExists(kid ID) (bool, error)
 
+	// Now is current time.
 	Now() time.Time
 }
 
@@ -86,6 +83,9 @@ func (s sigchainStore) KIDs() ([]ID, error) {
 }
 
 func (s sigchainStore) SaveSigchain(sc *Sigchain) error {
+	if len(sc.Statements()) == 0 {
+		return errors.Errorf("failed to save sigchain: no statements")
+	}
 	for _, st := range sc.Statements() {
 		if err := s.dst.Set(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
 			return err
@@ -109,10 +109,12 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 		return nil, err
 	}
 
-	sc, err := NewSigchainForKID(kid)
+	spk, err := SigchainPublicKeyFromID(kid)
 	if err != nil {
 		return nil, err
 	}
+
+	sc := NewSigchain(spk)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -129,52 +131,9 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 			return nil, err
 		}
 	}
-	if sc.Length() == 0 {
-		return nil, nil
-	}
 
-	// Sigchain from this store is read only, since it may be stale and adding
-	// directly to this Sigchain doesn't persist to the store.
-	sc.SetReadOnly(true)
 	iter.Release()
 	return sc, nil
-}
-
-// AddStatement ...
-func (s sigchainStore) AddStatement(st *Statement, sk *SignKey) error {
-	sc, err := s.Sigchain(sk.ID)
-	if err != nil {
-		return err
-	}
-	if sc == nil {
-		return NewErrNotFound(sk.ID, SigchainType)
-	}
-	if err := sc.Verify(st, sc.Last()); err != nil {
-		return err
-	}
-	if err := s.dst.Create(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
-		return err
-	}
-	return nil
-}
-
-// RevokeStatement ...
-func (s sigchainStore) RevokeStatement(revoke int, sk *SignKey) (*Statement, error) {
-	sc, err := s.Sigchain(sk.ID)
-	if err != nil {
-		return nil, err
-	}
-	st, err := GenerateRevoke(sc, revoke, sk)
-	if err != nil {
-		return nil, err
-	}
-	if err := sc.Verify(st, sc.Last()); err != nil {
-		return nil, err
-	}
-	if err := s.dst.Create(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
-		return nil, err
-	}
-	return st, nil
 }
 
 func (s sigchainStore) sigchainPaths(kid ID) ([]string, error) {

@@ -14,21 +14,7 @@ curl https://keys.pub/search?q=gabriel
 ```
 
 ```json
-{
-  "results": [
-    {
-      "kid": "GCyz8QoBP3tw3YzHMguLxoJJ8gKdYoLJbBE2PWkphGMm",
-      "user": {
-        "kid": "GCyz8QoBP3tw3YzHMguLxoJJ8gKdYoLJbBE2PWkphGMm",
-        "name": "gabriel",
-        "seq": 2,
-        "service": "github",
-        "url": "https://gist.github.com/gabriel/d12f5ca05f5d0fc9899f4a3c2276118e",
-        "ucts": "2019-10-30T17:31:02.096Z"
-      }
-    }
-  ]
-}
+// TODO: Output
 ```
 
 | Response | Description               |
@@ -37,18 +23,17 @@ curl https://keys.pub/search?q=gabriel
 
 SearchResult.
 
-| Response | Description                   |
-| -------- | ----------------------------- |
-| kid      | Key identifier.               |
-| user     | [User](../user.md), optional. |
+| Response | Description     |
+| -------- | --------------- |
+| kid      | Key identifier. |
+| users    | []UserResult    |
 
-User.
+UserResult.
 
-| JSON      | Description                     |
-| --------- | ------------------------------- |
-| `kid`     | Key identifier.                 |
-| `name`    | Username.                       |
-| `seq`     | Sigchain seq (position).        |
-| `service` | Service name (github, twitter). |
-| `url`     | URL to signed statement.        |
-| `ucts`    | URL check timestamp.            |
+| JSON     | Description              |
+| -------- | ------------------------ |
+| `err`    | Error.                   |
+| `status` | Status.                  |
+| `ts`     | Timestamp.               |
+| `user`   | User.                    |
+| `vts`    | Last verified timestamp. |

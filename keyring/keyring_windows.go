@@ -46,7 +46,7 @@ func (k *windows) List(opts *ListOpts) ([]*Item, error) {
 			if err != nil {
 				return nil, err
 			}
-			if opts.Type != "" && opts.Type != item.Type {
+			if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
 				continue
 			}
 			items = append(items, item)

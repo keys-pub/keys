@@ -19,9 +19,9 @@
 
 
 
-  <link crossorigin="anonymous" media="all" integrity="sha512-7mtunHqp/Bw0ND9akjJME8XCh0WPm3HAXOSeX7skL0qGAhpdfzkQvYcujYcwNPTpWKeKMFUGZGtvnEkcczFgwQ==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-9b5314213e37056ed87b0418056c4f2c.css" />
-  <link crossorigin="anonymous" media="all" integrity="sha512-CmoegizWCUR1jC94Y2eukVQIFxJ9GxYerz9q7dBwImLlx8ODwYkXAMIhCfTnA45Ep6++rcO/ZtKVLvFBM8dapA==" rel="stylesheet" href="https://github.githubassets.com/assets/site-4e9f27fa33341743f730ae7b0e33eff5.css" />
-    <link crossorigin="anonymous" media="all" integrity="sha512-1/z1fPE3Poa59d+2p+G3vpVfIVoknduVSBspLD6jvShQUYwanCH8p/mBRjT+AQk7Wep0Nwm5JLlA5//OlcjoWg==" rel="stylesheet" href="https://github.githubassets.com/assets/github-374af3cf411814845e3d9031bb0fb149.css" />
+  <link crossorigin="anonymous" media="all" integrity="sha512-hddDYPWR0gBbqLRmIZP242WMEiYsVkYI2UCYCVUHB4h5DhD2cbtFJYG+HPh21dZGb+sbgDHxQBNJCBq7YbmlBQ==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-02a3eaa24db2bd1ed9b64450595fc2cf.css" />
+  <link crossorigin="anonymous" media="all" integrity="sha512-8BxpFTogSyEi7yQb7rCnH1J/gTxVdHNk1Rrg92rh2zMf++XM8Us8Pcp+5GzjxqRxkax0Ckz52LufuEGch2uE7w==" rel="stylesheet" href="https://github.githubassets.com/assets/site-1faffb77dc8b20778aa60ecb5998972e.css" />
+    <link crossorigin="anonymous" media="all" integrity="sha512-Fr8GYcjC9Pwm6dQmefd4vXX2fXl7gylXrhSo2aMCxM0Ilrme82PXVtfHOzcnvR9vUmfvO8t8XVmNxW1FRnoYSg==" rel="stylesheet" href="https://github.githubassets.com/assets/github-8f8f40cebc9aea61f6dac776b58ccad9.css" />
     
     
     
@@ -30,20 +30,20 @@
 
   <meta name="viewport" content="width=device-width">
   
-  <title>gist:bd679134acba688cbcc0a65fa0890d76 · GitHub</title>
+  <title>gist:dfecf93b8fa3722c174255ed3851d753 · GitHub</title>
     <meta name="description" content="GitHub Gist: instantly share code, notes, and snippets.">
     <link rel="search" type="application/opensearchdescription+xml" href="/opensearch-gist.xml" title="Gist">
   <link rel="fluid-icon" href="https://gist.github.com/fluidicon.png" title="GitHub">
   <meta property="fb:app_id" content="1401488693436528">
 
-    <meta name="twitter:image:src" content="https://github.githubassets.com/images/modules/gists/gist-og-image.png" /><meta name="twitter:site" content="@github" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="gist:bd679134acba688cbcc0a65fa0890d76" /><meta name="twitter:description" content="GitHub Gist: instantly share code, notes, and snippets." />
-    <meta property="og:image" content="https://github.githubassets.com/images/modules/gists/gist-og-image.png" /><meta property="og:site_name" content="Gist" /><meta property="og:type" content="article" /><meta property="og:title" content="gist:bd679134acba688cbcc0a65fa0890d76" /><meta property="og:url" content="https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76" /><meta property="og:description" content="GitHub Gist: instantly share code, notes, and snippets." /><meta property="article:author" content="262588213843476" /><meta property="article:publisher" content="262588213843476" />
+    <meta name="twitter:image:src" content="https://github.githubassets.com/images/modules/gists/gist-og-image.png" /><meta name="twitter:site" content="@github" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="gist:dfecf93b8fa3722c174255ed3851d753" /><meta name="twitter:description" content="GitHub Gist: instantly share code, notes, and snippets." />
+    <meta property="og:image" content="https://github.githubassets.com/images/modules/gists/gist-og-image.png" /><meta property="og:site_name" content="Gist" /><meta property="og:type" content="article" /><meta property="og:title" content="gist:dfecf93b8fa3722c174255ed3851d753" /><meta property="og:url" content="https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753" /><meta property="og:description" content="GitHub Gist: instantly share code, notes, and snippets." /><meta property="article:author" content="262588213843476" /><meta property="article:publisher" content="262588213843476" />
 
   <link rel="assets" href="https://github.githubassets.com/">
   
   
 
-    <meta name="request-id" content="DC21:5BF0:108121FE:10F8A02D:5DF3F7E3" data-pjax-transient>
+    <meta name="request-id" content="F587:1943:15B0F446:16D28FC8:5E123968" data-pjax-transient>
 
 
 
@@ -55,7 +55,7 @@
     <meta name="google-site-verification" content="ZzhVyEFwb7w3e0-uOTltm8Jsck2F5StVihD0exw2fsA">
     <meta name="google-site-verification" content="GXs5KoUUkNCoaAZn7wPN-t01Pywp9M3sEjnt_3_ZWPc">
 
-    <meta name="octolytics-host" content="collector.githubapp.com" /><meta name="octolytics-app-id" content="gist" /><meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" /><meta name="octolytics-dimension-request_id" content="DC21:5BF0:108121FE:10F8A02D:5DF3F7E3" /><meta name="octolytics-dimension-region_edge" content="sea" /><meta name="octolytics-dimension-region_render" content="iad" /><meta name="octolytics-dimension-ga_id" content="" class="js-octo-ga-id" /><meta name="octolytics-dimension-visitor_id" content="7524957243049244644" />
+    <meta name="octolytics-host" content="collector.githubapp.com" /><meta name="octolytics-app-id" content="gist" /><meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" /><meta name="octolytics-dimension-request_id" content="F587:1943:15B0F446:16D28FC8:5E123968" /><meta name="octolytics-dimension-region_edge" content="sea" /><meta name="octolytics-dimension-region_render" content="iad" /><meta name="octolytics-dimension-ga_id" content="" class="js-octo-ga-id" /><meta name="octolytics-dimension-visitor_id" content="4494336015790168154" />
 
 <meta name="analytics-location" content="/&lt;user-name&gt;/&lt;gist-id&gt;" data-pjax-transient="true" /><meta name="octolytics-location" content="/&lt;user-name&gt;/&lt;gist-id&gt;" data-pjax-transient="true" />
 
@@ -68,7 +68,7 @@
 
 
 
-    <meta name="octolytics-dimension-public" content="false" /><meta name="octolytics-dimension-gist_id" content="100040040" /><meta name="octolytics-dimension-gist_name" content="bd679134acba688cbcc0a65fa0890d76" /><meta name="octolytics-dimension-anonymous" content="false" /><meta name="octolytics-dimension-owner_id" content="2669" /><meta name="octolytics-dimension-owner_login" content="gabriel" /><meta name="octolytics-dimension-forked" content="false" />
+    <meta name="octolytics-dimension-public" content="false" /><meta name="octolytics-dimension-gist_id" content="100399764" /><meta name="octolytics-dimension-gist_name" content="dfecf93b8fa3722c174255ed3851d753" /><meta name="octolytics-dimension-anonymous" content="false" /><meta name="octolytics-dimension-owner_id" content="2669" /><meta name="octolytics-dimension-owner_login" content="gabriel" /><meta name="octolytics-dimension-forked" content="false" />
 
   <meta
     class="js-ga-set"
@@ -92,13 +92,13 @@
 
       <meta name="expected-hostname" content="gist.github.com">
 
-      <meta name="js-proxy-site-detection-payload" content="YTBkZjhjMDQwZjRjMjE4MWM1MTM3Y2I5ZmY1YjY2NDczMGRlYmY2MThiZGU4OWZiNjI3ODJlNjRhZGNhNTIxYXx7InJlbW90ZV9hZGRyZXNzIjoiNjcuMTgwLjE3Ni4xNTciLCJyZXF1ZXN0X2lkIjoiREMyMTo1QkYwOjEwODEyMUZFOjEwRjhBMDJEOjVERjNGN0UzIiwidGltZXN0YW1wIjoxNTc2MjY5Nzk2LCJob3N0IjoiZ2l0aHViLmNvbSJ9">
+      <meta name="js-proxy-site-detection-payload" content="NThkNDU2ZWU5NzY5OGMyYTRmZDkzZDMxNmNjYmEzZjYyZDRhMjdjYzBiNDkxZDcxZjQxMTA1ZTE0NGM1YmE4Y3x7InJlbW90ZV9hZGRyZXNzIjoiNjcuMTgwLjE3Ni4xNTciLCJyZXF1ZXN0X2lkIjoiRjU4NzoxOTQzOjE1QjBGNDQ2OjE2RDI4RkM4OjVFMTIzOTY4IiwidGltZXN0YW1wIjoxNTc4MjUyNjgyLCJob3N0IjoiZ2l0aHViLmNvbSJ9">
 
     <meta name="enabled-features" content="MARKETPLACE_FEATURED_BLOG_POSTS,MARKETPLACE_INVOICED_BILLING,MARKETPLACE_SOCIAL_PROOF_CUSTOMERS,MARKETPLACE_TRENDING_SOCIAL_PROOF,MARKETPLACE_RECOMMENDATIONS,MARKETPLACE_PENDING_INSTALLATIONS">
 
-    <meta name="html-safe-nonce" content="1f4306a44b4ba2b789ea48179a5ab7a413fd1904">
+    <meta name="html-safe-nonce" content="ff84b9efbf7f3d76d3ee3d1c230a08aad0534b02">
 
-  <meta http-equiv="x-pjax-version" content="17886661623225d11e07411cdfd0a34b">
+  <meta http-equiv="x-pjax-version" content="f603fb087583c1a6811f39fc57b1f446">
   
 
       <link href="/gabriel.atom" rel="alternate" title="atom" type="application/atom+xml">
@@ -124,7 +124,7 @@
 
   </head>
 
-  <body class="logged-out env-production min-width-lg">
+  <body class="logged-out env-production emoji-size-boost min-width-lg">
     
 
   <div class="position-relative js-header-wrapper ">
@@ -182,9 +182,9 @@
 
 
     <div class="Header-item f4 mr-0" role="navigation">
-      <a class="HeaderMenu-link no-underline mr-3" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="6ead0e5755cc3b70a8e9d3429de7d6a6219290c077a7c13dccf77c62e5bc994a" data-ga-click="Header, sign in" href="https://gist.github.com/auth/github?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fbd679134acba688cbcc0a65fa0890d76">
+      <a class="HeaderMenu-link no-underline mr-3" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="07824c6e3edff45d7602f4d901a5442135877b31a724bf3e5c2f5217cc34d6ae" data-ga-click="Header, sign in" href="https://gist.github.com/auth/github?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fdfecf93b8fa3722c174255ed3851d753">
         Sign&nbsp;in
-</a>        <a class="HeaderMenu-link d-inline-block no-underline border border-gray-dark rounded-1 px-2 py-1" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="5fa83ec5025aa0b16f5c6bf8592ccfddc2bd5d1c12c201c836d40554e65ce982" data-ga-click="Header, sign up" href="/join?source=header-gist">
+</a>        <a class="HeaderMenu-link d-inline-block no-underline border border-gray-dark rounded-1 px-2 py-1" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="de172f600d8e8e7fa976c2f80d4731971ad6a724da1e6bed2ea7513c666ac76c" data-ga-click="Header, sign up" href="/join?source=header-gist">
           Sign&nbsp;up
 </a>    </div>
 </div>
@@ -228,11 +228,11 @@
     <a class="avatar mr-1" data-hovercard-type="user" data-hovercard-url="/users/gabriel/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/gabriel"><img src="https://avatars3.githubusercontent.com/u/2669?s=52&amp;v=4" width="26" height="26" alt="@gabriel" /></a>
     <span class="author"><a data-hovercard-type="user" data-hovercard-url="/users/gabriel/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/gabriel">gabriel</a></span><!--
         --><span class="path-divider">/</span><!--
-        --><strong itemprop="name" class="css-truncate-target" style="max-width: 410px"><a href="/gabriel/bd679134acba688cbcc0a65fa0890d76">gist:bd679134acba688cbcc0a65fa0890d76</a></strong>
+        --><strong itemprop="name" class="css-truncate-target" style="max-width: 410px"><a href="/gabriel/dfecf93b8fa3722c174255ed3851d753">gist:dfecf93b8fa3722c174255ed3851d753</a></strong>
       <span class="Label Label--outline v-align-middle">Secret</span>
 
     <div class="d-block text-small text-gray">
-      Created <time-ago datetime="2019-12-13T20:43:01Z" class="no-wrap">Dec 13, 2019</time-ago>
+      Created <time-ago datetime="2020-01-05T19:31:18Z" class="no-wrap">Jan 5, 2020</time-ago>
     </div>
   </h1>
 
@@ -241,17 +241,17 @@
 
 
     <li>
-        <a class="btn btn-sm btn-with-count tooltipped tooltipped-n" aria-label="You must be signed in to star a gist" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist star button&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="0f713098ccad5beb78f67b9f61ca7e1e7a6454f5824342e517553979b22fe746" href="/login?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fbd679134acba688cbcc0a65fa0890d76">
+        <a class="btn btn-sm btn-with-count tooltipped tooltipped-n" aria-label="You must be signed in to star a gist" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist star button&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="1a91ec74eb684579540ac7c1c9cb399eddbf94f0a17a35efd35aaa714c3a465b" href="/login?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fdfecf93b8fa3722c174255ed3851d753">
     <svg class="octicon octicon-star" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"/></svg>
     Star
 </a>
-  <a class="social-count" aria-label="0 users starred this gist" href="/gabriel/bd679134acba688cbcc0a65fa0890d76/stargazers">
+  <a class="social-count" aria-label="0 users starred this gist" href="/gabriel/dfecf93b8fa3722c174255ed3851d753/stargazers">
     0
 </a>
     </li>
 
       <li>
-          <a class="btn btn-sm btn-with-count tooltipped tooltipped-n" aria-label="You must be signed in to fork a gist" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist fork button&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="d973f18c8bffb1c4bcbe5dd401a5af4427fb36325aa15621d1fec96bc5a85bbf" href="/login?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fbd679134acba688cbcc0a65fa0890d76">
+          <a class="btn btn-sm btn-with-count tooltipped tooltipped-n" aria-label="You must be signed in to fork a gist" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;gist fork button&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="43d960c7633320b341a70a3a1e236ff3a2d83cddb232933aaf794fcf2d6467ce" href="/login?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fdfecf93b8fa3722c174255ed3851d753">
     <svg class="octicon octicon-repo-forked" viewBox="0 0 10 16" version="1.1" width="10" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1a1.993 1.993 0 00-1 3.72V6L5 8 3 6V4.72A1.993 1.993 0 002 1a1.993 1.993 0 00-1 3.72V6.5l3 3v1.78A1.993 1.993 0 005 15a1.993 1.993 0 001-3.72V9.5l3-3V4.72A1.993 1.993 0 008 1zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3 10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3-10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
     Fork
 </a>    <span class="social-count">0</span>
@@ -267,11 +267,11 @@
      aria-label="Gist"
      data-pjax="#gist-pjax-container">
 
-  <a class="js-selected-navigation-item selected reponav-item" data-pjax="true" data-hotkey="g c" aria-current="page" data-selected-links="gist_code /gabriel/bd679134acba688cbcc0a65fa0890d76" href="/gabriel/bd679134acba688cbcc0a65fa0890d76">
+  <a class="js-selected-navigation-item selected reponav-item" data-pjax="true" data-hotkey="g c" aria-current="page" data-selected-links="gist_code /gabriel/dfecf93b8fa3722c174255ed3851d753" href="/gabriel/dfecf93b8fa3722c174255ed3851d753">
     <svg class="octicon octicon-code" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M9.5 3L8 4.5 11.5 8 8 11.5 9.5 13 14 8 9.5 3zm-5 0L0 8l4.5 5L6 11.5 2.5 8 6 4.5 4.5 3z"/></svg>
     Code
 </a>
-    <a class="js-selected-navigation-item reponav-item" data-pjax="true" data-hotkey="g r" data-selected-links="gist_revisions /gabriel/bd679134acba688cbcc0a65fa0890d76/revisions" href="/gabriel/bd679134acba688cbcc0a65fa0890d76/revisions">
+    <a class="js-selected-navigation-item reponav-item" data-pjax="true" data-hotkey="g r" data-selected-links="gist_revisions /gabriel/dfecf93b8fa3722c174255ed3851d753/revisions" href="/gabriel/dfecf93b8fa3722c174255ed3851d753/revisions">
       <svg class="octicon octicon-git-commit" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M10.86 7c-.45-1.72-2-3-3.86-3-1.86 0-3.41 1.28-3.86 3H0v2h3.14c.45 1.72 2 3 3.86 3 1.86 0 3.41-1.28 3.86-3H14V7h-3.14zM7 10.2c-1.22 0-2.2-.98-2.2-2.2 0-1.22.98-2.2 2.2-2.2 1.22 0 2.2.98 2.2 2.2 0 1.22-.98 2.2-2.2 2.2z"/></svg>
       Revisions
       <span class="Counter">1</span>
@@ -299,7 +299,7 @@
             <span class="select-menu-title">What would you like to do?</span>
           </div>
           <div class="select-menu-list">
-              <button name="button" type="button" class="select-menu-item width-full" aria-checked="true" role="menuitemradio" value="&lt;script src=&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76.js&quot;&gt;&lt;/script&gt;" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;EMBED&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100040040,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="a12101b16778d1ee561ee0df3300076f5fd2d65d9312ccb4285185fa73ba03b4">
+              <button name="button" type="button" class="select-menu-item width-full" aria-checked="true" role="menuitemradio" value="&lt;script src=&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753.js&quot;&gt;&lt;/script&gt;" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;EMBED&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100399764,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="f3181719dda2a74d6296f473bb114d92ba412121bdccc501aa31d7acfec51b92">
                 <svg class="octicon octicon-check select-menu-item-icon" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <div class="select-menu-item-text">
                   <span class="select-menu-item-heading" data-menu-button-text>
@@ -310,7 +310,7 @@
                       Embed this gist in your website.
                     </span>
                 </div>
-</button>              <button name="button" type="button" class="select-menu-item width-full" aria-checked="false" role="menuitemradio" value="https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;SHARE&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100040040,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="87659a248c056613db65aa3ff24bcaae52215885e0636953296953d6128378a2">
+</button>              <button name="button" type="button" class="select-menu-item width-full" aria-checked="false" role="menuitemradio" value="https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;SHARE&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100399764,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="0b0c6802819e6ed2c79cd7e1be20eb0ab7c4b4c093a82792933697b370b5fd39">
                 <svg class="octicon octicon-check select-menu-item-icon" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <div class="select-menu-item-text">
                   <span class="select-menu-item-heading" data-menu-button-text>
@@ -321,7 +321,7 @@
                       Copy sharable link for this gist.
                     </span>
                 </div>
-</button>              <button name="button" type="button" class="select-menu-item width-full" aria-checked="false" role="menuitemradio" value="https://gist.github.com/bd679134acba688cbcc0a65fa0890d76.git" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;USE_HTTPS&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100040040,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="6b1470ca773ab634c9c21952770c28180b56bdc37ddfbb9d59826f007b1d5dc1">
+</button>              <button name="button" type="button" class="select-menu-item width-full" aria-checked="false" role="menuitemradio" value="https://gist.github.com/dfecf93b8fa3722c174255ed3851d753.git" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;USE_HTTPS&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100399764,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="d2b4c976c04c303163d38fb00c46c9338d35fa12f868e074caa4a3c0ec71808d">
                 <svg class="octicon octicon-check select-menu-item-icon" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <div class="select-menu-item-text">
                   <span class="select-menu-item-heading" data-menu-button-text>
@@ -350,23 +350,24 @@
       type="text"
       data-autoselect
       class="form-control input-monospace input-sm"
-      value="&lt;script src=&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76.js&quot;&gt;&lt;/script&gt;"
-      aria-label="Clone this repository at &lt;script src=&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76.js&quot;&gt;&lt;/script&gt;"
+      value="&lt;script src=&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753.js&quot;&gt;&lt;/script&gt;"
+      aria-label="Clone this repository at &lt;script src=&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753.js&quot;&gt;&lt;/script&gt;"
       readonly>
 
     <div class="input-group-button">
-      <clipboard-copy for="gist-share-url" aria-label="Copy to clipboard" class="btn btn-sm zeroclipboard-button" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;COPY_URL&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100040040,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="39acd7a05935f43ec10dcef214193b5759fde9952ff795457541437db686b9ea"><svg class="octicon octicon-clippy" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z"/></svg></clipboard-copy>
+      <clipboard-copy for="gist-share-url" aria-label="Copy to clipboard" class="btn btn-sm zeroclipboard-button" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;COPY_URL&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100399764,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="e29836f5e65b6ca26201902fab643d77ca5da050ca63b912140b8c97bfe69845"><svg class="octicon octicon-clippy" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z"/></svg></clipboard-copy>
     </div>
   </div>
 </div>
 
 
     <div class="file-navigation-option">
+    <a class="btn btn-sm tooltipped tooltipped-s tooltipped-multiline" aria-label="Save gabriel/dfecf93b8fa3722c174255ed3851d753 to your computer and use it in GitHub Desktop." data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;OPEN_IN_DESKTOP&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100399764,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="0738d928c18799176056633ddf3ff47c48b688e28193a4d6d78dcd5fa9b335bf" href="https://desktop.github.com"><svg class="octicon octicon-desktop-download" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 6h3V0h2v6h3l-4 4-4-4zm11-4h-4v1h4v8H1V3h4V2H1c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h5.34c-.25.61-.86 1.39-2.34 2h8c-1.48-.61-2.09-1.39-2.34-2H15c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1z"/></svg></a>
 </div>
 
 
     <div class="file-navigation-option">
-      <a class="btn btn-sm" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;DOWNLOAD_ZIP&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100040040,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="8cc8e44f0829c34e5ad64bf958c27ec2bfeca161eab2463270220e1015e40b32" data-ga-click="Gist, download zip, location:gist overview" href="/gabriel/bd679134acba688cbcc0a65fa0890d76/archive/6a67dd5bcba5274efe7a877fc95eacbc10423199.zip">Download ZIP</a>
+      <a class="btn btn-sm" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;clone_or_download.click&quot;,&quot;payload&quot;:{&quot;feature_clicked&quot;:&quot;DOWNLOAD_ZIP&quot;,&quot;git_repository_type&quot;:&quot;GIST&quot;,&quot;gist_id&quot;:100399764,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="162502f617f196ca9212762f6a9e67716fe5792c2f36d82e77fa4ad5ce4ee442" data-ga-click="Gist, download zip, location:gist overview" href="/gabriel/dfecf93b8fa3722c174255ed3851d753/archive/81ae57d022e44b7320baa39c8da7b92b4d390ed9.zip">Download ZIP</a>
     </div>
   </div>
 </div>
@@ -386,7 +387,7 @@
       <div class="file-header">
         <div class="file-actions">
 
-          <a class="btn btn-sm " href="/gabriel/bd679134acba688cbcc0a65fa0890d76/raw/6a67dd5bcba5274efe7a877fc95eacbc10423199/gistfile1.txt">Raw</a>
+          <a class="btn btn-sm " href="/gabriel/dfecf93b8fa3722c174255ed3851d753/raw/81ae57d022e44b7320baa39c8da7b92b4d390ed9/gistfile1.txt">Raw</a>
         </div>
         <div class="file-info">
           <span class="icon">
@@ -410,19 +411,19 @@
       </tr>
       <tr>
         <td id="file-gistfile1-txt-L2" class="blob-num js-line-number" data-line-number="2"></td>
-        <td id="file-gistfile1-txt-LC2" class="blob-code blob-code-inner js-file-line">        0150mpTlqwJ1qQn aeTpZ1Rfv2WdTHd WCxJdPMakpzy1VX sD6Ry6xNgMedgl4</td>
+        <td id="file-gistfile1-txt-LC2" class="blob-code blob-code-inner js-file-line">        Oncj2ahnrt8z8I2 5K5ycBnvj5W4nQ2 CcCMBxi16hWpRfE FHL1zDNHOfj82TV</td>
       </tr>
       <tr>
         <td id="file-gistfile1-txt-L3" class="blob-num js-line-number" data-line-number="3"></td>
-        <td id="file-gistfile1-txt-LC3" class="blob-code blob-code-inner js-file-line">        pOhHP6OU9E3HRNK qD0ozIzfhefTCKq LPKyEa7TvubxC32 ySZNNqdsFMglqUJ</td>
+        <td id="file-gistfile1-txt-LC3" class="blob-code blob-code-inner js-file-line">        ZP6q4mFhkPlnu3U G0RnkD9eMSyTCKq 6Xr2LSniILjRxYM WwtzXWH1P9g2DiQ</td>
       </tr>
       <tr>
         <td id="file-gistfile1-txt-L4" class="blob-num js-line-number" data-line-number="4"></td>
-        <td id="file-gistfile1-txt-LC4" class="blob-code blob-code-inner js-file-line">        cWB0dVKKKRYjJZ7 E4mQXtEUKFbpaLZ xQfnlg8YUkrxjVC EFQUwLJ1Cln0IIR</td>
+        <td id="file-gistfile1-txt-LC4" class="blob-code blob-code-inner js-file-line">        VkxL51PZaN6xp1K tnb72l9Ym5Y0sGC NDsulKa7ILrP1ov zLavKEWDbxeyl6V</td>
       </tr>
       <tr>
         <td id="file-gistfile1-txt-L5" class="blob-num js-line-number" data-line-number="5"></td>
-        <td id="file-gistfile1-txt-LC5" class="blob-code blob-code-inner js-file-line">        Xm3wrjSXmN3MzWY pMtKgTZKOl7n6D.</td>
+        <td id="file-gistfile1-txt-LC5" class="blob-code blob-code-inner js-file-line">        J5HlORix0wfLsi0 LryOX5lrdoKBc7Y 4Saqg2IP.</td>
       </tr>
       <tr>
         <td id="file-gistfile1-txt-L6" class="blob-num js-line-number" data-line-number="6"></td>
@@ -439,15 +440,15 @@
 
     <a name="comments"></a>
     <div class="js-quote-selection-container" data-quote-markdown=".js-comment-body">
-      <div class="js-discussion js-socket-channel" data-channel="marked-as-read:gist:100040040">
+      <div class="js-discussion js-socket-channel" data-channel="marked-as-read:gist:100399764">
         <div class="ml-6 pl-3">
           
 
-<!-- Rendered timeline since 2019-12-13 12:43:01 -->
+<!-- Rendered timeline since 2020-01-05 11:31:18 -->
 <div id="partial-timeline-marker"
       class="js-timeline-marker js-updatable-content"
-      data-url="/gabriel/bd679134acba688cbcc0a65fa0890d76/show_partial?partial=gist%2Ftimeline_marker&amp;since=1576269781"
-      data-last-modified="Fri, 13 Dec 2019 20:43:01 GMT"
+      data-url="/gabriel/dfecf93b8fa3722c174255ed3851d753/show_partial?partial=gist%2Ftimeline_marker&amp;since=1578252678"
+      data-last-modified="Sun, 05 Jan 2020 19:31:18 GMT"
       >
 </div>
 
@@ -456,10 +457,10 @@
         <div class="discussion-timeline-actions">
             
 <div class="flash flash-warn mt-3">
-    <a rel="nofollow" class="btn btn-primary" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;signed out comment&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="9ef7e0dff5e6227d05d41474540f81d1a4e30f04fd35b8678034759b15ec23f0" href="/join?source=comment-gist">Sign up for free</a>
+    <a rel="nofollow" class="btn btn-primary" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;signed out comment&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="3344b1bfda77fe9a6c9fedf7e730fb62b516f3bea93aa157374302dcff86049d" href="/join?source=comment-gist">Sign up for free</a>
     <strong>to join this conversation on GitHub</strong>.
     Already have an account?
-    <a rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;signed out comment&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;DC21:5BF0:108121FE:10F8A02D:5DF3F7E3&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/bd679134acba688cbcc0a65fa0890d76&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="7f9c386e895641b5687ee1d005ad0a8e6827e2b7bdf8bf296c330b2e42f5eacc" href="/login?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fbd679134acba688cbcc0a65fa0890d76">Sign in to comment</a>
+    <a rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;signed out comment&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:&quot;1046419147.1516951642&quot;,&quot;originating_request_id&quot;:&quot;F587:1943:15B0F446:16D28FC8:5E123968&quot;,&quot;originating_url&quot;:&quot;https://gist.github.com/gabriel/dfecf93b8fa3722c174255ed3851d753&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="52c1ac8e20082989d810e358d6f0c396299da4b6e3fa2d8bf7de68feb8b199a7" href="/login?return_to=https%3A%2F%2Fgist.github.com%2Fgabriel%2Fdfecf93b8fa3722c174255ed3851d753">Sign in to comment</a>
 </div>
 
         </div>
@@ -478,7 +479,7 @@
 <div class="footer container-lg width-full px-3" role="contentinfo">
   <div class="position-relative d-flex flex-justify-between pt-6 pb-2 mt-6 f6 text-gray border-top border-gray-light ">
     <ul class="list-style-none d-flex flex-wrap ">
-      <li class="mr-3">&copy; 2019 GitHub, Inc.</li>
+      <li class="mr-3">&copy; 2020 GitHub, Inc.</li>
         <li class="mr-3"><a data-ga-click="Footer, go to terms, text:terms" href="https://github.com/site/terms">Terms</a></li>
         <li class="mr-3"><a data-ga-click="Footer, go to privacy, text:privacy" href="https://github.com/site/privacy">Privacy</a></li>
         <li class="mr-3"><a data-ga-click="Footer, go to security, text:security" href="https://github.com/security">Security</a></li>
@@ -515,12 +516,12 @@
   </div>
 
 
-    <script crossorigin="anonymous" integrity="sha512-mdrBasYG+QjgS391PSyVkPr06io3gWplCVbPscguetNEHxIEt+mZwCeCxPR9eMNfda6qNuibNFqBo5ak2+O/hg==" type="application/javascript" src="https://github.githubassets.com/assets/compat-bootstrap-99dac16a.js"></script>
     
     
     
     
-      <script crossorigin="anonymous" async="async" integrity="sha512-VAdgWKYhb+YdOcBHJMKuYaMLvRbXhB6tplAlFuTXUXX6VhQmUmVLuVtQtKlFdMV9/Iyy7uy01/cW/67Gs8yDQA==" type="application/javascript" src="https://github.githubassets.com/assets/gist-bootstrap-54076058.js"></script>
+    
+      <script crossorigin="anonymous" async="async" integrity="sha512-NywZWk9rkvep2HRskzzeduFMNBMSLDp65E0P73yrpbgTkntgB7Xq2T3E9YcTVj8YQI8y32F8eN8/4jsgFwMYdg==" type="application/javascript" src="https://github.githubassets.com/assets/gist-bootstrap-372c195a.js"></script>
 
     
   <div class="js-stale-session-flash flash flash-warn flash-banner" hidden

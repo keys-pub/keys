@@ -40,15 +40,15 @@ func (u User) MarshalJSON() ([]byte, error) {
 func (u User) Bytes() []byte {
 	mes := []MarshalValue{}
 
-	mes = append(mes, NewStringEntry("kid", u.KID.String()))
-	mes = append(mes, NewStringEntry("name", u.Name))
+	mes = append(mes, NewStringEntry("k", u.KID.String()))
+	mes = append(mes, NewStringEntry("n", u.Name))
 
 	if u.Seq != 0 {
-		mes = append(mes, NewIntEntry("seq", u.Seq))
+		mes = append(mes, NewIntEntry("sq", u.Seq))
 	}
-	mes = append(mes, NewStringEntry("service", u.Service))
+	mes = append(mes, NewStringEntry("sr", u.Service))
 	if u.URL != "" {
-		mes = append(mes, NewStringEntry("url", u.URL))
+		mes = append(mes, NewStringEntry("u", u.URL))
 	}
 	return Marshal(mes)
 }
@@ -73,11 +73,11 @@ const (
 
 // userFormat should stay ordered by JSON key names.
 type userFormat struct {
-	KID     string `json:"kid"`
-	Name    string `json:"name"`
-	Seq     int    `json:"seq"`
-	Service string `json:"service"`
-	URL     string `json:"url"`
+	KID     string `json:"k"`
+	Name    string `json:"n"`
+	Seq     int    `json:"sq"`
+	Service string `json:"sr"`
+	URL     string `json:"u"`
 }
 
 // UnmarshalJSON unmarshals a user from JSON.
@@ -148,7 +148,7 @@ func NewUserForSigning(ust *UserStore, kid ID, service string, name string) (*Us
 func validateServiceSupported(service string) error {
 	// TODO: gitlab
 	switch service {
-	case "twitter", "github":
+	case Twitter, Github:
 	default:
 		return errors.Errorf("invalid service %s", service)
 	}
@@ -160,7 +160,7 @@ func validateServiceSupported(service string) error {
 // For twitter, the url should be https://twitter.com/{name}/status/{id}.
 func verifyURL(service string, name string, u *url.URL) error {
 	switch service {
-	case "github":
+	case Github:
 		if u.Scheme != "https" {
 			return errors.Errorf("invalid scheme for url %s", u)
 		}
@@ -177,7 +177,7 @@ func verifyURL(service string, name string, u *url.URL) error {
 			return errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
 		}
 		return nil
-	case "twitter":
+	case Twitter:
 		if u.Scheme != "https" {
 			return errors.Errorf("invalid scheme for url %s", u)
 		}
@@ -200,7 +200,7 @@ func verifyURL(service string, name string, u *url.URL) error {
 }
 
 func normalizeName(service string, name string) string {
-	if service == "twitter" && len(name) > 0 && name[0] == '@' {
+	if isTwitter(service) && len(name) > 0 && name[0] == '@' {
 		return name[1:]
 	}
 	return name
@@ -212,6 +212,21 @@ func normalizeURL(s string) (string, error) {
 		return "", err
 	}
 	return u.String(), nil
+}
+
+// Twitter service name.
+const Twitter = "twitter"
+
+// Github service name.
+const Github = "github"
+
+func isTwitter(s string) bool {
+	switch s {
+	case Twitter:
+		return true
+	default:
+		return false
+	}
 }
 
 func (u *UserStore) validateServiceAndName(service string, name string) error {
@@ -236,7 +251,7 @@ func (u *UserStore) validateServiceAndName(service string, name string) error {
 	}
 
 	// Normalize twitter name
-	if service == "twitter" && name[0] == '@' {
+	if isTwitter(service) && name[0] == '@' {
 		name = name[1:]
 	}
 
@@ -249,11 +264,11 @@ func (u *UserStore) validateServiceAndName(service string, name string) error {
 		return errors.Errorf("user name should be lowercase")
 	}
 
-	if service == "twitter" && len(name) > 15 {
+	if isTwitter(service) && len(name) > 15 {
 		return errors.Errorf("twitter name too long")
 	}
 
-	if service == "github" && len(name) > 39 {
+	if service == Github && len(name) > 39 {
 		return errors.Errorf("github name too long")
 	}
 
@@ -318,13 +333,13 @@ func (u *User) Sign(key *SignKey) (string, error) {
 // VerifyUser armored message for a user.
 // If user is specified, we will verify it matches the User in the verified
 // message.
-func VerifyUser(msg string, spk SignPublicKey, user *User) (*User, error) {
+func VerifyUser(msg string, spk SigchainPublicKey, user *User) (*User, error) {
 	b, err := DecodeSaltpackMessage(msg, "")
 	if err != nil {
 		return nil, err
 	}
 
-	bout, err := Verify(b, spk)
+	bout, err := spk.Verify(b)
 	if err != nil {
 		return nil, err
 	}

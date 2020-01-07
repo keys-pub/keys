@@ -37,10 +37,10 @@ func RandPhrase() string {
 	return phrase
 }
 
-// RandWords returns random wor
-// Returns max of 24 words, even if numWords specifies more.
+// RandWords returns random words.
+// numWords must be 1 to 24.
 func RandWords(numWords int) string {
-	if numWords <= 0 {
+	if numWords <= 0 || numWords > 24 {
 		panic("invalid number of words specified")
 	}
 	words := strings.Split(RandPhrase(), " ")
@@ -96,13 +96,6 @@ func RandString(n int) string {
 	buf := RandBytes(n)
 	s := MustEncode(buf, Base62)
 	return s
-}
-
-// randOID returns random ordered ID.
-// Ordered IDs have a 4 byte prefix set to the specified uint32.
-func randOID(n uint32) ID {
-	b := Rand32P4(n)
-	return MustID(b[:])
 }
 
 // RandUsername returns random lowercase string of length.

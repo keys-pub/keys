@@ -8,20 +8,19 @@ import (
 
 // ErrNotFound describes a key not found error when a key is required.
 type ErrNotFound struct {
-	ID   ID
-	Type string
+	ID string
 }
 
 // NewErrNotFound constructs a ErrNotFound.
-func NewErrNotFound(id ID, typ string) error {
-	return ErrNotFound{ID: id, Type: typ}
+func NewErrNotFound(id string) error {
+	return ErrNotFound{ID: id}
 }
 
 func (e ErrNotFound) Error() string {
 	if e.ID == "" {
-		return fmt.Sprintf("%s not found", TypeDescription(e.Type))
+		return "not found"
 	}
-	return fmt.Sprintf("%s not found %s", TypeDescription(e.Type), e.ID)
+	return fmt.Sprintf("not found %s", e.ID)
 }
 
 type tempError interface {

@@ -43,14 +43,14 @@ func TestTrimMessage(t *testing.T) {
 }
 
 func TestFindInTwitter(t *testing.T) {
-	b, err := ioutil.ReadFile("testdata/twitter/1202714310025236481")
+	b, err := ioutil.ReadFile("testdata/twitter/1205589994380783616")
 	require.NoError(t, err)
 
 	msg := findSaltpackMessageInHTML(string(b), "")
 
-	t.Logf(msg)
+	// t.Logf(msg)
 	s, err := trimSaltpackInHTML(msg, "")
 	require.NoError(t, err)
-	expected := `eb90A0en2hcwfYijYDez0uArQs3HYgOiJlOgVUIfSeipsu7JJcO6819zwug6n9639e2e18gwZtMCQlePtNVn9wTCKqLPKyEa7sfoHfnVB0hPvyKMbyjBGqHh7dz327KuwGT7OwwkMEmgjibmwuK6N31UwmaFLcDXRyz4c7NV5uSV1Msu2KjbMiH1JUIqH80eo7ux6O3uRXcb5ShhfqMJx`
+	expected := `J3kbkJJUbk0aFH3LkXvUwujIHF4fFYgkmLkU7PQJ2Q0s8WDzL8385iVXAPCxiUJiIT7zakM9eISXOTrHkNnngoTCKq6Xr2LSniILjRxYMWwtzXWH1P9g2DiQVkxL51PZaN6xp1Ktnb72l9Ym5Y0sGCNDsulKa7ILrP1ovzLavKEW0nV9K93hswOOR4uEk3AYsodIQSCC6LoIUNcYk4oc1`
 	require.Equal(t, expected, s)
 }

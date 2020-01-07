@@ -12,11 +12,11 @@ import (
 
 // UserResult is result of a user result.
 type UserResult struct {
-	Err            string     `json:"err,omitempty"`
-	LastVerifiedAt TimeMs     `json:"lvts"`
-	Status         UserStatus `json:"status"`
-	Timestamp      TimeMs     `json:"ts"`
-	User           *User      `json:"user"`
+	Err        string     `json:"err,omitempty"`
+	Status     UserStatus `json:"status"`
+	Timestamp  TimeMs     `json:"ts"`
+	User       *User      `json:"user"`
+	VerifiedAt TimeMs     `json:"vts"`
 }
 
 type userResults struct {
@@ -31,28 +31,6 @@ type UserStore struct {
 	req             Requestor
 	nowFn           func() time.Time
 	enabledServices *StringSet
-}
-
-// NewDefaultUserStore creates default UserStore.
-func NewDefaultUserStore(ds DocumentStore, scs SigchainStore) *UserStore {
-	services := []string{"twitter", "github"}
-	req := NewHTTPRequestor()
-	nowFn := time.Now
-	uc, err := NewUserStore(ds, scs, services, req, nowFn)
-	if err != nil {
-		panic(err)
-	}
-	return uc
-}
-
-// NewTestUserStore creates UserStore for testing.
-func NewTestUserStore(ds DocumentStore, scs SigchainStore, req Requestor, nowFn func() time.Time) *UserStore {
-	services := []string{"twitter", "github"}
-	uc, err := NewUserStore(ds, scs, services, req, nowFn)
-	if err != nil {
-		panic(err)
-	}
-	return uc
 }
 
 // NewUserStore creates UserStore.
@@ -116,7 +94,7 @@ func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserRes
 
 	results := make([]*UserResult, 0, len(users))
 	for _, user := range users {
-		result, err := u.result(ctx, sc.KID(), user.Service, user.Name)
+		result, err := u.result(ctx, sc.ID(), user.Service, user.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +103,7 @@ func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserRes
 				User: user,
 			}
 		}
-		if err := u.updateResult(ctx, result, sc.SignPublicKey()); err != nil {
+		if err := u.updateResult(ctx, result, sc.PublicKey()); err != nil {
 			return nil, err
 		}
 		results = append(results, result)
@@ -135,7 +113,7 @@ func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserRes
 }
 
 // Check a user. Doesn't index result.
-func (u *UserStore) Check(ctx context.Context, user *User, spk SignPublicKey) (*UserResult, error) {
+func (u *UserStore) Check(ctx context.Context, user *User, spk *SignPublicKey) (*UserResult, error) {
 	res := &UserResult{
 		User: user,
 	}
@@ -145,7 +123,7 @@ func (u *UserStore) Check(ctx context.Context, user *User, spk SignPublicKey) (*
 	return res, nil
 }
 
-func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk SignPublicKey) error {
+func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk SigchainPublicKey) error {
 	if result == nil {
 		return errors.Errorf("no user specified")
 	}
@@ -189,10 +167,10 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		return nil
 	}
 
-	logger.Infof("Verified %s", result)
+	logger.Infof("Verified %s", result.User.KID)
 	result.Err = ""
 	result.Status = UserStatusOK
-	result.LastVerifiedAt = TimeToMillis(u.Now())
+	result.VerifiedAt = TimeToMillis(u.Now())
 	return nil
 }
 
@@ -369,7 +347,7 @@ func (u *UserStore) index(ctx context.Context, results *userResults) error {
 				return err
 			}
 		} else {
-			name := fmt.Sprintf("%s@%s", result.User.Name, result.User.Service)
+			name := indexName(result.User)
 			namePath := Path(indexUser, name)
 			logger.Infof("Indexing user %s %s", namePath, result.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
@@ -379,6 +357,10 @@ func (u *UserStore) index(ctx context.Context, results *userResults) error {
 	}
 
 	return nil
+}
+
+func indexName(user *User) string {
+	return fmt.Sprintf("%s@%s", user.Name, user.Service)
 }
 
 // Expired returns KIDs that haven't been resulted in a duration.

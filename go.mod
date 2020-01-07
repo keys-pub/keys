@@ -1,6 +1,6 @@
 module github.com/keys-pub/keys
 
-go 1.12
+go 1.13
 
 require (
 	github.com/danieljoos/wincred v1.0.2

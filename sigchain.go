@@ -13,37 +13,29 @@ import (
 // Sigchain is a chain of signed statements by a sign key.
 type Sigchain struct {
 	kid        ID
-	spk        SignPublicKey
+	spk        SigchainPublicKey
 	statements []*Statement
 	revokes    map[int]*Statement
-	readOnly   bool
+}
+
+// SigchainPublicKey is public key for sigchain.
+type SigchainPublicKey interface {
+	ID() ID
+	Verify(b []byte) ([]byte, error)
+	VerifyDetached(sig []byte, b []byte) error
 }
 
 // RevokeLabel is label for revoking an earlier statement
 const RevokeLabel = "revoke"
 
 // NewSigchain returns a new Sigchain for a SignPublicKey.
-func NewSigchain(spk SignPublicKey) *Sigchain {
+func NewSigchain(spk SigchainPublicKey) *Sigchain {
 	return &Sigchain{
-		kid:        SignPublicKeyID(spk),
+		kid:        spk.ID(),
 		spk:        spk,
 		statements: []*Statement{},
 		revokes:    map[int]*Statement{},
 	}
-}
-
-// NewSigchainForKID returns a new Sigchain for a sign public key ID.
-func NewSigchainForKID(kid ID) (*Sigchain, error) {
-	spk, err := DecodeSignPublicKey(kid.String())
-	if err != nil {
-		return nil, err
-	}
-	return NewSigchain(spk), nil
-}
-
-// KID is the sign public key ID.
-func (s *Sigchain) KID() ID {
-	return s.kid
 }
 
 // ID is the sign public key ID.
@@ -51,18 +43,13 @@ func (s *Sigchain) ID() ID {
 	return s.kid
 }
 
-// SetReadOnly to set read only.
-func (s *Sigchain) SetReadOnly(b bool) {
-	s.readOnly = b
-}
-
 // Statements are all the signed statements.
 func (s Sigchain) Statements() []*Statement {
 	return s.statements
 }
 
-// SignPublicKey is sign public key for sigchain.
-func (s *Sigchain) SignPublicKey() SignPublicKey {
+// PublicKey is public key for the sigchain.
+func (s *Sigchain) PublicKey() SigchainPublicKey {
 	return s.spk
 }
 
@@ -113,18 +100,14 @@ func (s Sigchain) IsRevoked(seq int) bool {
 
 // Add signed statement to the Sigchain.
 func (s *Sigchain) Add(st *Statement) error {
-	if SignPublicKeyID(s.spk) != st.KID {
+	if s.kid != st.KID {
 		return errors.Errorf("invalid sigchain kid")
 	}
 	if len(st.Data) == 0 && st.Type != "revoke" {
 		return errors.Errorf("no data")
 	}
-	if err := s.Verify(st, s.Last()); err != nil {
+	if err := s.VerifyStatement(st, s.Last()); err != nil {
 		return err
-	}
-
-	if s.readOnly {
-		return errors.Errorf("sigchain is read only")
 	}
 
 	if st.Revoke != 0 {
@@ -156,8 +139,8 @@ func signStatement(st *Statement, signKey *SignKey) error {
 	if st.Sig != nil {
 		return errors.Errorf("signature already set")
 	}
-	if st.KID != SignPublicKeyID(signKey.PublicKey) {
-		return errors.Errorf("sign failed: key mismatch")
+	if st.KID != signKey.ID() {
+		return errors.Errorf("sign failed: key id mismatch")
 	}
 	st.serialized = statementBytesToSign(st)
 	st.Sig = signKey.SignDetached(st.serialized)
@@ -169,8 +152,8 @@ func GenerateStatement(sc *Sigchain, b []byte, sk *SignKey, typ string, ts time.
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
-	if !bytes.Equal(sc.spk[:], sk.PublicKey[:]) {
-		return nil, errors.Errorf("invalid sigchain sign key")
+	if sc.ID() != sk.ID() {
+		return nil, errors.Errorf("invalid sigchain sign public key")
 	}
 
 	seq := sc.LastSeq() + 1
@@ -187,7 +170,7 @@ func GenerateStatement(sc *Sigchain, b []byte, sk *SignKey, typ string, ts time.
 
 	st := &Statement{
 		Data:      b,
-		KID:       sk.ID,
+		KID:       sk.ID(),
 		Seq:       seq,
 		Prev:      prev,
 		Timestamp: ts,
@@ -215,8 +198,8 @@ func GenerateRevoke(sc *Sigchain, revoke int, sk *SignKey) (*Statement, error) {
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
-	if !bytes.Equal(sc.spk[:], sk.PublicKey[:]) {
-		return nil, errors.Errorf("invalid sigchain sign key")
+	if sc.ID() != sk.ID() {
+		return nil, errors.Errorf("invalid sigchain sign public key")
 	}
 	if revoke < 1 {
 		return nil, errors.Errorf("invalid revoke seq %d", revoke)
@@ -241,7 +224,7 @@ func GenerateRevoke(sc *Sigchain, revoke int, sk *SignKey) (*Statement, error) {
 		return nil, err
 	}
 	st := Statement{
-		KID:    SignPublicKeyID(sc.spk),
+		KID:    sc.ID(),
 		Seq:    seq,
 		Prev:   prevHash[:],
 		Revoke: revoke,
@@ -259,22 +242,19 @@ func (s *Sigchain) Revoke(revoke int, sk *SignKey) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	if s.readOnly {
-		return nil, errors.Errorf("sigchain is read only")
-	}
 	if err := s.Add(st); err != nil {
 		return nil, err
 	}
 	return st, nil
 }
 
-// Verify verifies a signed statement against a previous statement (in a
+// VerifyStatement verifies a signed statement against a previous statement (in a
 // Sigchain).
-func (s Sigchain) Verify(st *Statement, prev *Statement) error {
+func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 	if st.KID != s.kid {
 		return errors.Errorf("invalid statement kid")
 	}
-	if err := st.Verify(); err != nil {
+	if err := st.Verify(s.spk); err != nil {
 		return err
 	}
 
@@ -349,12 +329,6 @@ func (s *Sigchain) BoxPublicKeys() []BoxPublicKey {
 	return bpks
 }
 
-// PublicKey from the Sigchain. The Sigchain implements the PublicKey interface,
-// so it returns itself.
-func (s *Sigchain) PublicKey() PublicKey {
-	return s
-}
-
 // Users (statements) signed into the sigchain.
 func (s *Sigchain) Users() []*User {
 	sts := s.FindAll("user")
@@ -368,19 +342,6 @@ func (s *Sigchain) Users() []*User {
 		users = append(users, &user)
 	}
 	return users
-}
-
-// GenerateSigchain ...
-func GenerateSigchain(key Key, ts time.Time) *Sigchain {
-	sc := NewSigchain(key.SignKey().PublicKey)
-	st, err := GenerateStatement(sc, key.BoxKey().PublicKey[:], key.SignKey(), BoxPublicKeySigchainType, ts)
-	if err != nil {
-		panic(err)
-	}
-	if err := sc.Add(st); err != nil {
-		panic(err)
-	}
-	return sc
 }
 
 // FindLast search from the last statement to the first, returning after

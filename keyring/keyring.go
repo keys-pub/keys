@@ -63,7 +63,7 @@ type Keyring interface {
 
 // ListOpts ...
 type ListOpts struct {
-	Type string
+	Types []string
 }
 
 type store interface {
@@ -224,7 +224,7 @@ func (k *keyring) List(opts *ListOpts) ([]*Item, error) {
 		if err != nil {
 			return nil, err
 		}
-		if opts.Type != "" && opts.Type != item.Type {
+		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
 			continue
 		}
 		items = append(items, item)
@@ -286,4 +286,13 @@ func (k *keyring) Reset() error {
 		}
 	}
 	return k.Lock()
+}
+
+func contains(strs []string, s string) bool {
+	for _, e := range strs {
+		if e == s {
+			return true
+		}
+	}
+	return false
 }

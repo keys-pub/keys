@@ -19,12 +19,12 @@ func TestID(t *testing.T) {
 	require.Equal(t, 44, len(s))
 }
 
-func TestEncodeID(t *testing.T) {
+func TestNewID(t *testing.T) {
 	n := 10000
-	m := make(map[string]bool, n)
+	m := make(map[ID]bool, n)
 	for i := 0; i < n; i++ {
 		b := randBytes(32)
-		id, err := encodeID(b[:])
+		id, err := NewID("test", b[:])
 		require.NoError(t, err)
 		if _, ok := m[id]; ok {
 			t.Fatalf("id collision %s", id)

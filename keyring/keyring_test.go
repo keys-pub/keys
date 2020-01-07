@@ -8,7 +8,7 @@ import (
 )
 
 func TestKeyring(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -70,7 +70,7 @@ func testKeyring(t *testing.T, kr Keyring) {
 	require.Equal(t, items[0].ID, "abc")
 	require.Equal(t, items[1].ID, "xyz")
 
-	items2, err := kr.List(&ListOpts{Type: "type2"})
+	items2, err := kr.List(&ListOpts{Types: []string{"type2"}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(items2))
 	require.Equal(t, items2[0].ID, "xyz")
@@ -106,7 +106,7 @@ func testKeyring(t *testing.T, kr Keyring) {
 }
 
 func TestReset(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -154,7 +154,7 @@ func testReset(t *testing.T, kr Keyring) {
 }
 
 func TestUnlock(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testUnlock(t, kr)
@@ -189,7 +189,7 @@ func testUnlock(t *testing.T, kr Keyring) {
 }
 
 func TestSetErrors(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
@@ -201,7 +201,7 @@ func TestSetErrors(t *testing.T) {
 }
 
 func TestReserved(t *testing.T) {
-	kr, err := NewKeyring("Keys.pubTest")
+	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testReserved(t, kr)

@@ -1,6 +1,6 @@
 # Sigchain
 
-The sigchain is an ordered sequence of [Statement](https://godoc.org/github.com/keys-pub/keys#Statement)'s signed by a [Key](specs/key.md).
+The sigchain is an ordered sequence of [Statement](https://godoc.org/github.com/keys-pub/keys#Statement)'s signed by a key.
 
 This spec is similar to [Keybase Sigchain](https://keybase.io/docs/teams/sigchain_v2) or the [Secure Scuttlebutt Feed](https://ssbc.github.io/scuttlebutt-protocol-guide/#structure).
 

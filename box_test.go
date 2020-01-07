@@ -13,21 +13,21 @@ func TestBoxSeal(t *testing.T) {
 	bob := GenerateBoxKey()
 
 	msg := "Hey bob, it's alice. The passcode is 12345."
-	encrypted := BoxSeal([]byte(msg), bob.PublicKey, alice)
+	encrypted := BoxSeal([]byte(msg), bob.PublicKey(), alice)
 
-	out, err := BoxOpen(encrypted, alice.PublicKey, bob)
+	out, err := BoxOpen(encrypted, alice.PublicKey(), bob)
 	require.NoError(t, err)
 	require.Equal(t, "Hey bob, it's alice. The passcode is 12345.", string(out))
 }
 
 func ExampleBoxSeal() {
-	aliceBK := GenerateKey().BoxKey()
-	bobBK := GenerateKey().BoxKey()
+	ak := GenerateBoxKey()
+	bk := GenerateBoxKey()
 
 	msg := "Hey bob, it's alice. The passcode is 12345."
-	encrypted := BoxSeal([]byte(msg), bobBK.PublicKey, aliceBK)
+	encrypted := BoxSeal([]byte(msg), bk.PublicKey(), ak)
 
-	out, err := BoxOpen(encrypted, aliceBK.PublicKey, bobBK)
+	out, err := BoxOpen(encrypted, ak.PublicKey(), bk)
 	if err != nil {
 		log.Fatal(err)
 	}

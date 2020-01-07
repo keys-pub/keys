@@ -12,5 +12,5 @@ func TestNewBoxKeyFromPrivateKey(t *testing.T) {
 	boxKeyOut := NewBoxKeyFromPrivateKey(boxKey.PrivateKey())
 
 	require.Equal(t, boxKey.PrivateKey(), boxKeyOut.PrivateKey())
-	require.Equal(t, boxKey.PublicKey, boxKeyOut.PublicKey)
+	require.Equal(t, boxKey.PublicKey(), boxKeyOut.PublicKey())
 }

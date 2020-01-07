@@ -39,15 +39,16 @@ type Statement struct {
 
 // NewStatement creates a new statement from specified parameters.
 // Use GenerateStatement for an easier construction.
-func NewStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
-	st := newStatement(sig, data, kid, seq, prev, revoke, typ, ts)
-	if err := st.Verify(); err != nil {
+func NewStatement(sig []byte, data []byte, spk SigchainPublicKey, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
+	st := NewUnverifiedStatement(sig, data, spk.ID(), seq, prev, revoke, typ, ts)
+	if err := st.Verify(spk); err != nil {
 		return nil, err
 	}
 	return st, nil
 }
 
-func newStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke int, typ string, ts time.Time) *Statement {
+// NewUnverifiedStatement creates an unverified statement.
+func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke int, typ string, ts time.Time) *Statement {
 	st := &Statement{
 		Sig:       sig,
 		Data:      data,
@@ -64,14 +65,14 @@ func newStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke 
 
 // Key for a Statement.
 // If Seq is not set, then there is no key.
-// Key looks like "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001".
+// Key looks like "ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
 func (s Statement) Key() string {
 	return StatementKey(s.KID, s.Seq)
 }
 
 // StatementKey returns key for Statement kid,seq.
 // If seq is <= 0, then there is no key.
-// Path looks like "PbS3oWv4b6mmCwsAQ9dguCA4gU4MwfTStUQVj8hGrtah-000000000000001".
+// Path looks like "ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
 func StatementKey(kid ID, seq int) string {
 	if seq <= 0 {
 		return ""
@@ -81,7 +82,7 @@ func StatementKey(kid ID, seq int) string {
 
 // URL returns path string for a Statement in the HTTP API.
 // If Seq is not set, then there is no path.
-// Path looks like "/QBrbzCWK5Mf5fzzFayCqV4fnZaGUTMRjvAxyEqf388st/1".
+// Path looks like "/ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn/1".
 func (s Statement) URL() string {
 	if s.Seq == 0 {
 		return ""
@@ -120,7 +121,7 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 	}
 	ts := TimeFromMillis(TimeMs(stf.Timestamp))
 
-	st := newStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
+	st := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
 
 	// It is important to verify the original bytes match the specific
 	// serialization.
@@ -134,13 +135,12 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 }
 
 // Verify statement.
-func (s *Statement) Verify() error {
-	spk, err := DecodeSignPublicKey(s.KID.String())
-	if err != nil {
-		return err
+func (s *Statement) Verify(spk SigchainPublicKey) error {
+	if spk == nil {
+		return errors.Errorf("missing sigchain public key")
 	}
 	b := bytesJoin(s.Sig, s.serialized)
-	_, err = Verify(b, spk)
+	_, err := spk.Verify(b)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,6 @@
 # Saltpack
 
-Saltpack is the default [CryptoProvider](specs/cryptoprovider.md) used in Keys.pub.
+Saltpack is the default format used in Keys.pub.
 
 It supports streaming, large message sizes, multiple recipients and armoring.
 

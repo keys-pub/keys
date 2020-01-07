@@ -3,58 +3,50 @@ package saltpack
 import (
 	ksaltpack "github.com/keybase/saltpack"
 	"github.com/keys-pub/keys"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/nacl/sign"
 )
 
-// SignKey is a wrapper for
-type SignKey struct {
+// signKey is a wrapper for keys.SignKey.
+type signKey struct {
 	ksaltpack.SigningSecretKey
 	privateKey keys.SignPrivateKey
-	publicKey  keys.SignPublicKey
+	publicKey  *keys.SignPublicKey
 }
 
-// NewSignKey creates SigningSecretKey from a keys.SignKey.
-func NewSignKey(sk *keys.SignKey) *SignKey {
-	return &SignKey{
+// newSignKey creates SigningSecretKey from a keys.SignKey.
+func newSignKey(sk *keys.SignKey) *signKey {
+	return &signKey{
 		privateKey: sk.PrivateKey(),
-		publicKey:  sk.PublicKey,
+		publicKey:  sk.PublicKey(),
 	}
 }
 
-// Sign (for ksaltpack.SigningSecretKey)
-func (k *SignKey) Sign(message []byte) ([]byte, error) {
+func (k *signKey) Sign(message []byte) ([]byte, error) {
 	signedMessage := sign.Sign(nil, message, k.privateKey)
 	return signedMessage[:sign.Overhead], nil
 }
 
-// GetPublicKey (for ksaltpack.SigningSecretKey)
-func (k *SignKey) GetPublicKey() ksaltpack.SigningPublicKey {
-	return NewSignPublicKey(k.publicKey)
+func (k *signKey) GetPublicKey() ksaltpack.SigningPublicKey {
+	return newSignPublicKey(k.publicKey)
 }
 
-// SignPublicKey is a wrapper for keys.SignPublicKey.
-type SignPublicKey struct {
+// signPublicKey is a wrapper for keys.SignPublicKey.
+type signPublicKey struct {
 	ksaltpack.SigningPublicKey
-	pk keys.SignPublicKey
+	pk *keys.SignPublicKey
 }
 
-// NewSignPublicKey creates SignPublicKey for keys.SignPublicKey.
-func NewSignPublicKey(pk keys.SignPublicKey) *SignPublicKey {
-	return &SignPublicKey{pk: pk}
+// newSignPublicKey creates SignPublicKey for keys.SignPublicKey.
+func newSignPublicKey(pk *keys.SignPublicKey) *signPublicKey {
+	return &signPublicKey{pk: pk}
 }
 
-// ToKID (for ksaltpack.SigningPublicKey)
-func (k SignPublicKey) ToKID() []byte {
-	return k.pk[:]
+func (k signPublicKey) ToKID() []byte {
+	return k.pk.Bytes()[:]
 }
 
-// Verify (for ksaltpack.SigningPublicKey)
-func (k SignPublicKey) Verify(message []byte, signature []byte) error {
+func (k signPublicKey) Verify(message []byte, signature []byte) error {
 	signedMessage := append(signature, message...)
-	_, ok := sign.Open(nil, signedMessage, k.pk)
-	if !ok {
-		return errors.Errorf("failed to verify")
-	}
-	return nil
+	_, err := k.pk.Verify(signedMessage)
+	return err
 }

@@ -6,35 +6,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-var _ keys.CryptoProvider = &Saltpack{}
-var _ keys.CryptoStreamProvider = &Saltpack{}
-
-// Mode for encyption (signcrypt, encrypt)
-type Mode string
-
-const (
-	// SigncryptMode https://saltpack.org/signcryption-format.
-	// Recipients can't forge the message (non-repudiability).
-	SigncryptMode Mode = "signcrypt"
-	// EncryptMode see https://saltpack.org/encryption-format-v2.
-	// Recipients can forge the message (repudiability).
-	EncryptMode Mode = "encrypt"
-)
-
 // Saltpack provider.
 type Saltpack struct {
-	ks         *keys.Keystore
+	keys       Keystore
 	armor      bool
 	armorBrand string
-	mode       Mode
 }
 
-// NewSaltpack creates a new keys.CryptoProvider using Saltpack.
-// The default mode is Signcryption, see https://saltpack.org/signcryption-format.
-func NewSaltpack(ks *keys.Keystore) *Saltpack {
+// Keystore ...
+type Keystore interface {
+	BoxKeys() ([]*keys.BoxKey, error)
+}
+
+// NewSaltpack creates a Saltpack provider.
+// Uses signcryption, see https://saltpack.org/signcryption-format.
+func NewSaltpack(keys Keystore) *Saltpack {
 	return &Saltpack{
-		ks:   ks,
-		mode: SigncryptMode,
+		keys: keys,
 	}
 }
 
@@ -45,19 +33,6 @@ func versionValidator(version ksaltpack.Version) error {
 	default:
 		return errors.Errorf("unrecognized version")
 	}
-}
-
-// SetMode to set the mode.
-func (s *Saltpack) SetMode(m Mode) {
-	if m == EncryptMode {
-		panic("encrypt mode is currently unsupported")
-	}
-	s.mode = m
-}
-
-// Mode ...
-func (s *Saltpack) Mode() Mode {
-	return s.mode
 }
 
 // SetArmored to set whether data is armored.
@@ -82,7 +57,7 @@ func (s *Saltpack) ArmorBrand() string {
 
 // CreateEphemeralKey creates a random ephemeral key.
 func (s *Saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
-	bk := GenerateBoxKey()
+	bk := generateBoxKey()
 	return bk, nil
 }
 
@@ -102,15 +77,19 @@ func (s *Saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 // GetAllBoxSecretKeys returns all keys, needed if we want to support "hidden"
 // receivers via trial and error.
 func (s *Saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
-	logger.Infof("List keys...")
-	ks, err := s.ks.Keys()
-	if err != nil {
-		logger.Errorf("Failed to list keys: %v", err)
+	logger.Infof("List box keys...")
+	if s.keys == nil {
+		logger.Errorf("Failed to list all box keys: no keystore")
 		return nil
 	}
-	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(ks))
-	for _, k := range ks {
-		boxSecretKeys = append(boxSecretKeys, NewBoxKey(k.BoxKey()))
+	bks, err := s.keys.BoxKeys()
+	if err != nil {
+		logger.Errorf("Failed to list all box keys: %v", err)
+		return nil
+	}
+	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(bks))
+	for _, k := range bks {
+		boxSecretKeys = append(boxSecretKeys, newBoxKey(k))
 	}
 	return boxSecretKeys
 }
@@ -123,26 +102,10 @@ func (s *Saltpack) ImportBoxEphemeralKey(kid []byte) ksaltpack.BoxPublicKey {
 
 // LookupSigningPublicKey (for ksaltpack.SigKeyring)
 func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
-	kid, err := keys.NewID(b)
-	if err != nil {
-		logger.Errorf("Failed to saltpack lookup public key: %v", err)
+	if len(b) != 32 {
+		logger.Errorf("Invalid signing public key bytes")
 		return nil
 	}
-
-	// logger.Debugf("Lookup SigningPublicKey for %s", kid)
-	// pk, pkErr := s.ks.PublicKey(kid)
-	// if pkErr != nil {
-	// 	logger.Errorf("Failed to saltpack lookup public key: %v", pkErr)
-	// 	return nil
-	// }
-	// if pk != nil {
-	// 	return NewSignPublicKey(pk.SignPublicKey())
-	// }
-
-	spk, err := keys.DecodeSignPublicKey(kid.String())
-	if err != nil {
-		logger.Errorf("Failed to saltpack lookup public key: %v", err)
-		return nil
-	}
-	return NewSignPublicKey(spk)
+	spk := keys.Bytes32(b)
+	return newSignPublicKey(keys.NewSignPublicKey(spk))
 }

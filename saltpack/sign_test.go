@@ -11,44 +11,36 @@ import (
 )
 
 func TestSignVerifyDefault(t *testing.T) {
-	clock := newClock()
-	scs := keys.NewSigchainStore(keys.NewMem())
-	ks := keys.NewMemKeystore()
-	ks.SetSigchainStore(scs)
-	sp := NewSaltpack(ks)
-	alice, err := ks.GenerateKey(true, clock.Now())
-	require.NoError(t, err)
+	// SetLogger(NewLogger(DebugLevel))
+	sp := NewSaltpack(nil)
+
+	alice := keys.GenerateSignKey()
 
 	message := []byte("hi")
 
-	sig, err := sp.Sign(message, alice.SignKey())
+	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
 	messageOut, signer, err := sp.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
-	require.Equal(t, alice.ID(), keys.SignPublicKeyID(signer))
+	require.Equal(t, alice.PublicKey().ID(), signer.ID())
 }
 
 func TestSignVerifyArmored(t *testing.T) {
-	clock := newClock()
-	scs := keys.NewSigchainStore(keys.NewMem())
-	ks := keys.NewMemKeystore()
-	ks.SetSigchainStore(scs)
-	sp := NewSaltpack(ks)
+	sp := NewSaltpack(nil)
 	sp.SetArmored(true)
-	alice, err := ks.GenerateKey(true, clock.Now())
-	require.NoError(t, err)
+	alice := keys.GenerateSignKey()
 
 	message := []byte("hi")
 
-	sig, err := sp.Sign(message, alice.SignKey())
+	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
 	messageOut, signer, err := sp.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
-	require.Equal(t, alice.ID(), keys.SignPublicKeyID(signer))
+	require.Equal(t, alice.PublicKey().ID(), signer.ID())
 
 	// Verify with some prefix text
 	armored2 := stripBefore("some prefix text: \n" + string(sig) + "some suffix text")
@@ -58,37 +50,27 @@ func TestSignVerifyArmored(t *testing.T) {
 }
 
 func TestSignVerifyDetached(t *testing.T) {
-	clock := newClock()
-	scs := keys.NewSigchainStore(keys.NewMem())
-	ks := keys.NewMemKeystore()
-	ks.SetSigchainStore(scs)
-	sp := NewSaltpack(ks)
-	alice, err := ks.GenerateKey(true, clock.Now())
-	require.NoError(t, err)
+	sp := NewSaltpack(nil)
+	alice := keys.GenerateSignKey()
 
 	message := []byte("hi")
 
-	sig, err := sp.SignDetached(message, alice.SignKey())
+	sig, err := sp.SignDetached(message, alice)
 	require.NoError(t, err)
 
 	signer, err := sp.VerifyDetached(sig, message)
 	require.NoError(t, err)
-	require.Equal(t, alice.ID(), keys.SignPublicKeyID(signer))
+	require.Equal(t, alice.PublicKey().ID(), signer.ID())
 }
 
 func TestSignVerifyStream(t *testing.T) {
-	clock := newClock()
-	scs := keys.NewSigchainStore(keys.NewMem())
-	ks := keys.NewMemKeystore()
-	ks.SetSigchainStore(scs)
-	alice, err := ks.GenerateKey(true, clock.Now())
-	require.NoError(t, err)
-	sp := NewSaltpack(ks)
+	sp := NewSaltpack(nil)
+	alice := keys.GenerateSignKey()
 
 	message := []byte("I'm alice")
 
 	var buf bytes.Buffer
-	encrypted, err := sp.NewSignStream(&buf, alice.SignKey(), false)
+	encrypted, err := sp.NewSignStream(&buf, alice, false)
 	require.NoError(t, err)
 	n, err := encrypted.Write(message)
 	require.NoError(t, err)
@@ -98,7 +80,7 @@ func TestSignVerifyStream(t *testing.T) {
 	var reader io.Reader = bytes.NewReader(buf.Bytes())
 	stream, signer, err := sp.NewVerifyStream(reader)
 	require.NoError(t, err)
-	require.Equal(t, alice.ID(), keys.SignPublicKeyID(signer))
+	require.Equal(t, alice.PublicKey().ID(), signer.ID())
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)

@@ -8,27 +8,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// func TestSaveLoadSignKey(t *testing.T) {
-// 	ks := NewMemKeystore()
-
-// 	signKey := GenerateSignKey()
-
-// 	err := ks.SaveSignKey(signKey)
-// 	require.NoError(t, err)
-
-// 	signKeyOut, err := ks.SignKey(signKey.ID)
-// 	require.NoError(t, err)
-
-// 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
-// 	require.Equal(t, signKey.PublicKey, signKeyOut.PublicKey)
-// }
+func TestSaveLoadSignKey(t *testing.T) {
+	ks := NewMemKeystore()
+	signKey := GenerateSignKey()
+	err := ks.SaveSignKey(signKey)
+	require.NoError(t, err)
+	signKeyOut, err := ks.SignKey(signKey.ID())
+	require.NoError(t, err)
+	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
+	require.Equal(t, signKey.PublicKey(), signKeyOut.PublicKey())
+}
 
 func TestSignKeySeed(t *testing.T) {
 	signKey := GenerateSignKey()
 	seed := signKey.Seed()
-	var sba [SeedSize]byte
-	copy(sba[:], seed)
-	signKeyOut, err := NewSignKeyFromSeed(&sba)
+	var b [SignKeySeedSize]byte
+	copy(b[:], seed)
+	signKeyOut, err := NewSignKeyFromSeed(&b)
 	require.NoError(t, err)
 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
 }
@@ -39,38 +35,32 @@ func TestSignKeySignVerify(t *testing.T) {
 	b := []byte("test message")
 	sig := Sign(b, signKey)
 
-	bout, err := Verify(sig, signKey.PublicKey)
+	bout, err := signKey.PublicKey().Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, b, bout)
 
-	_, err = Verify(sig[0:len(sig)-1], signKey.PublicKey)
+	_, err = signKey.PublicKey().Verify(sig[0 : len(sig)-1])
 	require.EqualError(t, err, "verify failed")
 
 	sig2 := signKey.SignDetached(b)
-	err = VerifyDetached(sig2, b, signKey.PublicKey)
+	err = signKey.PublicKey().VerifyDetached(sig2, b)
 	require.NoError(t, err)
 
-	err = VerifyDetached(sig2, []byte{0x01}, signKey.PublicKey)
+	err = signKey.PublicKey().VerifyDetached(sig2, []byte{0x01})
 	require.EqualError(t, err, "verify failed")
 }
 
-func TestSignKeyEmpty(t *testing.T) {
-	signKey, err := NewSignKey([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-	require.EqualError(t, err, "empty private key bytes")
-	require.Nil(t, signKey)
-}
-
 func TestSignKeyInvalid(t *testing.T) {
-	signKey, err := NewSignKey([]byte{0x01})
+	signKey, err := NewSignKeyFromPrivateKey([]byte{0x01})
 	require.EqualError(t, err, "invalid private key length 1")
 	require.Nil(t, signKey)
 }
 
 func ExampleSign() {
-	aliceSK := GenerateKey().SignKey()
+	alice := GenerateSignKey()
 	msg := "I'm alice 🤓"
-	sig := Sign([]byte(msg), aliceSK)
-	out, err := Verify(sig, aliceSK.PublicKey)
+	sig := Sign([]byte(msg), alice)
+	out, err := alice.PublicKey().Verify(sig)
 	if err != nil {
 		log.Fatal(err)
 	}
