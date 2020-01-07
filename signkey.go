@@ -27,7 +27,7 @@ type SignPublicKey struct {
 	publicKey signPublicKey
 }
 
-// SignKeyType uses nacl.sign (Ed25519).
+// SignKeyType (Ed25519).
 const SignKeyType string = "ed"
 
 // SignKey a public/private boxKey which can sign and verify using nacl.sign.
@@ -65,6 +65,15 @@ func NewSignKeyFromPrivateKey(privateKey []byte) (*SignKey, error) {
 	}, nil
 }
 
+// BoxKey converts SignKey to BoxKey.
+func (k *SignKey) BoxKey() (*BoxKey, error) {
+	secretKey := ed25519PrivateKeyToCurve25519(ed25519.PrivateKey(k.privateKey[:]))
+	if len(secretKey) != 32 {
+		return nil, errors.Errorf("failed to convert key: invalid secret key bytes")
+	}
+	return NewBoxKeyFromPrivateKey(BoxPrivateKey(Bytes32(secretKey))), nil
+}
+
 // NewSignPublicKey creates a SignPublicKey.
 func NewSignPublicKey(b *[SignPublicKeySize]byte) *SignPublicKey {
 	return &SignPublicKey{
@@ -73,8 +82,13 @@ func NewSignPublicKey(b *[SignPublicKeySize]byte) *SignPublicKey {
 	}
 }
 
-// SigchainPublicKeyFromID converts ID to SignPublicKey.
+// SigchainPublicKeyFromID converts ID to SigchainPublicKey.
 func SigchainPublicKeyFromID(id ID) (SigchainPublicKey, error) {
+	return signPublicKeyFromID(id)
+}
+
+// signPublicKeyFromID converts ID to SignPublicKey.
+func signPublicKeyFromID(id ID) (*SignPublicKey, error) {
 	hrp, b, err := id.Decode()
 	if err != nil {
 		return nil, err
@@ -103,6 +117,16 @@ func (s SignPublicKey) String() string {
 // Bytes for public key.
 func (s SignPublicKey) Bytes() *[SignPublicKeySize]byte {
 	return s.publicKey
+}
+
+// BoxPublicKey converts the ed25519 public key to a curve25519 public key.
+func (s SignPublicKey) BoxPublicKey() BoxPublicKey {
+	edpk := ed25519.PublicKey(s.publicKey[:])
+	bpk := ed25519PublicKeyToCurve25519(edpk)
+	if len(bpk) != 32 {
+		panic("unable to convert key: invalid public key bytes")
+	}
+	return BoxPublicKey(Bytes32(bpk))
 }
 
 // Verify verifies a message and signature with public key.
@@ -182,7 +206,7 @@ func SignDetached(b []byte, sk *SignKey) []byte {
 	return Sign(b, sk)[:sign.Overhead]
 }
 
-// GenerateSignKey generates a SignKey (using ed25519).
+// GenerateSignKey generates a SignKey (Ed25519).
 func GenerateSignKey() *SignKey {
 	logger.Infof("Generating ed25519 key...")
 	seed := Rand32()

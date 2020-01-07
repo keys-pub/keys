@@ -12,59 +12,46 @@ import (
 func TestSigncrypt(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
+	spa := NewSaltpack(ksa)
 	alice := keys.GenerateSignKey()
 	err := ksa.SaveSignKey(alice)
-	abk := keys.GenerateBoxKey()
-	err = ksa.SaveBoxKey(abk)
-	require.NoError(t, err)
-	spa := NewSaltpack(ksa)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
 	bob := keys.GenerateSignKey()
 	err = ksb.SaveSignKey(bob)
-	bbk := keys.GenerateBoxKey()
-	err = ksb.SaveBoxKey(bbk)
-	require.NoError(t, err)
 
 	message := []byte("hi bob")
 
-	encrypted, err := spa.Signcrypt(message, alice, bbk.PublicKey())
+	encrypted, err := spa.Signcrypt(message, alice, bob.ID())
 	require.NoError(t, err)
 
 	out, sender, err := spb.SigncryptOpen(encrypted)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.PublicKey().ID(), sender.ID())
+	require.Equal(t, alice.PublicKey().ID(), sender)
 
-	_, err = spa.Signcrypt(message, alice, nil)
-	require.EqualError(t, err, "nil recipient")
+	_, err = spa.Signcrypt(message, alice, keys.ID(""))
+	require.EqualError(t, err, "invalid recipient: empty")
 }
 
 func TestSigncryptStream(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
+	spa := NewSaltpack(ksa)
 	alice := keys.GenerateSignKey()
 	err := ksa.SaveSignKey(alice)
-	abk := keys.GenerateBoxKey()
-	err = ksa.SaveBoxKey(abk)
-	require.NoError(t, err)
-	spa := NewSaltpack(ksa)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
 	bob := keys.GenerateSignKey()
 	err = ksb.SaveSignKey(bob)
-	bbk := keys.GenerateBoxKey()
-	err = ksb.SaveBoxKey(bbk)
-	require.NoError(t, err)
-
 	message := []byte("hi bob")
 
 	var buf bytes.Buffer
-	encrypted, err := spa.NewSigncryptStream(&buf, alice, bbk.PublicKey())
+	encrypted, err := spa.NewSigncryptStream(&buf, alice, bob.ID())
 	require.NoError(t, err)
 	n, err := encrypted.Write(message)
 	require.NoError(t, err)
@@ -73,7 +60,7 @@ func TestSigncryptStream(t *testing.T) {
 
 	stream, sender, err := spb.NewSigncryptOpenStream(&buf)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender.ID())
+	require.Equal(t, alice.PublicKey().ID(), sender)
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
@@ -83,12 +70,12 @@ func TestSigncryptOpenError(t *testing.T) {
 	ksa := keys.NewMemKeystore()
 	alice := keys.GenerateSignKey()
 	err := ksa.SaveSignKey(alice)
-	abk := keys.GenerateBoxKey()
-	err = ksa.SaveBoxKey(abk)
+	bob := keys.GenerateSignKey()
+	err = ksa.SaveSignKey(bob)
 	require.NoError(t, err)
 	spa := NewSaltpack(ksa)
 
-	encrypted, err := spa.Signcrypt([]byte("alice's message"), alice, abk.PublicKey())
+	encrypted, err := spa.Signcrypt([]byte("alice's message"), alice, bob.ID())
 	require.NoError(t, err)
 
 	ksb := keys.NewMemKeystore()

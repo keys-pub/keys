@@ -3,6 +3,7 @@ package keys
 import (
 	"crypto/rand"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -19,8 +20,8 @@ type BoxPrivateKey *[BoxPrivateKeySize]byte
 // BoxPublicKey is the public key part of a nacl.box compatible key
 type BoxPublicKey *[BoxPublicKeySize]byte
 
-// BoxKeyType uses nacl.box (Curve25519, XSalsa20 and Poly1305).
-const BoxKeyType string = "cx"
+// BoxKeyType (Curve25519).
+const BoxKeyType string = "cu"
 
 // BoxKey is a nacl.box compatible public/private key
 type BoxKey struct {
@@ -55,6 +56,21 @@ func GenerateBoxKey() *BoxKey {
 		publicKey:  publicKey,
 		privateKey: privateKey,
 	}
+}
+
+// boxPublicKeyFromID converts ID to BoxPublicKey.
+func boxPublicKeyFromID(id ID) (BoxPublicKey, error) {
+	hrp, b, err := id.Decode()
+	if err != nil {
+		return nil, err
+	}
+	if hrp != BoxKeyType {
+		return nil, errors.Errorf("invalid key type")
+	}
+	if len(b) != BoxPublicKeySize {
+		return nil, errors.Errorf("invalid box public key bytes")
+	}
+	return BoxPublicKey(Bytes32(b)), nil
 }
 
 // NewBoxKeyFromPrivateKey creates a BoxKey from private key bytes.

@@ -14,3 +14,13 @@ func TestNewBoxKeyFromPrivateKey(t *testing.T) {
 	require.Equal(t, boxKey.PrivateKey(), boxKeyOut.PrivateKey())
 	require.Equal(t, boxKey.PublicKey(), boxKeyOut.PublicKey())
 }
+
+func TestBoxKeyConversion(t *testing.T) {
+	sk := GenerateSignKey()
+	bk, err := sk.BoxKey()
+	require.NoError(t, err)
+
+	bpk := sk.PublicKey().BoxPublicKey()
+
+	require.Equal(t, bk.PublicKey()[:], bpk[:])
+}

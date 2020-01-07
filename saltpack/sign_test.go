@@ -21,10 +21,10 @@ func TestSignVerifyDefault(t *testing.T) {
 	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
-	messageOut, signer, err := sp.Verify(sig)
+	messageOut, sender, err := sp.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
-	require.Equal(t, alice.PublicKey().ID(), signer.ID())
+	require.Equal(t, alice.PublicKey().ID(), sender)
 }
 
 func TestSignVerifyArmored(t *testing.T) {
@@ -37,10 +37,10 @@ func TestSignVerifyArmored(t *testing.T) {
 	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
-	messageOut, signer, err := sp.Verify(sig)
+	messageOut, sender, err := sp.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
-	require.Equal(t, alice.PublicKey().ID(), signer.ID())
+	require.Equal(t, alice.PublicKey().ID(), sender)
 
 	// Verify with some prefix text
 	armored2 := stripBefore("some prefix text: \n" + string(sig) + "some suffix text")
@@ -58,9 +58,9 @@ func TestSignVerifyDetached(t *testing.T) {
 	sig, err := sp.SignDetached(message, alice)
 	require.NoError(t, err)
 
-	signer, err := sp.VerifyDetached(sig, message)
+	sender, err := sp.VerifyDetached(sig, message)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), signer.ID())
+	require.Equal(t, alice.PublicKey().ID(), sender)
 }
 
 func TestSignVerifyStream(t *testing.T) {
@@ -78,9 +78,9 @@ func TestSignVerifyStream(t *testing.T) {
 	encrypted.Close()
 
 	var reader io.Reader = bytes.NewReader(buf.Bytes())
-	stream, signer, err := sp.NewVerifyStream(reader)
+	stream, sender, err := sp.NewVerifyStream(reader)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), signer.ID())
+	require.Equal(t, alice.PublicKey().ID(), sender)
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)

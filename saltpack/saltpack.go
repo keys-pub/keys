@@ -15,6 +15,7 @@ type Saltpack struct {
 
 // Keystore ...
 type Keystore interface {
+	BoxPublicKeyFromID(id keys.ID) (keys.BoxPublicKey, error)
 	BoxKeys() ([]*keys.BoxKey, error)
 }
 
@@ -31,7 +32,7 @@ func versionValidator(version ksaltpack.Version) error {
 	case 1, 2:
 		return nil
 	default:
-		return errors.Errorf("unrecognized version")
+		return errors.Errorf("unrecognized version %d.%d", version.Major, version.Minor)
 	}
 }
 

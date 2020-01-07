@@ -108,7 +108,20 @@ func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	if item == nil {
 		return nil, nil
 	}
-	return AsBoxKey(item)
+
+	if item.Type == BoxKeyringType {
+		return AsBoxKey(item)
+	}
+
+	if item.Type == SignKeyringType {
+		sk, err := AsSignKey(item)
+		if err != nil {
+			return nil, err
+		}
+		return sk.BoxKey()
+	}
+
+	return nil, errors.Errorf("invalid box key type")
 }
 
 // CertificateKey for identifier.
@@ -159,7 +172,7 @@ func (k *Keystore) Delete(id string) (bool, error) {
 }
 
 // BoxKeys from the Keystore.
-func (k Keystore) BoxKeys() ([]*BoxKey, error) {
+func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
 		Types: []string{BoxKeyringType},
 	})
@@ -174,6 +187,20 @@ func (k Keystore) BoxKeys() ([]*BoxKey, error) {
 		}
 		keys = append(keys, key)
 	}
+
+	// Include box keys converted from sign keys.
+	sks, err := k.SignKeys()
+	if err != nil {
+		return nil, err
+	}
+	for _, sk := range sks {
+		bk, err := sk.BoxKey()
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, bk)
+	}
+
 	return keys, nil
 }
 
@@ -194,4 +221,34 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 		keys = append(keys, key)
 	}
 	return keys, nil
+}
+
+// BoxPublicKeyFromID gets box public key for an ID.
+func (k *Keystore) BoxPublicKeyFromID(id ID) (BoxPublicKey, error) {
+	if id == "" {
+		return nil, errors.Errorf("empty")
+	}
+
+	hrp, _, err := id.Decode()
+	if err != nil {
+		return nil, err
+	}
+
+	switch hrp {
+	case BoxKeyType:
+		bpk, err := boxPublicKeyFromID(id)
+		if err != nil {
+			return nil, err
+		}
+		return bpk, nil
+	case SignKeyType:
+		spk, err := signPublicKeyFromID(id)
+		if err != nil {
+			return nil, err
+		}
+		return spk.BoxPublicKey(), nil
+
+	default:
+		return nil, errors.Errorf("unrecognized %s", id)
+	}
 }
