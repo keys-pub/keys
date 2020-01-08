@@ -333,6 +333,8 @@ func (u *UserStore) index(ctx context.Context, results *userResults) error {
 		}
 	}
 
+	logger.Debugf("Data to index: %s", string(data))
+
 	kidPath := Path(indexKID, results.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
 	if err := u.dst.Set(ctx, kidPath, data); err != nil {
@@ -363,7 +365,7 @@ func indexName(user *User) string {
 	return fmt.Sprintf("%s@%s", user.Name, user.Service)
 }
 
-// Expired returns KIDs that haven't been resulted in a duration.
+// Expired returns KIDs that haven't been checked in a duration.
 func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error) {
 	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
 	if err != nil {

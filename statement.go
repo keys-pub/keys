@@ -65,14 +65,14 @@ func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byt
 
 // Key for a Statement.
 // If Seq is not set, then there is no key.
-// Key looks like "ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
+// Key looks like "kpe1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
 func (s Statement) Key() string {
 	return StatementKey(s.KID, s.Seq)
 }
 
 // StatementKey returns key for Statement kid,seq.
 // If seq is <= 0, then there is no key.
-// Path looks like "ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
+// Path looks like "kpe1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
 func StatementKey(kid ID, seq int) string {
 	if seq <= 0 {
 		return ""

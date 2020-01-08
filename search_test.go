@@ -382,21 +382,13 @@ func TestSearch(t *testing.T) {
 	results, err := ust.Search(ctx, &SearchRequest{Query: "a"})
 	require.NoError(t, err)
 	require.Equal(t, 10, len(results))
-	require.Equal(t, "ed18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5svmehft", results[0].KID.String())
-	require.Equal(t, 1, len(results[0].Users))
-	require.Equal(t, "a0", results[0].Users[0].User.Name)
-
-	results, err = ust.Search(ctx, &SearchRequest{Query: "a", Limit: 2})
-	require.NoError(t, err)
-	require.Equal(t, 2, len(results))
-	require.Equal(t, 1, len(results[0].Users))
-	require.Equal(t, "ed18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5svmehft", results[0].KID.String())
+	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
 	require.Equal(t, 1, len(results[0].Users))
 	require.Equal(t, "a0", results[0].Users[0].User.Name)
 
 	results, err = ust.Search(ctx, &SearchRequest{Limit: 1000})
 	require.NoError(t, err)
 	require.Equal(t, 20, len(results))
-	require.Equal(t, "ed1vmxkpzuj3wyw2rswl64r87h3cs7wlcrjjjctsl5luz46dg70wces3kq4ef", results[19].KID.String())
+	require.Equal(t, "kpe1vmxkpzuj3wyw2rswl64r87h3cs7wlcrjjjctsl5luz46dg70wcesdrvvg5", results[19].KID.String())
 	require.Equal(t, 1, len(results[19].Users))
 }

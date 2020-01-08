@@ -28,7 +28,7 @@ type SignPublicKey struct {
 }
 
 // SignKeyType (Ed25519).
-const SignKeyType string = "ed"
+const SignKeyType string = "kpe"
 
 // SignKey a public/private boxKey which can sign and verify using nacl.sign.
 type SignKey struct {

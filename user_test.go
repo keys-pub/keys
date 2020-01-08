@@ -30,14 +30,14 @@ func TestNewUserForTwitterSigning(t *testing.T) {
 	msg, err := user.Sign(sk)
 	require.NoError(t, err)
 	expected := `BEGIN MESSAGE.
-NWfTZwmVoF2JyaG 19zFMzvQTGCtapx tjd0qyJZPEAMETg wsopnv9Whmc2CHY
-LHduC9i3guXLTdY HzpluDb1KleTCKq 6Xr2LSniILjRxYM WwtzXWH1P9g2DiQ
-VkxL51PZaN6xp1K tnb72l9Ym5Y0sGC NDsulKa7ILrP1ov zLavKEWDbxeyl6V
-J5HlOPb8qaFXC7T oGM2twKIEmX6Ekk ynCw60oQokntgcx XGM1.
+iDAzaNexn2Pyskw kN7nPOqHMaHQAW6 eCKdqqPJjRvSYR8 nWsd3L6xJbPObZ9
+L25BID9V4AZbluY BNeXrpYoOeATCKq 6Xr2MZlres4noBA pBkewkEz5593DxH
+Pj84f5pY7PE1JEq D2gGjkgLByR9CFG 2aCgRgZZwl5UAa4 6bmBzOcQByOYlKb
+OS0ciNjMXqme7oU c8SlPAP9Gq3SDMQ Dg7eM5fLogY3MDW UqhLx.
 END MESSAGE.`
 	require.Equal(t, expected, msg)
 	require.False(t, len(msg) > 280)
-	require.Equal(t, 273, len(msg))
+	require.Equal(t, 274, len(msg))
 
 	out, err := VerifyUser(msg, sk.PublicKey(), user)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.NoError(t, err)
 	b, err := json.Marshal(user)
 	require.NoError(t, err)
-	require.Equal(t, `{"k":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","n":"123456789012345","sq":1,"sr":"twitter","u":"https://twitter.com/123456789012345/status/1234567890"}`, string(b))
+	require.Equal(t, `{"k":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","n":"123456789012345","sq":1,"sr":"twitter","u":"https://twitter.com/123456789012345/status/1234567890"}`, string(b))
 
 	var userOut User
 	err = json.Unmarshal(b, &userOut)
@@ -73,7 +73,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.NoError(t, err)
 	b, err = json.Marshal(user)
 	require.NoError(t, err)
-	require.Equal(t, `{"k":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","n":"123456789012345","sr":"twitter"}`, string(b))
+	require.Equal(t, `{"k":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","n":"123456789012345","sr":"twitter"}`, string(b))
 }
 
 func TestUserResultGithub(t *testing.T) {
@@ -94,7 +94,7 @@ func TestUserResultGithub(t *testing.T) {
 	require.NoError(t, err)
 	msg, err := user.Sign(sk)
 	require.NoError(t, err)
-	// t.Logf(msg)
+	t.Logf(msg)
 	_, err = VerifyUser(msg, sk.PublicKey(), user)
 	require.NoError(t, err)
 
@@ -131,12 +131,12 @@ func TestUserResultGithubWrongName(t *testing.T) {
 	scs := NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
 
-	// user, err := NewUserForSigning(ust, sk.ID(), "github", "alice2")
-	// require.NoError(t, err)
-	// msg, err := user.Sign(sk)
-	// require.NoError(t, err)
-	// require.NotEqual(t, "", msg)
-	// t.Logf(msg)
+	user, err := NewUserForSigning(ust, sk.ID(), "github", "alice2")
+	require.NoError(t, err)
+	msg, err := user.Sign(sk)
+	require.NoError(t, err)
+	require.NotEqual(t, "", msg)
+	t.Logf(msg)
 
 	sc := NewSigchain(sk.PublicKey())
 	err = req.SetResponseFile("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7")

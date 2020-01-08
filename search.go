@@ -42,7 +42,7 @@ type SearchResult struct {
 }
 
 func (u *UserStore) search(ctx context.Context, parent string, query string, limit int) ([]*SearchResult, error) {
-	logger.Infof("Searching %s", parent)
+	logger.Infof("Searching %s %q", parent, query)
 	iter, err := u.dst.Documents(ctx, parent, &DocumentsOpts{Prefix: query, Limit: limit})
 	if err != nil {
 		return nil, err
@@ -66,6 +66,7 @@ func (u *UserStore) search(ctx context.Context, parent string, query string, lim
 		})
 	}
 	iter.Release()
+	logger.Infof("Found %d user results", len(results))
 	return results, nil
 }
 

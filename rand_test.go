@@ -69,3 +69,8 @@ func TestRandUsername(t *testing.T) {
 		require.Equal(t, 8, len(u))
 	}
 }
+
+func TestRandString(t *testing.T) {
+	s := RandString(32)
+	require.Equal(t, 43, len(s))
+}

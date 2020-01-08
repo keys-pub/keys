@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"testing"
 
@@ -87,12 +88,9 @@ func TestSigchain(t *testing.T) {
 
 	spew, err := sc.Spew()
 	require.NoError(t, err)
-	expected := `/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/1 {".sig":"RfBktB0axROlrmq0++FxK7QHXt4Aq59VOL5tJzSHHi7MdwIEwjGQusB3NqDd3HRivWD4B0unNET68UswxTvSBQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001,"type":"test"}
-/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/2 {".sig":"7SzEDHKXUoEvZKicSdVx9ftBc9sdpUWlGtOCIRPDNFRM4/KWDVEoXAdcQtwxv7ccpaTDOA5GK3HkYYaAfVe6Cg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"+muAFil+RqSW0hTqfVTH+aFT4kX3+15yt5lKcnkbNhU=","revoke":1,"seq":2,"type":"revoke"}
-/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/3 {".sig":"PN5rJJpTSTtxU6TLHtsU01l7Q14uKidAG0jEvHheUmCT4ax6hJyar9ulMFbpWMjjilpYs3X0vul+sg8kv/abDQ==","data":"AgICAgICAgICAgICAgICAg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"OS4zWLgbHoqyO7oVRnovjuEz/qN9bfJXOIBLmNSSc3k=","seq":3,"ts":1234567890002,"type":"test"}
-/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/4 {".sig":"ZdJlZ+x882ABQrYazysbuPhoFGMiAujcYGo2+aDyLzCtpbaTJxPEa5msFtEcg0bqjWuNnTUmLKx8PLVvYnuBAw==","data":"AwMDAwMDAwMDAwMDAwMDAw==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"tCG8UeQh4iO0oSdw7EJ5YQ63dbdMXLFN/cXmyM5v9Fg=","seq":4,"ts":1234567890003,"type":"test"}
-`
-	require.Equal(t, expected, spew.String())
+	expected, err := ioutil.ReadFile("testdata/sc2.spew")
+	require.NoError(t, err)
+	require.Equal(t, string(expected), spew.String())
 }
 
 func TestSigchainJSON(t *testing.T) {
@@ -108,31 +106,30 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	st0 := sc.Statements()[0]
-	expectedStatement := `{".sig":"+NEHVE3zlc9AmC6uEwJF5MfAGGZcO7ZZZ1VI64ol6mXe/ZQ6fZEn9R1KWI05olHV03B9E8ofqep0d7Z2nCRHAQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001}`
+	expectedStatement := `{".sig":"99xVBoHGjtazE80tc74yj+mYYWr351RDQwwuCc9RjjMUkFIcDU09I8E38mlET0emZs1StXEpRJuDGfXSJ4D8BQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","seq":1,"ts":1234567890001}`
 	require.Equal(t, expectedStatement, string(st0.Bytes()))
 
 	b, err := json.Marshal(st0)
 	require.NoError(t, err)
-	expectedEntry := `{".sig":"+NEHVE3zlc9AmC6uEwJF5MfAGGZcO7ZZZ1VI64ol6mXe/ZQ6fZEn9R1KWI05olHV03B9E8ofqep0d7Z2nCRHAQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001}`
-	require.Equal(t, expectedEntry, string(b))
+	require.Equal(t, expectedStatement, string(b))
 
 	stb, err := StatementFromBytes(b)
 	require.NoError(t, err)
 	bout := stb.Bytes()
-	require.Equal(t, expectedEntry, string(bout))
+	require.Equal(t, expectedStatement, string(bout))
 
 	st2, err := GenerateStatement(sc, bytes.Repeat([]byte{0x02}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
 	siErr2 := sc.Add(st2)
 	require.NoError(t, siErr2)
 	entry2 := sc.Statements()[1]
-	expectedStatement2 := `{".sig":"WhR7Vg55ho+ZImJVZolp/W7chnSHlS4x8WLpjUwmWq+taGV6G6j6iHqbAKTrHx1HyvQI6j9H0TRzemHX6m+3Cg==","data":"AgICAgICAgICAgICAgICAg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"QT9kn83lDKhROP1e5hm6gbNIn87g9qB+ENAeZIYlR5c=","seq":2,"ts":1234567890002}`
+	expectedStatement2 := `{".sig":"VNvYqMOrjRt9AZh3zAn9s7QuUeET4KmZfxbsYchfscIwigx4dezzFhRJO0DhXAB8gO64+kBtypgBj3h9DqvTBQ==","data":"AgICAgICAgICAgICAgICAg==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","prev":"3lHv3g+lPWL5G3Lh3krjntHXrSzibh/JdGP9nc7xxEo=","seq":2,"ts":1234567890002}`
 	require.Equal(t, expectedStatement2, string(entry2.Bytes()))
 
 	_, siErr3 := sc.Revoke(2, sk)
 	require.NoError(t, siErr3)
 	entry3 := sc.Statements()[2]
-	expectedStatement3 := `{".sig":"rAE1SMgKRGI4DpZZqZY0IbXfW7ebVR3X4flFsRZxKbpGApwUjcBGEN1csAEYn4aFP5DnctCAM320BQkPvYkcBw==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"RDcf+K1Hhy2f6ahA1rvaVB5Yfn5o9YB7C1k0Tg+rX/w=","revoke":2,"seq":3,"type":"revoke"}`
+	expectedStatement3 := `{".sig":"fH6qw7Xv1+yKnasqAzBFpREOGk5Ly2fpLoH6WVzzuXk7OXS8sZr+k3qaeGTxwbe/OgoKPqCI1ZvbNdO+87HZAA==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","prev":"7NcCggncZpSy3bYlsRUm+a9NSJ5upn4RN63ibF0rNdg=","revoke":2,"seq":3,"type":"revoke"}`
 	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
 }
 

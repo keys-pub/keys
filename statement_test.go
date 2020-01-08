@@ -88,11 +88,11 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	data := statementBytesToSign(st)
-	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001,"type":"test"}`
+	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expected, string(data))
 
 	dataOut := st.Bytes()
-	expectedOut := `{".sig":"RfBktB0axROlrmq0++FxK7QHXt4Aq59VOL5tJzSHHi7MdwIEwjGQusB3NqDd3HRivWD4B0unNET68UswxTvSBQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","seq":1,"ts":1234567890001,"type":"test"}`
+	expectedOut := `{".sig":"/KL3VWwwPnz0rJjWliMFiACgRfMYeHlgwvf0zMtWNo/WXIsuDFNy/PA4LrZqEIWGlkJASfLrGue2kjtCgdjmAA==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expectedOut, string(dataOut))
 
 	require.Equal(t, expectedOut, string(st.Bytes()))
@@ -121,11 +121,11 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	data2 := statementBytesToSign(revoke)
-	expected2 := `{".sig":"","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"+muAFil+RqSW0hTqfVTH+aFT4kX3+15yt5lKcnkbNhU=","revoke":1,"seq":2,"type":"revoke"}`
+	expected2 := `{".sig":"","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","prev":"tVGumGOvb+QzNfIBuLl6BnKzIOP7PPOaDu+bRrABc58=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expected2, string(data2))
 
 	dataOut2 := revoke.Bytes()
-	expectedOut2 := `{".sig":"7SzEDHKXUoEvZKicSdVx9ftBc9sdpUWlGtOCIRPDNFRM4/KWDVEoXAdcQtwxv7ccpaTDOA5GK3HkYYaAfVe6Cg==","kid":"ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw","prev":"+muAFil+RqSW0hTqfVTH+aFT4kX3+15yt5lKcnkbNhU=","revoke":1,"seq":2,"type":"revoke"}`
+	expectedOut2 := `{".sig":"Gh8TJKJM4JHLvaDE/ZhHrKcWVl2sYMFm28Wu9a/ZyEkm2xcaPLKozGCzL8qX97X2b7juVY8ix994Dr4arcJUCQ==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","prev":"tVGumGOvb+QzNfIBuLl6BnKzIOP7PPOaDu+bRrABc58=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expectedOut2, string(dataOut2))
 
 	require.Equal(t, expectedOut2, string(revoke.Bytes()))
@@ -152,6 +152,6 @@ func TestStatementKeyURL(t *testing.T) {
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
-	require.Equal(t, "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw-000000000000001", st.Key())
-	require.Equal(t, "/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw/1", st.URL())
+	require.Equal(t, "kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen-000000000000001", st.Key())
+	require.Equal(t, "/kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen/1", st.URL())
 }

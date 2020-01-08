@@ -61,3 +61,19 @@ func (i *colsIterator) Next() (*Collection, error) {
 func (i *colsIterator) Release() {
 	i.cols = nil
 }
+
+// CollectionPaths returns paths from CollectionIterator.
+func CollectionPaths(iter CollectionIterator) ([]string, error) {
+	paths := []string{}
+	for {
+		col, err := iter.Next()
+		if err != nil {
+			return nil, err
+		}
+		if col == nil {
+			break
+		}
+		paths = append(paths, col.Path)
+	}
+	return paths, nil
+}

@@ -25,7 +25,7 @@ For example,
 
 ```json
 {
-  "k": "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw",
+  "k": "kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw",
   "n": "gabriel",
   "sr": "github"
 }
@@ -34,7 +34,7 @@ For example,
 You can create a signed user statement from the command line:
 
 ```shell
-keys user sign -kid "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw" \
+keys user sign -kid "kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw" \
 -service "github" -name "gabriel"
 ```
 
@@ -65,7 +65,7 @@ For example,
 
 ```json
 {
-  "k": "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw",
+  "k": "kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw",
   "n": "gabriel",
   "sq": 2,
   "sr": "github",
@@ -76,7 +76,7 @@ For example,
 You can save to the a user statement to the sigchain from the command line:
 
 ```shell
-keys user add -kid "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw" \
+keys user add -kid "kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw" \
 -service "github" -name "gabriel" \
 -url "https://gist.github.com/gabriel/02fae653e737bdeb7c730da669c949b1"
 ```
@@ -91,7 +91,7 @@ curl https://keys.pub/sigchain/ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrd
 {
   ".sig": "PiSMFgz2SiH+2hcb60uza6GLWHtmx6bK+hNVF8uFvSbkweFCAdPUc8WUbSfVo3fL7Msbf69kqwjjj2Rv98CxAA==",
   "data": "eyJraWQiOiJRQnJiekNXSzVNZjVmenpGYXlDcVY0Zm5aYUdVVE1SanZBeHlFcWYzODhzdCIsIm5hbWUiOiJnYWJyaWVsIiwic2VxIjoyLCJzZXJ2aWNlIjoiZ2l0aHViIiwidXJsIjoiaHR0cHM6Ly9naXN0LmdpdGh1Yi5jb20vZ2FicmllbC8wMWNlNDNhYTg2N2FhM2IwMTA1YTZkMThiZTdjOThmNiJ9",
-  "kid": "ed132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw",
+  "kid": "kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqrkl9gw",
   "prev": "w8O6TeLPbNPfYGJhv6xiEE4952hwNMYOoDP4bP3EWOQ=",
   "seq": 2,
   "type": "user"
