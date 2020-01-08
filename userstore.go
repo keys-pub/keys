@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -17,6 +18,13 @@ type UserResult struct {
 	Timestamp  TimeMs     `json:"ts"`
 	User       *User      `json:"user"`
 	VerifiedAt TimeMs     `json:"vts"`
+}
+
+func (r UserResult) String() string {
+	if r.Status == UserStatusOK {
+		return fmt.Sprintf("%s:%s(%d)", r.Status, r.User, r.VerifiedAt)
+	}
+	return fmt.Sprintf("%s:%s;err=%s", r.Status, r.User, r.Err)
 }
 
 type userResults struct {
@@ -81,12 +89,20 @@ func (u *UserStore) Update(ctx context.Context, kid ID) ([]*UserResult, error) {
 		Results: results,
 	}
 
-	logger.Infof("Indexing %s, %+v", res.KID, res.Results)
+	logger.Infof("Indexing %s: %s", res.KID, strings.Join(userResultsStrings(res.Results), ","))
 	if err := u.index(ctx, res); err != nil {
 		return []*UserResult{}, err
 	}
 
 	return results, nil
+}
+
+func userResultsStrings(res []*UserResult) []string {
+	out := make([]string, 0, len(res))
+	for _, r := range res {
+		out = append(out, r.String())
+	}
+	return out
 }
 
 func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserResult, error) {
