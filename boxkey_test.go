@@ -22,5 +22,5 @@ func TestBoxKeyConversion(t *testing.T) {
 
 	bpk := sk.PublicKey().BoxPublicKey()
 
-	require.Equal(t, bk.PublicKey()[:], bpk[:])
+	require.Equal(t, bk.PublicKey().Bytes()[:], bpk.Bytes()[:])
 }

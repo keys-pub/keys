@@ -22,9 +22,7 @@ func TestSaveLoadSignKey(t *testing.T) {
 func TestSignKeySeed(t *testing.T) {
 	signKey := GenerateSignKey()
 	seed := signKey.Seed()
-	var b [SignKeySeedSize]byte
-	copy(b[:], seed)
-	signKeyOut, err := NewSignKeyFromSeed(&b)
+	signKeyOut, err := NewSignKeyFromSeed(seed)
 	require.NoError(t, err)
 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
 }

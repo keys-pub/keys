@@ -15,7 +15,7 @@ type Saltpack struct {
 
 // Keystore ...
 type Keystore interface {
-	BoxPublicKeyFromID(id keys.ID) (keys.BoxPublicKey, error)
+	BoxPublicKeyFromID(id keys.ID) (*keys.BoxPublicKey, error)
 	BoxKeys() ([]*keys.BoxKey, error)
 }
 

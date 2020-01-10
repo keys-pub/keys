@@ -6,8 +6,8 @@ import (
 	"golang.org/x/crypto/nacl/sign"
 )
 
-// SignKeySize is the size of the SignKey private key bytes.
-const SignKeySize = 64
+// SignPrivateKeySize is the size of the SignKey private key bytes.
+const SignPrivateKeySize = 64
 
 // SignPublicKeySize is the size of the SignKey public key bytes.
 const SignPublicKeySize = 32
@@ -15,15 +15,10 @@ const SignPublicKeySize = 32
 // SignKeySeedSize is the size of the SignKey seed bytes.
 const SignKeySeedSize = 32
 
-// SignPrivateKey is the private part of sign key pair.
-type SignPrivateKey *[SignKeySize]byte
-
-type signPublicKey *[SignPublicKeySize]byte
-
 // SignPublicKey is the public part of sign key pair.
 type SignPublicKey struct {
 	id        ID
-	publicKey signPublicKey
+	publicKey *[SignPublicKeySize]byte
 }
 
 // SignKeyType (Ed25519).
@@ -31,14 +26,14 @@ const SignKeyType string = "kpe"
 
 // SignKey a public/private boxKey which can sign and verify.
 type SignKey struct {
-	privateKey SignPrivateKey
+	privateKey *[SignPrivateKeySize]byte
 	publicKey  *SignPublicKey
 }
 
 // NewSignKeyFromPrivateKey constructs SignKey from a private key.
 // The public key is derived from the private key.
 func NewSignKeyFromPrivateKey(privateKey []byte) (*SignKey, error) {
-	if len(privateKey) != SignKeySize {
+	if len(privateKey) != SignPrivateKeySize {
 		return nil, errors.Errorf("invalid private key length %d", len(privateKey))
 	}
 
@@ -49,8 +44,8 @@ func NewSignKeyFromPrivateKey(privateKey []byte) (*SignKey, error) {
 		return nil, errors.Errorf("invalid public key bytes (len=%d)", len(publicKey))
 	}
 
-	var privateKeyBytes [SignKeySize]byte
-	copy(privateKeyBytes[:], privateKey[:SignKeySize])
+	var privateKeyBytes [SignPrivateKeySize]byte
+	copy(privateKeyBytes[:], privateKey[:SignPrivateKeySize])
 
 	var publicKeyBytes [SignPublicKeySize]byte
 	copy(publicKeyBytes[:], publicKey[:SignPublicKeySize])
@@ -70,7 +65,7 @@ func (k *SignKey) BoxKey() (*BoxKey, error) {
 	if len(secretKey) != 32 {
 		return nil, errors.Errorf("failed to convert key: invalid secret key bytes")
 	}
-	return NewBoxKeyFromPrivateKey(BoxPrivateKey(Bytes32(secretKey))), nil
+	return NewBoxKeyFromPrivateKey(Bytes32(secretKey)), nil
 }
 
 // NewSignPublicKey creates a SignPublicKey.
@@ -83,11 +78,11 @@ func NewSignPublicKey(b *[SignPublicKeySize]byte) *SignPublicKey {
 
 // SigchainPublicKeyFromID converts ID to SigchainPublicKey.
 func SigchainPublicKeyFromID(id ID) (SigchainPublicKey, error) {
-	return signPublicKeyFromID(id)
+	return SignPublicKeyFromID(id)
 }
 
-// signPublicKeyFromID converts ID to SignPublicKey.
-func signPublicKeyFromID(id ID) (*SignPublicKey, error) {
+// SignPublicKeyFromID converts ID to SignPublicKey.
+func SignPublicKeyFromID(id ID) (*SignPublicKey, error) {
 	hrp, b, err := id.Decode()
 	if err != nil {
 		return nil, err
@@ -119,13 +114,13 @@ func (s SignPublicKey) Bytes() *[SignPublicKeySize]byte {
 }
 
 // BoxPublicKey converts the ed25519 public key to a curve25519 public key.
-func (s SignPublicKey) BoxPublicKey() BoxPublicKey {
+func (s SignPublicKey) BoxPublicKey() *BoxPublicKey {
 	edpk := ed25519.PublicKey(s.publicKey[:])
 	bpk := ed25519PublicKeyToCurve25519(edpk)
 	if len(bpk) != 32 {
 		panic("unable to convert key: invalid public key bytes")
 	}
-	return BoxPublicKey(Bytes32(bpk))
+	return NewBoxPublicKey(Bytes32(bpk))
 }
 
 // Verify verifies a message and signature with public key.
@@ -161,9 +156,9 @@ func NewSignKeyFromSeed(seed *[SignKeySeedSize]byte) (*SignKey, error) {
 }
 
 // Seed returns information on how to generate this key from ed25519 package seed.
-func (k SignKey) Seed() []byte {
+func (k SignKey) Seed() *[SignKeySeedSize]byte {
 	pk := ed25519.PrivateKey(k.privateKey[:])
-	return pk.Seed()
+	return Bytes32(pk.Seed())
 }
 
 // ID ...
@@ -181,7 +176,7 @@ func (k SignKey) PublicKey() *SignPublicKey {
 }
 
 // PrivateKey returns private key part.
-func (k SignKey) PrivateKey() *[SignKeySize]byte {
+func (k SignKey) PrivateKey() *[SignPrivateKeySize]byte {
 	return k.privateKey
 }
 

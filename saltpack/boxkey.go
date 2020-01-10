@@ -12,7 +12,7 @@ import (
 // boxKey is a wrapper for keys.BoxKey to support a ksaltpack.BoxKey.
 type boxKey struct {
 	ksaltpack.BoxSecretKey
-	privateKey keys.BoxPrivateKey
+	privateKey *[keys.BoxPrivateKeySize]byte
 	publicKey  *boxPublicKey
 }
 
@@ -63,17 +63,17 @@ func (k boxKey) Precompute(peer ksaltpack.BoxPublicKey) ksaltpack.BoxPrecomputed
 // boxPublicKey is a wrapper for keys.BoxPublicKey to support a ksaltpack.BoxPublicKey.
 type boxPublicKey struct {
 	ksaltpack.BoxPublicKey
-	pk keys.BoxPublicKey
+	pk *keys.BoxPublicKey
 }
 
 // newBoxPublicKey from byte array.
-func newBoxPublicKey(pk keys.BoxPublicKey) *boxPublicKey {
+func newBoxPublicKey(pk *keys.BoxPublicKey) *boxPublicKey {
 	return &boxPublicKey{pk: pk}
 }
 
 // ToKID (for ksaltpack.BoxPublicKey)
 func (p *boxPublicKey) ToKID() []byte {
-	return p.pk[:]
+	return p.pk.Bytes()[:]
 }
 
 func boxPublicKeyFromKID(b []byte) *boxPublicKey {
@@ -82,12 +82,12 @@ func boxPublicKeyFromKID(b []byte) *boxPublicKey {
 		return nil
 	}
 	pk := keys.Bytes32(b)
-	return newBoxPublicKey(keys.BoxPublicKey(pk))
+	return newBoxPublicKey(keys.NewBoxPublicKey(pk))
 }
 
 // ToRawBoxKeyPointer (for ksaltpack.BoxPublicKey)
 func (p *boxPublicKey) ToRawBoxKeyPointer() *ksaltpack.RawBoxKey {
-	rbk := ksaltpack.RawBoxKey(*p.pk)
+	rbk := ksaltpack.RawBoxKey(*p.pk.Bytes())
 	return &rbk
 }
 

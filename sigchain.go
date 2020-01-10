@@ -297,38 +297,6 @@ func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 	return nil
 }
 
-// BoxPublicKeySigchainType is a type for sigchain statement.
-const BoxPublicKeySigchainType = "bpk"
-
-// BoxPublicKey returns current box public key.
-func (s *Sigchain) BoxPublicKey() BoxPublicKey {
-	st := s.FindLast(BoxPublicKeySigchainType)
-	if st == nil {
-		return nil
-	}
-	if len(st.Data) != BoxPublicKeySize {
-		logger.Warningf("invalid box public key bytes in sigchain %s", s.ID)
-		return nil
-	}
-	bpk := BoxPublicKey(Bytes32(st.Data))
-	return bpk
-}
-
-// BoxPublicKeys returns all box public keys (not revoked) in the sigchain.
-func (s *Sigchain) BoxPublicKeys() []BoxPublicKey {
-	sts := s.FindAll(BoxPublicKeySigchainType)
-	bpks := make([]BoxPublicKey, 0, len(sts))
-	for _, st := range sts {
-		if len(st.Data) != BoxPublicKeySize {
-			logger.Warningf("invalid box public key bytes in sigchain %s", s.ID)
-			return nil
-		}
-		bpk := BoxPublicKey(Bytes32(st.Data))
-		bpks = append(bpks, bpk)
-	}
-	return bpks
-}
-
 // Users (statements) signed into the sigchain.
 func (s *Sigchain) Users() []*User {
 	sts := s.FindAll("user")

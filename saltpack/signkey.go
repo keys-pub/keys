@@ -9,7 +9,7 @@ import (
 // signKey is a wrapper for keys.SignKey.
 type signKey struct {
 	ksaltpack.SigningSecretKey
-	privateKey keys.SignPrivateKey
+	privateKey *[keys.SignPrivateKeySize]byte
 	publicKey  *keys.SignPublicKey
 }
 
