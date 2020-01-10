@@ -2,10 +2,10 @@ package keys
 
 import "github.com/pkg/errors"
 
-// SecretKeySize is the size of nacl.secretbox key bytes.
+// SecretKeySize is the size of secret key bytes.
 const SecretKeySize = 32
 
-// SecretKey is a symmetric key compatible with nacl.secretbox.
+// SecretKey is a symmetric key.
 type SecretKey *[SecretKeySize]byte
 
 // NewSecretKey from bytes.

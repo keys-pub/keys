@@ -1,9 +1,9 @@
 # Keys
 
-| Key       | Description                                                                                             |
-| --------- | ------------------------------------------------------------------------------------------------------- |
-| `SignKey` | Ed25519 (EdDSA) sign key (for use with [nacl.sign](https://godoc.org/golang.org/x/crypto/nacl/sign)).   |
-| `BoxKey`  | Curve25519 DH encryption key (for use with [nacl.box](https://godoc.org/golang.org/x/crypto/nacl/box)). |
+| Key       | Description                   |
+| --------- | ----------------------------- |
+| `SignKey` | Ed25519 (EdDSA) sign key.     |
+| `BoxKey`  | Curve25519 DH encryption key. |
 
 ## Examples
 

@@ -15,13 +15,12 @@ const SignPublicKeySize = 32
 // SignKeySeedSize is the size of the SignKey seed bytes.
 const SignKeySeedSize = 32
 
-// SignPrivateKey is the private part of nacl.sign key pair.
+// SignPrivateKey is the private part of sign key pair.
 type SignPrivateKey *[SignKeySize]byte
 
-// signPublicKey is the public part of nacl.sign key pair.
 type signPublicKey *[SignPublicKeySize]byte
 
-// SignPublicKey is the public part of nacl.sign key pair.
+// SignPublicKey is the public part of sign key pair.
 type SignPublicKey struct {
 	id        ID
 	publicKey signPublicKey
@@ -30,7 +29,7 @@ type SignPublicKey struct {
 // SignKeyType (Ed25519).
 const SignKeyType string = "kpe"
 
-// SignKey a public/private boxKey which can sign and verify using nacl.sign.
+// SignKey a public/private boxKey which can sign and verify.
 type SignKey struct {
 	privateKey SignPrivateKey
 	publicKey  *SignPublicKey

@@ -8,9 +8,9 @@
 
 ☢ This project is in development and has not been audited or reviewed. Use at your own risk. ☢
 
-## Key
+## Keys
 
-A [Key](specs/key.md) is capable of both signing and encryption. This key includes a signing key (Ed25519, for nacl.sign), an assymetric encryption key (Curve25519 DH, for nacl.box) and a symmetric encryption key (XSalsa20/Poly1305, for nacl.secretbox).
+[Keys](specs/keys.md) including a signing key (Ed25519), an assymetric encryption key (Curve25519 DH).
 
 ## Keystore
 
