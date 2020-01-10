@@ -98,6 +98,19 @@ func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
 	return AsSignKey(item)
 }
 
+// SignPublicKey returns sign public key for a key identifier.
+func (k *Keystore) SignPublicKey(kid ID) (*SignPublicKey, error) {
+	logger.Infof("Keystore load sign public key for %s", kid)
+	item, err := k.Get(kid.String())
+	if err != nil {
+		return nil, err
+	}
+	if item == nil {
+		return nil, nil
+	}
+	return AsSignPublicKey(item)
+}
+
 // BoxKey returns a box key for an identifier
 func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	logger.Infof("Keystore load box key for %s", kid)
@@ -108,20 +121,7 @@ func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	if item == nil {
 		return nil, nil
 	}
-
-	if item.Type == BoxKeyringType {
-		return AsBoxKey(item)
-	}
-
-	if item.Type == SignKeyringType {
-		sk, err := AsSignKey(item)
-		if err != nil {
-			return nil, err
-		}
-		return sk.BoxKey()
-	}
-
-	return nil, errors.Errorf("invalid box key type")
+	return AsBoxKey(item)
 }
 
 // CertificateKey for identifier.
@@ -142,9 +142,22 @@ func (k *Keystore) SaveSecretKey(kid string, secretKey *[32]byte) error {
 	return k.Set(NewSecretKeyItem(kid, secretKey))
 }
 
-// SaveSignKey saves a nacl.sign SignKey to the Keystore.
+// SaveSignKey saves a SignKey to the Keystore.
 func (k *Keystore) SaveSignKey(signKey *SignKey) error {
 	return k.Set(NewSignKeyItem(signKey))
+}
+
+// SaveSignPublicKey saves
+func (k *Keystore) SaveSignPublicKey(spk *SignPublicKey) error {
+	// Check we don't clobber a sign key
+	item, err := k.Get(spk.ID().String())
+	if err != nil {
+		return err
+	}
+	if item != nil && item.Type != SignPublicKeyringType {
+		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
+	}
+	return k.Set(NewSignPublicKeyItem(spk))
 }
 
 // SaveBoxKey saves a nacl.box BoxKey to the Keystore.
@@ -215,6 +228,28 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 	keys := make([]*SignKey, 0, len(items))
 	for _, item := range items {
 		key, err := AsSignKey(item)
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+// SignPublicKeys from the Keystore.
+func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
+	items, err := k.Keyring().List(&keyring.ListOpts{
+		Types: []string{
+			SignKeyringType,
+			SignPublicKeyringType,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	keys := make([]*SignPublicKey, 0, len(items))
+	for _, item := range items {
+		key, err := AsSignPublicKey(item)
 		if err != nil {
 			return nil, err
 		}

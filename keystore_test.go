@@ -27,6 +27,38 @@ func TestSignKeyItem(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, signKey.PrivateKey()[:], signKeyOut.PrivateKey()[:])
 	require.Equal(t, signKey.PublicKey().Bytes()[:], signKeyOut.PublicKey().Bytes()[:])
+
+	sks, err := ks.SignKeys()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(sks))
+	require.Equal(t, signKey.Seed()[:], sks[0].Seed()[:])
+
+	spkOut, err := ks.SignPublicKey(signKey.ID())
+	require.NoError(t, err)
+	require.Equal(t, signKey.PublicKey().Bytes()[:], spkOut.Bytes()[:])
+
+	spks, err := ks.SignPublicKeys()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(spks))
+	require.Equal(t, signKey.PublicKey().Bytes()[:], spks[0].Bytes()[:])
+
+	err = ks.SaveSignPublicKey(signKey.PublicKey())
+	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")
+}
+
+func TestSignPublicKeyItem(t *testing.T) {
+	ks := NewMemKeystore()
+	spk := GenerateSignKey().PublicKey()
+	err := ks.SaveSignPublicKey(spk)
+	require.NoError(t, err)
+	spkOut, err := ks.SignPublicKey(spk.ID())
+	require.NoError(t, err)
+	require.Equal(t, spk.Bytes()[:], spkOut.Bytes()[:])
+
+	spks, err := ks.SignPublicKeys()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(spks))
+	require.Equal(t, spk.Bytes()[:], spks[0].Bytes()[:])
 }
 
 func TestBoxKeyItem(t *testing.T) {

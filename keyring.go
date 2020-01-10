@@ -69,8 +69,24 @@ func AsSignKey(item *keyring.Item) (*SignKey, error) {
 }
 
 // NewSignPublicKeyItem creates keyring item for SignPublicKey.
-func NewSignPublicKeyItem(publicKey SignPublicKey) *keyring.Item {
+func NewSignPublicKeyItem(publicKey *SignPublicKey) *keyring.Item {
 	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), SignPublicKeyringType)
+}
+
+// AsSignPublicKey returns SignPublicKey for keyring Item.
+func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
+	switch item.Type {
+	case SignPublicKeyringType:
+		return NewSignPublicKey(Bytes32(item.SecretData())), nil
+	case SignKeyringType:
+		sk, err := AsSignKey(item)
+		if err != nil {
+			return nil, err
+		}
+		return sk.PublicKey(), nil
+	default:
+		return nil, errors.Errorf("invalid item type for sign public key: %s", item.Type)
+	}
 }
 
 // NewBoxPublicKeyItem creates keyring item for BoxPublicKey.
