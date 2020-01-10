@@ -71,7 +71,7 @@ func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if item == nil {
+	if item == nil || item.Type != string(SignItemType) {
 		return nil, nil
 	}
 	return AsSignKey(item)
@@ -97,7 +97,7 @@ func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if item == nil {
+	if item == nil || item.Type != string(BoxItemType) {
 		return nil, nil
 	}
 	return AsBoxKey(item)
