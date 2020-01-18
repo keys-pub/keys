@@ -332,16 +332,25 @@ func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
 	}
 
 	for _, result := range keyDoc.UserResults {
-		switch result.Status {
-		// Index result if status ok, or a transient error
-		case UserStatusOK, UserStatusConnFailure:
+		index := false
+		if result.VerifiedAt == 0 {
+			logger.Errorf("Never verified user result in indexing: %v", result)
+		} else {
+			switch result.Status {
+			// Index result if status ok, or a transient error
+			case UserStatusOK, UserStatusConnFailure:
+				index = true
+			}
+		}
+
+		if index {
 			name := indexName(result.User)
 			namePath := Path(indexUser, name)
 			logger.Infof("Indexing user result %s %s", namePath, result.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
 				return err
 			}
-		default:
+		} else {
 			logger.Infof("Removing failed user %s", result.User)
 			if err := u.removeUser(ctx, result.User); err != nil {
 				return err
