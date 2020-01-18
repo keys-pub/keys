@@ -27,7 +27,7 @@ func (r UserResult) String() string {
 	return fmt.Sprintf("%s:%s;err=%s", r.Status, r.User, r.Err)
 }
 
-type userDocument struct {
+type keyDocument struct {
 	KID         ID            `json:"kid"`
 	UserResults []*UserResult `json:"users,omitempty"`
 }
@@ -84,13 +84,13 @@ func (u *UserStore) Update(ctx context.Context, kid ID) ([]*UserResult, error) {
 		return []*UserResult{}, err
 	}
 
-	userDoc := &userDocument{
+	keyDoc := &keyDocument{
 		KID:         kid,
 		UserResults: results,
 	}
 
-	logger.Infof("Indexing %s: %s", userDoc.KID, strings.Join(userResultsStrings(userDoc.UserResults), ","))
-	if err := u.index(ctx, userDoc); err != nil {
+	logger.Infof("Indexing %s: %s", keyDoc.KID, strings.Join(userResultsStrings(keyDoc.UserResults), ","))
+	if err := u.index(ctx, keyDoc); err != nil {
 		return []*UserResult{}, err
 	}
 
@@ -217,7 +217,7 @@ func (u *UserStore) Get(ctx context.Context, kid ID) ([]*UserResult, error) {
 	return res.UserResults, nil
 }
 
-func (u *UserStore) get(ctx context.Context, kid ID) (*userDocument, error) {
+func (u *UserStore) get(ctx context.Context, kid ID) (*keyDocument, error) {
 	if kid == "" {
 		return nil, errors.Errorf("empty kid")
 	}
@@ -229,11 +229,11 @@ func (u *UserStore) get(ctx context.Context, kid ID) (*userDocument, error) {
 	if doc == nil {
 		return nil, nil
 	}
-	var userDoc userDocument
-	if err := json.Unmarshal(doc.Data, &userDoc); err != nil {
+	var keyDoc keyDocument
+	if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 		return nil, err
 	}
-	return &userDoc, nil
+	return &keyDoc, nil
 }
 
 func (u *UserStore) result(ctx context.Context, kid ID, service string, name string) (*UserResult, error) {
@@ -265,11 +265,11 @@ func (u *UserStore) removeKID(ctx context.Context, kid ID) error {
 }
 
 func (u *UserStore) removeExistingUsers(ctx context.Context, kid ID) error {
-	userDoc, err := u.get(ctx, kid)
+	keyDoc, err := u.get(ctx, kid)
 	if err != nil {
 		return err
 	}
-	for _, result := range userDoc.UserResults {
+	for _, result := range keyDoc.UserResults {
 		if err := u.removeUser(ctx, result.User); err != nil {
 			return err
 		}
@@ -333,8 +333,8 @@ func (u *UserStore) diffUsers(ctx context.Context, kid ID, results []*UserResult
 const indexKID = "kid"
 const indexUser = "user"
 
-func (u *UserStore) index(ctx context.Context, userDoc *userDocument) error {
-	diff, err := u.diffUsers(ctx, userDoc.KID, userDoc.UserResults)
+func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
+	diff, err := u.diffUsers(ctx, keyDoc.KID, keyDoc.UserResults)
 	if err != nil {
 		return err
 	}
@@ -344,19 +344,19 @@ func (u *UserStore) index(ctx context.Context, userDoc *userDocument) error {
 		}
 	}
 
-	data, err := json.Marshal(userDoc)
+	data, err := json.Marshal(keyDoc)
 	if err != nil {
 		return err
 	}
 	logger.Debugf("Data to index: %s", string(data))
 
-	kidPath := Path(indexKID, userDoc.KID.String())
+	kidPath := Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
 	if err := u.dst.Set(ctx, kidPath, data); err != nil {
 		return err
 	}
 
-	for _, result := range userDoc.UserResults {
+	for _, result := range keyDoc.UserResults {
 		if result.Status != UserStatusOK {
 			// TODO: Should we not remove on connection errors (or only if a temporary error persists)?
 			logger.Infof("Removing failed user %s", result.User)
@@ -395,11 +395,11 @@ func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error)
 		if doc == nil {
 			break
 		}
-		var userDoc userDocument
-		if err := json.Unmarshal(doc.Data, &userDoc); err != nil {
+		var keyDoc keyDocument
+		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		for _, result := range userDoc.UserResults {
+		for _, result := range keyDoc.UserResults {
 			ts := TimeFromMillis(result.Timestamp)
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
 				kids = append(kids, result.User.KID)

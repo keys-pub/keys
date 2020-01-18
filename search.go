@@ -56,13 +56,13 @@ func (u *UserStore) search(ctx context.Context, parent string, query string, lim
 		if doc == nil {
 			break
 		}
-		var userDoc userDocument
-		if err := json.Unmarshal(doc.Data, &userDoc); err != nil {
+		var keyDoc keyDocument
+		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
 		results = append(results, &SearchResult{
-			KID:         userDoc.KID,
-			UserResults: userDoc.UserResults,
+			KID:         keyDoc.KID,
+			UserResults: keyDoc.UserResults,
 		})
 	}
 	iter.Release()
@@ -107,6 +107,9 @@ func (u *UserStore) Search(ctx context.Context, req *SearchRequest) ([]*SearchRe
 			if err != nil {
 				return nil, err
 			}
+
+			// Re-order so matched users are first
+
 			results = append(results, res...)
 		case KIDField:
 			res, err := u.search(ctx, indexKID, req.Query, limit)
