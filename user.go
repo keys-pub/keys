@@ -59,7 +59,7 @@ type UserStatus string
 const (
 	// UserStatusOK if user was found and verified.
 	UserStatusOK UserStatus = "ok"
-	// UserStatusResourceNotFound if resources was not found.
+	// UserStatusResourceNotFound if resource (URL) was not found.
 	UserStatusResourceNotFound UserStatus = "resource-not-found"
 	// UserStatusContentNotFound if resource was found, but message was missing.
 	UserStatusContentNotFound UserStatus = "content-not-found"

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +26,7 @@ func TestSearchUsers(t *testing.T) {
 	ust := testUserStore(t, dst, scs, req, clock)
 	ctx := context.TODO()
 
-	results, err := ust.Search(ctx, &SearchRequest{})
+	results, err := ust.Search(ctx, &UserSearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
@@ -49,7 +48,7 @@ func TestSearchUsers(t *testing.T) {
 
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alic"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, 1, len(results[0].UserResults))
@@ -66,7 +65,7 @@ func TestSearchUsers(t *testing.T) {
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 	// Search "al", match both "alice" and "alicenew".
-	results, err = ust.Search(ctx, &SearchRequest{Query: "al"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "al"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, 2, len(results[0].UserResults))
@@ -79,18 +78,16 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "github", results[0].UserResults[1].User.Service)
 	require.Equal(t, "https://gist.github.com/alicenew/1", results[0].UserResults[1].User.URL)
 	require.Equal(t, 2, results[0].UserResults[1].User.Seq)
-	require.Equal(t, UserField, results[0].MatchField)
 	require.Equal(t, 2, results[0].MatchCount)
 
 	// Search "alicene", match alicenew (appears first).
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alicene"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alicene"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, 2, len(results[0].UserResults))
 	require.Equal(t, alice.ID(), results[0].KID)
 	require.Equal(t, "alicenew", results[0].UserResults[0].User.Name)
 	require.Equal(t, "alice", results[0].UserResults[1].User.Name)
-	require.Equal(t, UserField, results[0].MatchField)
 	require.Equal(t, 1, results[0].MatchCount)
 
 	// Revoke alice, update
@@ -103,7 +100,7 @@ func TestSearchUsers(t *testing.T) {
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = ust.Search(ctx, &SearchRequest{Query: "al"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "al"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, 1, len(results[0].UserResults))
@@ -120,7 +117,7 @@ func TestSearchUsers(t *testing.T) {
 	_, err = ust.Update(ctx, alice2.ID())
 	require.NoError(t, err)
 
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alic"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(results))
 	require.Equal(t, 1, len(results[0].UserResults))
@@ -142,39 +139,19 @@ func TestSearchUsers(t *testing.T) {
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alic"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice2.ID(), results[0].UserResults[0].User.KID)
 	require.Equal(t, "alice", results[0].UserResults[0].User.Name)
 	require.Equal(t, Twitter, results[0].UserResults[0].User.Service)
 
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alice@twitter"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alice@twitter"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice2.ID(), results[0].UserResults[0].User.KID)
 	require.Equal(t, "alice", results[0].UserResults[0].User.Name)
 	require.Equal(t, Twitter, results[0].UserResults[0].User.Service)
-
-	results, err = ust.Search(ctx, &SearchRequest{Query: alice2.ID().String()[:5]})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, 1, len(results[0].UserResults))
-	require.Equal(t, alice2.ID(), results[0].UserResults[0].User.KID)
-	require.Equal(t, "alice", results[0].UserResults[0].User.Name)
-	require.Equal(t, Twitter, results[0].UserResults[0].User.Service)
-
-	results, err = ust.Search(ctx, &SearchRequest{Query: alice2.ID().String()[:5], Fields: []SearchField{KIDField}})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(results[0].UserResults))
-	require.Equal(t, alice2.ID(), results[0].UserResults[0].User.KID)
-	require.Equal(t, "alice", results[0].UserResults[0].User.Name)
-	require.Equal(t, Twitter, results[0].UserResults[0].User.Service)
-
-	results, err = ust.Search(ctx, &SearchRequest{Query: ids[0].String()[:5], Fields: []SearchField{KIDField}})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, ids[0].String(), results[0].KID.String())
 
 	// Check Documents
 	iter, err := dst.Documents(context.TODO(), "kid", nil)
@@ -207,7 +184,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	ust := testUserStore(t, dst, scs, req, clock)
 	ctx := context.TODO()
 
-	results, err := ust.Search(ctx, &SearchRequest{})
+	results, err := ust.Search(ctx, &UserSearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
@@ -218,27 +195,38 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alice@github"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, 1, len(results[0].UserResults))
-	require.Equal(t, alice.ID(), results[0].UserResults[0].User.KID)
+	require.Equal(t, alice.ID(), results[0].KID)
+	require.Equal(t, TimeMs(1234567890003), results[0].UserResults[0].Timestamp)
+	require.Equal(t, TimeMs(1234567890004), results[0].UserResults[0].VerifiedAt)
 
-	// Set error for alice@github
 	data, err := req.Response("https://gist.github.com/alice/1")
 	require.NoError(t, err)
-	req.SetError("https://gist.github.com/alice/1", errors.Errorf("test error"))
+
+	// Set 500 error for alice@github
+	req.SetError("https://gist.github.com/alice/1", ErrHTTP{StatusCode: 500})
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alice@github"})
-	require.NoError(t, err)
-	require.Equal(t, 0, len(results))
-
-	results, err = ust.Search(ctx, &SearchRequest{})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
-	require.Equal(t, alice.ID().String(), results[0].KID.String())
+	require.Equal(t, 1, len(results[0].UserResults))
+	require.Equal(t, UserStatusConnFailure, results[0].UserResults[0].Status)
+	require.Equal(t, TimeMs(1234567890007), results[0].UserResults[0].Timestamp)
+	require.Equal(t, TimeMs(1234567890004), results[0].UserResults[0].VerifiedAt)
+
+	// Set 404 error for alice@github
+	req.SetError("https://gist.github.com/alice/1", ErrHTTP{StatusCode: 404})
+	_, err = ust.Update(ctx, alice.ID())
+	require.NoError(t, err)
+
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alice@github"})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(results))
 
 	// Check Documents
 	iter, err := dst.Documents(context.TODO(), "kid", nil)
@@ -260,7 +248,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = ust.Search(ctx, &SearchRequest{Query: "alice@github"})
+	results, err = ust.Search(ctx, &UserSearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice.ID().String(), results[0].KID.String())
@@ -286,7 +274,7 @@ func TestExpired(t *testing.T) {
 
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
-	results, err := ust.Search(ctx, &SearchRequest{})
+	results, err := ust.Search(ctx, &UserSearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice.ID(), results[0].UserResults[0].User.KID)
@@ -377,47 +365,28 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		name := fmt.Sprintf("a%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
+		_, err = ust.Update(ctx, key.ID())
+		require.NoError(t, err)
 	}
 	for i := 10; i < 20; i++ {
 		key, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		require.NoError(t, err)
 		name := fmt.Sprintf("b%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
-	}
-
-	kids, kerr := scs.KIDs()
-	require.NoError(t, kerr)
-	require.Equal(t, 20, len(kids))
-	for _, kid := range kids {
-		_, err := ust.Update(ctx, kid)
+		_, err = ust.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 
-	results, err := ust.Search(ctx, &SearchRequest{Query: "a"})
+	results, err := ust.Search(ctx, &UserSearchRequest{Query: "a"})
 	require.NoError(t, err)
 	require.Equal(t, 10, len(results))
 	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
 	require.Equal(t, 1, len(results[0].UserResults))
 	require.Equal(t, "a0", results[0].UserResults[0].User.Name)
-	require.Equal(t, UserField, results[0].MatchField)
 	require.Equal(t, 1, results[0].MatchCount)
 
-	results, err = ust.Search(ctx, &SearchRequest{Limit: 1000})
+	results, err = ust.Search(ctx, &UserSearchRequest{Limit: 1000})
 	require.NoError(t, err)
 	require.Equal(t, 20, len(results))
 	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
-
-	results, err = ust.Search(ctx, &SearchRequest{Query: "kpe18d4z00xwk6"})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
-	require.Equal(t, KIDField, results[0].MatchField)
-	require.Equal(t, 1, results[0].MatchCount)
-
-	results, err = ust.Search(ctx, &SearchRequest{Query: "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck"})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
-	require.Equal(t, KIDField, results[0].MatchField)
-	require.Equal(t, 1, results[0].MatchCount)
 }

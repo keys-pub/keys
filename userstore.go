@@ -252,31 +252,6 @@ func (u *UserStore) result(ctx context.Context, kid ID, service string, name str
 	return nil, nil
 }
 
-func (u *UserStore) removeKID(ctx context.Context, kid ID) error {
-	if err := u.removeExistingUsers(ctx, kid); err != nil {
-		return err
-	}
-
-	idPath := Path(indexKID, kid.String())
-	if _, err := u.dst.Delete(ctx, idPath); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *UserStore) removeExistingUsers(ctx context.Context, kid ID) error {
-	keyDoc, err := u.get(ctx, kid)
-	if err != nil {
-		return err
-	}
-	for _, result := range keyDoc.UserResults {
-		if err := u.removeUser(ctx, result.User); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (u *UserStore) removeUser(ctx context.Context, user *User) error {
 	name := fmt.Sprintf("%s@%s", user.Name, user.Service)
 	namePath := Path(indexUser, name)
@@ -357,17 +332,18 @@ func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
 	}
 
 	for _, result := range keyDoc.UserResults {
-		if result.Status != UserStatusOK {
-			// TODO: Should we not remove on connection errors (or only if a temporary error persists)?
-			logger.Infof("Removing failed user %s", result.User)
-			if err := u.removeUser(ctx, result.User); err != nil {
-				return err
-			}
-		} else {
+		switch result.Status {
+		// Index result if status ok, or a transient error
+		case UserStatusOK, UserStatusConnFailure:
 			name := indexName(result.User)
 			namePath := Path(indexUser, name)
-			logger.Infof("Indexing user %s %s", namePath, result.User.KID)
+			logger.Infof("Indexing user result %s %s", namePath, result.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
+				return err
+			}
+		default:
+			logger.Infof("Removing failed user %s", result.User)
+			if err := u.removeUser(ctx, result.User); err != nil {
 				return err
 			}
 		}
