@@ -3,6 +3,7 @@ package keys
 import (
 	"context"
 	"encoding/json"
+	"strings"
 )
 
 // SearchField is fields to restrict search to.
@@ -37,8 +38,13 @@ type SearchRequest struct {
 
 // SearchResult ...
 type SearchResult struct {
-	KID         ID            `json:"kid"`
-	UserResults []*UserResult `json:"users,omitempty"`
+	KID ID `json:"kid"`
+	// UserResults, with matched results at the beginning (of length MatchCount).
+	UserResults []*UserResult `json:"users"`
+	// MatchField is what search field we matched on.
+	MatchField SearchField `json:"matchField"`
+	// MatchCount, is number of matched results.
+	MatchCount int `json:"matchCount"`
 }
 
 func (u *UserStore) search(ctx context.Context, parent string, query string, limit int) ([]*SearchResult, error) {
@@ -98,29 +104,54 @@ func (u *UserStore) Search(ctx context.Context, req *SearchRequest) ([]*SearchRe
 		fields = []SearchField{UserField, KIDField}
 	}
 
-	results := []*SearchResult{}
+	combined := []*SearchResult{}
 
 	for _, field := range fields {
 		switch field {
 		case UserField:
-			res, err := u.search(ctx, indexUser, req.Query, limit)
+			results, err := u.search(ctx, indexUser, req.Query, limit)
 			if err != nil {
 				return nil, err
 			}
 
-			// Re-order so matched users are first
+			for _, res := range results {
+				// Re-order so matched are first
+				matched := make([]*UserResult, 0, len(res.UserResults))
+				unmatched := make([]*UserResult, 0, len(res.UserResults))
+				count := 0
+				for _, r := range res.UserResults {
+					if strings.HasPrefix(r.User.String(), req.Query) {
+						matched = append(matched, r)
+						count++
+					} else {
+						unmatched = append(unmatched, r)
+					}
+				}
+				combined = append(combined, &SearchResult{
+					KID:         res.KID,
+					UserResults: append(matched, unmatched...),
+					MatchField:  UserField,
+					MatchCount:  count,
+				})
+			}
 
-			results = append(results, res...)
 		case KIDField:
-			res, err := u.search(ctx, indexKID, req.Query, limit)
+			results, err := u.search(ctx, indexKID, req.Query, limit)
 			if err != nil {
 				return nil, err
 			}
-			results = append(results, res...)
+			for _, res := range results {
+				combined = append(combined, &SearchResult{
+					KID:         res.KID,
+					UserResults: res.UserResults,
+					MatchField:  KIDField,
+					MatchCount:  1,
+				})
+			}
 		}
 	}
 
-	results = dedupe(results, limit)
+	combined = dedupe(combined, limit)
 
-	return results, nil
+	return combined, nil
 }

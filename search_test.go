@@ -65,6 +65,7 @@ func TestSearchUsers(t *testing.T) {
 	aliceNewSt := saveUser(t, ust, scs, alice, "alicenew", "github", clock, req)
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
+	// Search "al", match both "alice" and "alicenew".
 	results, err = ust.Search(ctx, &SearchRequest{Query: "al"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
@@ -78,6 +79,19 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "github", results[0].UserResults[1].User.Service)
 	require.Equal(t, "https://gist.github.com/alicenew/1", results[0].UserResults[1].User.URL)
 	require.Equal(t, 2, results[0].UserResults[1].User.Seq)
+	require.Equal(t, UserField, results[0].MatchField)
+	require.Equal(t, 2, results[0].MatchCount)
+
+	// Search "alicene", match alicenew (appears first).
+	results, err = ust.Search(ctx, &SearchRequest{Query: "alicene"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	require.Equal(t, 2, len(results[0].UserResults))
+	require.Equal(t, alice.ID(), results[0].KID)
+	require.Equal(t, "alicenew", results[0].UserResults[0].User.Name)
+	require.Equal(t, "alice", results[0].UserResults[1].User.Name)
+	require.Equal(t, UserField, results[0].MatchField)
+	require.Equal(t, 1, results[0].MatchCount)
 
 	// Revoke alice, update
 	sc, err := scs.Sigchain(alice.ID())
@@ -385,10 +399,25 @@ func TestSearch(t *testing.T) {
 	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
 	require.Equal(t, 1, len(results[0].UserResults))
 	require.Equal(t, "a0", results[0].UserResults[0].User.Name)
+	require.Equal(t, UserField, results[0].MatchField)
+	require.Equal(t, 1, results[0].MatchCount)
 
 	results, err = ust.Search(ctx, &SearchRequest{Limit: 1000})
 	require.NoError(t, err)
 	require.Equal(t, 20, len(results))
-	require.Equal(t, "kpe1vmxkpzuj3wyw2rswl64r87h3cs7wlcrjjjctsl5luz46dg70wcesdrvvg5", results[19].KID.String())
-	require.Equal(t, 1, len(results[19].UserResults))
+	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
+
+	results, err = ust.Search(ctx, &SearchRequest{Query: "kpe18d4z00xwk6"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
+	require.Equal(t, KIDField, results[0].MatchField)
+	require.Equal(t, 1, results[0].MatchCount)
+
+	results, err = ust.Search(ctx, &SearchRequest{Query: "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	require.Equal(t, "kpe18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5ssw4wck", results[0].KID.String())
+	require.Equal(t, KIDField, results[0].MatchField)
+	require.Equal(t, 1, results[0].MatchCount)
 }
