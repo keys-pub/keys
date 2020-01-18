@@ -37,8 +37,8 @@ type SearchRequest struct {
 
 // SearchResult ...
 type SearchResult struct {
-	KID   ID            `json:"kid"`
-	Users []*UserResult `json:"users,omitempty"`
+	KID         ID            `json:"kid"`
+	UserResults []*UserResult `json:"urs,omitempty"`
 }
 
 func (u *UserStore) search(ctx context.Context, parent string, query string, limit int) ([]*SearchResult, error) {
@@ -56,13 +56,13 @@ func (u *UserStore) search(ctx context.Context, parent string, query string, lim
 		if doc == nil {
 			break
 		}
-		var res userResults
-		if err := json.Unmarshal(doc.Data, &res); err != nil {
+		var userDoc userDocument
+		if err := json.Unmarshal(doc.Data, &userDoc); err != nil {
 			return nil, err
 		}
 		results = append(results, &SearchResult{
-			KID:   res.KID,
-			Users: res.Results,
+			KID:         userDoc.KID,
+			UserResults: userDoc.UserResults,
 		})
 	}
 	iter.Release()
