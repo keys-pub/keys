@@ -30,15 +30,14 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
 	ids := []ID{}
 	for i := 10; i < 15; i++ {
-		key, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
-		require.NoError(t, err)
+		key := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		ids = append(ids, key.ID())
 		name := fmt.Sprintf("name%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
@@ -111,8 +110,7 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 2, results[0].UserResults[0].User.Seq)
 
 	// Add alice@twitter
-	alice2, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x03}, 32)))
-	require.NoError(t, err)
+	alice2 := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x03}, 32)))
 	saveUser(t, ust, scs, alice2, "alice", Twitter, clock, req)
 	_, err = ust.Update(ctx, alice2.ID())
 	require.NoError(t, err)
@@ -188,8 +186,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
@@ -267,8 +264,7 @@ func TestExpired(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
@@ -333,8 +329,7 @@ func TestGenerateUserStatement(t *testing.T) {
 	clock := newClock()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
-	key, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	key := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	req := NewMockRequestor()
 	ust := testUserStore(t, dst, scs, req, clock)
@@ -361,19 +356,17 @@ func TestSearch(t *testing.T) {
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {
-		key, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
-		require.NoError(t, err)
+		key := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("a%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
-		_, err = ust.Update(ctx, key.ID())
+		_, err := ust.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 	for i := 10; i < 20; i++ {
-		key, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
-		require.NoError(t, err)
+		key := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("b%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
-		_, err = ust.Update(ctx, key.ID())
+		_, err := ust.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 

@@ -13,8 +13,7 @@ import (
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -95,8 +94,7 @@ func TestSigchain(t *testing.T) {
 
 func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 
@@ -139,8 +137,7 @@ func TestSigchainUsers(t *testing.T) {
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())

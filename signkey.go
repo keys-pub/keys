@@ -22,7 +22,7 @@ type SignPublicKey struct {
 }
 
 // SignKeyType (Ed25519).
-const SignKeyType string = "kpe"
+const SignKeyType KeyType = "kpe"
 
 // SignKey a public/private boxKey which can sign and verify.
 type SignKey struct {
@@ -53,25 +53,25 @@ func NewSignKeyFromPrivateKey(privateKey []byte) (*SignKey, error) {
 	return &SignKey{
 		privateKey: &privateKeyBytes,
 		publicKey: &SignPublicKey{
-			id:        MustID(SignKeyType, publicKeyBytes[:]),
+			id:        MustID(string(SignKeyType), publicKeyBytes[:]),
 			publicKey: &publicKeyBytes,
 		},
 	}, nil
 }
 
 // BoxKey converts SignKey to BoxKey.
-func (k *SignKey) BoxKey() (*BoxKey, error) {
+func (k *SignKey) BoxKey() *BoxKey {
 	secretKey := ed25519PrivateKeyToCurve25519(ed25519.PrivateKey(k.privateKey[:]))
 	if len(secretKey) != 32 {
-		return nil, errors.Errorf("failed to convert key: invalid secret key bytes")
+		panic("failed to convert key: invalid secret key bytes")
 	}
-	return NewBoxKeyFromPrivateKey(Bytes32(secretKey)), nil
+	return NewBoxKeyFromPrivateKey(Bytes32(secretKey))
 }
 
 // NewSignPublicKey creates a SignPublicKey.
 func NewSignPublicKey(b *[SignPublicKeySize]byte) *SignPublicKey {
 	return &SignPublicKey{
-		id:        MustID(SignKeyType, b[:]),
+		id:        MustID(string(SignKeyType), b[:]),
 		publicKey: b,
 	}
 }
@@ -87,7 +87,7 @@ func SignPublicKeyFromID(id ID) (*SignPublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hrp != SignKeyType {
+	if hrp != string(SignKeyType) {
 		return nil, errors.Errorf("invalid key type")
 	}
 	if len(b) != SignPublicKeySize {
@@ -150,9 +150,13 @@ func (s SignPublicKey) VerifyDetached(sig []byte, b []byte) error {
 
 // NewSignKeyFromSeed constructs SignKey from an ed25519 seed.
 // The private key is derived from this seed and the public key is derived from the private key.
-func NewSignKeyFromSeed(seed *[SignKeySeedSize]byte) (*SignKey, error) {
+func NewSignKeyFromSeed(seed *[SignKeySeedSize]byte) *SignKey {
 	privateKey := ed25519.NewKeyFromSeed(seed[:])
-	return NewSignKeyFromPrivateKey(privateKey)
+	sk, err := NewSignKeyFromPrivateKey(privateKey)
+	if err != nil {
+		panic(err)
+	}
+	return sk
 }
 
 // Seed returns information on how to generate this key from ed25519 package seed.
@@ -204,9 +208,5 @@ func SignDetached(b []byte, sk *SignKey) []byte {
 func GenerateSignKey() *SignKey {
 	logger.Infof("Generating ed25519 key...")
 	seed := Rand32()
-	sk, err := NewSignKeyFromSeed(seed)
-	if err != nil {
-		panic(err)
-	}
-	return sk
+	return NewSignKeyFromSeed(seed)
 }

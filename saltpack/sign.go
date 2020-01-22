@@ -32,30 +32,24 @@ func (s *Saltpack) Verify(b []byte) ([]byte, keys.ID, error) {
 	if s.armor {
 		return s.verifyArmored(string(b))
 	}
-	spk, out, err := ksaltpack.Verify(versionValidator, b, s)
+	spk, out, err := ksaltpack.Verify(signVersionValidator, b, s)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
 
-	return out, signPublicKeyToID(spk), nil
+	return out, bytesToID(spk.ToKID(), keys.SignKeyType), nil
 }
 
 func (s *Saltpack) verifyArmored(msg string) ([]byte, keys.ID, error) {
-	spk, out, _, err := ksaltpack.Dearmor62Verify(versionValidator, msg, s)
+	spk, out, _, err := ksaltpack.Dearmor62Verify(signVersionValidator, msg, s)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return out, signPublicKeyToID(spk), nil
+	return out, bytesToID(spk.ToKID(), keys.SignKeyType), nil
 }
 
-func signPublicKeyToID(spk ksaltpack.SigningPublicKey) keys.ID {
-	b := spk.ToKID()
-	if len(b) != keys.SignPublicKeySize {
-		logger.Errorf("invalid sign public key bytes")
-		return ""
-	}
-	out := keys.NewSignPublicKey(keys.Bytes32(b))
-	return out.ID()
+func bytesToID(b []byte, typ keys.KeyType) keys.ID {
+	return keys.MustID(string(typ), b)
 }
 
 // VerifyDetached ...
@@ -64,12 +58,12 @@ func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
 		// TODO: Implement
 		return "", errors.Errorf("not implemented")
 	}
-	spk, err := ksaltpack.VerifyDetached(versionValidator, b, sig, s)
+	spk, err := ksaltpack.VerifyDetached(signVersionValidator, b, sig, s)
 	if err != nil {
 		return "", convertErr(err)
 	}
 
-	return signPublicKeyToID(spk), nil
+	return bytesToID(spk.ToKID(), keys.SignKeyType), nil
 }
 
 // NewSignStream ...
@@ -91,20 +85,20 @@ func (s *Saltpack) NewVerifyStream(r io.Reader) (io.Reader, keys.ID, error) {
 	if s.armor {
 		return s.NewVerifyArmoredStream(r)
 	}
-	spk, reader, err := ksaltpack.NewVerifyStream(versionValidator, r, s)
+	spk, reader, err := ksaltpack.NewVerifyStream(signVersionValidator, r, s)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return reader, signPublicKeyToID(spk), nil
+	return reader, bytesToID(spk.ToKID(), keys.SignKeyType), nil
 }
 
 // NewVerifyArmoredStream ...
 func (s *Saltpack) NewVerifyArmoredStream(r io.Reader) (io.Reader, keys.ID, error) {
-	spk, reader, _, err := ksaltpack.NewDearmor62VerifyStream(versionValidator, r, s)
+	spk, reader, _, err := ksaltpack.NewDearmor62VerifyStream(signVersionValidator, r, s)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return reader, signPublicKeyToID(spk), nil
+	return reader, bytesToID(spk.ToKID(), keys.SignKeyType), nil
 }
 
 // stripBefore removes text before BEGIN.

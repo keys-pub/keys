@@ -10,8 +10,7 @@ import (
 
 func TestStatement(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -29,8 +28,7 @@ func TestStatement(t *testing.T) {
 
 func TestStatementJSON(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -79,8 +77,7 @@ func TestStatementJSON(t *testing.T) {
 
 func TestStatementSpecificSerialization(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
@@ -143,8 +140,7 @@ func TestStatementSpecificSerialization(t *testing.T) {
 
 func TestStatementKeyURL(t *testing.T) {
 	clock := newClock()
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())

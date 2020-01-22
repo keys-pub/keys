@@ -4,31 +4,12 @@ import (
 	"io"
 
 	"github.com/keys-pub/keys"
-	"github.com/pkg/errors"
 
 	ksaltpack "github.com/keybase/saltpack"
 )
 
-type ephemeralKeyCreator struct{}
-
-func (c ephemeralKeyCreator) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
-	boxKey := generateBoxKey()
-	return boxKey, nil
-}
-
-func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
-	publicKeys := make([]ksaltpack.BoxPublicKey, 0, len(recipients))
-	for _, r := range recipients {
-		pk, err := s.keys.BoxPublicKeyFromID(r)
-		if err != nil {
-			return nil, errors.Wrapf(err, "invalid recipient")
-		}
-		publicKeys = append(publicKeys, newBoxPublicKey(pk))
-	}
-	return publicKeys, nil
-}
-
-// Signcrypt ...
+// Signcrypt to recipients.
+// https://saltpack.org/signcryption-format
 func (s *Saltpack) Signcrypt(b []byte, sender *keys.SignKey, recipients ...keys.ID) ([]byte, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
@@ -50,7 +31,7 @@ func (s *Saltpack) SigncryptOpen(b []byte) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return out, signPublicKeyToID(sender), nil
+	return out, bytesToID(sender.ToKID(), keys.SignKeyType), nil
 }
 
 func (s *Saltpack) signcryptArmoredOpen(b []byte) ([]byte, keys.ID, error) {
@@ -59,7 +40,7 @@ func (s *Saltpack) signcryptArmoredOpen(b []byte) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return out, signPublicKeyToID(sender), nil
+	return out, bytesToID(sender.ToKID(), keys.SignKeyType), nil
 }
 
 // NewSigncryptStream ...
@@ -83,7 +64,7 @@ func (s *Saltpack) NewSigncryptOpenStream(r io.Reader) (io.Reader, keys.ID, erro
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return stream, signPublicKeyToID(sender), nil
+	return stream, bytesToID(sender.ToKID(), keys.SignKeyType), nil
 }
 
 func (s *Saltpack) newSigncryptArmoredOpenStream(r io.Reader) (io.Reader, keys.ID, error) {
@@ -92,5 +73,12 @@ func (s *Saltpack) newSigncryptArmoredOpenStream(r io.Reader) (io.Reader, keys.I
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return stream, signPublicKeyToID(sender), nil
+	return stream, bytesToID(sender.ToKID(), keys.SignKeyType), nil
+}
+
+type ephemeralKeyCreator struct{}
+
+func (c ephemeralKeyCreator) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
+	boxKey := generateBoxKey()
+	return boxKey, nil
 }

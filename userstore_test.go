@@ -17,8 +17,7 @@ func testUserStore(t *testing.T, dst DocumentStore, scs SigchainStore, req *Mock
 }
 
 func TestNewUserForTwitterSigning(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	req := NewMockRequestor()
 	clock := newClock()
@@ -46,8 +45,7 @@ END MESSAGE.`
 }
 
 func TestNewUserMarshal(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	req := NewMockRequestor()
 	clock := newClock()
@@ -78,8 +76,7 @@ func TestNewUserMarshal(t *testing.T) {
 
 func TestUserResultGithub(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
 	req := NewMockRequestor()
@@ -87,7 +84,7 @@ func TestUserResultGithub(t *testing.T) {
 	scs := NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
 
-	err = req.SetResponseFile("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", "testdata/github/70281cc427850c272a8574af4d8564d9")
+	err := req.SetResponseFile("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", "testdata/github/70281cc427850c272a8574af4d8564d9")
 	require.NoError(t, err)
 
 	user, err := NewUserForSigning(ust, sk.ID(), "github", "alice")
@@ -122,8 +119,7 @@ func TestUserResultGithub(t *testing.T) {
 }
 
 func TestUserResultGithubWrongName(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
 	req := NewMockRequestor()
@@ -157,8 +153,7 @@ func TestUserResultGithubWrongName(t *testing.T) {
 }
 
 func TestUserResultGithubWrongService(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
 	req := NewMockRequestor()
@@ -190,8 +185,7 @@ func TestUserResultGithubWrongService(t *testing.T) {
 }
 
 func TestUserResultTwitter(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
 	req := NewMockRequestor()
@@ -233,8 +227,7 @@ func TestUserResultTwitter(t *testing.T) {
 }
 
 func TestUserUnverified(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
 	req := NewMockRequestor()
@@ -260,8 +253,7 @@ func TestUserUnverified(t *testing.T) {
 }
 
 func TestCheckNoUsers(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	sc := NewSigchain(sk.PublicKey())
 
 	req := NewMockRequestor()
@@ -281,8 +273,7 @@ func TestCheckNoUsers(t *testing.T) {
 }
 
 func TestVerifyUser(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	req := NewMockRequestor()
 	clock := newClock()
@@ -309,8 +300,7 @@ func TestVerifyUser(t *testing.T) {
 }
 
 func TestNewUser(t *testing.T) {
-	sk, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	clock := newClock()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)

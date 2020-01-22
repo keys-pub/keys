@@ -1,7 +1,7 @@
 package keys
 
 import (
-	"crypto/rand"
+	"bytes"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/curve25519"
@@ -21,7 +21,7 @@ type BoxPublicKey struct {
 }
 
 // BoxKeyType (Curve25519).
-const BoxKeyType string = "kpc"
+const BoxKeyType KeyType = "kpc"
 
 // BoxKey is a Curve25519 assymmetric encryption key.
 type BoxKey struct {
@@ -45,17 +45,9 @@ func (k BoxKey) PublicKey() *BoxPublicKey {
 	return k.publicKey
 }
 
-// GenerateBoxKey creates a new BoxKey
+// GenerateBoxKey creates a new BoxKey.
 func GenerateBoxKey() *BoxKey {
-	publicKey, privateKey, err := box.GenerateKey(rand.Reader)
-	if err != nil {
-		panic(err)
-	}
-	return &BoxKey{
-		id:         MustID(BoxKeyType, publicKey[:]),
-		publicKey:  NewBoxPublicKey(publicKey),
-		privateKey: privateKey,
-	}
+	return NewBoxKeyFromSeed(Rand32())
 }
 
 // boxPublicKeyFromID converts ID to BoxPublicKey.
@@ -64,7 +56,7 @@ func boxPublicKeyFromID(id ID) (*BoxPublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hrp != BoxKeyType {
+	if hrp != string(BoxKeyType) {
 		return nil, errors.Errorf("invalid key type")
 	}
 	if len(b) != BoxPublicKeySize {
@@ -73,12 +65,25 @@ func boxPublicKeyFromID(id ID) (*BoxPublicKey, error) {
 	return NewBoxPublicKey(Bytes32(b)), nil
 }
 
+// NewBoxKeyFromSeed from seed.
+func NewBoxKeyFromSeed(seed *[32]byte) *BoxKey {
+	publicKey, privateKey, err := box.GenerateKey(bytes.NewReader(seed[:]))
+	if err != nil {
+		panic(err)
+	}
+	return &BoxKey{
+		id:         MustID(string(BoxKeyType), publicKey[:]),
+		publicKey:  NewBoxPublicKey(publicKey),
+		privateKey: privateKey,
+	}
+}
+
 // NewBoxKeyFromPrivateKey creates a BoxKey from private key bytes.
 func NewBoxKeyFromPrivateKey(privateKey *[BoxPrivateKeySize]byte) *BoxKey {
 	publicKey := new([32]byte)
 	curve25519.ScalarBaseMult(publicKey, privateKey)
 	return &BoxKey{
-		id:         MustID(BoxKeyType, publicKey[:]),
+		id:         MustID(string(BoxKeyType), publicKey[:]),
 		privateKey: privateKey,
 		publicKey:  NewBoxPublicKey(publicKey),
 	}
@@ -96,7 +101,7 @@ func (k *BoxKey) Open(b []byte, nonce *[24]byte, sender *BoxPublicKey) ([]byte, 
 
 // NewBoxPublicKey creates BoxPublicKey.
 func NewBoxPublicKey(b *[BoxPublicKeySize]byte) *BoxPublicKey {
-	id, err := NewID(BoxKeyType, b[:])
+	id, err := NewID(string(BoxKeyType), b[:])
 	if err != nil {
 		panic(err)
 	}

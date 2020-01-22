@@ -149,6 +149,7 @@ func (k *Keystore) Delete(kid ID) (bool, error) {
 }
 
 // BoxKeys from the Keystore.
+// Also includes box keys converted from sign keys.
 func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
 		Types: []string{string(BoxItemType)},
@@ -171,10 +172,7 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 		return nil, err
 	}
 	for _, sk := range sks {
-		bk, err := sk.BoxKey()
-		if err != nil {
-			return nil, err
-		}
+		bk := sk.BoxKey()
 		keys = append(keys, bk)
 	}
 
@@ -287,9 +285,9 @@ func (k Keystore) Keys(types []ItemType) (*Keys, error) {
 	}, nil
 }
 
-// BoxPublicKeyFromID gets box public key for an ID.
+// BoxPublicKey gets box public key for an ID.
 // If key is a sign public key will convert to a box public key.
-func (k *Keystore) BoxPublicKeyFromID(id ID) (*BoxPublicKey, error) {
+func (k *Keystore) BoxPublicKey(id ID) (*BoxPublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty")
 	}
@@ -300,13 +298,13 @@ func (k *Keystore) BoxPublicKeyFromID(id ID) (*BoxPublicKey, error) {
 	}
 
 	switch hrp {
-	case BoxKeyType:
+	case string(BoxKeyType):
 		bpk, err := boxPublicKeyFromID(id)
 		if err != nil {
 			return nil, err
 		}
 		return bpk, nil
-	case SignKeyType:
+	case string(SignKeyType):
 		spk, err := SignPublicKeyFromID(id)
 		if err != nil {
 			return nil, err

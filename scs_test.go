@@ -20,8 +20,7 @@ func TestSigchainStore(t *testing.T) {
 	clock := newClock()
 	scs := testSigchainStore(t, clock)
 
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	ok, err := scs.SigchainExists(alice.ID())
 	require.NoError(t, err)
@@ -60,8 +59,7 @@ func TestSigchainStore(t *testing.T) {
 	require.NotNil(t, sc)
 	require.Equal(t, alice.ID(), sc.ID())
 
-	bob, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
-	require.NoError(t, err)
+	bob := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	scb := NewSigchain(bob.PublicKey())
 	st, err = GenerateStatement(scb, []byte("bob"), bob, "", clock.Now())
 	require.NoError(t, err)
@@ -102,8 +100,7 @@ func TestSigchainStoreSpew(t *testing.T) {
 	clock := newClock()
 	scs := testSigchainStore(t, clock)
 
-	alice, err := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	require.NoError(t, err)
+	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	sc := NewSigchain(alice.PublicKey())
 
 	st, err := GenerateStatement(sc, []byte("test1"), alice, "", clock.Now())

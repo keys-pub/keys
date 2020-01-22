@@ -17,8 +17,7 @@ func TestNewBoxKeyFromPrivateKey(t *testing.T) {
 
 func TestBoxKeyConversion(t *testing.T) {
 	sk := GenerateSignKey()
-	bk, err := sk.BoxKey()
-	require.NoError(t, err)
+	bk := sk.BoxKey()
 
 	bpk := sk.PublicKey().BoxPublicKey()
 

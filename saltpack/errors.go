@@ -9,7 +9,7 @@ import (
 
 func convertErr(err error) error {
 	if kerr, ok := err.(ksaltpack.ErrNoSenderKey); ok {
-		kid, err := keys.NewID(keys.SignKeyType, kerr.Sender)
+		kid, err := keys.NewID(string(keys.SignKeyType), kerr.Sender)
 		if err != nil {
 			return errors.Errorf("failed to parse sender key")
 		}

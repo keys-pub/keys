@@ -9,5 +9,8 @@ type Key interface {
 	Bytes() []byte
 
 	// Type of key.
-	Type() string
+	Type() KeyType
 }
+
+// KeyType ...
+type KeyType string
