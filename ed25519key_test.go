@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSaveLoadSignKey(t *testing.T) {
+func TestSaveLoadEd25519Key(t *testing.T) {
 	ks := NewMemKeystore()
-	signKey := GenerateSignKey()
+	signKey := GenerateEd25519Key()
 	err := ks.SaveSignKey(signKey)
 	require.NoError(t, err)
 	signKeyOut, err := ks.SignKey(signKey.ID())
@@ -19,15 +19,15 @@ func TestSaveLoadSignKey(t *testing.T) {
 	require.Equal(t, signKey.PublicKey(), signKeyOut.PublicKey())
 }
 
-func TestSignKeySeed(t *testing.T) {
-	signKey := GenerateSignKey()
+func TestEd25519KeySeed(t *testing.T) {
+	signKey := GenerateEd25519Key()
 	seed := signKey.Seed()
-	signKeyOut := NewSignKeyFromSeed(seed)
+	signKeyOut := NewEd25519KeyFromSeed(seed)
 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
 }
 
-func TestSignKeySignVerify(t *testing.T) {
-	signKey := GenerateSignKey()
+func TestEd25519KeySignVerify(t *testing.T) {
+	signKey := GenerateEd25519Key()
 
 	b := []byte("test message")
 	sig := Sign(b, signKey)
@@ -47,14 +47,14 @@ func TestSignKeySignVerify(t *testing.T) {
 	require.EqualError(t, err, "verify failed")
 }
 
-func TestSignKeyInvalid(t *testing.T) {
-	signKey, err := NewSignKeyFromPrivateKey([]byte{0x01})
+func TestEd25519KeyInvalid(t *testing.T) {
+	signKey, err := NewEd25519KeyFromPrivateKey([]byte{0x01})
 	require.EqualError(t, err, "invalid private key length 1")
 	require.Nil(t, signKey)
 }
 
 func ExampleSign() {
-	alice := GenerateSignKey()
+	alice := GenerateEd25519Key()
 	msg := "I'm alice 🤓"
 	sig := Sign([]byte(msg), alice)
 	out, err := alice.PublicKey().Verify(sig)

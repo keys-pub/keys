@@ -73,11 +73,11 @@ import (
 )
 
 func main() {
-    alice := keys.GenerateKey()
-    sc := keys.NewSigchain(alice.PublicKey().SignPublicKey())
+    alice := keys.GenerateEd25519Key()
+    sc := keys.NewSigchain(alice.PublicKey())
 
     // Create root statement
-    st, err := keys.GenerateStatement(sc, []byte("hi! 🤓"), alice.SignKey(), "", time.Now())
+    st, err := keys.GenerateStatement(sc, []byte("hi! 🤓"), alice, "", time.Now())
     if err != nil {
         log.Fatal(err)
     }
@@ -86,7 +86,7 @@ func main() {
     }
 
     // Add 2nd statement
-    st2, err := keys.GenerateStatement(sc, []byte("2nd message"), alice.SignKey(), "", time.Now())
+    st2, err := keys.GenerateStatement(sc, []byte("2nd message"), alice, "", time.Now())
     if err != nil {
         log.Fatal(err)
     }
@@ -95,7 +95,7 @@ func main() {
     }
 
     // Revoke 2nd statement
-    if _, err := sc.Revoke(2, alice.SignKey()); err != nil {
+    if _, err := sc.Revoke(2, alice); err != nil {
         log.Fatal(err)
     }
 

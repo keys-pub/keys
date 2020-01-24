@@ -14,7 +14,7 @@ func TestSignVerifyDefault(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	sp := NewSaltpack(nil)
 
-	alice := keys.GenerateSignKey()
+	alice := keys.GenerateEd25519Key()
 
 	message := []byte("hi")
 
@@ -30,7 +30,7 @@ func TestSignVerifyDefault(t *testing.T) {
 func TestSignVerifyArmored(t *testing.T) {
 	sp := NewSaltpack(nil)
 	sp.SetArmored(true)
-	alice := keys.GenerateSignKey()
+	alice := keys.GenerateEd25519Key()
 
 	message := []byte("hi")
 
@@ -51,7 +51,7 @@ func TestSignVerifyArmored(t *testing.T) {
 
 func TestSignVerifyDetached(t *testing.T) {
 	sp := NewSaltpack(nil)
-	alice := keys.GenerateSignKey()
+	alice := keys.GenerateEd25519Key()
 
 	message := []byte("hi")
 
@@ -65,7 +65,7 @@ func TestSignVerifyDetached(t *testing.T) {
 
 func TestSignVerifyStream(t *testing.T) {
 	sp := NewSaltpack(nil)
-	alice := keys.GenerateSignKey()
+	alice := keys.GenerateEd25519Key()
 
 	message := []byte("I'm alice")
 

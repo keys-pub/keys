@@ -10,7 +10,7 @@ import (
 
 func TestStatement(t *testing.T) {
 	clock := newClock()
-	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -21,14 +21,14 @@ func TestStatement(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, st.Bytes(), st2.Bytes())
 
-	rk := GenerateSignKey()
+	rk := GenerateEd25519Key()
 	_, err = NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.EqualError(t, err, "verify failed")
 }
 
 func TestStatementJSON(t *testing.T) {
 	clock := newClock()
-	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -77,7 +77,7 @@ func TestStatementJSON(t *testing.T) {
 
 func TestStatementSpecificSerialization(t *testing.T) {
 	clock := newClock()
-	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
@@ -140,7 +140,7 @@ func TestStatementSpecificSerialization(t *testing.T) {
 
 func TestStatementKeyURL(t *testing.T) {
 	clock := newClock()
-	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())

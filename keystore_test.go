@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"bytes"
 	"sync"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 
 func TestSignKeyItem(t *testing.T) {
 	ks := NewMemKeystore()
-	sk := GenerateSignKey()
+	sk := GenerateEd25519Key()
 	err := ks.SaveSignKey(sk)
 	require.NoError(t, err)
 	skOut, err := ks.SignKey(sk.ID())
@@ -29,7 +30,7 @@ func TestSignKeyItem(t *testing.T) {
 	err = ks.SaveSignPublicKey(sk.PublicKey())
 	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")
 
-	spk := GenerateSignKey().PublicKey()
+	spk := GenerateEd25519Key().PublicKey()
 	err = ks.SaveSignPublicKey(spk)
 	require.NoError(t, err)
 	skOut, err = ks.SignKey(spk.ID())
@@ -37,9 +38,9 @@ func TestSignKeyItem(t *testing.T) {
 	require.Nil(t, skOut)
 }
 
-func TestSignPublicKeyItem(t *testing.T) {
+func TestEd25519PublicKeyItem(t *testing.T) {
 	ks := NewMemKeystore()
-	spk := GenerateSignKey().PublicKey()
+	spk := GenerateEd25519Key().PublicKey()
 	err := ks.SaveSignPublicKey(spk)
 	require.NoError(t, err)
 	spkOut, err := ks.SignPublicKey(spk.ID())
@@ -54,7 +55,7 @@ func TestSignPublicKeyItem(t *testing.T) {
 
 func TestBoxKeyItem(t *testing.T) {
 	ks := NewMemKeystore()
-	bk := GenerateBoxKey()
+	bk := GenerateCurve25519Key()
 	err := ks.SaveBoxKey(bk)
 	require.NoError(t, err)
 	bkOut, err := ks.BoxKey(bk.ID())
@@ -65,7 +66,7 @@ func TestBoxKeyItem(t *testing.T) {
 	err = ks.SaveBoxPublicKey(bk.PublicKey())
 	require.EqualError(t, err, "failed to save box public key: existing keyring item exists of alternate type")
 
-	bpk := GenerateBoxKey().PublicKey()
+	bpk := GenerateCurve25519Key().PublicKey()
 	err = ks.SaveBoxPublicKey(bpk)
 	require.NoError(t, err)
 	bkOut, err = ks.BoxKey(bpk.ID())
@@ -74,25 +75,52 @@ func TestBoxKeyItem(t *testing.T) {
 }
 
 func TestKeystoreList(t *testing.T) {
+	// SetLogger(NewLogger(DebugLevel))
 	ks := NewMemKeystore()
-	for i := 0; i < 10; i++ {
-		sk := GenerateSignKey()
-		err := ks.SaveSignKey(sk)
-		require.NoError(t, err)
-	}
-	bk := GenerateBoxKey()
-	err := ks.SaveBoxKey(bk)
+
+	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	err := ks.SaveSignKey(sk)
+	require.NoError(t, err)
+
+	sk2 := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	err = ks.SaveSignPublicKey(sk2.PublicKey())
+	require.NoError(t, err)
+
+	bk := NewCurve25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	err = ks.SaveBoxKey(bk)
+	require.NoError(t, err)
+
+	bk2 := NewCurve25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	err = ks.SaveBoxPublicKey(bk2.PublicKey())
+	require.NoError(t, err)
+
+	// Put passphrase in keyring to ensure it doesn't confuse us
+	err = ks.set(NewPassphraseItem("passphrase1", "password"))
 	require.NoError(t, err)
 
 	out, err := ks.Keys(nil)
 	require.NoError(t, err)
-	require.Equal(t, 10, len(out.SignKeys))
-	require.Equal(t, 1, len(out.BoxKeys))
+	require.Equal(t, 4, len(out))
+
+	out, err = ks.Keys(&Opts{
+		Types: []KeyType{Curve25519, Curve25519Public},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, len(out))
+	require.Equal(t, ID("kpc15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gysuf0584"), out[0].ID())
+	require.Equal(t, ID("kpc1e6xn45wvkce7c7msc9upffw8dmxs9959q5xng369hgzcwrjc04vs0ts6h3"), out[1].ID())
+
+	out, err = ks.Keys(&Opts{
+		Types: []KeyType{Curve25519},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(out))
+	require.Equal(t, ID("kpc15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gysuf0584"), out[0].ID())
 }
 
 func TestKeystoreConcurrent(t *testing.T) {
 	ks := NewMemKeystore()
-	sk := GenerateSignKey()
+	sk := GenerateEd25519Key()
 	ks.SaveSignKey(sk)
 
 	skOut, err := ks.SignKey(sk.ID())

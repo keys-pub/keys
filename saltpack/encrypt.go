@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/keys-pub/keys"
+	"github.com/pkg/errors"
 
 	ksaltpack "github.com/keybase/saltpack"
 )
@@ -38,7 +39,10 @@ func (s *Saltpack) Decrypt(b []byte) ([]byte, keys.ID, error) {
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender = bytesToID(info.SenderKey.ToKID(), keys.BoxKeyType)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "failed to decrypt")
+		}
 	}
 	return out, sender, nil
 }
@@ -51,7 +55,10 @@ func (s *Saltpack) decryptArmored(b []byte) ([]byte, keys.ID, error) {
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender = bytesToID(info.SenderKey.ToKID(), keys.BoxKeyType)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "failed to decrypt")
+		}
 	}
 	return out, sender, nil
 }
@@ -84,7 +91,10 @@ func (s *Saltpack) NewDecryptStream(r io.Reader) (io.Reader, keys.ID, error) {
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender = bytesToID(info.SenderKey.ToKID(), keys.BoxKeyType)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "failed to decrypt")
+		}
 	}
 	return stream, sender, nil
 }
@@ -97,7 +107,10 @@ func (s *Saltpack) newDecryptArmoredStream(r io.Reader) (io.Reader, keys.ID, err
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender = bytesToID(info.SenderKey.ToKID(), keys.BoxKeyType)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "failed to decrypt")
+		}
 	}
 	return stream, sender, nil
 }

@@ -71,7 +71,7 @@ func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if item == nil || item.Type != string(SignItemType) {
+	if item == nil || item.Type != string(Ed25519) {
 		return nil, nil
 	}
 	return AsSignKey(item)
@@ -97,7 +97,7 @@ func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if item == nil || item.Type != string(BoxItemType) {
+	if item == nil || item.Type != string(Curve25519) {
 		return nil, nil
 	}
 	return AsBoxKey(item)
@@ -115,7 +115,7 @@ func (k *Keystore) SaveSignPublicKey(spk *SignPublicKey) error {
 	if err != nil {
 		return err
 	}
-	if item != nil && item.Type != string(SignPublicItemType) {
+	if item != nil && item.Type != string(Ed25519Public) {
 		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
 	}
 	return k.set(NewSignPublicKeyItem(spk))
@@ -133,7 +133,7 @@ func (k *Keystore) SaveBoxPublicKey(bpk *BoxPublicKey) error {
 	if err != nil {
 		return err
 	}
-	if item != nil && item.Type != string(BoxPublicItemType) {
+	if item != nil && item.Type != string(Curve25519Public) {
 		return errors.Errorf("failed to save box public key: existing keyring item exists of alternate type")
 	}
 	return k.set(NewBoxPublicKeyItem(bpk))
@@ -148,11 +148,72 @@ func (k *Keystore) Delete(kid ID) (bool, error) {
 	return k.Keyring().Delete(kid.String())
 }
 
+// Key for id.
+func (k *Keystore) Key(id ID) (Key, error) {
+	item, err := k.get(id.String())
+	if err != nil {
+		return nil, err
+	}
+	return keyForItem(item)
+}
+
+// keyForItem returns Key or nil if not recognized as a key.
+func keyForItem(item *keyring.Item) (Key, error) {
+	switch item.Type {
+	case string(Curve25519):
+		return AsBoxKey(item)
+	case string(Curve25519Public):
+		return AsCurve25519PublicKey(item)
+	case string(Ed25519):
+		return AsSignKey(item)
+	case string(Ed25519Public):
+		return AsSignPublicKey(item)
+	default:
+		return nil, nil
+	}
+}
+
+// Opts are options for listing keys.
+type Opts struct {
+	Types []KeyType
+}
+
+// Keys lists keys in the keyring.
+// It ignores keyring items that aren't keys or of the specified types.
+func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
+	if opts == nil {
+		opts = &Opts{}
+	}
+	logger.Debugf("Keys %+v", opts)
+	itemTypes := make([]string, 0, len(opts.Types)*2)
+	for _, t := range opts.Types {
+		itemTypes = append(itemTypes, string(t))
+	}
+	items, err := k.Keyring().List(&keyring.ListOpts{Types: itemTypes})
+	if err != nil {
+		return nil, err
+	}
+	keys := make([]Key, 0, len(items))
+	for _, item := range items {
+		logger.Debugf("Key for item type: %s", item.Type)
+		key, err := keyForItem(item)
+		if err != nil {
+			return nil, err
+		}
+		if key == nil {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	logger.Debugf("Found %d keys", len(keys))
+	return keys, nil
+}
+
 // BoxKeys from the Keystore.
 // Also includes box keys converted from sign keys.
 func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(BoxItemType)},
+		Types: []string{string(Curve25519)},
 	})
 	if err != nil {
 		return nil, err
@@ -172,7 +233,7 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 		return nil, err
 	}
 	for _, sk := range sks {
-		bk := sk.BoxKey()
+		bk := sk.Curve25519Key()
 		keys = append(keys, bk)
 	}
 
@@ -182,7 +243,7 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 // SignKeys from the Keystore.
 func (k Keystore) SignKeys() ([]*SignKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(SignItemType)},
+		Types: []string{string(Ed25519)},
 	})
 	if err != nil {
 		return nil, err
@@ -201,7 +262,7 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 // SignPublicKeys from the Keystore.
 func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(SignPublicItemType)},
+		Types: []string{string(Ed25519Public)},
 	})
 	if err != nil {
 		return nil, err
@@ -217,76 +278,8 @@ func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	return keys, nil
 }
 
-// Keys is the result from Keys.
-type Keys struct {
-	SignKeys       []*SignKey
-	SignPublicKeys []*SignPublicKey
-	BoxKeys        []*BoxKey
-	BoxPublicKeys  []*BoxPublicKey
-}
-
-// Capacity of all the keys.
-func (k Keys) Capacity() int {
-	return len(k.SignKeys) + len(k.SignPublicKeys) + len(k.BoxKeys) + len(k.BoxPublicKeys)
-}
-
-// Keys for types.
-func (k Keystore) Keys(types []ItemType) (*Keys, error) {
-	stypes := make([]string, 0, len(types))
-	for _, t := range types {
-		stypes = append(stypes, string(t))
-	}
-
-	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: stypes,
-	})
-	if err != nil {
-		return nil, err
-	}
-	sks := make([]*SignKey, 0, len(items))
-	spks := make([]*SignPublicKey, 0, len(items))
-	bks := make([]*BoxKey, 0, len(items))
-	bpks := make([]*BoxPublicKey, 0, len(items))
-	for _, item := range items {
-		switch ItemType(item.Type) {
-		case SignItemType:
-			sk, err := AsSignKey(item)
-			if err != nil {
-				return nil, err
-			}
-			sks = append(sks, sk)
-		case SignPublicItemType:
-			spk, err := AsSignPublicKey(item)
-			if err != nil {
-				return nil, err
-			}
-			spks = append(spks, spk)
-		case BoxItemType:
-			bk, err := AsBoxKey(item)
-			if err != nil {
-				return nil, err
-			}
-			bks = append(bks, bk)
-		case BoxPublicItemType:
-			bpk, err := AsBoxPublicKey(item)
-			if err != nil {
-				return nil, err
-			}
-			bpks = append(bpks, bpk)
-		default:
-			return nil, errors.Errorf("item type for list not supported yet %s", item.Type)
-		}
-	}
-	return &Keys{
-		SignKeys:       sks,
-		SignPublicKeys: spks,
-		BoxKeys:        bks,
-		BoxPublicKeys:  bpks,
-	}, nil
-}
-
 // BoxPublicKey gets box public key for an ID.
-// If key is a sign public key will convert to a box public key.
+// If the key is a sign key type it will convert to a box public key.
 func (k *Keystore) BoxPublicKey(id ID) (*BoxPublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty")
@@ -298,18 +291,18 @@ func (k *Keystore) BoxPublicKey(id ID) (*BoxPublicKey, error) {
 	}
 
 	switch hrp {
-	case string(BoxKeyType):
-		bpk, err := boxPublicKeyFromID(id)
+	case curveKeyHRP:
+		bpk, err := Curve25519PublicKeyFromID(id)
 		if err != nil {
 			return nil, err
 		}
 		return bpk, nil
-	case string(SignKeyType):
-		spk, err := SignPublicKeyFromID(id)
+	case edKeyHRP:
+		spk, err := Ed25519PublicKeyFromID(id)
 		if err != nil {
 			return nil, err
 		}
-		return spk.BoxPublicKey(), nil
+		return spk.Curve25519PublicKey(), nil
 
 	default:
 		return nil, errors.Errorf("unrecognized %s", id)

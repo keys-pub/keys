@@ -12,7 +12,7 @@ func BoxSeal(b []byte, recipient *BoxPublicKey, sender *BoxKey) []byte {
 }
 
 func sealBox(b []byte, nonce *[24]byte, recipient *BoxPublicKey, sender *BoxKey) []byte {
-	encrypted := box.Seal(nil, b, nonce, recipient.Bytes(), sender.PrivateKey())
+	encrypted := box.Seal(nil, b, nonce, recipient.Bytes32(), sender.PrivateKey())
 	return append(nonce[:], encrypted...)
 }
 
@@ -29,7 +29,7 @@ func openBox(encrypted []byte, sender *BoxPublicKey, recipient *BoxKey) ([]byte,
 	copy(nonce[:], encrypted[:24])
 	encrypted = encrypted[24:]
 
-	b, ok := box.Open(nil, encrypted, &nonce, sender.Bytes(), recipient.PrivateKey())
+	b, ok := box.Open(nil, encrypted, &nonce, sender.Bytes32(), recipient.PrivateKey())
 	if !ok {
 		return nil, errors.Errorf("box open failed")
 	}

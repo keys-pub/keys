@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/keys-pub/keys"
+	"github.com/pkg/errors"
 
 	ksaltpack "github.com/keybase/saltpack"
 )
@@ -27,20 +28,28 @@ func (s *Saltpack) SigncryptOpen(b []byte) ([]byte, keys.ID, error) {
 	if s.armor {
 		return s.signcryptArmoredOpen(b)
 	}
-	sender, out, err := ksaltpack.SigncryptOpen(b, s, nil)
+	spk, out, err := ksaltpack.SigncryptOpen(b, s, nil)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return out, bytesToID(sender.ToKID(), keys.SignKeyType), nil
+	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	if err != nil {
+		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
+	}
+	return out, sender, nil
 }
 
 func (s *Saltpack) signcryptArmoredOpen(b []byte) ([]byte, keys.ID, error) {
 	// TODO: Casting to string could be a performance issue
-	sender, out, _, err := ksaltpack.Dearmor62SigncryptOpen(string(b), s, nil)
+	spk, out, _, err := ksaltpack.Dearmor62SigncryptOpen(string(b), s, nil)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return out, bytesToID(sender.ToKID(), keys.SignKeyType), nil
+	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	if err != nil {
+		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
+	}
+	return out, sender, nil
 }
 
 // NewSigncryptStream ...
@@ -60,20 +69,28 @@ func (s *Saltpack) NewSigncryptOpenStream(r io.Reader) (io.Reader, keys.ID, erro
 	if s.armor {
 		return s.newSigncryptArmoredOpenStream(r)
 	}
-	sender, stream, err := ksaltpack.NewSigncryptOpenStream(r, s, nil)
+	spk, stream, err := ksaltpack.NewSigncryptOpenStream(r, s, nil)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return stream, bytesToID(sender.ToKID(), keys.SignKeyType), nil
+	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	if err != nil {
+		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
+	}
+	return stream, sender, nil
 }
 
 func (s *Saltpack) newSigncryptArmoredOpenStream(r io.Reader) (io.Reader, keys.ID, error) {
 	// TODO: Specifying nil for resolver will panic if box keys not found
-	sender, stream, _, err := ksaltpack.NewDearmor62SigncryptOpenStream(r, s, nil)
+	spk, stream, _, err := ksaltpack.NewDearmor62SigncryptOpenStream(r, s, nil)
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	return stream, bytesToID(sender.ToKID(), keys.SignKeyType), nil
+	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	if err != nil {
+		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
+	}
+	return stream, sender, nil
 }
 
 type ephemeralKeyCreator struct{}

@@ -12,13 +12,13 @@ import (
 // boxKey is a wrapper for keys.BoxKey to support a ksaltpack.BoxKey.
 type boxKey struct {
 	ksaltpack.BoxSecretKey
-	privateKey *[keys.BoxPrivateKeySize]byte
+	privateKey *[32]byte
 	publicKey  *boxPublicKey
 }
 
 // GenerateBoxKey creates a BoxKey.
 func generateBoxKey() boxKey {
-	bk := keys.GenerateBoxKey()
+	bk := keys.GenerateCurve25519Key()
 	return newBoxKey(bk)
 }
 
@@ -82,12 +82,12 @@ func boxPublicKeyFromKID(b []byte) *boxPublicKey {
 		return nil
 	}
 	pk := keys.Bytes32(b)
-	return newBoxPublicKey(keys.NewBoxPublicKey(pk))
+	return newBoxPublicKey(keys.NewCurve25519PublicKey(pk))
 }
 
 // ToRawBoxKeyPointer (for ksaltpack.BoxPublicKey)
 func (p *boxPublicKey) ToRawBoxKeyPointer() *ksaltpack.RawBoxKey {
-	rbk := ksaltpack.RawBoxKey(*p.pk.Bytes())
+	rbk := ksaltpack.RawBoxKey(*p.pk.Bytes32())
 	return &rbk
 }
 

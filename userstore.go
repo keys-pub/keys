@@ -129,7 +129,7 @@ func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserRes
 }
 
 // Check a user. Doesn't index result.
-func (u *UserStore) Check(ctx context.Context, user *User, spk *SignPublicKey) (*UserResult, error) {
+func (u *UserStore) Check(ctx context.Context, user *User, spk SigchainPublicKey) (*UserResult, error) {
 	res := &UserResult{
 		User: user,
 	}

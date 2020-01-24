@@ -13,7 +13,7 @@ import (
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
-	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -66,7 +66,7 @@ func TestSigchain(t *testing.T) {
 	err = sc.Add(st4)
 	require.EqualError(t, err, "no data")
 
-	_, err = GenerateStatement(sc, []byte{}, GenerateSignKey(), "", clock.Now())
+	_, err = GenerateStatement(sc, []byte{}, GenerateEd25519Key(), "", clock.Now())
 	require.EqualError(t, err, "invalid sigchain sign public key")
 
 	// Revoke invalid seq
@@ -94,7 +94,7 @@ func TestSigchain(t *testing.T) {
 
 func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
-	sk := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 
@@ -137,7 +137,7 @@ func TestSigchainUsers(t *testing.T) {
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	alice := NewSignKeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -186,7 +186,7 @@ func TestSigchainUsers(t *testing.T) {
 
 func ExampleNewSigchain() {
 	clock := newClock()
-	alice := GenerateSignKey()
+	alice := GenerateEd25519Key()
 	sc := NewSigchain(alice.PublicKey())
 
 	// Create root statement

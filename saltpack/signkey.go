@@ -1,6 +1,8 @@
 package saltpack
 
 import (
+	"golang.org/x/crypto/ed25519"
+
 	ksaltpack "github.com/keybase/saltpack"
 	"github.com/keys-pub/keys"
 	"golang.org/x/crypto/nacl/sign"
@@ -9,7 +11,7 @@ import (
 // signKey is a wrapper for keys.SignKey.
 type signKey struct {
 	ksaltpack.SigningSecretKey
-	privateKey *[keys.SignPrivateKeySize]byte
+	privateKey *[ed25519.PrivateKeySize]byte
 	publicKey  *keys.SignPublicKey
 }
 

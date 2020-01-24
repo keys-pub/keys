@@ -9,8 +9,8 @@ import (
 )
 
 func TestBoxSeal(t *testing.T) {
-	alice := GenerateBoxKey()
-	bob := GenerateBoxKey()
+	alice := GenerateCurve25519Key()
+	bob := GenerateCurve25519Key()
 
 	msg := "Hey bob, it's alice. The passcode is 12345."
 	encrypted := BoxSeal([]byte(msg), bob.PublicKey(), alice)
@@ -21,8 +21,8 @@ func TestBoxSeal(t *testing.T) {
 }
 
 func ExampleBoxSeal() {
-	ak := GenerateBoxKey()
-	bk := GenerateBoxKey()
+	ak := GenerateCurve25519Key()
+	bk := GenerateCurve25519Key()
 
 	msg := "Hey bob, it's alice. The passcode is 12345."
 	encrypted := BoxSeal([]byte(msg), bk.PublicKey(), ak)

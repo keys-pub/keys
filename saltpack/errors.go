@@ -9,11 +9,11 @@ import (
 
 func convertErr(err error) error {
 	if kerr, ok := err.(ksaltpack.ErrNoSenderKey); ok {
-		kid, err := keys.NewID(string(keys.SignKeyType), kerr.Sender)
+		id, err := bytesToID(kerr.Sender, keys.Ed25519Public)
 		if err != nil {
-			return errors.Errorf("failed to parse sender key")
+			return errors.Wrapf(err, "failed to parse sender key")
 		}
-		return keys.NewErrNotFound(kid.String())
+		return keys.NewErrNotFound(id.String())
 	}
 	// if err == ksaltpack.ErrNoDecryptionKey {
 	// 	return keys.NewErrNotFound("", keys.PublicKeyType)

@@ -112,7 +112,7 @@ func (s *Saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 		logger.Errorf("LookupBoxPublicKey len(kid) != 32")
 		return nil
 	}
-	return newBoxPublicKey(keys.NewBoxPublicKey(keys.Bytes32(kid)))
+	return newBoxPublicKey(keys.NewCurve25519PublicKey(keys.Bytes32(kid)))
 }
 
 // GetAllBoxSecretKeys returns all keys, needed if we want to support "hidden"
@@ -148,7 +148,7 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 		return nil
 	}
 	spk := keys.Bytes32(b)
-	return newSignPublicKey(keys.NewSignPublicKey(spk))
+	return newSignPublicKey(keys.NewEd25519PublicKey(spk))
 }
 
 func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
