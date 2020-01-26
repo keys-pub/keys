@@ -303,19 +303,17 @@ func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 	return nil
 }
 
-// Users (statements) signed into the sigchain.
-func (s *Sigchain) Users() []*User {
-	sts := s.FindAll("user")
-	users := make([]*User, 0, len(sts))
-	for _, st := range sts {
-		var user User
-		if err := json.Unmarshal(st.Data, &user); err != nil {
-			logger.Warningf("Invalid user in sigchain: %+v", err)
-			continue
-		}
-		users = append(users, &user)
+// User (statement) signed into the sigchain.
+func (s *Sigchain) User() (*User, error) {
+	st := s.FindLast("user")
+	if st == nil {
+		return nil, nil
 	}
-	return users
+	var user User
+	if err := json.Unmarshal(st.Data, &user); err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // FindLast search from the last statement to the first, returning after

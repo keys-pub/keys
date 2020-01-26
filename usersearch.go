@@ -3,7 +3,6 @@ package keys
 import (
 	"context"
 	"encoding/json"
-	"strings"
 )
 
 // UserSearchRequest ...
@@ -17,10 +16,8 @@ type UserSearchRequest struct {
 // UserSearchResult ...
 type UserSearchResult struct {
 	KID ID `json:"kid"`
-	// UserResults, with matched results at the beginning (of length MatchCount).
-	UserResults []*UserResult `json:"users"`
-	// MatchCount, is number of matched results.
-	MatchCount int `json:"matchCount"`
+	// UserResult.
+	UserResult *UserResult `json:"users"`
 }
 
 func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*UserSearchResult, error) {
@@ -30,7 +27,6 @@ func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*Use
 		return nil, err
 	}
 
-	kids := NewIDSet()
 	results := make([]*UserSearchResult, 0, limit)
 	for {
 		doc, err := iter.Next()
@@ -48,19 +44,9 @@ func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*Use
 			return nil, err
 		}
 
-		if kids.Contains(keyDoc.KID) {
-			continue
-		}
-		kids.Add(keyDoc.KID)
-
-		userResults := keyDoc.UserResults
-		if userResults == nil {
-			// Set empty array instead of nil
-			userResults = []*UserResult{}
-		}
 		results = append(results, &UserSearchResult{
-			KID:         keyDoc.KID,
-			UserResults: keyDoc.UserResults,
+			KID:        keyDoc.KID,
+			UserResult: keyDoc.UserResult,
 		})
 	}
 	iter.Release()
@@ -76,31 +62,5 @@ func (u *UserStore) Search(ctx context.Context, req *UserSearchRequest) ([]*User
 		limit = 100
 	}
 
-	results, err := u.search(ctx, req.Query, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([]*UserSearchResult, 0, len(results))
-	// Re-order so matched are first
-	for _, res := range results {
-		matched := make([]*UserResult, 0, len(res.UserResults))
-		unmatched := make([]*UserResult, 0, len(res.UserResults))
-		count := 0
-		for _, r := range res.UserResults {
-			if strings.HasPrefix(r.User.String(), req.Query) {
-				matched = append(matched, r)
-				count++
-			} else {
-				unmatched = append(unmatched, r)
-			}
-		}
-		out = append(out, &UserSearchResult{
-			KID:         res.KID,
-			UserResults: append(matched, unmatched...),
-			MatchCount:  count,
-		})
-	}
-
-	return out, nil
+	return u.search(ctx, req.Query, limit)
 }

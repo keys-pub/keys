@@ -16,7 +16,7 @@ type Curve25519PublicKey struct {
 
 // Curve25519 key type.
 const Curve25519 KeyType = "curve25519"
-const curveKeyHRP string = "kpc"
+const curveKeyHRP string = "kbc"
 
 // Curve25519Public public key type.
 const Curve25519Public KeyType = "curve25519-public"

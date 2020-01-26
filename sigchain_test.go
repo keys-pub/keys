@@ -104,7 +104,7 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	st0 := sc.Statements()[0]
-	expectedStatement := `{".sig":"99xVBoHGjtazE80tc74yj+mYYWr351RDQwwuCc9RjjMUkFIcDU09I8E38mlET0emZs1StXEpRJuDGfXSJ4D8BQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","seq":1,"ts":1234567890001}`
+	expectedStatement := `{".sig":"SPKxMlhPU7wiPGsszrQN3ljWdkTbKFWxqbTqtoFp/ZrV0jd1WsMxMltiyHc4/N0mUWga1zshztXQFkEcamvECg==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","seq":1,"ts":1234567890001}`
 	require.Equal(t, expectedStatement, string(st0.Bytes()))
 
 	b, err := json.Marshal(st0)
@@ -121,13 +121,13 @@ func TestSigchainJSON(t *testing.T) {
 	siErr2 := sc.Add(st2)
 	require.NoError(t, siErr2)
 	entry2 := sc.Statements()[1]
-	expectedStatement2 := `{".sig":"VNvYqMOrjRt9AZh3zAn9s7QuUeET4KmZfxbsYchfscIwigx4dezzFhRJO0DhXAB8gO64+kBtypgBj3h9DqvTBQ==","data":"AgICAgICAgICAgICAgICAg==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","prev":"3lHv3g+lPWL5G3Lh3krjntHXrSzibh/JdGP9nc7xxEo=","seq":2,"ts":1234567890002}`
+	expectedStatement2 := `{".sig":"97dCpuu8cXBnMDsbsdljBAdSVV6FaWyx+Nwvw7tsk1Riksy0k5rg8OJiN0RNXPcXlHHagPku9SIlAvgQtjLpCw==","data":"AgICAgICAgICAgICAgICAg==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","prev":"xsF9vVfMVzvoYUmrcMvWRNYpXaTrbINMgVQRHUBRQOQ=","seq":2,"ts":1234567890002}`
 	require.Equal(t, expectedStatement2, string(entry2.Bytes()))
 
 	_, siErr3 := sc.Revoke(2, sk)
 	require.NoError(t, siErr3)
 	entry3 := sc.Statements()[2]
-	expectedStatement3 := `{".sig":"fH6qw7Xv1+yKnasqAzBFpREOGk5Ly2fpLoH6WVzzuXk7OXS8sZr+k3qaeGTxwbe/OgoKPqCI1ZvbNdO+87HZAA==","kid":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","prev":"7NcCggncZpSy3bYlsRUm+a9NSJ5upn4RN63ibF0rNdg=","revoke":2,"seq":3,"type":"revoke"}`
+	expectedStatement3 := `{".sig":"odu1EYdLq8LvKAaW80Kfoil+tdPIsvug2psWmk8Xk/UTAyczw/g5PyyKypPQaJg1/sls/qGunoTY7qcKjEgZAw==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","prev":"txNhm/TGe8QKScMetXrv2UzDYBZ7ZI6u0TJDdoB9Cb0=","revoke":2,"seq":3,"type":"revoke"}`
 	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
 }
 
@@ -142,27 +142,30 @@ func TestSigchainUsers(t *testing.T) {
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
-	users := sc.Users()
-	require.Equal(t, 0, len(users))
+	user, err := sc.User()
+	require.NoError(t, err)
+	require.Nil(t, user)
 
-	user, err := NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	user, err = NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := GenerateUserStatement(sc, user, alice, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	users = sc.Users()
-	require.Equal(t, 1, len(users))
-	require.Equal(t, "alice", users[0].Name)
-	require.Equal(t, "github", users[0].Service)
-	require.Equal(t, "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", users[0].URL)
-	require.Equal(t, 1, users[0].Seq)
+	user, err = sc.User()
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	require.Equal(t, "alice", user.Name)
+	require.Equal(t, "github", user.Service)
+	require.Equal(t, "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", user.URL)
+	require.Equal(t, 1, user.Seq)
 
 	_, err = sc.Revoke(1, alice)
 	require.NoError(t, err)
-	users = sc.Users()
-	require.Equal(t, 0, len(users))
+	user, err = sc.User()
+	require.NoError(t, err)
+	require.Nil(t, user)
 
 	user2, err := NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
@@ -176,12 +179,13 @@ func TestSigchainUsers(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	users = sc.Users()
-	require.Equal(t, 1, len(users))
-	require.Equal(t, "alice", users[0].Name)
-	require.Equal(t, "github", users[0].Service)
-	require.Equal(t, "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", users[0].URL)
-	require.Equal(t, 3, users[0].Seq)
+	user, err = sc.User()
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	require.Equal(t, "alice", user.Name)
+	require.Equal(t, "github", user.Service)
+	require.Equal(t, "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", user.URL)
+	require.Equal(t, 3, user.Seq)
 }
 
 func ExampleNewSigchain() {

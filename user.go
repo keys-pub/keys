@@ -293,16 +293,18 @@ func (u *UserStore) validate(user *User) error {
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
 // GenerateUserStatement for a user to add to the sigchain.
+// Returns ErrUserAlreadySet is user already exists in the sigchain.
 func GenerateUserStatement(sc *Sigchain, user *User, sk *SignKey, ts time.Time) (*Statement, error) {
 	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}
-	// Check if we have an existing user set with the same name and service
-	users := sc.Users()
-	for _, euser := range users {
-		if euser.Service == user.Service && euser.Name == user.Name {
-			return nil, ErrUserAlreadySet
-		}
+	// Check if we have an existing user set.
+	existing, err := sc.User()
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		return nil, ErrUserAlreadySet
 	}
 
 	b, err := json.Marshal(user)

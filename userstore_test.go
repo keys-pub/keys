@@ -29,10 +29,10 @@ func TestNewUserForTwitterSigning(t *testing.T) {
 	msg, err := user.Sign(sk)
 	require.NoError(t, err)
 	expected := `BEGIN MESSAGE.
-iDAzaNexn2Pyskw kN7nPOqHMaHQAW6 eCKdqqPJjRvSYR8 nWsd3L6xJbPObZ9
-L25BID9V4AZbluY BNeXrpYoOeATCKq 6Xr2MZlres4noBA pBkewkEz5593DxH
-Pj84f5pY7PE1JEq D2gGjkgLByR9CFG 2aCgRgZZwl5UAa4 6bmBzOcQByOYlKb
-OS0ciNjMXqme7oU c8SlPAP9Gq3SDMQ Dg7eM5fLogY3MDW UqhLx.
+ppEplIb6EGgQ16A KknLXHWBCAk7nnC sFD1wTO4LXwxkP2 IJkNp4wO88fiQ7V
+spM4uMsgZVSadsq 5w2oBWmrgwtTCKq 6Xr2MZu9OMNqdcB y5bhFeVoC3DU8Lt
+GTf9lEuEJPE1JEq D2gGjkgLByR9CFG 2aCgRgZZwl5UAa4 6bmBzzrNWh22nKn
+tYyFSEaRuWpLnD1 iA1eS7hSyydvUC9 abRiM5fLogY3MDW UqhLx.
 END MESSAGE.`
 	require.Equal(t, expected, msg)
 	require.False(t, len(msg) > 280)
@@ -56,7 +56,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.NoError(t, err)
 	b, err := json.Marshal(user)
 	require.NoError(t, err)
-	require.Equal(t, `{"k":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","n":"123456789012345","sq":1,"sr":"twitter","u":"https://twitter.com/123456789012345/status/1234567890"}`, string(b))
+	require.Equal(t, `{"k":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","n":"123456789012345","sq":1,"sr":"twitter","u":"https://twitter.com/123456789012345/status/1234567890"}`, string(b))
 
 	var userOut User
 	err = json.Unmarshal(b, &userOut)
@@ -71,7 +71,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.NoError(t, err)
 	b, err = json.Marshal(user)
 	require.NoError(t, err)
-	require.Equal(t, `{"k":"kpe132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqlrnuen","n":"123456789012345","sr":"twitter"}`, string(b))
+	require.Equal(t, `{"k":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","n":"123456789012345","sr":"twitter"}`, string(b))
 }
 
 func TestUserResultGithub(t *testing.T) {
@@ -108,14 +108,14 @@ func TestUserResultGithub(t *testing.T) {
 	_, err = GenerateUserStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	results, err := ust.Update(context.TODO(), sk.ID())
+	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, UserStatusOK, results[0].Status)
-	require.Equal(t, "github", results[0].User.Service)
-	require.Equal(t, "alice", results[0].User.Name)
-	require.Equal(t, TimeMs(1234567890004), results[0].VerifiedAt)
-	require.Equal(t, TimeMs(1234567890003), results[0].Timestamp)
+	require.NotNil(t, result)
+	require.Equal(t, UserStatusOK, result.Status)
+	require.Equal(t, "github", result.User.Service)
+	require.Equal(t, "alice", result.User.Name)
+	require.Equal(t, TimeMs(1234567890004), result.VerifiedAt)
+	require.Equal(t, TimeMs(1234567890003), result.Timestamp)
 }
 
 func TestUserResultGithubWrongName(t *testing.T) {
@@ -146,10 +146,10 @@ func TestUserResultGithubWrongName(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	users, err := ust.checkSigchain(context.TODO(), sc)
-	require.Equal(t, 1, len(users))
-	require.Equal(t, UserStatusFailure, users[0].Status)
-	require.Equal(t, users[0].Err, "name mismatch alice != alice2")
+	result, err := ust.checkSigchain(context.TODO(), sc)
+	require.NotNil(t, result)
+	require.Equal(t, UserStatusFailure, result.Status)
+	require.Equal(t, result.Err, "name mismatch alice != alice2")
 }
 
 func TestUserResultGithubWrongService(t *testing.T) {
@@ -178,10 +178,10 @@ func TestUserResultGithubWrongService(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	users, err := ust.checkSigchain(context.TODO(), sc)
-	require.Equal(t, 1, len(users))
-	require.Equal(t, UserStatusFailure, users[0].Status)
-	require.Equal(t, users[0].Err, "service mismatch github != github2")
+	result, err := ust.checkSigchain(context.TODO(), sc)
+	require.NotNil(t, result)
+	require.Equal(t, UserStatusFailure, result.Status)
+	require.Equal(t, result.Err, "service mismatch github != github2")
 }
 
 func TestUserResultTwitter(t *testing.T) {
@@ -215,15 +215,15 @@ func TestUserResultTwitter(t *testing.T) {
 	err = req.SetResponseFile("https://twitter.com/bob/status/1205589994380783616", "testdata/twitter/1205589994380783616")
 	require.NoError(t, err)
 
-	users, err := ust.Update(context.TODO(), sk.ID())
+	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.Equal(t, 1, len(users))
-	require.NotNil(t, users[0].User)
-	require.Equal(t, UserStatusOK, users[0].Status)
-	require.Equal(t, Twitter, users[0].User.Service)
-	require.Equal(t, "bob", users[0].User.Name)
-	require.Equal(t, TimeMs(1234567890004), users[0].VerifiedAt)
-	require.Equal(t, TimeMs(1234567890003), users[0].Timestamp)
+	require.NotNil(t, result)
+	require.NotNil(t, result.User)
+	require.Equal(t, UserStatusOK, result.Status)
+	require.Equal(t, Twitter, result.User.Service)
+	require.Equal(t, "bob", result.User.Name)
+	require.Equal(t, TimeMs(1234567890004), result.VerifiedAt)
+	require.Equal(t, TimeMs(1234567890003), result.Timestamp)
 }
 
 func TestUserUnverified(t *testing.T) {
@@ -262,14 +262,14 @@ func TestCheckNoUsers(t *testing.T) {
 	scs := NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
 
-	users, err := ust.checkSigchain(context.TODO(), sc)
+	result, err := ust.checkSigchain(context.TODO(), sc)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(users))
+	require.Nil(t, result)
 
 	rk := GenerateEd25519Key()
-	res, err := ust.Update(context.TODO(), rk.ID())
+	result, err = ust.Update(context.TODO(), rk.ID())
 	require.NoError(t, err)
-	require.Equal(t, 0, len(res))
+	require.Nil(t, result)
 }
 
 func TestVerifyUser(t *testing.T) {

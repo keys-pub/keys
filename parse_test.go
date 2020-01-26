@@ -51,6 +51,6 @@ func TestFindInTwitter(t *testing.T) {
 	// t.Logf(msg)
 	s, err := trimSaltpackInHTML(msg, "")
 	require.NoError(t, err)
-	expected := `GvyzFZ4LLVOf2W382a4Vz3mGzpADHwGFQruUGeK4O9dsOLlhcrDxrIa8q5g8u0BoyZV7tL7twKmAXxcklFurQRTCKq6Xr2MZlres4noBApBkewkEz5593DxHPj84f5pY7PE1JEqD2gGjkgLByR9CFG2aCgRgZZwl5UAa46bmBzOc6LIzAM7PWYsOsLFSTA1rkBWlHrdZ38ykimcDQH5UCr`
+	expected := `4GzGHxrCV1mQX52SsmHqMRFVoFxjJ1U5MSWcBSZghX6c3pGpWnUnPM7yzXyUO174RObuLyx6Q8ndjy1KvBAMrTTCKq6Xr2MZu9OMNqdcBy5bhFeVoC3DU8LtGTf9lEuEJPE1JEqD2gGjkgLByR9CFG2aCgRgZZwl5UAa46bmBzzr5hHCbULzUPQDQhFimhSg2RdoCQj97oiDKhszZtgWSr`
 	require.Equal(t, expected, s)
 }

@@ -14,7 +14,7 @@ type Ed25519PublicKey struct {
 
 // Ed25519 key.
 const Ed25519 KeyType = "ed25519"
-const edKeyHRP string = "kpe"
+const edKeyHRP string = "kse"
 
 // Ed25519Public public key.
 const Ed25519Public KeyType = "ed25519-public"

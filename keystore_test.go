@@ -126,15 +126,15 @@ func TestKeystoreList(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(out))
-	require.Equal(t, ID("kpc15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gysuf0584"), out[0].ID())
-	require.Equal(t, ID("kpc1e6xn45wvkce7c7msc9upffw8dmxs9959q5xng369hgzcwrjc04vs0ts6h3"), out[1].ID())
+	require.Equal(t, bk.ID(), out[0].ID())
+	require.Equal(t, bk2.ID(), out[1].ID())
 
 	out, err = ks.Keys(&Opts{
 		Types: []KeyType{Curve25519},
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(out))
-	require.Equal(t, ID("kpc15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gysuf0584"), out[0].ID())
+	require.Equal(t, bk.ID(), out[0].ID())
 }
 
 func TestKeystoreConcurrent(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,8 +27,8 @@ func (r UserResult) String() string {
 }
 
 type keyDocument struct {
-	KID         ID            `json:"kid"`
-	UserResults []*UserResult `json:"users,omitempty"`
+	KID        ID          `json:"kid"`
+	UserResult *UserResult `json:"result,omitempty"`
 }
 
 // UserStore is the environment for user results.
@@ -68,33 +67,33 @@ func (u *UserStore) Requestor() Requestor {
 }
 
 // Update index for sigchain KID.
-func (u *UserStore) Update(ctx context.Context, kid ID) ([]*UserResult, error) {
+func (u *UserStore) Update(ctx context.Context, kid ID) (*UserResult, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
-		return []*UserResult{}, err
+		return nil, err
 	}
 	if sc == nil {
-		return []*UserResult{}, nil
+		return nil, nil
 	}
 
 	logger.Infof("Checking users %s", kid)
-	results, err := u.checkSigchain(ctx, sc)
+	result, err := u.checkSigchain(ctx, sc)
 	if err != nil {
-		return []*UserResult{}, err
+		return nil, err
 	}
 
 	keyDoc := &keyDocument{
-		KID:         kid,
-		UserResults: results,
+		KID:        kid,
+		UserResult: result,
 	}
 
-	logger.Infof("Indexing %s: %s", keyDoc.KID, strings.Join(userResultsStrings(keyDoc.UserResults), ","))
+	logger.Infof("Indexing %s: %+v", keyDoc.KID, keyDoc.UserResult)
 	if err := u.index(ctx, keyDoc); err != nil {
-		return []*UserResult{}, err
+		return nil, err
 	}
 
-	return results, nil
+	return result, nil
 }
 
 func userResultsStrings(res []*UserResult) []string {
@@ -105,27 +104,27 @@ func userResultsStrings(res []*UserResult) []string {
 	return out
 }
 
-func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) ([]*UserResult, error) {
-	users := sc.Users()
-
-	results := make([]*UserResult, 0, len(users))
-	for _, user := range users {
-		result, err := u.result(ctx, sc.ID(), user.Service, user.Name)
-		if err != nil {
-			return nil, err
-		}
-		if result == nil {
-			result = &UserResult{
-				User: user,
-			}
-		}
-		if err := u.updateResult(ctx, result, sc.PublicKey()); err != nil {
-			return nil, err
-		}
-		results = append(results, result)
+func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) (*UserResult, error) {
+	user, err := sc.User()
+	if err != nil {
+		return nil, err
 	}
-
-	return results, nil
+	if user == nil {
+		return nil, nil
+	}
+	result, err := u.result(ctx, sc.ID())
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		result = &UserResult{
+			User: user,
+		}
+	}
+	if err := u.updateResult(ctx, result, sc.PublicKey()); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // Check a user. Doesn't index result.
@@ -206,15 +205,15 @@ func (u *UserStore) ValidateStatement(st *Statement) error {
 }
 
 // Get users for KID.
-func (u *UserStore) Get(ctx context.Context, kid ID) ([]*UserResult, error) {
+func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
 	res, err := u.get(ctx, kid)
 	if err != nil {
 		return nil, err
 	}
 	if res == nil {
-		return []*UserResult{}, nil
+		return nil, nil
 	}
-	return res.UserResults, nil
+	return res.UserResult, nil
 }
 
 func (u *UserStore) get(ctx context.Context, kid ID) (*keyDocument, error) {
@@ -236,20 +235,15 @@ func (u *UserStore) get(ctx context.Context, kid ID) (*keyDocument, error) {
 	return &keyDoc, nil
 }
 
-func (u *UserStore) result(ctx context.Context, kid ID, service string, name string) (*UserResult, error) {
-	results, err := u.get(ctx, kid)
+func (u *UserStore) result(ctx context.Context, kid ID) (*UserResult, error) {
+	doc, err := u.get(ctx, kid)
 	if err != nil {
 		return nil, err
 	}
-	if results == nil {
+	if doc == nil {
 		return nil, nil
 	}
-	for _, result := range results.UserResults {
-		if result.User.Service == service && result.User.Name == name {
-			return result, nil
-		}
-	}
-	return nil, nil
+	return doc.UserResult, nil
 }
 
 func (u *UserStore) removeUser(ctx context.Context, user *User) error {
@@ -262,60 +256,22 @@ func (u *UserStore) removeUser(ctx context.Context, user *User) error {
 	return nil
 }
 
-func containsUser(results []*UserResult, result *UserResult) bool {
-	for _, c := range results {
-		if c.User.Service == result.User.Service && c.User.Name == result.User.Name {
-			return true
-		}
-	}
-	return false
-}
-
-type userDiff struct {
-	add    []*UserResult
-	remove []*UserResult
-}
-
-func (u *UserStore) diffUsers(ctx context.Context, kid ID, results []*UserResult) (*userDiff, error) {
-	add := []*UserResult{}
-	remove := []*UserResult{}
-
-	result, err := u.get(ctx, kid)
-	if err != nil {
-		return nil, err
-	}
-	existing := []*UserResult{}
-	if result != nil {
-		existing = result.UserResults
-	}
-
-	for _, a := range results {
-		if !containsUser(existing, a) {
-			add = append(add, a)
-		}
-	}
-	for _, r := range existing {
-		if !containsUser(results, r) {
-			remove = append(remove, r)
-		}
-	}
-	return &userDiff{
-		add:    add,
-		remove: remove,
-	}, nil
-}
-
 const indexKID = "kid"
 const indexUser = "user"
 
 func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
-	diff, err := u.diffUsers(ctx, keyDoc.KID, keyDoc.UserResults)
+	// Remove existing if different
+	existing, err := u.get(ctx, keyDoc.KID)
 	if err != nil {
 		return err
 	}
-	for _, r := range diff.remove {
-		if err := u.removeUser(ctx, r.User); err != nil {
-			return err
+	if existing != nil && existing.UserResult != nil && existing.UserResult.User != nil {
+		if keyDoc.UserResult == nil || keyDoc.UserResult.User == nil ||
+			(existing.UserResult.User.Name != keyDoc.UserResult.User.Name &&
+				existing.UserResult.User.Service != keyDoc.UserResult.User.Service) {
+			if err := u.removeUser(ctx, existing.UserResult.User); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -331,12 +287,12 @@ func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
 		return err
 	}
 
-	for _, result := range keyDoc.UserResults {
+	if keyDoc.UserResult != nil {
 		index := false
-		if result.VerifiedAt == 0 {
-			logger.Errorf("Never verified user result in indexing: %v", result)
+		if keyDoc.UserResult.VerifiedAt == 0 {
+			logger.Errorf("Never verified user result in indexing: %v", keyDoc.UserResult)
 		} else {
-			switch result.Status {
+			switch keyDoc.UserResult.Status {
 			// Index result if status ok, or a transient error
 			case UserStatusOK, UserStatusConnFailure:
 				index = true
@@ -344,15 +300,15 @@ func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
 		}
 
 		if index {
-			name := indexName(result.User)
+			name := indexName(keyDoc.UserResult.User)
 			namePath := Path(indexUser, name)
-			logger.Infof("Indexing user result %s %s", namePath, result.User.KID)
+			logger.Infof("Indexing user result %s %s", namePath, keyDoc.UserResult.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
 				return err
 			}
 		} else {
-			logger.Infof("Removing failed user %s", result.User)
-			if err := u.removeUser(ctx, result.User); err != nil {
+			logger.Infof("Removing failed user %s", keyDoc.UserResult.User)
+			if err := u.removeUser(ctx, keyDoc.UserResult.User); err != nil {
 				return err
 			}
 		}
@@ -384,12 +340,10 @@ func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error)
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		for _, result := range keyDoc.UserResults {
-			ts := TimeFromMillis(result.Timestamp)
-			if ts.IsZero() || u.Now().Sub(ts) > dt {
-				kids = append(kids, result.User.KID)
-				break
-			}
+		ts := TimeFromMillis(keyDoc.UserResult.Timestamp)
+		if ts.IsZero() || u.Now().Sub(ts) > dt {
+			kids = append(kids, keyDoc.UserResult.User.KID)
+			break
 		}
 	}
 	iter.Release()
