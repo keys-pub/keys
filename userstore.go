@@ -340,10 +340,12 @@ func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error)
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		ts := TimeFromMillis(keyDoc.UserResult.Timestamp)
-		if ts.IsZero() || u.Now().Sub(ts) > dt {
-			kids = append(kids, keyDoc.UserResult.User.KID)
-			break
+		if keyDoc.UserResult != nil {
+			ts := TimeFromMillis(keyDoc.UserResult.Timestamp)
+			if ts.IsZero() || u.Now().Sub(ts) > dt {
+				kids = append(kids, keyDoc.UserResult.User.KID)
+				break
+			}
 		}
 	}
 	iter.Release()

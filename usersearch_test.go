@@ -246,6 +246,14 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, 0, len(ids))
 
 	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+
+	_, err = ust.Update(ctx, alice.ID())
+	require.NoError(t, err)
+
+	ids, err = ust.Expired(ctx, time.Hour)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(ids))
+
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
