@@ -17,12 +17,37 @@ func NewBoxKeyItem(key *BoxKey) *keyring.Item {
 }
 
 // AsBoxKey returns BoxKey for keyring Item.
+// If item is SignKey returns converted to BoxKey.
 func AsBoxKey(item *keyring.Item) (*BoxKey, error) {
-	if item.Type != string(Curve25519) {
+	switch item.Type {
+	case string(Curve25519):
+		bk := NewCurve25519KeyFromPrivateKey(Bytes32(item.SecretData()))
+		return bk, nil
+	case string(Ed25519):
+		sk, err := AsSignKey(item)
+		if err != nil {
+			return nil, err
+		}
+		return sk.Curve25519Key(), nil
+	default:
 		return nil, errors.Errorf("item type %s != %s", item.Type, string(Curve25519))
 	}
-	BoxKey := NewCurve25519KeyFromPrivateKey(Bytes32(item.SecretData()))
-	return BoxKey, nil
+}
+
+// AsBoxPublicKey returns BoxPublicKey for keyring Item.
+func AsBoxPublicKey(item *keyring.Item) (*BoxPublicKey, error) {
+	switch item.Type {
+	case string(Curve25519Public):
+		return NewCurve25519PublicKey(Bytes32(item.SecretData())), nil
+	case string(Curve25519):
+		bk, err := AsBoxKey(item)
+		if err != nil {
+			return nil, err
+		}
+		return bk.PublicKey(), nil
+	default:
+		return nil, errors.Errorf("invalid item type for sign public key: %s", item.Type)
+	}
 }
 
 // NewSignKeyItem creates keyring item for SignKey.

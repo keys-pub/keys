@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSignKeyItem(t *testing.T) {
+func TestEd25519KeyItem(t *testing.T) {
 	ks := NewMemKeystore()
 	sk := GenerateEd25519Key()
 	err := ks.SaveSignKey(sk)
@@ -53,7 +53,26 @@ func TestEd25519PublicKeyItem(t *testing.T) {
 	require.Equal(t, spk.Bytes()[:], spks[0].Bytes()[:])
 }
 
-func TestBoxKeyItem(t *testing.T) {
+func TestFindEd25519PublicKey(t *testing.T) {
+	ks := NewMemKeystore()
+	sk := GenerateEd25519Key()
+	err := ks.SaveSignKey(sk)
+	require.NoError(t, err)
+
+	spkConv, err := ks.FindEd25519PublicKey(sk.PublicKey().Curve25519PublicKey())
+	require.NoError(t, err)
+	require.Equal(t, sk.PublicKey().Bytes(), spkConv.Bytes())
+
+	spk := GenerateEd25519Key().PublicKey()
+	err = ks.SaveSignPublicKey(spk)
+	require.NoError(t, err)
+
+	spkConv2, err := ks.FindEd25519PublicKey(spk.Curve25519PublicKey())
+	require.NoError(t, err)
+	require.Equal(t, spk.Bytes(), spkConv2.Bytes())
+}
+
+func TestCurve25519KeyItem(t *testing.T) {
 	ks := NewMemKeystore()
 	bk := GenerateCurve25519Key()
 	err := ks.SaveBoxKey(bk)

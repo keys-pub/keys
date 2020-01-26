@@ -16,11 +16,15 @@ func (s *Saltpack) Signcrypt(b []byte, sender *keys.SignKey, recipients ...keys.
 	if err != nil {
 		return nil, err
 	}
+	if sender == nil {
+		return nil, errors.Errorf("no sender specified")
+	}
+	sk := newSignKey(sender)
 	if s.armor {
-		s, err := ksaltpack.SigncryptArmor62Seal(b, ephemeralKeyCreator{}, newSignKey(sender), recs, nil, s.armorBrand)
+		s, err := ksaltpack.SigncryptArmor62Seal(b, ephemeralKeyCreator{}, sk, recs, nil, s.armorBrand)
 		return []byte(s), err
 	}
-	return ksaltpack.SigncryptSeal(b, ephemeralKeyCreator{}, newSignKey(sender), recs, nil)
+	return ksaltpack.SigncryptSeal(b, ephemeralKeyCreator{}, sk, recs, nil)
 }
 
 // SigncryptOpen ...

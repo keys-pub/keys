@@ -33,7 +33,10 @@ func TestSigncrypt(t *testing.T) {
 	require.Equal(t, alice.PublicKey().ID(), sender)
 
 	_, err = spa.Signcrypt(message, alice, keys.ID(""))
-	require.EqualError(t, err, "invalid recipient: empty")
+	require.EqualError(t, err, "invalid recipient: empty id")
+
+	_, err = spa.Signcrypt(message, nil, bob.ID())
+	require.EqualError(t, err, "no sender specified")
 }
 
 func TestSigncryptStream(t *testing.T) {

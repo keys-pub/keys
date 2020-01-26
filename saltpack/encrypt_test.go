@@ -33,7 +33,7 @@ func TestEncrypt(t *testing.T) {
 	require.Equal(t, alice.PublicKey().ID(), sender)
 
 	_, err = spa.Encrypt(message, alice, keys.ID(""))
-	require.EqualError(t, err, "invalid recipient: empty")
+	require.EqualError(t, err, "invalid recipient: empty id")
 }
 
 func TestEncryptAnon(t *testing.T) {

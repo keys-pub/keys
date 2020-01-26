@@ -17,7 +17,6 @@ type Saltpack struct {
 
 // Keystore ...
 type Keystore interface {
-	BoxPublicKey(id keys.ID) (*keys.BoxPublicKey, error)
 	BoxKeys() ([]*keys.BoxKey, error)
 }
 
@@ -154,9 +153,12 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
 	publicKeys := make([]ksaltpack.BoxPublicKey, 0, len(recipients))
 	for _, r := range recipients {
-		pk, err := s.keys.BoxPublicKey(r)
+		pk, err := keys.BoxPublicKeyForID(r)
 		if err != nil {
 			return nil, errors.Wrapf(err, "invalid recipient")
+		}
+		if pk == nil {
+			return nil, errors.Wrapf(err, "recipient not found %s", r)
 		}
 		publicKeys = append(publicKeys, newBoxPublicKey(pk))
 	}

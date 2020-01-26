@@ -97,3 +97,36 @@ func (i ID) WithSeq(seq int) string {
 	}
 	return fmt.Sprintf("%s-%015d", i, seq)
 }
+
+// IsEd25519 returns true if ID represents a Ed25519 key.
+func (i ID) IsEd25519() bool {
+	hrp, _, err := i.Decode()
+	if err != nil {
+		return false
+	}
+	return hrp == edKeyHRP
+}
+
+// IsCurve25519 returns true if ID represents a Curve25519 key.
+func (i ID) IsCurve25519() bool {
+	hrp, _, err := i.Decode()
+	if err != nil {
+		return false
+	}
+	return hrp == curveKeyHRP
+}
+
+// KeyType returns public key type that ID represents or empty string if unknown.
+func (i ID) KeyType() KeyType {
+	hrp, _, err := i.Decode()
+	if err != nil {
+		return ""
+	}
+	switch hrp {
+	case edKeyHRP:
+		return Ed25519Public
+	case curveKeyHRP:
+		return Curve25519Public
+	}
+	return ""
+}

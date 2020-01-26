@@ -1,6 +1,8 @@
 package keys
 
 import (
+	"bytes"
+
 	"github.com/keys-pub/keys/keyring"
 	"github.com/pkg/errors"
 )
@@ -77,7 +79,9 @@ func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
 	return AsSignKey(item)
 }
 
-// SignPublicKey returns sign public key for a key identifier.
+// SignPublicKey returns sign public key from the Keystore.
+// Since the public key itself is in the ID, you can convert the ID without
+// getting it from the keystore via SignPublicKeyForID.
 func (k *Keystore) SignPublicKey(kid ID) (*SignPublicKey, error) {
 	logger.Infof("Keystore load sign public key for %s", kid)
 	item, err := k.get(kid.String())
@@ -108,7 +112,7 @@ func (k *Keystore) SaveSignKey(signKey *SignKey) error {
 	return k.set(NewSignKeyItem(signKey))
 }
 
-// SaveSignPublicKey saves
+// SaveSignPublicKey saves SignPublicKey to the Keystore.
 func (k *Keystore) SaveSignPublicKey(spk *SignPublicKey) error {
 	// Check we don't clobber an existing sign key
 	item, err := k.get(spk.ID().String())
@@ -212,8 +216,9 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 // BoxKeys from the Keystore.
 // Also includes box keys converted from sign keys.
 func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
+	logger.Debugf("Loading box keys...")
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(Curve25519)},
+		Types: []string{string(Curve25519), string(Ed25519)},
 	})
 	if err != nil {
 		return nil, err
@@ -226,17 +231,7 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 		}
 		keys = append(keys, key)
 	}
-
-	// Include box keys converted from sign keys.
-	sks, err := k.SignKeys()
-	if err != nil {
-		return nil, err
-	}
-	for _, sk := range sks {
-		bk := sk.Curve25519Key()
-		keys = append(keys, bk)
-	}
-
+	logger.Debugf("Found %d box keys", len(keys))
 	return keys, nil
 }
 
@@ -260,51 +255,96 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 }
 
 // SignPublicKeys from the Keystore.
+// Includes public keys of SignKey's.
 func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(Ed25519Public)},
+		Types: []string{
+			string(Ed25519),
+			string(Ed25519Public),
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	keys := make([]*SignPublicKey, 0, len(items))
 	for _, item := range items {
-		key, err := AsSignPublicKey(item)
-		if err != nil {
-			return nil, err
+		switch item.Type {
+		case string(Ed25519):
+			key, err := AsSignKey(item)
+			if err != nil {
+				return nil, err
+			}
+			keys = append(keys, key.PublicKey())
+		case string(Ed25519Public):
+			key, err := AsSignPublicKey(item)
+			if err != nil {
+				return nil, err
+			}
+			keys = append(keys, key)
 		}
-		keys = append(keys, key)
 	}
 	return keys, nil
 }
 
-// BoxPublicKey gets box public key for an ID.
-// If the key is a sign key type it will convert to a box public key.
-func (k *Keystore) BoxPublicKey(id ID) (*BoxPublicKey, error) {
-	if id == "" {
-		return nil, errors.Errorf("empty")
-	}
-
-	hrp, _, err := id.Decode()
+// BoxPublicKey returns box public key from the Keystore.
+// Since the public key itself is in the ID, you can convert the ID without
+// getting it from the keystore via BoxPublicKeyForID.
+func (k *Keystore) BoxPublicKey(kid ID) (*BoxPublicKey, error) {
+	logger.Infof("Keystore load box public key for %s", kid)
+	item, err := k.get(kid.String())
 	if err != nil {
 		return nil, err
 	}
+	if item == nil {
+		return nil, nil
+	}
+	return AsBoxPublicKey(item)
+}
 
-	switch hrp {
-	case curveKeyHRP:
-		bpk, err := Curve25519PublicKeyFromID(id)
-		if err != nil {
-			return nil, err
-		}
-		return bpk, nil
-	case edKeyHRP:
+// SignPublicKeyForID converts ID to a sign public key.
+func SignPublicKeyForID(id ID) (*SignPublicKey, error) {
+	if id == "" {
+		return nil, errors.Errorf("empty id")
+	}
+	if id.IsEd25519() {
+		return Ed25519PublicKeyFromID(id)
+	}
+	return nil, errors.Errorf("unrecognized id %s", id)
+}
+
+// BoxPublicKeyForID converts ID to a box public key.
+// If the key is a sign key type it will convert to a box public key.
+func BoxPublicKeyForID(id ID) (*BoxPublicKey, error) {
+	if id == "" {
+		return nil, errors.Errorf("empty id")
+	}
+	if id.IsCurve25519() {
+		return Curve25519PublicKeyFromID(id)
+	}
+	if id.IsEd25519() {
 		spk, err := Ed25519PublicKeyFromID(id)
 		if err != nil {
 			return nil, err
 		}
 		return spk.Curve25519PublicKey(), nil
-
-	default:
-		return nil, errors.Errorf("unrecognized %s", id)
 	}
+	return nil, errors.Errorf("unrecognized id %s", id)
+}
+
+// FindEd25519PublicKey searches all our Ed25519 public keys for a match to a converted
+// Curve25519 public key.
+func (k *Keystore) FindEd25519PublicKey(bpk *Curve25519PublicKey) (*Ed25519PublicKey, error) {
+	logger.Debugf("Finding ed25519 key from curve25519 key %s", bpk.ID())
+	spks, err := k.SignPublicKeys()
+	if err != nil {
+		return nil, err
+	}
+	for _, spk := range spks {
+		if bytes.Equal(spk.Curve25519PublicKey().Bytes(), bpk.Bytes()) {
+			logger.Debugf("Found ed25519 key %s", spk.ID())
+			return spk, nil
+		}
+	}
+	logger.Debugf("Ed25519 key not found")
+	return nil, err
 }
