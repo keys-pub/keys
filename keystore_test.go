@@ -163,3 +163,19 @@ func TestKeystoreConcurrent(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestExportImportKey(t *testing.T) {
+	sk := GenerateEd25519Key()
+	ks := NewMemKeystore()
+	err := ks.SaveKey(sk)
+	require.NoError(t, err)
+
+	password := "testpassword"
+	msg, err := ks.ExportSaltpack(sk.ID(), password)
+	require.NoError(t, err)
+
+	ks2 := NewMemKeystore()
+	key, err := ks2.ImportSaltpack(msg, "testpassword", false)
+	require.NoError(t, err)
+	require.Equal(t, sk.ID(), key.ID())
+}

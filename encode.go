@@ -144,36 +144,36 @@ func IsASCII(b []byte) bool {
 	return isASCII
 }
 
-func trimMessage(msg string) string {
-	base62Only := func(r rune) rune {
+func trimSaltpack(msg string, allowSpace bool) string {
+	charsOnly := func(r rune) rune {
 		// 0-9, A-Z, a-z
 		if (r >= 0x30 && r <= 0x39) || (r >= 0x41 && r <= 0x5A) || (r >= 0x61 && r <= 0x7A) {
 			return r
 		}
+		if allowSpace && r == ' ' {
+			return r
+		}
 		return -1
 	}
-	return strings.Map(base62Only, msg)
+	return strings.Map(charsOnly, msg)
 }
 
-// EncodeSaltpackMessage encodes bytes to saltpack message of the form:
-// BEGIN {brand} MESSAGE.
-// {content}
-// END {brand} MESSAGE.
-func EncodeSaltpackMessage(b []byte, brand string) string {
+// EncodeSaltpack encodes bytes to saltpack message.
+func EncodeSaltpack(b []byte, brand string) string {
 	return saltpackStart(brand) + "\n" + encodeSaltpack(b) + "\n" + saltpackEnd(brand)
 }
 
-// DecodeSaltpackMessage decodes saltpack message.
-func DecodeSaltpackMessage(msg string, brand string) ([]byte, error) {
-	trim, err := trimSaltpackInHTML(msg, brand)
-	if err != nil {
-		return nil, err
+// DecodeSaltpack decodes saltpack message.
+func DecodeSaltpack(msg string, isHTML bool) ([]byte, string, error) {
+	s, brand := findSaltpack(msg, isHTML)
+	if s == "" {
+		return nil, "", nil
 	}
-	b, err := Decode(trim, Base62)
+	b, err := Decode(s, Base62)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode saltpack message")
+		return nil, "", errors.Wrapf(err, "failed to decode saltpack message")
 	}
-	return b, nil
+	return b, brand, nil
 }
 
 func encodeSaltpack(b []byte) string {
@@ -183,7 +183,7 @@ func encodeSaltpack(b []byte) string {
 }
 
 func decodeSaltpack(s string) ([]byte, error) {
-	s = trimMessage(s)
+	s = trimSaltpack(s, false)
 	return Decode(s, Base62)
 }
 
@@ -195,4 +195,60 @@ func hasUpper(s string) bool {
 		}
 	}
 	return false
+}
+
+// Brand is saltpack brand.
+type Brand string
+
+// Ed25519Brand is saltpack brand for Ed25519 key.
+const Ed25519Brand Brand = "ED25519 KEY"
+
+// Curve25519Brand is saltpack brand for Curve25519 key.
+const Curve25519Brand Brand = "CURVE25519 KEY"
+
+// EncodeKeyToSaltpack encrypts a key to saltpack with password.
+func EncodeKeyToSaltpack(key Key, password string) (string, error) {
+	var brand Brand
+	b := key.Bytes()
+	switch key.Type() {
+	case Ed25519:
+		brand = Ed25519Brand
+	case Curve25519:
+		brand = Curve25519Brand
+	default:
+		return "", errors.Errorf("unsupported key type %s", key.Type())
+	}
+	out := EncryptWithPassword(b, password)
+	return EncodeSaltpack(out, string(brand)), nil
+}
+
+// DecodeKeyFromSaltpack decrypts a saltpack encrypted key.
+func DecodeKeyFromSaltpack(msg string, password string, isHTML bool) (Key, error) {
+	encrypted, brand, err := DecodeSaltpack(msg, isHTML)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse saltpack")
+	}
+	b, err := DecryptWithPassword(encrypted, password)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decrypt saltpack encoded key")
+	}
+	if brand == "" {
+		return nil, errors.Errorf("unable to determine key type from saltpack brand")
+	}
+	switch brand {
+	case string(Ed25519Brand):
+		if len(b) != 64 {
+			return nil, errors.Errorf("invalid number of bytes for ed25519 seed")
+		}
+		sk := NewEd25519KeyFromPrivateKey(Bytes64(b))
+		return sk, nil
+	case string(Curve25519Brand):
+		if len(b) != 32 {
+			return nil, errors.Errorf("invalid number of bytes for curve25519 private key")
+		}
+		bk := NewCurve25519KeyFromPrivateKey(Bytes32(b))
+		return bk, nil
+	default:
+		return nil, errors.Errorf("unknown key type %s", brand)
+	}
 }

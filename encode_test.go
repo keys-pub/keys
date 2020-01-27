@@ -70,7 +70,7 @@ func TestHasUpper(t *testing.T) {
 
 func TestSaltpackEncode(t *testing.T) {
 	b := bytes.Repeat([]byte{0x01}, 128)
-	msg := EncodeSaltpackMessage(b, "TEST")
+	msg := EncodeSaltpack(b, "TEST")
 	expected := `BEGIN TEST MESSAGE.
 0El6XFXwsUFD8J2 vGxsaboW7rZYnQR BP5d9erwRwd290E l6XFXwsUFD8J2vG
 xsaboW7rZYnQRBP 5d9erwRwd290El6 XFXwsUFD8J2vGxs aboW7rZYnQRBP5d
@@ -78,11 +78,33 @@ xsaboW7rZYnQRBP 5d9erwRwd290El6 XFXwsUFD8J2vGxs aboW7rZYnQRBP5d
 END TEST MESSAGE.`
 	require.Equal(t, expected, msg)
 
-	msg = EncodeSaltpackMessage(b, "")
+	out, brand, err := DecodeSaltpack(msg, false)
+	require.NoError(t, err)
+	require.Equal(t, b, out)
+	require.Equal(t, "TEST", brand)
+
+	msg = EncodeSaltpack(b, "")
 	expected = `BEGIN MESSAGE.
 0El6XFXwsUFD8J2 vGxsaboW7rZYnQR BP5d9erwRwd290E l6XFXwsUFD8J2vG
 xsaboW7rZYnQRBP 5d9erwRwd290El6 XFXwsUFD8J2vGxs aboW7rZYnQRBP5d
 9erwRwd290El6XF XwsUFD8J2vGxsab oW7rZYnQRBP5d9e rwRwd29.
 END MESSAGE.`
 	require.Equal(t, expected, msg)
+}
+
+func TestEncodeDecodeKey(t *testing.T) {
+	sk := GenerateEd25519Key()
+	msg, err := EncodeKeyToSaltpack(sk, "testpassword")
+	require.NoError(t, err)
+
+	t.Logf(msg)
+
+	_, err = DecodeKeyFromSaltpack(msg, "invalidpassword", false)
+	require.EqualError(t, err, "failed to decrypt saltpack encoded key: failed to decrypt with a password: secretbox open failed")
+
+	skOut, err := DecodeKeyFromSaltpack(msg, "testpassword", false)
+	require.NoError(t, err)
+
+	require.Equal(t, sk.Type(), skOut.Type())
+	require.Equal(t, sk.Bytes(), skOut.Bytes())
 }

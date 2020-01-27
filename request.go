@@ -159,6 +159,7 @@ func (r *MockRequestor) Response(url string) ([]byte, error) {
 		return nil, errors.Errorf("no mock response for %s", url)
 	}
 	logger.Debugf("Mock response %s, data=%d; err=%s", url, len(resp.data), resp.err)
+	// logger.Debugf("Mock data: %s", string(resp.data))
 	return resp.data, resp.err
 }
 

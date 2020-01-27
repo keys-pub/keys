@@ -27,16 +27,12 @@ type Ed25519Key struct {
 
 // NewEd25519KeyFromPrivateKey constructs Ed25519Key from a private key.
 // The public key is derived from the private key.
-func NewEd25519KeyFromPrivateKey(privateKey []byte) (*Ed25519Key, error) {
-	if len(privateKey) != ed25519.PrivateKeySize {
-		return nil, errors.Errorf("invalid private key length %d", len(privateKey))
-	}
-
+func NewEd25519KeyFromPrivateKey(privateKey *[ed25519.PrivateKeySize]byte) *Ed25519Key {
 	// Derive public key from private key
-	edpk := ed25519.PrivateKey(privateKey)
+	edpk := ed25519.PrivateKey(privateKey[:])
 	publicKey := edpk.Public().(ed25519.PublicKey)
 	if len(publicKey) != ed25519.PublicKeySize {
-		return nil, errors.Errorf("invalid public key bytes (len=%d)", len(publicKey))
+		panic(errors.Errorf("invalid public key bytes (len=%d)", len(publicKey)))
 	}
 
 	var privateKeyBytes [ed25519.PrivateKeySize]byte
@@ -51,7 +47,7 @@ func NewEd25519KeyFromPrivateKey(privateKey []byte) (*Ed25519Key, error) {
 			id:        MustID(edKeyHRP, publicKeyBytes[:]),
 			publicKey: &publicKeyBytes,
 		},
-	}, nil
+	}
 }
 
 // Curve25519Key converts Ed25519Key to Curve25519Key.
@@ -172,11 +168,7 @@ func (s Ed25519PublicKey) VerifyDetached(sig []byte, b []byte) error {
 // The private key is derived from this seed and the public key is derived from the private key.
 func NewEd25519KeyFromSeed(seed *[ed25519.SeedSize]byte) *Ed25519Key {
 	privateKey := ed25519.NewKeyFromSeed(seed[:])
-	sk, err := NewEd25519KeyFromPrivateKey(privateKey)
-	if err != nil {
-		panic(err)
-	}
-	return sk
+	return NewEd25519KeyFromPrivateKey(Bytes64(privateKey))
 }
 
 // Seed returns information on how to generate this key from ed25519 package seed.

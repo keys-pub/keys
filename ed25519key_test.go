@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"testing"
@@ -47,10 +48,8 @@ func TestEd25519KeySignVerify(t *testing.T) {
 	require.EqualError(t, err, "verify failed")
 }
 
-func TestEd25519KeyInvalid(t *testing.T) {
-	signKey, err := NewEd25519KeyFromPrivateKey([]byte{0x01})
-	require.EqualError(t, err, "invalid private key length 1")
-	require.Nil(t, signKey)
+func TestNewEd25519KeyFromPrivateKey(t *testing.T) {
+	_ = NewEd25519KeyFromPrivateKey(Bytes64(bytes.Repeat([]byte{0x01}, 64)))
 }
 
 func ExampleSign() {

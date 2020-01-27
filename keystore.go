@@ -348,3 +348,36 @@ func (k *Keystore) FindEd25519PublicKey(bpk *Curve25519PublicKey) (*Ed25519Publi
 	logger.Debugf("Ed25519 key not found")
 	return nil, err
 }
+
+// SaveKey saves Key based on its type.
+func (k *Keystore) SaveKey(key Key) error {
+	switch v := key.(type) {
+	case *Ed25519Key:
+		return k.SaveSignKey(v)
+	case *Curve25519Key:
+		return k.SaveBoxKey(v)
+	default:
+		return errors.Errorf("unsupported key")
+	}
+}
+
+// ImportSaltpack imports key into the keystore from a saltpack message.
+func (k *Keystore) ImportSaltpack(msg string, password string, isHTML bool) (Key, error) {
+	key, err := DecodeKeyFromSaltpack(msg, password, isHTML)
+	if err != nil {
+		return nil, err
+	}
+	if err := k.SaveKey(key); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+// ExportSaltpack exports key from the keystore to a saltpack message.
+func (k *Keystore) ExportSaltpack(id ID, password string) (string, error) {
+	key, err := k.Key(id)
+	if err != nil {
+		return "", err
+	}
+	return EncodeKeyToSaltpack(key, password)
+}

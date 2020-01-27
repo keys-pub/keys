@@ -166,7 +166,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		return nil
 	}
 
-	msg := findSaltpackMessageInHTML(string(body), "")
+	msg, _ := findSaltpack(string(body), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
 		result.Err = "user signed message content not found"
@@ -174,7 +174,8 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		return nil
 	}
 
-	_, err = VerifyUser(msg, spk, result.User)
+	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
+	_, err = VerifyUser(verifyMsg, spk, result.User)
 	if err != nil {
 		logger.Warningf("Failed to verify statement: %s", err)
 		result.Err = err.Error()

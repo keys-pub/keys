@@ -14,7 +14,7 @@ import (
 // TODO: Don't accept user names on server > some length
 
 func TestSearchUsers(t *testing.T) {
-	//SetLogger(NewLogger(DebugLevel))
+	// SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
 	dst := NewMem()

@@ -328,7 +328,8 @@ func (u *User) Sign(key *SignKey) (string, error) {
 		return "", err
 	}
 	sig := key.Sign(b)
-	msg := EncodeSaltpackMessage(sig, "")
+	// No brand for user message to keep it under 280 characters (for twitter)
+	msg := EncodeSaltpack(sig, "")
 	return msg, nil
 }
 
@@ -336,7 +337,7 @@ func (u *User) Sign(key *SignKey) (string, error) {
 // If user is specified, we will verify it matches the User in the verified
 // message.
 func VerifyUser(msg string, spk SigchainPublicKey, user *User) (*User, error) {
-	b, err := DecodeSaltpackMessage(msg, "")
+	b, _, err := DecodeSaltpack(msg, false)
 	if err != nil {
 		return nil, err
 	}

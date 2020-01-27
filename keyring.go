@@ -60,10 +60,11 @@ func AsSignKey(item *keyring.Item) (*SignKey, error) {
 	if item.Type != string(Ed25519) {
 		return nil, errors.Errorf("item type %s != %s", item.Type, string(Ed25519))
 	}
-	sk, err := NewEd25519KeyFromPrivateKey(item.SecretData())
-	if err != nil {
-		return nil, err
+	b := item.SecretData()
+	if len(b) != 64 {
+		return nil, errors.Errorf("invalid number of bytes for ed25519 private key")
 	}
+	sk := NewEd25519KeyFromPrivateKey(Bytes64(b))
 	return sk, nil
 }
 
@@ -76,7 +77,11 @@ func NewSignPublicKeyItem(publicKey *SignPublicKey) *keyring.Item {
 func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
 	switch item.Type {
 	case string(Ed25519Public):
-		return NewEd25519PublicKey(Bytes32(item.SecretData())), nil
+		b := item.SecretData()
+		if len(b) != 32 {
+			return nil, errors.Errorf("invalid number of bytes for ed25519 public key")
+		}
+		return NewEd25519PublicKey(Bytes32(b)), nil
 	case string(Ed25519):
 		sk, err := AsSignKey(item)
 		if err != nil {
@@ -97,7 +102,11 @@ func NewBoxPublicKeyItem(publicKey *Curve25519PublicKey) *keyring.Item {
 func AsCurve25519PublicKey(item *keyring.Item) (*Curve25519PublicKey, error) {
 	switch item.Type {
 	case string(Curve25519Public):
-		return NewCurve25519PublicKey(Bytes32(item.SecretData())), nil
+		b := item.SecretData()
+		if len(b) != 32 {
+			return nil, errors.Errorf("invalid number of bytes for curve25519 public key")
+		}
+		return NewCurve25519PublicKey(Bytes32(b)), nil
 	case string(Curve25519):
 		bk, err := AsBoxKey(item)
 		if err != nil {
@@ -119,7 +128,11 @@ func AsSecretKey(item *keyring.Item) (SecretKey, error) {
 	if item.Type != secretItemType {
 		return nil, errors.Errorf("item type %s != %s", item.Type, secretItemType)
 	}
-	return Bytes32(item.SecretData()), nil
+	b := item.SecretData()
+	if len(b) != 32 {
+		return nil, errors.Errorf("invalid number of bytes for secret key")
+	}
+	return Bytes32(b), nil
 }
 
 // NewCertificateKeyItem creates an Item for a certificate private key.

@@ -5,8 +5,6 @@ import (
 	"html"
 	"regexp"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // saltpackStart start of a saltpack message.
@@ -44,57 +42,32 @@ func breakString(msg string, wordLen int, lineLen int) string {
 	return strings.Join(lines, "\n")
 }
 
-// findSaltpackMessageInHTML finds string in HTML data.
-func findSaltpackMessageInHTML(body string, brand string) string {
-	logger.Debugf("Searching for statement in message (%d)", len(body))
-	start := saltpackStart(brand)
-	end := saltpackEnd(brand)
-	msg := find(body, start, end, true)
-	if msg == "" {
-		return ""
-	}
-	if len(msg) < len(start)+len(end) {
-		return ""
-	}
-	return msg
-}
-
-func find(body string, start, end string, stripHTML bool) string {
-	// TODO: Better parsing
-	idx := strings.Index(body, start)
-	if idx == -1 {
-		return ""
-	}
-	idx2 := strings.Index(body[idx:], end)
-	if idx2 == -1 {
-		return ""
-	}
-	msg := body[idx : idx+idx2+len(end)]
-	if stripHTML {
-		msg = stripTags(msg)
-	}
-	return msg
-}
-
 func stripTags(body string) string {
 	re := regexp.MustCompile(`<\/?[^>]+(>|$)`)
 	return re.ReplaceAllString(body, "")
 }
 
-func trimSaltpackInHTML(msg string, brand string) (string, error) {
-	msg = html.UnescapeString(msg)
-
-	start := saltpackStart(brand)
-	end := saltpackEnd(brand)
-
-	if !strings.HasPrefix(msg, start) {
-		return "", errors.Errorf("missing saltpack start")
+func findSaltpack(msg string, isHTML bool) (string, string) {
+	if isHTML {
+		msg = html.UnescapeString(msg)
 	}
-	if !strings.HasSuffix(msg, end) {
-		return "", errors.Errorf("missing saltpack end")
-	}
-	msg = msg[len(start) : len(msg)-len(end)]
-	msg = trimMessage(msg)
 
-	return msg, nil
+	re := regexp.MustCompile(`(?s).*BEGIN (.*)MESSAGE\.(.*)END .*MESSAGE.*`)
+	s := re.FindStringSubmatch(msg)
+
+	brand, out := "", ""
+	if len(s) >= 2 {
+		brand = strings.TrimSpace(trimSaltpack(s[1], true))
+	}
+	if len(s) >= 3 {
+		out = s[2]
+		out = strings.ReplaceAll(out, "\\n", "")
+	}
+
+	if isHTML {
+		out = stripTags(out)
+	}
+
+	out = trimSaltpack(out, false)
+	return out, brand
 }
