@@ -30,7 +30,7 @@ func TestFindInTwitter(t *testing.T) {
 	require.NoError(t, err)
 
 	s, brand := findSaltpack(string(b), true)
-	expected := `4GzGHxrCV1mQX52SsmHqMRFVoFxjJ1U5MSWcBSZghX6c3pGpWnUnPM7yzXyUO174RObuLyx6Q8ndjy1KvBAMrTTCKq6Xr2MZu9OMNqdcBy5bhFeVoC3DU8LtGTf9lEuEJPE1JEqD2gGjkgLByR9CFG2aCgRgZZwl5UAa46bmBzzr5hHCbULzUPQDQhFimhSg2RdoCQj97oiDKhszZtgWSr`
+	expected := `FD0Lv2C2AtvqD1XEwqDo1tOTkv8LKisQMlS6gluxz0npc1S2MuNVOfTph934h1xXQqj5EtueEBntfhbDceoOBETCKq6Xr2MZHgg4UNRDbZy2loGoGN3Mvxd4r7FIwpZOJPE1JEqD2gGjkgLByR9CFG2aCgRgZZwl5UAa46bmBzjE5yyl9oNKSO6lAVCOrl3JBganxnssAnkQt3vM3TdJOf`
 	require.Equal(t, expected, s)
 	require.Equal(t, "", brand)
 }

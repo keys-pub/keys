@@ -1,9 +1,9 @@
 # Keys
 
-| Key       | Description               |
-| --------- | ------------------------- |
-| `Ed25519` | Ed25519 (EdDSA) sign key. |
-| `X25519`  | X25519 DH encryption key. |
+| Key        | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `EdX25519` | EdX25519 (Ed25519/X25519) signing/encryption key. |
+| `X25519`   | X25519 encryption key.                            |
 
 ## Examples
 
@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-    alice := keys.GenerateEd25519Key()
+    alice := keys.GenerateEdX25519Key()
     fmt.Printf("ID: %s\n", alice.ID())
 }
 ```
@@ -37,7 +37,7 @@ import (
 )
 
 func main() {
-    alice := keys.GenerateEd25519Key()
+    alice := keys.GenerateEdX25519Key()
     msg := "I'm alice 🤓"
     sig := alice.Sign([]byte(msg))
     out, err := alice.Verify(sig)

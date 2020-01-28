@@ -9,7 +9,7 @@ import (
 
 func convertErr(err error) error {
 	if kerr, ok := err.(ksaltpack.ErrNoSenderKey); ok {
-		id, err := bytesToID(kerr.Sender, keys.Ed25519Public)
+		id, err := bytesToID(kerr.Sender, keys.EdX25519Public)
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse sender key")
 		}

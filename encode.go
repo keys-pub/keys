@@ -200,8 +200,8 @@ func hasUpper(s string) bool {
 // Brand is saltpack brand.
 type Brand string
 
-// Ed25519Brand is saltpack brand for Ed25519 key.
-const Ed25519Brand Brand = "ED25519 KEY"
+// EdX25519Brand is saltpack brand for EdX25519 key.
+const EdX25519Brand Brand = "ED25519 KEY"
 
 // X25519Brand is saltpack brand for X25519 key.
 const X25519Brand Brand = "CURVE25519 KEY"
@@ -211,8 +211,8 @@ func EncodeKeyToSaltpack(key Key, password string) (string, error) {
 	var brand Brand
 	b := key.Bytes()
 	switch key.Type() {
-	case Ed25519:
-		brand = Ed25519Brand
+	case EdX25519:
+		brand = EdX25519Brand
 	case X25519:
 		brand = X25519Brand
 	default:
@@ -236,11 +236,11 @@ func DecodeKeyFromSaltpack(msg string, password string, isHTML bool) (Key, error
 		return nil, errors.Errorf("unable to determine key type from saltpack brand")
 	}
 	switch brand {
-	case string(Ed25519Brand):
+	case string(EdX25519Brand):
 		if len(b) != 64 {
 			return nil, errors.Errorf("invalid number of bytes for ed25519 seed")
 		}
-		sk := NewEd25519KeyFromPrivateKey(Bytes64(b))
+		sk := NewEdX25519KeyFromPrivateKey(Bytes64(b))
 		return sk, nil
 	case string(X25519Brand):
 		if len(b) != 32 {

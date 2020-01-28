@@ -10,7 +10,7 @@ import (
 )
 
 // Sign ...
-func (s *Saltpack) Sign(b []byte, key *keys.Ed25519Key) ([]byte, error) {
+func (s *Saltpack) Sign(b []byte, key *keys.EdX25519Key) ([]byte, error) {
 	if s.armor {
 		s, err := ksaltpack.SignArmor62(ksaltpack.Version1(), b, newSignKey(key), s.armorBrand)
 		return []byte(s), err
@@ -19,7 +19,7 @@ func (s *Saltpack) Sign(b []byte, key *keys.Ed25519Key) ([]byte, error) {
 }
 
 // SignDetached ...
-func (s *Saltpack) SignDetached(b []byte, key *keys.Ed25519Key) ([]byte, error) {
+func (s *Saltpack) SignDetached(b []byte, key *keys.EdX25519Key) ([]byte, error) {
 	if s.armor {
 		// TODO: Implement
 		return nil, errors.Errorf("not implemented")
@@ -36,7 +36,7 @@ func (s *Saltpack) Verify(b []byte) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
@@ -48,7 +48,7 @@ func (s *Saltpack) verifyArmored(msg string) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
@@ -60,8 +60,8 @@ func bytesToID(b []byte, typ keys.KeyType) (keys.ID, error) {
 		return "", errors.Errorf("invalid bytes for id")
 	}
 	switch typ {
-	case keys.Ed25519Public:
-		spk := keys.NewEd25519PublicKey(keys.Bytes32(b))
+	case keys.EdX25519Public:
+		spk := keys.NewEdX25519PublicKey(keys.Bytes32(b))
 		return spk.ID(), nil
 	case keys.X25519Public:
 		bpk := keys.NewX25519PublicKey(keys.Bytes32(b))
@@ -82,7 +82,7 @@ func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
 		return "", convertErr(err)
 	}
 
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to verify")
 	}
@@ -90,7 +90,7 @@ func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
 }
 
 // NewSignStream ...
-func (s *Saltpack) NewSignStream(w io.Writer, key *keys.Ed25519Key, detached bool) (io.WriteCloser, error) {
+func (s *Saltpack) NewSignStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
 	if detached && s.armor {
 		return ksaltpack.NewSignDetachedArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), s.armorBrand)
 	}
@@ -112,7 +112,7 @@ func (s *Saltpack) NewVerifyStream(r io.Reader) (io.Reader, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
@@ -125,7 +125,7 @@ func (s *Saltpack) NewVerifyArmoredStream(r io.Reader) (io.Reader, keys.ID, erro
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}

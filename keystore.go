@@ -73,7 +73,7 @@ func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if item == nil || item.Type != string(Ed25519) {
+	if item == nil || item.Type != string(EdX25519) {
 		return nil, nil
 	}
 	return AsSignKey(item)
@@ -119,7 +119,7 @@ func (k *Keystore) SaveSignPublicKey(spk *SignPublicKey) error {
 	if err != nil {
 		return err
 	}
-	if item != nil && item.Type != string(Ed25519Public) {
+	if item != nil && item.Type != string(EdX25519Public) {
 		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
 	}
 	return k.set(NewSignPublicKeyItem(spk))
@@ -168,9 +168,9 @@ func keyForItem(item *keyring.Item) (Key, error) {
 		return AsBoxKey(item)
 	case string(X25519Public):
 		return AsX25519PublicKey(item)
-	case string(Ed25519):
+	case string(EdX25519):
 		return AsSignKey(item)
-	case string(Ed25519Public):
+	case string(EdX25519Public):
 		return AsSignPublicKey(item)
 	default:
 		return nil, nil
@@ -218,7 +218,7 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	logger.Debugf("Loading box keys...")
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(X25519), string(Ed25519)},
+		Types: []string{string(X25519), string(EdX25519)},
 	})
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 // SignKeys from the Keystore.
 func (k Keystore) SignKeys() ([]*SignKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(Ed25519)},
+		Types: []string{string(EdX25519)},
 	})
 	if err != nil {
 		return nil, err
@@ -259,8 +259,8 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	items, err := k.Keyring().List(&keyring.ListOpts{
 		Types: []string{
-			string(Ed25519),
-			string(Ed25519Public),
+			string(EdX25519),
+			string(EdX25519Public),
 		},
 	})
 	if err != nil {
@@ -269,13 +269,13 @@ func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	keys := make([]*SignPublicKey, 0, len(items))
 	for _, item := range items {
 		switch item.Type {
-		case string(Ed25519):
+		case string(EdX25519):
 			key, err := AsSignKey(item)
 			if err != nil {
 				return nil, err
 			}
 			keys = append(keys, key.PublicKey())
-		case string(Ed25519Public):
+		case string(EdX25519Public):
 			key, err := AsSignPublicKey(item)
 			if err != nil {
 				return nil, err
@@ -306,8 +306,8 @@ func SignPublicKeyForID(id ID) (*SignPublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty id")
 	}
-	if id.IsEd25519() {
-		return Ed25519PublicKeyFromID(id)
+	if id.IsEdX25519() {
+		return EdX25519PublicKeyFromID(id)
 	}
 	return nil, errors.Errorf("unrecognized id %s", id)
 }
@@ -321,8 +321,8 @@ func BoxPublicKeyForID(id ID) (*BoxPublicKey, error) {
 	if id.IsX25519() {
 		return X25519PublicKeyFromID(id)
 	}
-	if id.IsEd25519() {
-		spk, err := Ed25519PublicKeyFromID(id)
+	if id.IsEdX25519() {
+		spk, err := EdX25519PublicKeyFromID(id)
 		if err != nil {
 			return nil, err
 		}
@@ -331,10 +331,10 @@ func BoxPublicKeyForID(id ID) (*BoxPublicKey, error) {
 	return nil, errors.Errorf("unrecognized id %s", id)
 }
 
-// FindEd25519PublicKey searches all our Ed25519 public keys for a match to a converted
+// FindEdX25519PublicKey searches all our EdX25519 public keys for a match to a converted
 // X25519 public key.
-func (k *Keystore) FindEd25519PublicKey(bpk *X25519PublicKey) (*Ed25519PublicKey, error) {
-	logger.Debugf("Finding ed25519 key from x25519 key %s", bpk.ID())
+func (k *Keystore) FindEdX25519PublicKey(bpk *X25519PublicKey) (*EdX25519PublicKey, error) {
+	logger.Debugf("Finding edx25519 key from an x25519 key %s", bpk.ID())
 	spks, err := k.SignPublicKeys()
 	if err != nil {
 		return nil, err
@@ -345,14 +345,14 @@ func (k *Keystore) FindEd25519PublicKey(bpk *X25519PublicKey) (*Ed25519PublicKey
 			return spk, nil
 		}
 	}
-	logger.Debugf("Ed25519 key not found")
+	logger.Debugf("EdX25519 key not found")
 	return nil, err
 }
 
 // SaveKey saves Key based on its type.
 func (k *Keystore) SaveKey(key Key) error {
 	switch v := key.(type) {
-	case *Ed25519Key:
+	case *EdX25519Key:
 		return k.SaveSignKey(v)
 	case *X25519Key:
 		return k.SaveBoxKey(v)

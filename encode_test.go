@@ -93,7 +93,7 @@ END MESSAGE.`
 }
 
 func TestEncodeDecodeKey(t *testing.T) {
-	sk := GenerateEd25519Key()
+	sk := GenerateEdX25519Key()
 	msg, err := EncodeKeyToSaltpack(sk, "testpassword")
 	require.NoError(t, err)
 

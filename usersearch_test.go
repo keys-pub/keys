@@ -30,14 +30,14 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
-	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	require.NoError(t, err)
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
 	ids := []ID{}
 	for i := 10; i < 15; i++ {
-		key := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
+		key := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		ids = append(ids, key.ID())
 		name := fmt.Sprintf("name%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
@@ -89,7 +89,7 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 3, results[0].UserResult.User.Seq)
 
 	// Add alice@twitter
-	alice2 := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x03}, 32)))
+	alice2 := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x03}, 32)))
 	saveUser(t, ust, scs, alice2, "alice", Twitter, clock, req)
 	_, err = ust.Update(ctx, alice2.ID())
 	require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
-	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
@@ -245,7 +245,7 @@ func TestExpired(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 
-	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -318,7 +318,7 @@ func TestGenerateUserStatement(t *testing.T) {
 	clock := newClock()
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
-	key := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	key := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	req := NewMockRequestor()
 	ust := testUserStore(t, dst, scs, req, clock)
@@ -345,14 +345,14 @@ func TestSearch(t *testing.T) {
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {
-		key := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
+		key := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("a%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
 		_, err := ust.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 	for i := 10; i < 20; i++ {
-		key := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
+		key := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("b%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
 		_, err := ust.Update(ctx, key.ID())
@@ -362,12 +362,12 @@ func TestSearch(t *testing.T) {
 	results, err := ust.Search(ctx, &UserSearchRequest{Query: "a"})
 	require.NoError(t, err)
 	require.Equal(t, 10, len(results))
-	require.Equal(t, "kse18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5snr7vdt", results[0].KID.String())
+	require.Equal(t, "kex18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5s0v3alm", results[0].KID.String())
 	require.NotNil(t, 1, results[0].UserResult)
 	require.Equal(t, "a0", results[0].UserResult.User.Name)
 
 	results, err = ust.Search(ctx, &UserSearchRequest{Limit: 1000})
 	require.NoError(t, err)
 	require.Equal(t, 20, len(results))
-	require.Equal(t, "kse18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5snr7vdt", results[0].KID.String())
+	require.Equal(t, "kex18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5s0v3alm", results[0].KID.String())
 }

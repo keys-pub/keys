@@ -147,7 +147,7 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 		return nil
 	}
 	spk := keys.Bytes32(b)
-	return newSignPublicKey(keys.NewEd25519PublicKey(spk))
+	return newSignPublicKey(keys.NewEdX25519PublicKey(spk))
 }
 
 func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {

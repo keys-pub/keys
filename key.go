@@ -15,11 +15,11 @@ type Key interface {
 // KeyType ...
 type KeyType string
 
-// SignKey is a Ed25519Key.
-type SignKey = Ed25519Key
+// SignKey is a EdX25519Key.
+type SignKey = EdX25519Key
 
-// SignPublicKey is a Ed25519PublicKey.
-type SignPublicKey = Ed25519PublicKey
+// SignPublicKey is a EdX25519PublicKey.
+type SignPublicKey = EdX25519PublicKey
 
 // BoxKey is a X25519Key.
 type BoxKey = X25519Key
@@ -27,7 +27,7 @@ type BoxKey = X25519Key
 // BoxPublicKey is a X25519PublicKey.
 type BoxPublicKey = X25519PublicKey
 
-var _ Key = &Ed25519Key{}
-var _ Key = &Ed25519PublicKey{}
+var _ Key = &EdX25519Key{}
+var _ Key = &EdX25519PublicKey{}
 var _ Key = &X25519Key{}
 var _ Key = &X25519PublicKey{}

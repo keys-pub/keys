@@ -137,17 +137,17 @@ func TestEncryptOpenError(t *testing.T) {
 	require.EqualError(t, err, "no decryption key found for message")
 }
 
-func TestEncryptWithEd25519Key(t *testing.T) {
+func TestEncryptWithEdX25519Key(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
 	spa := NewSaltpack(ksa)
-	alice := keys.NewEd25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ksa.SaveSignKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
-	bob := keys.NewEd25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	bob := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ksb.SaveSignKey(bob)
 
 	message := []byte("hi bob")

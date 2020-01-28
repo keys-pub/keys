@@ -36,7 +36,7 @@ func (s *Saltpack) SigncryptOpen(b []byte) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
 	}
@@ -49,7 +49,7 @@ func (s *Saltpack) signcryptArmoredOpen(b []byte) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
 	}
@@ -77,7 +77,7 @@ func (s *Saltpack) NewSigncryptOpenStream(r io.Reader) (io.Reader, keys.ID, erro
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
 	}
@@ -90,7 +90,7 @@ func (s *Saltpack) newSigncryptArmoredOpenStream(r io.Reader) (io.Reader, keys.I
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.Ed25519Public)
+	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to signcrypt open")
 	}

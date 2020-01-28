@@ -20,8 +20,8 @@ type Sigchain struct {
 
 // SigchainPublicKeyFromID converts ID to SigchainPublicKey.
 func SigchainPublicKeyFromID(id ID) (SigchainPublicKey, error) {
-	// TODO: Verify id is ed25519 key type.
-	return Ed25519PublicKeyFromID(id)
+	// TODO: Verify id is edx25519 key type.
+	return EdX25519PublicKeyFromID(id)
 }
 
 // SigchainPublicKey is public key for sigchain.

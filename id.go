@@ -98,13 +98,13 @@ func (i ID) WithSeq(seq int) string {
 	return fmt.Sprintf("%s-%015d", i, seq)
 }
 
-// IsEd25519 returns true if ID represents a Ed25519 key.
-func (i ID) IsEd25519() bool {
+// IsEdX25519 returns true if ID represents a EdX25519 key.
+func (i ID) IsEdX25519() bool {
 	hrp, _, err := i.Decode()
 	if err != nil {
 		return false
 	}
-	return hrp == ed25519KeyHRP
+	return hrp == edx25519KeyHRP
 }
 
 // IsX25519 returns true if ID represents a X25519 key.
@@ -123,8 +123,8 @@ func (i ID) KeyType() KeyType {
 		return ""
 	}
 	switch hrp {
-	case ed25519KeyHRP:
-		return Ed25519Public
+	case edx25519KeyHRP:
+		return EdX25519Public
 	case x25519KeyHRP:
 		return X25519Public
 	}

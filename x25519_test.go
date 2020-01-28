@@ -16,7 +16,7 @@ func TestNewX25519KeyFromPrivateKey(t *testing.T) {
 }
 
 func TestX25519KeyConversion(t *testing.T) {
-	sk := GenerateEd25519Key()
+	sk := GenerateEdX25519Key()
 	bk := sk.X25519Key()
 
 	bpk := sk.PublicKey().X25519PublicKey()

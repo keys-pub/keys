@@ -73,7 +73,7 @@ import (
 )
 
 func main() {
-    alice := keys.GenerateEd25519Key()
+    alice := keys.GenerateEdX25519Key()
     sc := keys.NewSigchain(alice.PublicKey())
 
     // Create root statement

@@ -10,7 +10,7 @@ import (
 
 func TestStatement(t *testing.T) {
 	clock := newClock()
-	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -21,14 +21,14 @@ func TestStatement(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, st.Bytes(), st2.Bytes())
 
-	rk := GenerateEd25519Key()
+	rk := GenerateEdX25519Key()
 	_, err = NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.EqualError(t, err, "verify failed")
 }
 
 func TestStatementJSON(t *testing.T) {
 	clock := newClock()
-	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -77,7 +77,7 @@ func TestStatementJSON(t *testing.T) {
 
 func TestStatementSpecificSerialization(t *testing.T) {
 	clock := newClock()
-	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
@@ -85,11 +85,11 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	data := statementBytesToSign(st)
-	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","seq":1,"ts":1234567890001,"type":"test"}`
+	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expected, string(data))
 
 	dataOut := st.Bytes()
-	expectedOut := `{".sig":"iU6gQ8IrvERpxfYq0UeJgMfNb4EY71Lju2ruQgWi/pl1EMi/bS9/Ja9pOp9ij6pOr+pOswfZaAPqH0EWhsoyCg==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","seq":1,"ts":1234567890001,"type":"test"}`
+	expectedOut := `{".sig":"+H4VoHKAzH8e7Fn0LTtabx1MSpmnEY7xejxzMLr13Cfu1uvj4LKDKJ8AWLP38OU+HDSqO9JYkR+MtM/o7JvzAw==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expectedOut, string(dataOut))
 
 	require.Equal(t, expectedOut, string(st.Bytes()))
@@ -118,11 +118,11 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	data2 := statementBytesToSign(revoke)
-	expected2 := `{".sig":"","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","prev":"CAhaSSitCjnMOW08ryvoMtDV/QXK1/Xwhzg5Tt3WFes=","revoke":1,"seq":2,"type":"revoke"}`
+	expected2 := `{".sig":"","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"V/5ecc6cFRzsi83kcaqyahjXqWp+wTxFwpJMrk+MHXA=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expected2, string(data2))
 
 	dataOut2 := revoke.Bytes()
-	expectedOut2 := `{".sig":"eyDoqT0DV0Pces4SfsvyqVRrIVICnhWSfYGrk2HHMjmtFYX60QKe7v6iWanQcC9J0TXp99CppHoc/GQHbZmSCQ==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","prev":"CAhaSSitCjnMOW08ryvoMtDV/QXK1/Xwhzg5Tt3WFes=","revoke":1,"seq":2,"type":"revoke"}`
+	expectedOut2 := `{".sig":"Ez8WFOCIjCM4SNRk6erV8t1+9tWT8Fz1lAbmxvEytV8CHwIQi3sfvrAd0JwB+oZEmMp3WC3VJMSEqkR07iS5Bw==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"V/5ecc6cFRzsi83kcaqyahjXqWp+wTxFwpJMrk+MHXA=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expectedOut2, string(dataOut2))
 
 	require.Equal(t, expectedOut2, string(revoke.Bytes()))
@@ -140,7 +140,7 @@ func TestStatementSpecificSerialization(t *testing.T) {
 
 func TestStatementKeyURL(t *testing.T) {
 	clock := newClock()
-	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -148,6 +148,6 @@ func TestStatementKeyURL(t *testing.T) {
 	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
-	require.Equal(t, "kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw-000000000000001", st.Key())
-	require.Equal(t, "/kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw/1", st.URL())
+	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077-000000000000001", st.Key())
+	require.Equal(t, "/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077/1", st.URL())
 }

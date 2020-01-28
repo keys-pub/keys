@@ -23,7 +23,7 @@ func AsBoxKey(item *keyring.Item) (*BoxKey, error) {
 	case string(X25519):
 		bk := NewX25519KeyFromPrivateKey(Bytes32(item.SecretData()))
 		return bk, nil
-	case string(Ed25519):
+	case string(EdX25519):
 		sk, err := AsSignKey(item)
 		if err != nil {
 			return nil, err
@@ -52,37 +52,37 @@ func AsBoxPublicKey(item *keyring.Item) (*BoxPublicKey, error) {
 
 // NewSignKeyItem creates keyring item for SignKey.
 func NewSignKeyItem(signKey *SignKey) *keyring.Item {
-	return keyring.NewItem(signKey.ID().String(), keyring.NewSecret(signKey.PrivateKey()[:]), string(Ed25519))
+	return keyring.NewItem(signKey.ID().String(), keyring.NewSecret(signKey.PrivateKey()[:]), string(EdX25519))
 }
 
 // AsSignKey returns SignKey for keyring Item.
 func AsSignKey(item *keyring.Item) (*SignKey, error) {
-	if item.Type != string(Ed25519) {
-		return nil, errors.Errorf("item type %s != %s", item.Type, string(Ed25519))
+	if item.Type != string(EdX25519) {
+		return nil, errors.Errorf("item type %s != %s", item.Type, string(EdX25519))
 	}
 	b := item.SecretData()
 	if len(b) != 64 {
 		return nil, errors.Errorf("invalid number of bytes for ed25519 private key")
 	}
-	sk := NewEd25519KeyFromPrivateKey(Bytes64(b))
+	sk := NewEdX25519KeyFromPrivateKey(Bytes64(b))
 	return sk, nil
 }
 
 // NewSignPublicKeyItem creates keyring item for SignPublicKey.
 func NewSignPublicKeyItem(publicKey *SignPublicKey) *keyring.Item {
-	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), string(Ed25519Public))
+	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), string(EdX25519Public))
 }
 
 // AsSignPublicKey returns SignPublicKey for keyring Item.
 func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
 	switch item.Type {
-	case string(Ed25519Public):
+	case string(EdX25519Public):
 		b := item.SecretData()
 		if len(b) != 32 {
 			return nil, errors.Errorf("invalid number of bytes for ed25519 public key")
 		}
-		return NewEd25519PublicKey(Bytes32(b)), nil
-	case string(Ed25519):
+		return NewEdX25519PublicKey(Bytes32(b)), nil
+	case string(EdX25519):
 		sk, err := AsSignKey(item)
 		if err != nil {
 			return nil, err

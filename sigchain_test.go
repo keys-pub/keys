@@ -13,7 +13,7 @@ import (
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
-	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -66,7 +66,7 @@ func TestSigchain(t *testing.T) {
 	err = sc.Add(st4)
 	require.EqualError(t, err, "no data")
 
-	_, err = GenerateStatement(sc, []byte{}, GenerateEd25519Key(), "", clock.Now())
+	_, err = GenerateStatement(sc, []byte{}, GenerateEdX25519Key(), "", clock.Now())
 	require.EqualError(t, err, "invalid sigchain sign public key")
 
 	// Revoke invalid seq
@@ -94,7 +94,7 @@ func TestSigchain(t *testing.T) {
 
 func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
-	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(sk.PublicKey())
 
@@ -104,7 +104,7 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	st0 := sc.Statements()[0]
-	expectedStatement := `{".sig":"SPKxMlhPU7wiPGsszrQN3ljWdkTbKFWxqbTqtoFp/ZrV0jd1WsMxMltiyHc4/N0mUWga1zshztXQFkEcamvECg==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","seq":1,"ts":1234567890001}`
+	expectedStatement := `{".sig":"VV7Q1B54UZ5YBEmhTYt2tQACynfAWIZpZ+5sSwT+DJsRnvA2MAGW86hTVtso4optvXW2PvO0DACTPpMsC/SSDQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001}`
 	require.Equal(t, expectedStatement, string(st0.Bytes()))
 
 	b, err := json.Marshal(st0)
@@ -121,13 +121,13 @@ func TestSigchainJSON(t *testing.T) {
 	siErr2 := sc.Add(st2)
 	require.NoError(t, siErr2)
 	entry2 := sc.Statements()[1]
-	expectedStatement2 := `{".sig":"97dCpuu8cXBnMDsbsdljBAdSVV6FaWyx+Nwvw7tsk1Riksy0k5rg8OJiN0RNXPcXlHHagPku9SIlAvgQtjLpCw==","data":"AgICAgICAgICAgICAgICAg==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","prev":"xsF9vVfMVzvoYUmrcMvWRNYpXaTrbINMgVQRHUBRQOQ=","seq":2,"ts":1234567890002}`
+	expectedStatement2 := `{".sig":"eFHVVItCK0lwZzeeejBLdxAjqu1Fo3wFQ3U1/Q7J4HyimDp892A82jiaa8SOB+DekA3vEXkJicGkiGeuBFahDw==","data":"AgICAgICAgICAgICAgICAg==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"adAq4hsj899D6Y8T6ZnvxFG6EDtJaKcXe6Sk/D/VVLo=","seq":2,"ts":1234567890002}`
 	require.Equal(t, expectedStatement2, string(entry2.Bytes()))
 
 	_, siErr3 := sc.Revoke(2, sk)
 	require.NoError(t, siErr3)
 	entry3 := sc.Statements()[2]
-	expectedStatement3 := `{".sig":"odu1EYdLq8LvKAaW80Kfoil+tdPIsvug2psWmk8Xk/UTAyczw/g5PyyKypPQaJg1/sls/qGunoTY7qcKjEgZAw==","kid":"kse132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawquwc7vw","prev":"txNhm/TGe8QKScMetXrv2UzDYBZ7ZI6u0TJDdoB9Cb0=","revoke":2,"seq":3,"type":"revoke"}`
+	expectedStatement3 := `{".sig":"Y63sL8+BsoU7LmiHCCw6IEadu463H9Gx6B9F/WTgRBDBoIZHB3kwIeFChvlO/HFpqkK0AmkrO5AzW9/rps8JCQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"6PT7dojypKdO8YldF00QiWqBfRBh1f1D9y9C2Qn6v/Y=","revoke":2,"seq":3,"type":"revoke"}`
 	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
 }
 
@@ -137,7 +137,7 @@ func TestSigchainUsers(t *testing.T) {
 	dst := NewMem()
 	scs := NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	alice := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
@@ -190,7 +190,7 @@ func TestSigchainUsers(t *testing.T) {
 
 func ExampleNewSigchain() {
 	clock := newClock()
-	alice := GenerateEd25519Key()
+	alice := GenerateEdX25519Key()
 	sc := NewSigchain(alice.PublicKey())
 
 	// Create root statement

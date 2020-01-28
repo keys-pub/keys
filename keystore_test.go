@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEd25519KeyItem(t *testing.T) {
+func TestEdX25519KeyItem(t *testing.T) {
 	ks := NewMemKeystore()
-	sk := GenerateEd25519Key()
+	sk := GenerateEdX25519Key()
 	err := ks.SaveSignKey(sk)
 	require.NoError(t, err)
 	skOut, err := ks.SignKey(sk.ID())
@@ -30,7 +30,7 @@ func TestEd25519KeyItem(t *testing.T) {
 	err = ks.SaveSignPublicKey(sk.PublicKey())
 	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")
 
-	spk := GenerateEd25519Key().PublicKey()
+	spk := GenerateEdX25519Key().PublicKey()
 	err = ks.SaveSignPublicKey(spk)
 	require.NoError(t, err)
 	skOut, err = ks.SignKey(spk.ID())
@@ -38,9 +38,9 @@ func TestEd25519KeyItem(t *testing.T) {
 	require.Nil(t, skOut)
 }
 
-func TestEd25519PublicKeyItem(t *testing.T) {
+func TestEdX25519PublicKeyItem(t *testing.T) {
 	ks := NewMemKeystore()
-	spk := GenerateEd25519Key().PublicKey()
+	spk := GenerateEdX25519Key().PublicKey()
 	err := ks.SaveSignPublicKey(spk)
 	require.NoError(t, err)
 	spkOut, err := ks.SignPublicKey(spk.ID())
@@ -53,21 +53,21 @@ func TestEd25519PublicKeyItem(t *testing.T) {
 	require.Equal(t, spk.Bytes()[:], spks[0].Bytes()[:])
 }
 
-func TestFindEd25519PublicKey(t *testing.T) {
+func TestFindEdX25519PublicKey(t *testing.T) {
 	ks := NewMemKeystore()
-	sk := GenerateEd25519Key()
+	sk := GenerateEdX25519Key()
 	err := ks.SaveSignKey(sk)
 	require.NoError(t, err)
 
-	spkConv, err := ks.FindEd25519PublicKey(sk.PublicKey().X25519PublicKey())
+	spkConv, err := ks.FindEdX25519PublicKey(sk.PublicKey().X25519PublicKey())
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Bytes(), spkConv.Bytes())
 
-	spk := GenerateEd25519Key().PublicKey()
+	spk := GenerateEdX25519Key().PublicKey()
 	err = ks.SaveSignPublicKey(spk)
 	require.NoError(t, err)
 
-	spkConv2, err := ks.FindEd25519PublicKey(spk.X25519PublicKey())
+	spkConv2, err := ks.FindEdX25519PublicKey(spk.X25519PublicKey())
 	require.NoError(t, err)
 	require.Equal(t, spk.Bytes(), spkConv2.Bytes())
 }
@@ -97,11 +97,11 @@ func TestKeystoreList(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	ks := NewMemKeystore()
 
-	sk := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ks.SaveSignKey(sk)
 	require.NoError(t, err)
 
-	sk2 := NewEd25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	sk2 := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ks.SaveSignPublicKey(sk2.PublicKey())
 	require.NoError(t, err)
 
@@ -139,7 +139,7 @@ func TestKeystoreList(t *testing.T) {
 
 func TestKeystoreConcurrent(t *testing.T) {
 	ks := NewMemKeystore()
-	sk := GenerateEd25519Key()
+	sk := GenerateEdX25519Key()
 	ks.SaveSignKey(sk)
 
 	skOut, err := ks.SignKey(sk.ID())
@@ -165,7 +165,7 @@ func TestKeystoreConcurrent(t *testing.T) {
 }
 
 func TestExportImportKey(t *testing.T) {
-	sk := GenerateEd25519Key()
+	sk := GenerateEdX25519Key()
 	ks := NewMemKeystore()
 	err := ks.SaveKey(sk)
 	require.NoError(t, err)
