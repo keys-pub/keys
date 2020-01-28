@@ -63,8 +63,8 @@ func bytesToID(b []byte, typ keys.KeyType) (keys.ID, error) {
 	case keys.Ed25519Public:
 		spk := keys.NewEd25519PublicKey(keys.Bytes32(b))
 		return spk.ID(), nil
-	case keys.Curve25519Public:
-		bpk := keys.NewCurve25519PublicKey(keys.Bytes32(b))
+	case keys.X25519Public:
+		bpk := keys.NewX25519PublicKey(keys.Bytes32(b))
 		return bpk.ID(), nil
 	default:
 		return "", errors.Errorf("unknown key type for id")

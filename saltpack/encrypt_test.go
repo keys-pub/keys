@@ -13,13 +13,13 @@ func TestEncrypt(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
 	spa := NewSaltpack(ksa)
-	alice := keys.NewCurve25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ksa.SaveBoxKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
-	bob := keys.NewCurve25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	bob := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ksb.SaveBoxKey(bob)
 
 	message := []byte("hi bob")
@@ -44,7 +44,7 @@ func TestEncryptAnon(t *testing.T) {
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
-	bob := keys.NewCurve25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	bob := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err := ksb.SaveBoxKey(bob)
 
 	message := []byte("hi bob")
@@ -61,13 +61,13 @@ func TestEncryptStream(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
 	spa := NewSaltpack(ksa)
-	alice := keys.GenerateCurve25519Key()
+	alice := keys.GenerateX25519Key()
 	err := ksa.SaveBoxKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
-	bob := keys.GenerateCurve25519Key()
+	bob := keys.GenerateX25519Key()
 	err = ksb.SaveBoxKey(bob)
 	message := []byte("hi bob")
 
@@ -96,7 +96,7 @@ func TestEncryptStreamAnon(t *testing.T) {
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := NewSaltpack(ksb)
-	bob := keys.GenerateCurve25519Key()
+	bob := keys.GenerateX25519Key()
 	err := ksb.SaveBoxKey(bob)
 
 	message := []byte("hi bob, its anon")
@@ -120,9 +120,9 @@ func TestEncryptStreamAnon(t *testing.T) {
 
 func TestEncryptOpenError(t *testing.T) {
 	ksa := keys.NewMemKeystore()
-	alice := keys.GenerateCurve25519Key()
+	alice := keys.GenerateX25519Key()
 	err := ksa.SaveBoxKey(alice)
-	bob := keys.GenerateCurve25519Key()
+	bob := keys.GenerateX25519Key()
 	err = ksa.SaveBoxKey(bob)
 	require.NoError(t, err)
 	spa := NewSaltpack(ksa)
@@ -152,11 +152,11 @@ func TestEncryptWithEd25519Key(t *testing.T) {
 
 	message := []byte("hi bob")
 
-	encrypted, err := spa.Encrypt(message, alice.Curve25519Key(), bob.ID())
+	encrypted, err := spa.Encrypt(message, alice.X25519Key(), bob.ID())
 	require.NoError(t, err)
 
 	out, sender, err := spb.Decrypt(encrypted)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.Curve25519Key().PublicKey().ID(), sender)
+	require.Equal(t, alice.X25519Key().PublicKey().ID(), sender)
 }

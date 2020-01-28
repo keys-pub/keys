@@ -39,7 +39,7 @@ func (s *Saltpack) Decrypt(b []byte) ([]byte, keys.ID, error) {
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
@@ -55,7 +55,7 @@ func (s *Saltpack) decryptArmored(b []byte) ([]byte, keys.ID, error) {
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
@@ -91,7 +91,7 @@ func (s *Saltpack) NewDecryptStream(r io.Reader) (io.Reader, keys.ID, error) {
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
@@ -107,7 +107,7 @@ func (s *Saltpack) newDecryptArmoredStream(r io.Reader) (io.Reader, keys.ID, err
 	}
 	sender := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.Curve25519Public)
+		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}

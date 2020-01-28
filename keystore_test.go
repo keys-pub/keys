@@ -59,7 +59,7 @@ func TestFindEd25519PublicKey(t *testing.T) {
 	err := ks.SaveSignKey(sk)
 	require.NoError(t, err)
 
-	spkConv, err := ks.FindEd25519PublicKey(sk.PublicKey().Curve25519PublicKey())
+	spkConv, err := ks.FindEd25519PublicKey(sk.PublicKey().X25519PublicKey())
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Bytes(), spkConv.Bytes())
 
@@ -67,14 +67,14 @@ func TestFindEd25519PublicKey(t *testing.T) {
 	err = ks.SaveSignPublicKey(spk)
 	require.NoError(t, err)
 
-	spkConv2, err := ks.FindEd25519PublicKey(spk.Curve25519PublicKey())
+	spkConv2, err := ks.FindEd25519PublicKey(spk.X25519PublicKey())
 	require.NoError(t, err)
 	require.Equal(t, spk.Bytes(), spkConv2.Bytes())
 }
 
-func TestCurve25519KeyItem(t *testing.T) {
+func TestX25519KeyItem(t *testing.T) {
 	ks := NewMemKeystore()
-	bk := GenerateCurve25519Key()
+	bk := GenerateX25519Key()
 	err := ks.SaveBoxKey(bk)
 	require.NoError(t, err)
 	bkOut, err := ks.BoxKey(bk.ID())
@@ -85,7 +85,7 @@ func TestCurve25519KeyItem(t *testing.T) {
 	err = ks.SaveBoxPublicKey(bk.PublicKey())
 	require.EqualError(t, err, "failed to save box public key: existing keyring item exists of alternate type")
 
-	bpk := GenerateCurve25519Key().PublicKey()
+	bpk := GenerateX25519Key().PublicKey()
 	err = ks.SaveBoxPublicKey(bpk)
 	require.NoError(t, err)
 	bkOut, err = ks.BoxKey(bpk.ID())
@@ -105,11 +105,11 @@ func TestKeystoreList(t *testing.T) {
 	err = ks.SaveSignPublicKey(sk2.PublicKey())
 	require.NoError(t, err)
 
-	bk := NewCurve25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	bk := NewX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err = ks.SaveBoxKey(bk)
 	require.NoError(t, err)
 
-	bk2 := NewCurve25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	bk2 := NewX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ks.SaveBoxPublicKey(bk2.PublicKey())
 	require.NoError(t, err)
 
@@ -122,7 +122,7 @@ func TestKeystoreList(t *testing.T) {
 	require.Equal(t, 4, len(out))
 
 	out, err = ks.Keys(&Opts{
-		Types: []KeyType{Curve25519, Curve25519Public},
+		Types: []KeyType{X25519, X25519Public},
 	})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(out))
@@ -130,7 +130,7 @@ func TestKeystoreList(t *testing.T) {
 	require.Equal(t, bk2.ID(), out[1].ID())
 
 	out, err = ks.Keys(&Opts{
-		Types: []KeyType{Curve25519},
+		Types: []KeyType{X25519},
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(out))

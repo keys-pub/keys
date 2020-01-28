@@ -21,13 +21,13 @@ type SignKey = Ed25519Key
 // SignPublicKey is a Ed25519PublicKey.
 type SignPublicKey = Ed25519PublicKey
 
-// BoxKey is a Curve25519Key.
-type BoxKey = Curve25519Key
+// BoxKey is a X25519Key.
+type BoxKey = X25519Key
 
-// BoxPublicKey is a Curve25519PublicKey.
-type BoxPublicKey = Curve25519PublicKey
+// BoxPublicKey is a X25519PublicKey.
+type BoxPublicKey = X25519PublicKey
 
 var _ Key = &Ed25519Key{}
 var _ Key = &Ed25519PublicKey{}
-var _ Key = &Curve25519Key{}
-var _ Key = &Curve25519PublicKey{}
+var _ Key = &X25519Key{}
+var _ Key = &X25519PublicKey{}

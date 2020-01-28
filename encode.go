@@ -203,8 +203,8 @@ type Brand string
 // Ed25519Brand is saltpack brand for Ed25519 key.
 const Ed25519Brand Brand = "ED25519 KEY"
 
-// Curve25519Brand is saltpack brand for Curve25519 key.
-const Curve25519Brand Brand = "CURVE25519 KEY"
+// X25519Brand is saltpack brand for X25519 key.
+const X25519Brand Brand = "CURVE25519 KEY"
 
 // EncodeKeyToSaltpack encrypts a key to saltpack with password.
 func EncodeKeyToSaltpack(key Key, password string) (string, error) {
@@ -213,8 +213,8 @@ func EncodeKeyToSaltpack(key Key, password string) (string, error) {
 	switch key.Type() {
 	case Ed25519:
 		brand = Ed25519Brand
-	case Curve25519:
-		brand = Curve25519Brand
+	case X25519:
+		brand = X25519Brand
 	default:
 		return "", errors.Errorf("unsupported key type %s", key.Type())
 	}
@@ -242,11 +242,11 @@ func DecodeKeyFromSaltpack(msg string, password string, isHTML bool) (Key, error
 		}
 		sk := NewEd25519KeyFromPrivateKey(Bytes64(b))
 		return sk, nil
-	case string(Curve25519Brand):
+	case string(X25519Brand):
 		if len(b) != 32 {
-			return nil, errors.Errorf("invalid number of bytes for curve25519 private key")
+			return nil, errors.Errorf("invalid number of bytes for x25519 private key")
 		}
-		bk := NewCurve25519KeyFromPrivateKey(Bytes32(b))
+		bk := NewX25519KeyFromPrivateKey(Bytes32(b))
 		return bk, nil
 	default:
 		return nil, errors.Errorf("unknown key type %s", brand)

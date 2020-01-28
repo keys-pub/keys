@@ -104,16 +104,16 @@ func (i ID) IsEd25519() bool {
 	if err != nil {
 		return false
 	}
-	return hrp == edKeyHRP
+	return hrp == ed25519KeyHRP
 }
 
-// IsCurve25519 returns true if ID represents a Curve25519 key.
-func (i ID) IsCurve25519() bool {
+// IsX25519 returns true if ID represents a X25519 key.
+func (i ID) IsX25519() bool {
 	hrp, _, err := i.Decode()
 	if err != nil {
 		return false
 	}
-	return hrp == curveKeyHRP
+	return hrp == x25519KeyHRP
 }
 
 // KeyType returns public key type that ID represents or empty string if unknown.
@@ -123,10 +123,10 @@ func (i ID) KeyType() KeyType {
 		return ""
 	}
 	switch hrp {
-	case edKeyHRP:
+	case ed25519KeyHRP:
 		return Ed25519Public
-	case curveKeyHRP:
-		return Curve25519Public
+	case x25519KeyHRP:
+		return X25519Public
 	}
 	return ""
 }

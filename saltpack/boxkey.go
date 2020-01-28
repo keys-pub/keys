@@ -18,7 +18,7 @@ type boxKey struct {
 
 // GenerateBoxKey creates a BoxKey.
 func generateBoxKey() boxKey {
-	bk := keys.GenerateCurve25519Key()
+	bk := keys.GenerateX25519Key()
 	return newBoxKey(bk)
 }
 
@@ -82,7 +82,7 @@ func boxPublicKeyFromKID(b []byte) *boxPublicKey {
 		return nil
 	}
 	pk := keys.Bytes32(b)
-	return newBoxPublicKey(keys.NewCurve25519PublicKey(pk))
+	return newBoxPublicKey(keys.NewX25519PublicKey(pk))
 }
 
 // ToRawBoxKeyPointer (for ksaltpack.BoxPublicKey)

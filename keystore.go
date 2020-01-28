@@ -101,7 +101,7 @@ func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if item == nil || item.Type != string(Curve25519) {
+	if item == nil || item.Type != string(X25519) {
 		return nil, nil
 	}
 	return AsBoxKey(item)
@@ -137,7 +137,7 @@ func (k *Keystore) SaveBoxPublicKey(bpk *BoxPublicKey) error {
 	if err != nil {
 		return err
 	}
-	if item != nil && item.Type != string(Curve25519Public) {
+	if item != nil && item.Type != string(X25519Public) {
 		return errors.Errorf("failed to save box public key: existing keyring item exists of alternate type")
 	}
 	return k.set(NewBoxPublicKeyItem(bpk))
@@ -164,10 +164,10 @@ func (k *Keystore) Key(id ID) (Key, error) {
 // keyForItem returns Key or nil if not recognized as a key.
 func keyForItem(item *keyring.Item) (Key, error) {
 	switch item.Type {
-	case string(Curve25519):
+	case string(X25519):
 		return AsBoxKey(item)
-	case string(Curve25519Public):
-		return AsCurve25519PublicKey(item)
+	case string(X25519Public):
+		return AsX25519PublicKey(item)
 	case string(Ed25519):
 		return AsSignKey(item)
 	case string(Ed25519Public):
@@ -218,7 +218,7 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	logger.Debugf("Loading box keys...")
 	items, err := k.Keyring().List(&keyring.ListOpts{
-		Types: []string{string(Curve25519), string(Ed25519)},
+		Types: []string{string(X25519), string(Ed25519)},
 	})
 	if err != nil {
 		return nil, err
@@ -318,29 +318,29 @@ func BoxPublicKeyForID(id ID) (*BoxPublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty id")
 	}
-	if id.IsCurve25519() {
-		return Curve25519PublicKeyFromID(id)
+	if id.IsX25519() {
+		return X25519PublicKeyFromID(id)
 	}
 	if id.IsEd25519() {
 		spk, err := Ed25519PublicKeyFromID(id)
 		if err != nil {
 			return nil, err
 		}
-		return spk.Curve25519PublicKey(), nil
+		return spk.X25519PublicKey(), nil
 	}
 	return nil, errors.Errorf("unrecognized id %s", id)
 }
 
 // FindEd25519PublicKey searches all our Ed25519 public keys for a match to a converted
-// Curve25519 public key.
-func (k *Keystore) FindEd25519PublicKey(bpk *Curve25519PublicKey) (*Ed25519PublicKey, error) {
-	logger.Debugf("Finding ed25519 key from curve25519 key %s", bpk.ID())
+// X25519 public key.
+func (k *Keystore) FindEd25519PublicKey(bpk *X25519PublicKey) (*Ed25519PublicKey, error) {
+	logger.Debugf("Finding ed25519 key from x25519 key %s", bpk.ID())
 	spks, err := k.SignPublicKeys()
 	if err != nil {
 		return nil, err
 	}
 	for _, spk := range spks {
-		if bytes.Equal(spk.Curve25519PublicKey().Bytes(), bpk.Bytes()) {
+		if bytes.Equal(spk.X25519PublicKey().Bytes(), bpk.Bytes()) {
 			logger.Debugf("Found ed25519 key %s", spk.ID())
 			return spk, nil
 		}
@@ -354,7 +354,7 @@ func (k *Keystore) SaveKey(key Key) error {
 	switch v := key.(type) {
 	case *Ed25519Key:
 		return k.SaveSignKey(v)
-	case *Curve25519Key:
+	case *X25519Key:
 		return k.SaveBoxKey(v)
 	default:
 		return errors.Errorf("unsupported key")

@@ -1,9 +1,9 @@
 # Keys
 
-| Key          | Description                   |
-| ------------ | ----------------------------- |
-| `Ed25519`    | Ed25519 (EdDSA) sign key.     |
-| `Curve25519` | Curve25519 DH encryption key. |
+| Key       | Description               |
+| --------- | ------------------------- |
+| `Ed25519` | Ed25519 (EdDSA) sign key. |
+| `X25519`  | X25519 DH encryption key. |
 
 ## Examples
 
@@ -63,8 +63,8 @@ import (
 )
 
 func main() {
-    alice := keys.GenerateCurve25519Key()
-    bob := keys.GenerateCurve25519Key()
+    alice := keys.GenerateX25519Key()
+    bob := keys.GenerateX25519Key()
 
     msg := "Hey bob, it's alice. The passcode is 12345."
     encrypted := keys.BoxSeal([]byte(msg), bob.PublicKey, alice)

@@ -13,33 +13,33 @@ const (
 
 // NewBoxKeyItem creates keyring item for BoxKey.
 func NewBoxKeyItem(key *BoxKey) *keyring.Item {
-	return keyring.NewItem(key.ID().String(), keyring.NewSecret(key.PrivateKey()[:]), string(Curve25519))
+	return keyring.NewItem(key.ID().String(), keyring.NewSecret(key.PrivateKey()[:]), string(X25519))
 }
 
 // AsBoxKey returns BoxKey for keyring Item.
 // If item is SignKey returns converted to BoxKey.
 func AsBoxKey(item *keyring.Item) (*BoxKey, error) {
 	switch item.Type {
-	case string(Curve25519):
-		bk := NewCurve25519KeyFromPrivateKey(Bytes32(item.SecretData()))
+	case string(X25519):
+		bk := NewX25519KeyFromPrivateKey(Bytes32(item.SecretData()))
 		return bk, nil
 	case string(Ed25519):
 		sk, err := AsSignKey(item)
 		if err != nil {
 			return nil, err
 		}
-		return sk.Curve25519Key(), nil
+		return sk.X25519Key(), nil
 	default:
-		return nil, errors.Errorf("item type %s != %s", item.Type, string(Curve25519))
+		return nil, errors.Errorf("item type %s != %s", item.Type, string(X25519))
 	}
 }
 
 // AsBoxPublicKey returns BoxPublicKey for keyring Item.
 func AsBoxPublicKey(item *keyring.Item) (*BoxPublicKey, error) {
 	switch item.Type {
-	case string(Curve25519Public):
-		return NewCurve25519PublicKey(Bytes32(item.SecretData())), nil
-	case string(Curve25519):
+	case string(X25519Public):
+		return NewX25519PublicKey(Bytes32(item.SecretData())), nil
+	case string(X25519):
 		bk, err := AsBoxKey(item)
 		if err != nil {
 			return nil, err
@@ -93,21 +93,21 @@ func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
 	}
 }
 
-// NewBoxPublicKeyItem creates keyring item for Curve25519PublicKey.
-func NewBoxPublicKeyItem(publicKey *Curve25519PublicKey) *keyring.Item {
-	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), string(Curve25519Public))
+// NewBoxPublicKeyItem creates keyring item for X25519PublicKey.
+func NewBoxPublicKeyItem(publicKey *X25519PublicKey) *keyring.Item {
+	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), string(X25519Public))
 }
 
-// AsCurve25519PublicKey returns Curve25519PublicKey for keyring Item.
-func AsCurve25519PublicKey(item *keyring.Item) (*Curve25519PublicKey, error) {
+// AsX25519PublicKey returns X25519PublicKey for keyring Item.
+func AsX25519PublicKey(item *keyring.Item) (*X25519PublicKey, error) {
 	switch item.Type {
-	case string(Curve25519Public):
+	case string(X25519Public):
 		b := item.SecretData()
 		if len(b) != 32 {
-			return nil, errors.Errorf("invalid number of bytes for curve25519 public key")
+			return nil, errors.Errorf("invalid number of bytes for x25519 public key")
 		}
-		return NewCurve25519PublicKey(Bytes32(b)), nil
-	case string(Curve25519):
+		return NewX25519PublicKey(Bytes32(b)), nil
+	case string(X25519):
 		bk, err := AsBoxKey(item)
 		if err != nil {
 			return nil, err

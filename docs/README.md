@@ -10,7 +10,7 @@
 
 ## Keys
 
-[Keys](specs/keys.md) including a signing key (Ed25519), an assymetric encryption key (Curve25519 DH).
+[Keys](specs/keys.md) including a signing key (Ed25519), an assymetric encryption key (X25519 DH).
 
 ## Keystore
 
