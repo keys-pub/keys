@@ -60,21 +60,21 @@ func TestFindSaltpack(t *testing.T) {
 	require.Equal(t, "l0eEt9tsSRb8xzEXvvgqPrizO9VJe9AcsbRmIt5NoSP8AjLpClFdJJ1upFbIxxnKzSyXt6ltPcXWkaseWW5coa1e5VXvEMPpyt5IQii1Q5ox8p3recj6hVN", out)
 	require.Equal(t, "", brand)
 
-	msg = `This is a saltpack encoded message... BEGIN ED25519 KEY MESSAGE.
+	msg = `This is a saltpack encoded message... BEGIN EDX25519 KEY MESSAGE.
 	l0eEt9tsSRb8xzE XvvgqPrizO9VJe9 AcsbRmIt5NoSP8A jLpClFdJJ1upFbI
 	xxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.
-	END ED25519 KEY MESSAGE. --`
+	END EDX25519 KEY MESSAGE. --`
 	out, brand = findSaltpack(msg, false)
 	require.Equal(t, "l0eEt9tsSRb8xzEXvvgqPrizO9VJe9AcsbRmIt5NoSP8AjLpClFdJJ1upFbIxxnKzSyXt6ltPcXWkaseWW5coa1e5VXvEMPpyt5IQii1Q5ox8p3recj6hVN", out)
-	require.Equal(t, "ED25519 KEY", brand)
+	require.Equal(t, "EDX25519 KEY", brand)
 
-	msg = `This is a saltpack encoded message... BEGIN ED25519 
+	msg = `This is a saltpack encoded message... BEGIN EDX25519 
 	KEY MESSAGE.
 	l0eEt9tsSRb8xzE XvvgqPrizO9VJe9 AcsbRmIt5NoSP8A jLpClFdJJ1upFbI
 	xxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.
-	END ED25519
+	END EDX25519
 	 KEY MESSAGE. --`
 	out, brand = findSaltpack(msg, false)
 	require.Equal(t, "l0eEt9tsSRb8xzEXvvgqPrizO9VJe9AcsbRmIt5NoSP8AjLpClFdJJ1upFbIxxnKzSyXt6ltPcXWkaseWW5coa1e5VXvEMPpyt5IQii1Q5ox8p3recj6hVN", out)
-	require.Equal(t, "ED25519 KEY", brand)
+	require.Equal(t, "EDX25519 KEY", brand)
 }

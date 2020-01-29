@@ -205,7 +205,9 @@ func (u *UserStore) ValidateStatement(st *Statement) error {
 	return nil
 }
 
-// Get users for KID.
+// Get user result for KID.
+// Retrieves cached result. If Update(kid) has not been called or there is no
+// user statement, this will return nil.
 func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
 	res, err := u.get(ctx, kid)
 	if err != nil {

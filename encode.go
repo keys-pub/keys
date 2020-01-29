@@ -201,7 +201,7 @@ func hasUpper(s string) bool {
 type Brand string
 
 // EdX25519Brand is saltpack brand for EdX25519 key.
-const EdX25519Brand Brand = "ED25519 KEY"
+const EdX25519Brand Brand = "EDX25519 KEY"
 
 // X25519Brand is saltpack brand for X25519 key.
 const X25519Brand Brand = "CURVE25519 KEY"
