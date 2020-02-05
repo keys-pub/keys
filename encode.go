@@ -208,6 +208,9 @@ const X25519Brand Brand = "CURVE25519 KEY"
 
 // EncodeKeyToSaltpack encrypts a key to saltpack with password.
 func EncodeKeyToSaltpack(key Key, password string) (string, error) {
+	if key == nil {
+		return "", errors.Errorf("no key to encode")
+	}
 	var brand Brand
 	b := key.Bytes()
 	switch key.Type() {

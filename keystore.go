@@ -158,6 +158,9 @@ func (k *Keystore) Key(id ID) (Key, error) {
 	if err != nil {
 		return nil, err
 	}
+	if item == nil {
+		return nil, nil
+	}
 	return keyForItem(item)
 }
 

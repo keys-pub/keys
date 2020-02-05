@@ -179,3 +179,10 @@ func TestExportImportKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, sk.ID(), key.ID())
 }
+
+func TestUnknownKey(t *testing.T) {
+	ks := NewMemKeystore()
+	key, err := ks.Key(RandID(edx25519KeyHRP))
+	require.NoError(t, err)
+	require.Nil(t, key)
+}
