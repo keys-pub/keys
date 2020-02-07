@@ -25,14 +25,14 @@ type mem struct {
 	items map[string][]byte
 }
 
-func (k mem) get(service string, id string) ([]byte, error) {
+func (k mem) Get(service string, id string) ([]byte, error) {
 	if b, ok := k.items[id]; ok {
 		return b, nil
 	}
 	return nil, nil
 }
 
-func (k mem) set(service string, id string, data []byte, typ string) error {
+func (k mem) Set(service string, id string, data []byte, typ string) error {
 	if id == "" {
 		return errors.Errorf("no id set")
 	}
@@ -40,7 +40,7 @@ func (k mem) set(service string, id string, data []byte, typ string) error {
 	return nil
 }
 
-func (k mem) ids(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k mem) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {
 		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
@@ -60,12 +60,12 @@ func (k mem) ids(service string, prefix string, showHidden bool, showReserved bo
 	return ids, nil
 }
 
-func (k mem) exists(service string, id string) (bool, error) {
+func (k mem) Exists(service string, id string) (bool, error) {
 	_, ok := k.items[id]
 	return ok, nil
 }
 
-func (k mem) remove(service string, id string) (bool, error) {
+func (k mem) Delete(service string, id string) (bool, error) {
 	if _, ok := k.items[id]; ok {
 		delete(k.items, id)
 		return true, nil

@@ -15,7 +15,7 @@ func NewKeyring(service string) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
-	kr, err := newKeyring(system, service)
+	kr, err := newKeyring(NewStore(), service)
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +121,15 @@ func list(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) 
 	return items, nil
 }
 
-var system = sys{}
+// NewStore returns keyring store.
+func NewStore() Store {
+	return sys{}
+}
 
 type sys struct{}
 
 // Get item from keyring.
-func (k sys) get(service string, id string) ([]byte, error) {
+func (k sys) Get(service string, id string) ([]byte, error) {
 	s, err := gokeyring.Get(service, id)
 	if err != nil {
 		if err == gokeyring.ErrNotFound {
@@ -138,11 +141,11 @@ func (k sys) get(service string, id string) ([]byte, error) {
 }
 
 // Set item in keyring.
-func (k sys) set(service string, id string, data []byte, typ string) error {
+func (k sys) Set(service string, id string, data []byte, typ string) error {
 	return gokeyring.Set(service, id, string(data))
 }
 
-func (k sys) remove(service string, id string) (bool, error) {
+func (k sys) Delete(service string, id string) (bool, error) {
 	if err := gokeyring.Delete(service, id); err != nil {
 		if err == gokeyring.ErrNotFound {
 			return false, nil
@@ -152,7 +155,7 @@ func (k sys) remove(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) ids(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	svc, err := ss.NewSecretService()
 	if err != nil {
 		return nil, err
@@ -177,7 +180,7 @@ func (k sys) ids(service string, prefix string, showHidden bool, showReserved bo
 	return ids, nil
 }
 
-func (k sys) exists(service string, id string) (bool, error) {
+func (k sys) Exists(service string, id string) (bool, error) {
 	s, err := gokeyring.Get(service, id)
 	if err != nil {
 		if err == gokeyring.ErrNotFound {

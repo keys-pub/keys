@@ -12,7 +12,7 @@ func NewKeyring(service string) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
-	kr, err := newKeyring(system, service)
+	kr, err := newKeyring(NewStore(), service)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +58,14 @@ func (k *windows) List(opts *ListOpts) ([]*Item, error) {
 	return items, nil
 }
 
-var system = sys{}
+// NewStore returns keyring store.
+func NewStore() Store {
+	return sys{}
+}
 
 type sys struct{}
 
-func (k sys) get(service string, id string) ([]byte, error) {
+func (k sys) Get(service string, id string) ([]byte, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
@@ -77,14 +80,14 @@ func (k sys) get(service string, id string) ([]byte, error) {
 	return cred.CredentialBlob, nil
 }
 
-func (k sys) set(service string, id string, data []byte, typ string) error {
+func (k sys) Set(service string, id string, data []byte, typ string) error {
 	targetName := service + "/" + id
 	cred := wincred.NewGenericCredential(targetName)
 	cred.CredentialBlob = data
 	return cred.Write()
 }
 
-func (k sys) remove(service string, id string) (bool, error) {
+func (k sys) Delete(service string, id string) (bool, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
@@ -102,7 +105,7 @@ func (k sys) remove(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) exists(service string, id string) (bool, error) {
+func (k sys) Exists(service string, id string) (bool, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
@@ -117,7 +120,7 @@ func (k sys) exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) ids(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	creds, err := wincred.List()
 	if err != nil {
 		return nil, err

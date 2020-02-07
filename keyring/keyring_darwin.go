@@ -13,7 +13,7 @@ func NewKeyring(service string) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
-	kr, err := newKeyring(system, service)
+	kr, err := newKeyring(NewStore(), service)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (k *darwin) List(opts *ListOpts) ([]*Item, error) {
 		if strings.HasPrefix(r.Account, hiddenPrefix) || strings.HasPrefix(r.Account, reservedPrefix) {
 			continue
 		}
-		item, err := getItem(system, k.service, r.Account, k.key)
+		item, err := getItem(NewStore(), k.service, r.Account, k.key)
 		if err != nil {
 			return nil, err
 		}
@@ -74,11 +74,14 @@ func (k *darwin) List(opts *ListOpts) ([]*Item, error) {
 	return items, nil
 }
 
-var system = sys{}
-
 type sys struct{}
 
-func (k sys) get(service string, id string) ([]byte, error) {
+// NewStore returns keyring store.
+func NewStore() Store {
+	return sys{}
+}
+
+func (k sys) Get(service string, id string) ([]byte, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
 	query.SetService(service)
@@ -99,16 +102,16 @@ func (k sys) get(service string, id string) ([]byte, error) {
 	return results[0].Data, nil
 }
 
-func (k sys) set(service string, id string, data []byte, typ string) error {
+func (k sys) Set(service string, id string, data []byte, typ string) error {
 	// Remove existing
-	_, err := system.remove(service, id)
+	_, err := k.Delete(service, id)
 	if err != nil {
 		return errors.Wrapf(err, "failed to remove existing keychain item before add")
 	}
 	return add(service, id, data, typ)
 }
 
-func (k sys) remove(service string, id string) (bool, error) {
+func (k sys) Delete(service string, id string) (bool, error) {
 	item := keychain.NewItem()
 	item.SetSecClass(keychain.SecClassGenericPassword)
 	item.SetService(service)
@@ -127,7 +130,7 @@ func (k sys) remove(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) exists(service string, id string) (bool, error) {
+func (k sys) Exists(service string, id string) (bool, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
 	query.SetService(service)
@@ -145,7 +148,7 @@ func (k sys) exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) ids(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
 	query.SetService(service)

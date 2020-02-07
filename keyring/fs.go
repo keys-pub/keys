@@ -38,7 +38,7 @@ type fs struct {
 	dir string
 }
 
-func (k fs) get(service string, id string) ([]byte, error) {
+func (k fs) Get(service string, id string) ([]byte, error) {
 	path := filepath.Join(k.dir, id)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, nil
@@ -46,7 +46,7 @@ func (k fs) get(service string, id string) ([]byte, error) {
 	return ioutil.ReadFile(path)
 }
 
-func (k fs) set(service string, id string, data []byte, typ string) error {
+func (k fs) Set(service string, id string, data []byte, typ string) error {
 	path := filepath.Join(k.dir, id)
 	if err := os.MkdirAll(k.dir, 0700); err != nil {
 		return err
@@ -57,7 +57,7 @@ func (k fs) set(service string, id string, data []byte, typ string) error {
 	return nil
 }
 
-func (k fs) ids(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k fs) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	path := filepath.Join(k.dir, service)
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -81,7 +81,7 @@ func (k fs) ids(service string, prefix string, showHidden bool, showReserved boo
 	return ids, nil
 }
 
-func (k fs) exists(service string, id string) (bool, error) {
+func (k fs) Exists(service string, id string) (bool, error) {
 	path := filepath.Join(k.dir, service, id)
 	if _, err := os.Stat(path); err == nil {
 		return true, nil
@@ -92,7 +92,7 @@ func (k fs) exists(service string, id string) (bool, error) {
 	}
 }
 
-func (k fs) remove(service string, id string) (bool, error) {
+func (k fs) Delete(service string, id string) (bool, error) {
 	path := filepath.Join(k.dir, service, id)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false, nil

@@ -65,7 +65,7 @@ func testAuth(t *testing.T, kr Keyring) {
 	// require.Equal(t, []byte("secret"), item.Secret().Data)
 }
 
-func TestSystem(t *testing.T) {
+func TestStore(t *testing.T) {
 	kr, err := NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
@@ -75,13 +75,13 @@ func TestSystem(t *testing.T) {
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
 
-	// Test get internal raw
-	kh, err := system.get("KeysTest", "#auth")
+	st := NewStore()
+
+	kh, err := st.Get("KeysTest", "#auth")
 	require.NoError(t, err)
 	require.NotNil(t, kh)
 
-	// Test get raw error
-	err = system.set("KeysTest", ".raw", []byte{0x01}, "")
+	err = st.Set("KeysTest", ".raw", []byte{0x01}, "")
 	require.NoError(t, err)
 
 	_, err = kr.Get(".raw")
