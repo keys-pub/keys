@@ -136,11 +136,9 @@ func AsSecretKey(item *keyring.Item) (SecretKey, error) {
 }
 
 // NewCertificateKeyItem creates an Item for a certificate private key.
-// The publicKey is a PEM encoded X.509v3 certificate.
-// The privateKey is a PEM encoded EC private key ASN.1, DER format.
-func NewCertificateKeyItem(id string, privateKey string, publicKey string) *keyring.Item {
-	item := keyring.NewItem(id, keyring.NewStringSecret(privateKey), certificateItemType)
-	item.SetSecretFor("public", keyring.NewStringSecret(publicKey))
+func NewCertificateKeyItem(id string, certKey *CertificateKey) *keyring.Item {
+	item := keyring.NewItem(id, keyring.NewStringSecret(certKey.Private()), certificateItemType)
+	item.SetSecretFor("public", keyring.NewStringSecret(certKey.Public()))
 	return item
 }
 
