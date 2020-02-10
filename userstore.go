@@ -209,7 +209,7 @@ func (u *UserStore) ValidateStatement(st *Statement) error {
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
 func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
-	res, err := u.get(ctx, kid)
+	res, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
 	}
@@ -219,11 +219,23 @@ func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
 	return res.UserResult, nil
 }
 
-func (u *UserStore) get(ctx context.Context, kid ID) (*keyDocument, error) {
-	if kid == "" {
-		return nil, errors.Errorf("empty kid")
+// User result for user name@service.
+func (u *UserStore) User(ctx context.Context, user string) (*UserResult, error) {
+	res, err := u.get(ctx, indexUser, user)
+	if err != nil {
+		return nil, err
 	}
-	path := Path(indexKID, kid.String())
+	if res == nil {
+		return nil, nil
+	}
+	return res.UserResult, nil
+}
+
+func (u *UserStore) get(ctx context.Context, index string, val string) (*keyDocument, error) {
+	if val == "" {
+		return nil, errors.Errorf("empty value")
+	}
+	path := Path(index, val)
 	doc, err := u.dst.Get(ctx, path)
 	if err != nil {
 		return nil, err
@@ -239,7 +251,7 @@ func (u *UserStore) get(ctx context.Context, kid ID) (*keyDocument, error) {
 }
 
 func (u *UserStore) result(ctx context.Context, kid ID) (*UserResult, error) {
-	doc, err := u.get(ctx, kid)
+	doc, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +276,7 @@ const indexUser = "user"
 
 func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
 	// Remove existing if different
-	existing, err := u.get(ctx, keyDoc.KID)
+	existing, err := u.get(ctx, indexKID, keyDoc.KID.String())
 	if err != nil {
 		return err
 	}

@@ -116,6 +116,16 @@ func TestUserResultGithub(t *testing.T) {
 	require.Equal(t, "alice", result.User.Name)
 	require.Equal(t, TimeMs(1234567890004), result.VerifiedAt)
 	require.Equal(t, TimeMs(1234567890003), result.Timestamp)
+
+	result, err = ust.Get(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.Equal(t, "github", result.User.Service)
+	require.Equal(t, "alice", result.User.Name)
+
+	result, err = ust.User(context.TODO(), "alice@github")
+	require.NoError(t, err)
+	require.Equal(t, "github", result.User.Service)
+	require.Equal(t, "alice", result.User.Name)
 }
 
 func TestUserResultGithubWrongName(t *testing.T) {
