@@ -15,9 +15,8 @@ type UserSearchRequest struct {
 
 // UserSearchResult ...
 type UserSearchResult struct {
-	KID ID `json:"kid"`
-	// UserResult.
-	UserResult *UserResult `json:"users"`
+	KID        ID
+	UserResult *UserResult
 }
 
 func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*UserSearchResult, error) {
