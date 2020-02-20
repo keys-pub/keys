@@ -21,8 +21,8 @@ func (s *Saltpack) Sign(b []byte, key *keys.EdX25519Key) ([]byte, error) {
 // SignDetached ...
 func (s *Saltpack) SignDetached(b []byte, key *keys.EdX25519Key) ([]byte, error) {
 	if s.armor {
-		// TODO: Implement
-		return nil, errors.Errorf("not implemented")
+		s, err := ksaltpack.SignDetachedArmor62(ksaltpack.Version1(), b, newSignKey(key), s.armorBrand)
+		return []byte(s), err
 	}
 	return ksaltpack.SignDetached(ksaltpack.Version1(), b, newSignKey(key))
 }
@@ -73,13 +73,19 @@ func bytesToID(b []byte, typ keys.KeyType) (keys.ID, error) {
 
 // VerifyDetached ...
 func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
+	var spk ksaltpack.SigningPublicKey
 	if s.armor {
-		// TODO: Implement
-		return "", errors.Errorf("not implemented")
-	}
-	spk, err := ksaltpack.VerifyDetached(signVersionValidator, b, sig, s)
-	if err != nil {
-		return "", convertErr(err)
+		s, _, err := ksaltpack.Dearmor62VerifyDetached(signVersionValidator, b, string(sig), s)
+		if err != nil {
+			return "", convertErr(err)
+		}
+		spk = s
+	} else {
+		s, err := ksaltpack.VerifyDetached(signVersionValidator, b, sig, s)
+		if err != nil {
+			return "", convertErr(err)
+		}
+		spk = s
 	}
 
 	signer, err := bytesToID(spk.ToKID(), keys.EdX25519Public)

@@ -24,15 +24,22 @@ func TestSignVerify(t *testing.T) {
 	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
-	messageOut, signer, err := sp.Verify(sig)
+	out, signer, err := sp.Verify(sig)
 	require.NoError(t, err)
-	require.Equal(t, message, messageOut)
+	require.Equal(t, message, out)
+	require.Equal(t, alice.PublicKey().ID(), signer)
+
+	sig, err = sp.SignDetached(message, alice)
+	require.NoError(t, err)
+
+	signer, err = sp.VerifyDetached(sig, message)
+	require.NoError(t, err)
+	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
 func ExampleSaltpack_Sign() {
-	ks := keys.NewKeystore()
-	sp := saltpack.NewSaltpack(ks)
+	sp := saltpack.NewSaltpack(nil)
 	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
@@ -43,12 +50,12 @@ func ExampleSaltpack_Sign() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Signed: %s", string(sig))
+	fmt.Printf("%d", len(sig))
+	// Output: 376
 }
 
 func ExampleSaltpack_SignDetached() {
-	ks := keys.NewKeystore()
-	sp := saltpack.NewSaltpack(ks)
+	sp := saltpack.NewSaltpack(nil)
 	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
@@ -59,12 +66,12 @@ func ExampleSaltpack_SignDetached() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Signed (detached): %s", string(sig))
+	fmt.Printf("%d", len(sig))
+	// Output: 263
 }
 
 func ExampleSaltpack_Verify() {
-	ks := keys.NewKeystore()
-	sp := saltpack.NewSaltpack(ks)
+	sp := saltpack.NewSaltpack(nil)
 	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
@@ -80,8 +87,13 @@ func ExampleSaltpack_Verify() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Signer: %s\n", signer)
-	fmt.Printf("Out: %s\n", string(out))
+	if signer == alice.ID() {
+		fmt.Printf("Signer is alice\n")
+	}
+	fmt.Printf("%s\n", string(out))
+	// Output:
+	// Signer is alice
+	// hi from alice
 }
 
 func TestSignVerifyArmored(t *testing.T) {
