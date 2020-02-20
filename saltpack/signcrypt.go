@@ -11,7 +11,7 @@ import (
 
 // Signcrypt to recipients.
 // https://saltpack.org/signcryption-format
-func (s *Saltpack) Signcrypt(b []byte, sender *keys.SignKey, recipients ...keys.ID) ([]byte, error) {
+func (s *Saltpack) Signcrypt(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) ([]byte, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (s *Saltpack) signcryptArmoredOpen(b []byte) ([]byte, keys.ID, error) {
 }
 
 // NewSigncryptStream ...
-func (s *Saltpack) NewSigncryptStream(w io.Writer, sender *keys.SignKey, recipients ...keys.ID) (io.WriteCloser, error) {
+func (s *Saltpack) NewSigncryptStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err

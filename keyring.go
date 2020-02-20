@@ -11,20 +11,20 @@ const (
 	secretItemType      string = "secret"
 )
 
-// NewBoxKeyItem creates keyring item for BoxKey.
-func NewBoxKeyItem(key *BoxKey) *keyring.Item {
+// NewX25519KeyItem creates keyring item for X25519Key.
+func NewX25519KeyItem(key *X25519Key) *keyring.Item {
 	return keyring.NewItem(key.ID().String(), keyring.NewSecret(key.PrivateKey()[:]), string(X25519))
 }
 
-// AsBoxKey returns BoxKey for keyring Item.
-// If item is SignKey returns converted to BoxKey.
-func AsBoxKey(item *keyring.Item) (*BoxKey, error) {
+// AsX25519Key returns X25519Key for keyring Item.
+// If item is EdX25519Key returns converted to X25519Key.
+func AsX25519Key(item *keyring.Item) (*X25519Key, error) {
 	switch item.Type {
 	case string(X25519):
 		bk := NewX25519KeyFromPrivateKey(Bytes32(item.SecretData()))
 		return bk, nil
 	case string(EdX25519):
-		sk, err := AsSignKey(item)
+		sk, err := AsEdX25519Key(item)
 		if err != nil {
 			return nil, err
 		}
@@ -34,29 +34,13 @@ func AsBoxKey(item *keyring.Item) (*BoxKey, error) {
 	}
 }
 
-// AsBoxPublicKey returns BoxPublicKey for keyring Item.
-func AsBoxPublicKey(item *keyring.Item) (*BoxPublicKey, error) {
-	switch item.Type {
-	case string(X25519Public):
-		return NewX25519PublicKey(Bytes32(item.SecretData())), nil
-	case string(X25519):
-		bk, err := AsBoxKey(item)
-		if err != nil {
-			return nil, err
-		}
-		return bk.PublicKey(), nil
-	default:
-		return nil, errors.Errorf("invalid item type for sign public key: %s", item.Type)
-	}
-}
-
-// NewSignKeyItem creates keyring item for SignKey.
-func NewSignKeyItem(signKey *SignKey) *keyring.Item {
+// NewEdX25519KeyItem creates keyring item for EdX25519Key.
+func NewEdX25519KeyItem(signKey *EdX25519Key) *keyring.Item {
 	return keyring.NewItem(signKey.ID().String(), keyring.NewSecret(signKey.PrivateKey()[:]), string(EdX25519))
 }
 
-// AsSignKey returns SignKey for keyring Item.
-func AsSignKey(item *keyring.Item) (*SignKey, error) {
+// AsEdX25519Key returns EdX25519Key for keyring Item.
+func AsEdX25519Key(item *keyring.Item) (*EdX25519Key, error) {
 	if item.Type != string(EdX25519) {
 		return nil, errors.Errorf("item type %s != %s", item.Type, string(EdX25519))
 	}
@@ -68,13 +52,13 @@ func AsSignKey(item *keyring.Item) (*SignKey, error) {
 	return sk, nil
 }
 
-// NewSignPublicKeyItem creates keyring item for SignPublicKey.
-func NewSignPublicKeyItem(publicKey *SignPublicKey) *keyring.Item {
+// NewEdX25519PublicKeyItem creates keyring item for EdX25519PublicKey.
+func NewEdX25519PublicKeyItem(publicKey *EdX25519PublicKey) *keyring.Item {
 	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), string(EdX25519Public))
 }
 
-// AsSignPublicKey returns SignPublicKey for keyring Item.
-func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
+// AsEdX25519PublicKey returns EdX25519PublicKey for keyring Item.
+func AsEdX25519PublicKey(item *keyring.Item) (*EdX25519PublicKey, error) {
 	switch item.Type {
 	case string(EdX25519Public):
 		b := item.SecretData()
@@ -83,7 +67,7 @@ func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
 		}
 		return NewEdX25519PublicKey(Bytes32(b)), nil
 	case string(EdX25519):
-		sk, err := AsSignKey(item)
+		sk, err := AsEdX25519Key(item)
 		if err != nil {
 			return nil, err
 		}
@@ -93,8 +77,8 @@ func AsSignPublicKey(item *keyring.Item) (*SignPublicKey, error) {
 	}
 }
 
-// NewBoxPublicKeyItem creates keyring item for X25519PublicKey.
-func NewBoxPublicKeyItem(publicKey *X25519PublicKey) *keyring.Item {
+// NewX25519PublicKeyItem creates keyring item for X25519PublicKey.
+func NewX25519PublicKeyItem(publicKey *X25519PublicKey) *keyring.Item {
 	return keyring.NewItem(publicKey.ID().String(), keyring.NewSecret(publicKey.Bytes()[:]), string(X25519Public))
 }
 
@@ -108,7 +92,7 @@ func AsX25519PublicKey(item *keyring.Item) (*X25519PublicKey, error) {
 		}
 		return NewX25519PublicKey(Bytes32(b)), nil
 	case string(X25519):
-		bk, err := AsBoxKey(item)
+		bk, err := AsX25519Key(item)
 		if err != nil {
 			return nil, err
 		}

@@ -52,8 +52,8 @@ func (k *Keystore) set(item *keyring.Item) error {
 	return k.kr.Set(item)
 }
 
-// SignKey returns sign key for a key identifier.
-func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
+// EdX25519Key returns sign key for a key identifier.
+func (k *Keystore) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	logger.Infof("Keystore load sign key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
@@ -62,13 +62,13 @@ func (k *Keystore) SignKey(kid ID) (*SignKey, error) {
 	if item == nil || item.Type != string(EdX25519) {
 		return nil, nil
 	}
-	return AsSignKey(item)
+	return AsEdX25519Key(item)
 }
 
-// SignPublicKey returns sign public key from the Keystore.
+// EdX25519PublicKey returns sign public key from the Keystore.
 // Since the public key itself is in the ID, you can convert the ID without
-// getting it from the keystore via SignPublicKeyForID.
-func (k *Keystore) SignPublicKey(kid ID) (*SignPublicKey, error) {
+// getting it from the keystore via EdX25519PublicKeyForID.
+func (k *Keystore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	logger.Infof("Keystore load sign public key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
@@ -77,11 +77,11 @@ func (k *Keystore) SignPublicKey(kid ID) (*SignPublicKey, error) {
 	if item == nil {
 		return nil, nil
 	}
-	return AsSignPublicKey(item)
+	return AsEdX25519PublicKey(item)
 }
 
-// BoxKey returns a box key for an identifier
-func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
+// X25519Key returns a box key for an identifier
+func (k *Keystore) X25519Key(kid ID) (*X25519Key, error) {
 	logger.Infof("Keystore load box key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
@@ -90,16 +90,16 @@ func (k *Keystore) BoxKey(kid ID) (*BoxKey, error) {
 	if item == nil || item.Type != string(X25519) {
 		return nil, nil
 	}
-	return AsBoxKey(item)
+	return AsX25519Key(item)
 }
 
-// SaveSignKey saves a SignKey to the Keystore.
-func (k *Keystore) SaveSignKey(signKey *SignKey) error {
-	return k.set(NewSignKeyItem(signKey))
+// SaveEdX25519Key saves a EdX25519Key to the Keystore.
+func (k *Keystore) SaveEdX25519Key(signKey *EdX25519Key) error {
+	return k.set(NewEdX25519KeyItem(signKey))
 }
 
-// SaveSignPublicKey saves SignPublicKey to the Keystore.
-func (k *Keystore) SaveSignPublicKey(spk *SignPublicKey) error {
+// SaveEdX25519PublicKey saves EdX25519PublicKey to the Keystore.
+func (k *Keystore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 	// Check we don't clobber an existing sign key
 	item, err := k.get(spk.ID().String())
 	if err != nil {
@@ -108,16 +108,16 @@ func (k *Keystore) SaveSignPublicKey(spk *SignPublicKey) error {
 	if item != nil && item.Type != string(EdX25519Public) {
 		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
 	}
-	return k.set(NewSignPublicKeyItem(spk))
+	return k.set(NewEdX25519PublicKeyItem(spk))
 }
 
-// SaveBoxKey saves a BoxKey to the Keystore.
-func (k *Keystore) SaveBoxKey(bk *BoxKey) error {
-	return k.set(NewBoxKeyItem(bk))
+// SaveX25519Key saves a X25519Key to the Keystore.
+func (k *Keystore) SaveX25519Key(bk *X25519Key) error {
+	return k.set(NewX25519KeyItem(bk))
 }
 
-// SaveBoxPublicKey saves a BoxPublicKey to the Keystore.
-func (k *Keystore) SaveBoxPublicKey(bpk *BoxPublicKey) error {
+// SaveX25519PublicKey saves a X25519PublicKey to the Keystore.
+func (k *Keystore) SaveX25519PublicKey(bpk *X25519PublicKey) error {
 	// Check we don't clobber an existing box key
 	item, err := k.get(bpk.ID().String())
 	if err != nil {
@@ -126,7 +126,7 @@ func (k *Keystore) SaveBoxPublicKey(bpk *BoxPublicKey) error {
 	if item != nil && item.Type != string(X25519Public) {
 		return errors.Errorf("failed to save box public key: existing keyring item exists of alternate type")
 	}
-	return k.set(NewBoxPublicKeyItem(bpk))
+	return k.set(NewX25519PublicKeyItem(bpk))
 }
 
 // Delete removes an item from the keystore.
@@ -158,13 +158,13 @@ func (k *Keystore) Key(id ID) (Key, error) {
 func keyForItem(item *keyring.Item) (Key, error) {
 	switch item.Type {
 	case string(X25519):
-		return AsBoxKey(item)
+		return AsX25519Key(item)
 	case string(X25519Public):
 		return AsX25519PublicKey(item)
 	case string(EdX25519):
-		return AsSignKey(item)
+		return AsEdX25519Key(item)
 	case string(EdX25519Public):
-		return AsSignPublicKey(item)
+		return AsEdX25519PublicKey(item)
 	default:
 		return nil, nil
 	}
@@ -210,9 +210,9 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 	return keys, nil
 }
 
-// BoxKeys from the Keystore.
+// X25519Keys from the Keystore.
 // Also includes box keys converted from sign keys.
-func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
+func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
 	logger.Debugf("Loading box keys...")
 	kr, err := k.Keyring()
 	if err != nil {
@@ -224,9 +224,9 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	keys := make([]*BoxKey, 0, len(items))
+	keys := make([]*X25519Key, 0, len(items))
 	for _, item := range items {
-		key, err := AsBoxKey(item)
+		key, err := AsX25519Key(item)
 		if err != nil {
 			return nil, err
 		}
@@ -236,8 +236,8 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	return keys, nil
 }
 
-// SignKeys from the Keystore.
-func (k Keystore) SignKeys() ([]*SignKey, error) {
+// EdX25519Keys from the Keystore.
+func (k Keystore) EdX25519Keys() ([]*EdX25519Key, error) {
 	kr, err := k.Keyring()
 	if err != nil {
 		return nil, err
@@ -248,9 +248,9 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	keys := make([]*SignKey, 0, len(items))
+	keys := make([]*EdX25519Key, 0, len(items))
 	for _, item := range items {
-		key, err := AsSignKey(item)
+		key, err := AsEdX25519Key(item)
 		if err != nil {
 			return nil, err
 		}
@@ -259,9 +259,9 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 	return keys, nil
 }
 
-// SignPublicKeys from the Keystore.
-// Includes public keys of SignKey's.
-func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
+// EdX25519PublicKeys from the Keystore.
+// Includes public keys of EdX25519Key's.
+func (k Keystore) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 	kr, err := k.Keyring()
 	if err != nil {
 		return nil, err
@@ -275,17 +275,17 @@ func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	keys := make([]*SignPublicKey, 0, len(items))
+	keys := make([]*EdX25519PublicKey, 0, len(items))
 	for _, item := range items {
 		switch item.Type {
 		case string(EdX25519):
-			key, err := AsSignKey(item)
+			key, err := AsEdX25519Key(item)
 			if err != nil {
 				return nil, err
 			}
 			keys = append(keys, key.PublicKey())
 		case string(EdX25519Public):
-			key, err := AsSignPublicKey(item)
+			key, err := AsEdX25519PublicKey(item)
 			if err != nil {
 				return nil, err
 			}
@@ -295,10 +295,10 @@ func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
 	return keys, nil
 }
 
-// BoxPublicKey returns box public key from the Keystore.
+// X25519PublicKey returns box public key from the Keystore.
 // Since the public key itself is in the ID, you can convert the ID without
-// getting it from the keystore via BoxPublicKeyForID.
-func (k *Keystore) BoxPublicKey(kid ID) (*BoxPublicKey, error) {
+// getting it from the keystore via X25519PublicKeyForID.
+func (k *Keystore) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
 	logger.Infof("Keystore load box public key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
@@ -307,11 +307,11 @@ func (k *Keystore) BoxPublicKey(kid ID) (*BoxPublicKey, error) {
 	if item == nil {
 		return nil, nil
 	}
-	return AsBoxPublicKey(item)
+	return AsX25519PublicKey(item)
 }
 
-// SignPublicKeyForID converts ID to a sign public key.
-func SignPublicKeyForID(id ID) (*SignPublicKey, error) {
+// EdX25519PublicKeyForID converts ID to a sign public key.
+func EdX25519PublicKeyForID(id ID) (*EdX25519PublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty id")
 	}
@@ -321,9 +321,9 @@ func SignPublicKeyForID(id ID) (*SignPublicKey, error) {
 	return nil, errors.Errorf("unrecognized id %s", id)
 }
 
-// BoxPublicKeyForID converts ID to a box public key.
+// X25519PublicKeyForID converts ID to a box public key.
 // If the key is a sign key type it will convert to a box public key.
-func BoxPublicKeyForID(id ID) (*BoxPublicKey, error) {
+func X25519PublicKeyForID(id ID) (*X25519PublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty id")
 	}
@@ -344,7 +344,7 @@ func BoxPublicKeyForID(id ID) (*BoxPublicKey, error) {
 // X25519 public key.
 func (k *Keystore) FindEdX25519PublicKey(bpk *X25519PublicKey) (*EdX25519PublicKey, error) {
 	logger.Debugf("Finding edx25519 key from an x25519 key %s", bpk.ID())
-	spks, err := k.SignPublicKeys()
+	spks, err := k.EdX25519PublicKeys()
 	if err != nil {
 		return nil, err
 	}
@@ -362,9 +362,9 @@ func (k *Keystore) FindEdX25519PublicKey(bpk *X25519PublicKey) (*EdX25519PublicK
 func (k *Keystore) SaveKey(key Key) error {
 	switch v := key.(type) {
 	case *EdX25519Key:
-		return k.SaveSignKey(v)
+		return k.SaveEdX25519Key(v)
 	case *X25519Key:
-		return k.SaveBoxKey(v)
+		return k.SaveX25519Key(v)
 	default:
 		return errors.Errorf("unsupported key")
 	}

@@ -12,11 +12,11 @@ import (
 type signKey struct {
 	ksaltpack.SigningSecretKey
 	privateKey *[ed25519.PrivateKeySize]byte
-	publicKey  *keys.SignPublicKey
+	publicKey  *keys.EdX25519PublicKey
 }
 
 // newSignKey creates SigningSecretKey from a keys.SignKey.
-func newSignKey(sk *keys.SignKey) *signKey {
+func newSignKey(sk *keys.EdX25519Key) *signKey {
 	return &signKey{
 		privateKey: sk.PrivateKey(),
 		publicKey:  sk.PublicKey(),
@@ -35,11 +35,11 @@ func (k *signKey) GetPublicKey() ksaltpack.SigningPublicKey {
 // signPublicKey is a wrapper for keys.SignPublicKey.
 type signPublicKey struct {
 	ksaltpack.SigningPublicKey
-	pk *keys.SignPublicKey
+	pk *keys.EdX25519PublicKey
 }
 
 // newSignPublicKey creates SignPublicKey for keys.SignPublicKey.
-func newSignPublicKey(pk *keys.SignPublicKey) *signPublicKey {
+func newSignPublicKey(pk *keys.EdX25519PublicKey) *signPublicKey {
 	return &signPublicKey{pk: pk}
 }
 

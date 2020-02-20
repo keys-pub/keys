@@ -280,7 +280,7 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, []keys.ID{alice.ID()}, ids)
 }
 
-func saveUser(t *testing.T, ust *keys.UserStore, scs keys.SigchainStore, key *keys.SignKey, name string, service string, clock *clock, mock *keys.MockRequestor) *keys.Statement {
+func saveUser(t *testing.T, ust *keys.UserStore, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *clock, mock *keys.MockRequestor) *keys.Statement {
 	url := ""
 	switch service {
 	case keys.Github:

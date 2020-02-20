@@ -17,7 +17,7 @@ type Saltpack struct {
 
 // Keystore ...
 type Keystore interface {
-	BoxKeys() ([]*keys.BoxKey, error)
+	X25519Keys() ([]*keys.X25519Key, error)
 }
 
 // NewSaltpack creates a Saltpack provider.
@@ -89,7 +89,7 @@ func (s *Saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKe
 		logger.Errorf("Failed to list all box keys: no keystore")
 		return -1, nil
 	}
-	bks, err := s.keys.BoxKeys()
+	bks, err := s.keys.X25519Keys()
 	if err != nil {
 		logger.Errorf("Failed to list all box keys: %v", err)
 		return -1, nil
@@ -122,7 +122,7 @@ func (s *Saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
 		logger.Errorf("Failed to list all box keys: no keystore")
 		return nil
 	}
-	bks, err := s.keys.BoxKeys()
+	bks, err := s.keys.X25519Keys()
 	if err != nil {
 		logger.Errorf("Failed to list all box keys: %v", err)
 		return nil
@@ -153,7 +153,7 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
 	publicKeys := make([]ksaltpack.BoxPublicKey, 0, len(recipients))
 	for _, r := range recipients {
-		pk, err := keys.BoxPublicKeyForID(r)
+		pk, err := keys.X25519PublicKeyForID(r)
 		if err != nil {
 			return nil, errors.Wrapf(err, "invalid recipient")
 		}

@@ -12,7 +12,7 @@ import (
 // Encrypt bytes to recipients.
 // Sender can be nil, if you want it to be anonymous.
 // https://saltpack.org/encryption-format-v2
-func (s *Saltpack) Encrypt(b []byte, sender *keys.BoxKey, recipients ...keys.ID) ([]byte, error) {
+func (s *Saltpack) Encrypt(b []byte, sender *keys.X25519Key, recipients ...keys.ID) ([]byte, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (s *Saltpack) decryptArmored(b []byte) ([]byte, keys.ID, error) {
 
 // NewEncryptStream creates an encrypted io.WriteCloser.
 // Sender can be nil, if you want it to be anonymous.
-func (s *Saltpack) NewEncryptStream(w io.Writer, sender *keys.BoxKey, recipients ...keys.ID) (io.WriteCloser, error) {
+func (s *Saltpack) NewEncryptStream(w io.Writer, sender *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err

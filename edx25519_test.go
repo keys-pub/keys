@@ -13,9 +13,9 @@ import (
 func TestSaveLoadEdX25519Key(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	signKey := keys.GenerateEdX25519Key()
-	err := ks.SaveSignKey(signKey)
+	err := ks.SaveEdX25519Key(signKey)
 	require.NoError(t, err)
-	signKeyOut, err := ks.SignKey(signKey.ID())
+	signKeyOut, err := ks.EdX25519Key(signKey.ID())
 	require.NoError(t, err)
 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
 	require.Equal(t, signKey.PublicKey(), signKeyOut.PublicKey())

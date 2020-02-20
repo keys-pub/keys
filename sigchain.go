@@ -34,7 +34,7 @@ type SigchainPublicKey interface {
 // RevokeLabel is label for revoking an earlier statement
 const RevokeLabel = "revoke"
 
-// NewSigchain returns a new Sigchain for a SignPublicKey.
+// NewSigchain returns a new Sigchain for a EdX25519PublicKey.
 func NewSigchain(spk SigchainPublicKey) *Sigchain {
 	return &Sigchain{
 		kid:        spk.ID(),
@@ -141,7 +141,7 @@ func SigchainHash(st *Statement) (*[32]byte, error) {
 
 // signStatement sets the KID and Sig fields on a Signed value (that has no Sig
 // yet).
-func signStatement(st *Statement, signKey *SignKey) error {
+func signStatement(st *Statement, signKey *EdX25519Key) error {
 	if st.Sig != nil {
 		return errors.Errorf("signature already set")
 	}
@@ -154,7 +154,7 @@ func signStatement(st *Statement, signKey *SignKey) error {
 }
 
 // GenerateStatement creates Statement to be added to the Sigchain.
-func GenerateStatement(sc *Sigchain, b []byte, sk *SignKey, typ string, ts time.Time) (*Statement, error) {
+func GenerateStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, ts time.Time) (*Statement, error) {
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
@@ -200,7 +200,7 @@ func sigchainPreviousHash(prev *Statement) (*[32]byte, error) {
 }
 
 // GenerateRevoke creates a revoke Statement.
-func GenerateRevoke(sc *Sigchain, revoke int, sk *SignKey) (*Statement, error) {
+func GenerateRevoke(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, error) {
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
@@ -243,7 +243,7 @@ func GenerateRevoke(sc *Sigchain, revoke int, sk *SignKey) (*Statement, error) {
 }
 
 // Revoke a signed statement in the Sigchain.
-func (s *Sigchain) Revoke(revoke int, sk *SignKey) (*Statement, error) {
+func (s *Sigchain) Revoke(revoke int, sk *EdX25519Key) (*Statement, error) {
 	st, err := GenerateRevoke(s, revoke, sk)
 	if err != nil {
 		return nil, err

@@ -23,7 +23,7 @@ func generateBoxKey() boxKey {
 }
 
 // newBoxKey creates a BoxKey from a keys.BoxKey.
-func newBoxKey(bk *keys.BoxKey) boxKey {
+func newBoxKey(bk *keys.X25519Key) boxKey {
 	pk := newBoxPublicKey(bk.PublicKey())
 	return boxKey{
 		privateKey: bk.PrivateKey(),
@@ -63,11 +63,11 @@ func (k boxKey) Precompute(peer ksaltpack.BoxPublicKey) ksaltpack.BoxPrecomputed
 // boxPublicKey is a wrapper for keys.BoxPublicKey to support a ksaltpack.BoxPublicKey.
 type boxPublicKey struct {
 	ksaltpack.BoxPublicKey
-	pk *keys.BoxPublicKey
+	pk *keys.X25519PublicKey
 }
 
 // newBoxPublicKey from byte array.
-func newBoxPublicKey(pk *keys.BoxPublicKey) *boxPublicKey {
+func newBoxPublicKey(pk *keys.X25519PublicKey) *boxPublicKey {
 	return &boxPublicKey{pk: pk}
 }
 

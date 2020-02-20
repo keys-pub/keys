@@ -12,29 +12,29 @@ import (
 func TestEdX25519KeyItem(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	sk := keys.GenerateEdX25519Key()
-	err := ks.SaveSignKey(sk)
+	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
-	skOut, err := ks.SignKey(sk.ID())
+	skOut, err := ks.EdX25519Key(sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.PrivateKey()[:], skOut.PrivateKey()[:])
 	require.Equal(t, sk.PublicKey().Bytes()[:], skOut.PublicKey().Bytes()[:])
 
-	sks, err := ks.SignKeys()
+	sks, err := ks.EdX25519Keys()
 	require.NoError(t, err)
 	require.Equal(t, 1, len(sks))
 	require.Equal(t, sk.Seed()[:], sks[0].Seed()[:])
 
-	spkOut, err := ks.SignPublicKey(sk.ID())
+	spkOut, err := ks.EdX25519PublicKey(sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Bytes()[:], spkOut.Bytes()[:])
 
-	err = ks.SaveSignPublicKey(sk.PublicKey())
+	err = ks.SaveEdX25519PublicKey(sk.PublicKey())
 	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")
 
 	spk := keys.GenerateEdX25519Key().PublicKey()
-	err = ks.SaveSignPublicKey(spk)
+	err = ks.SaveEdX25519PublicKey(spk)
 	require.NoError(t, err)
-	skOut, err = ks.SignKey(spk.ID())
+	skOut, err = ks.EdX25519Key(spk.ID())
 	require.NoError(t, err)
 	require.Nil(t, skOut)
 }
@@ -42,13 +42,13 @@ func TestEdX25519KeyItem(t *testing.T) {
 func TestEdX25519PublicKeyItem(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	spk := keys.GenerateEdX25519Key().PublicKey()
-	err := ks.SaveSignPublicKey(spk)
+	err := ks.SaveEdX25519PublicKey(spk)
 	require.NoError(t, err)
-	spkOut, err := ks.SignPublicKey(spk.ID())
+	spkOut, err := ks.EdX25519PublicKey(spk.ID())
 	require.NoError(t, err)
 	require.Equal(t, spk.Bytes()[:], spkOut.Bytes()[:])
 
-	spks, err := ks.SignPublicKeys()
+	spks, err := ks.EdX25519PublicKeys()
 	require.NoError(t, err)
 	require.Equal(t, 1, len(spks))
 	require.Equal(t, spk.Bytes()[:], spks[0].Bytes()[:])
@@ -57,7 +57,7 @@ func TestEdX25519PublicKeyItem(t *testing.T) {
 func TestFindEdX25519PublicKey(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	sk := keys.GenerateEdX25519Key()
-	err := ks.SaveSignKey(sk)
+	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
 
 	spkConv, err := ks.FindEdX25519PublicKey(sk.PublicKey().X25519PublicKey())
@@ -65,7 +65,7 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 	require.Equal(t, sk.PublicKey().Bytes(), spkConv.Bytes())
 
 	spk := keys.GenerateEdX25519Key().PublicKey()
-	err = ks.SaveSignPublicKey(spk)
+	err = ks.SaveEdX25519PublicKey(spk)
 	require.NoError(t, err)
 
 	spkConv2, err := ks.FindEdX25519PublicKey(spk.X25519PublicKey())
@@ -76,20 +76,20 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 func TestX25519KeyItem(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	bk := keys.GenerateX25519Key()
-	err := ks.SaveBoxKey(bk)
+	err := ks.SaveX25519Key(bk)
 	require.NoError(t, err)
-	bkOut, err := ks.BoxKey(bk.ID())
+	bkOut, err := ks.X25519Key(bk.ID())
 	require.NoError(t, err)
 	require.Equal(t, bk.PrivateKey()[:], bkOut.PrivateKey()[:])
 	require.Equal(t, bk.PublicKey().Bytes()[:], bkOut.PublicKey().Bytes()[:])
 
-	err = ks.SaveBoxPublicKey(bk.PublicKey())
+	err = ks.SaveX25519PublicKey(bk.PublicKey())
 	require.EqualError(t, err, "failed to save box public key: existing keyring item exists of alternate type")
 
 	bpk := keys.GenerateX25519Key().PublicKey()
-	err = ks.SaveBoxPublicKey(bpk)
+	err = ks.SaveX25519PublicKey(bpk)
 	require.NoError(t, err)
-	bkOut, err = ks.BoxKey(bpk.ID())
+	bkOut, err = ks.X25519Key(bpk.ID())
 	require.NoError(t, err)
 	require.Nil(t, bkOut)
 }
@@ -99,19 +99,19 @@ func TestKeystoreList(t *testing.T) {
 	ks := keys.NewMemKeystore()
 
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	err := ks.SaveSignKey(sk)
+	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
 
 	sk2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
-	err = ks.SaveSignPublicKey(sk2.PublicKey())
+	err = ks.SaveEdX25519PublicKey(sk2.PublicKey())
 	require.NoError(t, err)
 
 	bk := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	err = ks.SaveBoxKey(bk)
+	err = ks.SaveX25519Key(bk)
 	require.NoError(t, err)
 
 	bk2 := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
-	err = ks.SaveBoxPublicKey(bk2.PublicKey())
+	err = ks.SaveX25519PublicKey(bk2.PublicKey())
 	require.NoError(t, err)
 
 	// Put passphrase in keyring to ensure it doesn't confuse us
@@ -143,9 +143,9 @@ func TestKeystoreList(t *testing.T) {
 func TestKeystoreConcurrent(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	sk := keys.GenerateEdX25519Key()
-	ks.SaveSignKey(sk)
+	ks.SaveEdX25519Key(sk)
 
-	skOut, err := ks.SignKey(sk.ID())
+	skOut, err := ks.EdX25519Key(sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.Seed()[:], skOut.Seed()[:])
 
@@ -153,14 +153,14 @@ func TestKeystoreConcurrent(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		for i := 0; i < 2000; i++ {
-			skOut, err := ks.SignKey(sk.ID())
+			skOut, err := ks.EdX25519Key(sk.ID())
 			require.NoError(t, err)
 			require.Equal(t, sk.Seed()[:], skOut.Seed()[:])
 		}
 		wg.Done()
 	}()
 	for i := 0; i < 2000; i++ {
-		skOut, err := ks.SignKey(sk.ID())
+		skOut, err := ks.EdX25519Key(sk.ID())
 		require.NoError(t, err)
 		require.Equal(t, sk.Seed()[:], skOut.Seed()[:])
 	}

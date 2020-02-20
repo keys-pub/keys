@@ -294,7 +294,7 @@ var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
 // GenerateUserStatement for a user to add to the sigchain.
 // Returns ErrUserAlreadySet is user already exists in the sigchain.
-func GenerateUserStatement(sc *Sigchain, user *User, sk *SignKey, ts time.Time) (*Statement, error) {
+func GenerateUserStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time.Time) (*Statement, error) {
 	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}
@@ -322,7 +322,7 @@ func GenerateUserStatement(sc *Sigchain, user *User, sk *SignKey, ts time.Time) 
 }
 
 // Sign user into an armored message.
-func (u *User) Sign(key *SignKey) (string, error) {
+func (u *User) Sign(key *EdX25519Key) (string, error) {
 	b, err := json.Marshal(u)
 	if err != nil {
 		return "", err

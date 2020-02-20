@@ -15,13 +15,13 @@ func TestSigncrypt(t *testing.T) {
 	ksa := keys.NewMemKeystore()
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
-	err := ksa.SaveSignKey(alice)
+	err := ksa.SaveEdX25519Key(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
-	err = ksb.SaveSignKey(bob)
+	err = ksb.SaveEdX25519Key(bob)
 
 	message := []byte("hi bob")
 
@@ -45,13 +45,13 @@ func TestSigncryptStream(t *testing.T) {
 	ksa := keys.NewMemKeystore()
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
-	err := ksa.SaveSignKey(alice)
+	err := ksa.SaveEdX25519Key(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
-	err = ksb.SaveSignKey(bob)
+	err = ksb.SaveEdX25519Key(bob)
 	message := []byte("hi bob")
 
 	var buf bytes.Buffer
@@ -73,9 +73,10 @@ func TestSigncryptStream(t *testing.T) {
 func TestSigncryptOpenError(t *testing.T) {
 	ksa := keys.NewMemKeystore()
 	alice := keys.GenerateEdX25519Key()
-	err := ksa.SaveSignKey(alice)
+	err := ksa.SaveEdX25519Key(alice)
+	require.NoError(t, err)
 	bob := keys.GenerateEdX25519Key()
-	err = ksa.SaveSignKey(bob)
+	err = ksa.SaveEdX25519Key(bob)
 	require.NoError(t, err)
 	spa := saltpack.NewSaltpack(ksa)
 
