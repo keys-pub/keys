@@ -62,9 +62,9 @@ func (i *colsIterator) Release() {
 	i.cols = nil
 }
 
-// CollectionPaths returns paths from CollectionIterator.
-func CollectionPaths(iter CollectionIterator) ([]string, error) {
-	paths := []string{}
+// CollectionsFromIterator returns Collection's from CollectionIterator.
+func CollectionsFromIterator(iter CollectionIterator) ([]*Collection, error) {
+	cols := []*Collection{}
 	for {
 		col, err := iter.Next()
 		if err != nil {
@@ -73,7 +73,23 @@ func CollectionPaths(iter CollectionIterator) ([]string, error) {
 		if col == nil {
 			break
 		}
-		paths = append(paths, col.Path)
+		cols = append(cols, col)
 	}
-	return paths, nil
+	return cols, nil
+}
+
+// DocumentsFromIterator returns Document's from DocumentIterator.
+func DocumentsFromIterator(iter DocumentIterator) ([]*Document, error) {
+	docs := []*Document{}
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			return nil, err
+		}
+		if doc == nil {
+			break
+		}
+		docs = append(docs, doc)
+	}
+	return docs, nil
 }

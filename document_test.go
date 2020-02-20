@@ -1,4 +1,4 @@
-package keys
+package keys_test
 
 import (
 	"context"
@@ -7,36 +7,39 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDocument(t *testing.T) {
-	db := NewMem()
+	db := keys.NewMem()
 	clock := newClock()
 	db.SetTimeNow(clock.Now)
 	ctx := context.TODO()
 
 	paths := []string{}
 	for i := 0; i < 4; i++ {
-		p := Path("test", strconv.Itoa(i))
+		p := keys.Path("test", strconv.Itoa(i))
 		err := db.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 		paths = append(paths, p)
 	}
 	sort.Strings(paths)
 
-	docs, err := db.list(ctx, "test", nil)
+	iter, err := db.Documents(ctx, "test", nil)
+	require.NoError(t, err)
+	docs, err := keys.DocumentsFromIterator(iter)
 	require.NoError(t, err)
 	require.Equal(t, 4, len(docs))
 	require.Equal(t, "/test/0", docs[0].Path)
 	require.Equal(t, []byte("value0"), docs[0].Data)
-	require.Equal(t, TimeMs(1234567890001), TimeToMillis(docs[0].CreatedAt))
+	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(docs[0].CreatedAt))
 
-	pathsOut := documentPaths(docs)
+	pathsOut := keys.DocumentPaths(docs)
 	require.Equal(t, paths, pathsOut)
 
-	doc := NewDocument("test/6", []byte("value6"))
+	doc := keys.NewDocument("test/6", []byte("value6"))
 	require.Equal(t, "/test/6", doc.Path)
-	doc = NewDocument("//test//6", []byte("value6"))
+	doc = keys.NewDocument("//test//6", []byte("value6"))
 	require.Equal(t, "/test/6", doc.Path)
 }

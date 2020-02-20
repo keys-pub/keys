@@ -78,7 +78,7 @@ func (u *UserStore) Update(ctx context.Context, kid ID) (*UserResult, error) {
 	}
 
 	logger.Infof("Checking users %s", kid)
-	result, err := u.checkSigchain(ctx, sc)
+	result, err := u.CheckSigchain(ctx, sc)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,8 @@ func userResultsStrings(res []*UserResult) []string {
 	return out
 }
 
-func (u *UserStore) checkSigchain(ctx context.Context, sc *Sigchain) (*UserResult, error) {
+// CheckSigchain looks for user in a Sigchain.
+func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResult, error) {
 	user, err := sc.User()
 	if err != nil {
 		return nil, err
@@ -166,7 +167,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		return nil
 	}
 
-	msg, _ := findSaltpack(string(body), true)
+	msg, _ := FindSaltpack(string(body), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
 		result.Err = "user signed message content not found"

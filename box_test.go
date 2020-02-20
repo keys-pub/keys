@@ -1,33 +1,34 @@
-package keys
+package keys_test
 
 import (
 	"fmt"
 	"log"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBoxSeal(t *testing.T) {
-	alice := GenerateX25519Key()
-	bob := GenerateX25519Key()
+	alice := keys.GenerateX25519Key()
+	bob := keys.GenerateX25519Key()
 
 	msg := "Hey bob, it's alice. The passcode is 12345."
-	encrypted := BoxSeal([]byte(msg), bob.PublicKey(), alice)
+	encrypted := keys.BoxSeal([]byte(msg), bob.PublicKey(), alice)
 
-	out, err := BoxOpen(encrypted, alice.PublicKey(), bob)
+	out, err := keys.BoxOpen(encrypted, alice.PublicKey(), bob)
 	require.NoError(t, err)
 	require.Equal(t, "Hey bob, it's alice. The passcode is 12345.", string(out))
 }
 
 func ExampleBoxSeal() {
-	ak := GenerateX25519Key()
-	bk := GenerateX25519Key()
+	ak := keys.GenerateX25519Key()
+	bk := keys.GenerateX25519Key()
 
 	msg := "Hey bob, it's alice. The passcode is 12345."
-	encrypted := BoxSeal([]byte(msg), bk.PublicKey(), ak)
+	encrypted := keys.BoxSeal([]byte(msg), bk.PublicKey(), ak)
 
-	out, err := BoxOpen(encrypted, ak.PublicKey(), bk)
+	out, err := keys.BoxOpen(encrypted, ak.PublicKey(), bk)
 	if err != nil {
 		log.Fatal(err)
 	}

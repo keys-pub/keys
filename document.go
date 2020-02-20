@@ -61,7 +61,8 @@ func (d *Document) Pretty() []byte {
 	return nil
 }
 
-func documentPaths(docs []*Document) []string {
+// DocumentPaths from Document's.
+func DocumentPaths(docs []*Document) []string {
 	paths := make([]string, 0, len(docs))
 	for _, doc := range docs {
 		paths = append(paths, doc.Path)
@@ -73,12 +74,4 @@ func documentPaths(docs []*Document) []string {
 type Collection struct {
 	// Path to Document's.
 	Path string
-}
-
-func collectionPaths(cols []*Collection) []string {
-	paths := make([]string, 0, len(cols))
-	for _, col := range cols {
-		paths = append(paths, col.Path)
-	}
-	return paths
 }

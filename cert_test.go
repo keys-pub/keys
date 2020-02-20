@@ -1,14 +1,15 @@
-package keys
+package keys_test
 
 import (
 	"crypto/x509"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateCertificateKey(t *testing.T) {
-	caCert, err := GenerateCertificateKey("localhost", true, nil)
+	caCert, err := keys.GenerateCertificateKey("localhost", true, nil)
 	require.NoError(t, err)
 	require.True(t, len(caCert.Public()) > 0)
 	require.True(t, len(caCert.Private()) > 0)
@@ -34,7 +35,7 @@ func TestGenerateCertificateKey(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	certKey, err := NewCertificateKey(caCert.Private(), caCert.Public())
+	certKey, err := keys.NewCertificateKey(caCert.Private(), caCert.Public())
 	require.NoError(t, err)
 	require.NotNil(t, certKey)
 }
@@ -56,7 +57,7 @@ AwEHoUQDQgAEOXhT88Pe/Ql5LFyxYUb9a0v+HOKqs2PGO/0CE4UPSj5XpocMUotM
 Sm4Yau1/1j1SV+/VktinixCC7hfVyswyFg==
 -----END ECDSA PRIVATE KEY-----`
 
-	certKey, err := NewCertificateKey(private, public)
+	certKey, err := keys.NewCertificateKey(private, public)
 	require.NoError(t, err)
 	require.NotNil(t, certKey)
 

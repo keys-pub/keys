@@ -1,8 +1,9 @@
-package keys
+package keys_test
 
 import (
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,10 +22,10 @@ func (t errTest) Timeout() bool {
 }
 
 func TestIsTemporaryError(t *testing.T) {
-	require.True(t, IsTemporaryError(&errTest{}))
+	require.True(t, keys.IsTemporaryError(&errTest{}))
 }
 
 func TestNewErrNotFound(t *testing.T) {
-	require.EqualError(t, NewErrNotFound("123"), "not found 123")
-	require.EqualError(t, NewErrNotFound(""), "not found")
+	require.EqualError(t, keys.NewErrNotFound("123"), "not found 123")
+	require.EqualError(t, keys.NewErrNotFound(""), "not found")
 }

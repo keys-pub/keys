@@ -1,4 +1,4 @@
-package keys
+package keys_test
 
 import (
 	"bytes"
@@ -8,17 +8,18 @@ import (
 	"log"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
-	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := NewSigchain(alice.PublicKey())
+	sc := keys.NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
-	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), alice, "test", clock.Now())
+	st, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), alice, "test", clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -38,7 +39,7 @@ func TestSigchain(t *testing.T) {
 	res = sc.FindLast("test")
 	require.Nil(t, res)
 
-	st2, err := GenerateStatement(sc, bytes.Repeat([]byte{0x02}, 16), alice, "test", clock.Now())
+	st2, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x02}, 16), alice, "test", clock.Now())
 	require.NoError(t, err)
 	siErr2 := sc.Add(st2)
 	require.NoError(t, siErr2)
@@ -47,7 +48,7 @@ func TestSigchain(t *testing.T) {
 	require.NotNil(t, res)
 	require.Equal(t, bytes.Repeat([]byte{0x02}, 16), res.Data)
 
-	st3, err := GenerateStatement(sc, bytes.Repeat([]byte{0x03}, 16), alice, "test", clock.Now())
+	st3, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x03}, 16), alice, "test", clock.Now())
 	require.NoError(t, err)
 	siErr3 := sc.Add(st3)
 	require.NoError(t, siErr3)
@@ -61,12 +62,12 @@ func TestSigchain(t *testing.T) {
 
 	require.Equal(t, 4, len(sc.Statements()))
 
-	st4, err := GenerateStatement(sc, []byte{}, alice, "", clock.Now())
+	st4, err := keys.GenerateStatement(sc, []byte{}, alice, "", clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st4)
 	require.EqualError(t, err, "no data")
 
-	_, err = GenerateStatement(sc, []byte{}, GenerateEdX25519Key(), "", clock.Now())
+	_, err = keys.GenerateStatement(sc, []byte{}, keys.GenerateEdX25519Key(), "", clock.Now())
 	require.EqualError(t, err, "invalid sigchain sign public key")
 
 	// Revoke invalid seq
@@ -94,11 +95,11 @@ func TestSigchain(t *testing.T) {
 
 func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
-	sk := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.PublicKey())
 
-	st, err := GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "", clock.Now())
+	st, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -111,12 +112,12 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedStatement, string(b))
 
-	stb, err := StatementFromBytes(b)
+	stb, err := keys.StatementFromBytes(b)
 	require.NoError(t, err)
 	bout := stb.Bytes()
 	require.Equal(t, expectedStatement, string(bout))
 
-	st2, err := GenerateStatement(sc, bytes.Repeat([]byte{0x02}, 16), sk, "", clock.Now())
+	st2, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x02}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
 	siErr2 := sc.Add(st2)
 	require.NoError(t, siErr2)
@@ -133,22 +134,22 @@ func TestSigchainJSON(t *testing.T) {
 
 func TestSigchainUsers(t *testing.T) {
 	clock := newClock()
-	req := NewMockRequestor()
-	dst := NewMem()
-	scs := NewSigchainStore(dst)
+	req := keys.NewMockRequestor()
+	dst := keys.NewMem()
+	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := NewSigchain(alice.PublicKey())
+	sc := keys.NewSigchain(alice.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
 	user, err := sc.User()
 	require.NoError(t, err)
 	require.Nil(t, user)
 
-	user, err = NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	user, err = keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
-	st, err := GenerateUserStatement(sc, user, alice, clock.Now())
+	st, err := keys.GenerateUserStatement(sc, user, alice, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -167,14 +168,14 @@ func TestSigchainUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, user)
 
-	user2, err := NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	user2, err := keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
-	st2, err := GenerateUserStatement(sc, user2, alice, clock.Now())
+	st2, err := keys.GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 
-	user2, err = NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
+	user2, err = keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
 	require.NoError(t, err)
-	st2, err = GenerateUserStatement(sc, user2, alice, clock.Now())
+	st2, err = keys.GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st2)
 	require.NoError(t, err)
@@ -190,11 +191,11 @@ func TestSigchainUsers(t *testing.T) {
 
 func ExampleNewSigchain() {
 	clock := newClock()
-	alice := GenerateEdX25519Key()
-	sc := NewSigchain(alice.PublicKey())
+	alice := keys.GenerateEdX25519Key()
+	sc := keys.NewSigchain(alice.PublicKey())
 
 	// Create root statement
-	st, err := GenerateStatement(sc, []byte("hi! 🤓"), alice, "", clock.Now())
+	st, err := keys.GenerateStatement(sc, []byte("hi! 🤓"), alice, "", clock.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,7 +204,7 @@ func ExampleNewSigchain() {
 	}
 
 	// Add 2nd statement
-	st2, err := GenerateStatement(sc, []byte("2nd message"), alice, "", clock.Now())
+	st2, err := keys.GenerateStatement(sc, []byte("2nd message"), alice, "", clock.Now())
 	if err != nil {
 		log.Fatal(err)
 	}

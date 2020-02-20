@@ -144,7 +144,8 @@ func IsASCII(b []byte) bool {
 	return isASCII
 }
 
-func trimSaltpack(msg string, allowSpace bool) string {
+// TrimSaltpack removes non base63 characters from a string.
+func TrimSaltpack(msg string, allowSpace bool) string {
 	charsOnly := func(r rune) rune {
 		// 0-9, A-Z, a-z
 		if (r >= 0x30 && r <= 0x39) || (r >= 0x41 && r <= 0x5A) || (r >= 0x61 && r <= 0x7A) {
@@ -165,7 +166,7 @@ func EncodeSaltpack(b []byte, brand string) string {
 
 // DecodeSaltpack decodes saltpack message.
 func DecodeSaltpack(msg string, isHTML bool) ([]byte, string, error) {
-	s, brand := findSaltpack(msg, isHTML)
+	s, brand := FindSaltpack(msg, isHTML)
 	if s == "" {
 		return nil, "", nil
 	}
@@ -179,15 +180,16 @@ func DecodeSaltpack(msg string, isHTML bool) ([]byte, string, error) {
 func encodeSaltpack(b []byte) string {
 	out := MustEncode(b, Base62)
 	out = out + "."
-	return breakString(out, 15, 4)
+	return BreakString(out, 15, 4)
 }
 
 func decodeSaltpack(s string) ([]byte, error) {
-	s = trimSaltpack(s, false)
+	s = TrimSaltpack(s, false)
 	return Decode(s, Base62)
 }
 
-func hasUpper(s string) bool {
+// HasUpper returns true if string has an uppercase character.
+func HasUpper(s string) bool {
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		if c >= 'A' && c <= 'Z' {

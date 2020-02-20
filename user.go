@@ -259,7 +259,7 @@ func (u *UserStore) validateServiceAndName(service string, name string) error {
 	if !isASCII {
 		return errors.Errorf("user name has non-ASCII characters")
 	}
-	hu := hasUpper(name)
+	hu := HasUpper(name)
 	if hu {
 		return errors.Errorf("user name should be lowercase")
 	}

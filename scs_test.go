@@ -1,17 +1,18 @@
-package keys
+package keys_test
 
 import (
 	"bytes"
 	"io/ioutil"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
-func testSigchainStore(t *testing.T, clock *clock) SigchainStore {
-	mem := NewMem()
+func testSigchainStore(t *testing.T, clock *clock) keys.SigchainStore {
+	mem := keys.NewMem()
 	mem.SetTimeNow(clock.Now)
-	scs := newSigchainStore(mem)
+	scs := keys.NewSigchainStore(mem)
 	scs.SetTimeNow(clock.Now)
 	return scs
 }
@@ -20,7 +21,7 @@ func TestSigchainStore(t *testing.T) {
 	clock := newClock()
 	scs := testSigchainStore(t, clock)
 
-	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	ok, err := scs.SigchainExists(alice.ID())
 	require.NoError(t, err)
@@ -30,8 +31,8 @@ func TestSigchainStore(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, sc)
 
-	sca := NewSigchain(alice.PublicKey())
-	st, err := GenerateStatement(sca, []byte("alice"), alice, "", clock.Now())
+	sca := keys.NewSigchain(alice.PublicKey())
+	st, err := keys.GenerateStatement(sca, []byte("alice"), alice, "", clock.Now())
 	require.NoError(t, err)
 	err = sca.Add(st)
 	require.NoError(t, err)
@@ -45,7 +46,7 @@ func TestSigchainStore(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	st, err = GenerateStatement(sca, []byte("alice2"), alice, "", clock.Now())
+	st, err = keys.GenerateStatement(sca, []byte("alice2"), alice, "", clock.Now())
 	require.NoError(t, err)
 	err = sca.Add(st)
 	require.NoError(t, err)
@@ -59,9 +60,9 @@ func TestSigchainStore(t *testing.T) {
 	require.NotNil(t, sc)
 	require.Equal(t, alice.ID(), sc.ID())
 
-	bob := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x02}, 32)))
-	scb := NewSigchain(bob.PublicKey())
-	st, err = GenerateStatement(scb, []byte("bob"), bob, "", clock.Now())
+	bob := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	scb := keys.NewSigchain(bob.PublicKey())
+	st, err = keys.GenerateStatement(scb, []byte("bob"), bob, "", clock.Now())
 	require.NoError(t, err)
 	err = scb.Add(st)
 	require.NoError(t, err)
@@ -70,7 +71,7 @@ func TestSigchainStore(t *testing.T) {
 
 	kids, err := scs.KIDs()
 	require.NoError(t, err)
-	expected := []ID{
+	expected := []keys.ID{
 		alice.ID(),
 		bob.ID(),
 	}
@@ -82,7 +83,7 @@ func TestSigchainStore(t *testing.T) {
 
 	kids, err = scs.KIDs()
 	require.NoError(t, err)
-	expected = []ID{
+	expected = []keys.ID{
 		bob.ID(),
 	}
 	require.Equal(t, expected, kids)
@@ -100,10 +101,10 @@ func TestSigchainStoreSpew(t *testing.T) {
 	clock := newClock()
 	scs := testSigchainStore(t, clock)
 
-	alice := NewEdX25519KeyFromSeed(Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	sc := NewSigchain(alice.PublicKey())
+	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sc := keys.NewSigchain(alice.PublicKey())
 
-	st, err := GenerateStatement(sc, []byte("test1"), alice, "", clock.Now())
+	st, err := keys.GenerateStatement(sc, []byte("test1"), alice, "", clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -113,7 +114,7 @@ func TestSigchainStoreSpew(t *testing.T) {
 	sc, err = scs.Sigchain(alice.ID())
 	require.NoError(t, err)
 
-	st2, err := GenerateStatement(sc, []byte("test2"), alice, "", clock.Now())
+	st2, err := keys.GenerateStatement(sc, []byte("test2"), alice, "", clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st2)
 	require.NoError(t, err)

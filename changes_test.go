@@ -1,4 +1,4 @@
-package keys
+package keys_test
 
 import (
 	"context"
@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
-func testChanges(t *testing.T, ds DocumentStore, changes Changes) {
+func testChanges(t *testing.T, ds keys.DocumentStore, changes keys.Changes) {
 	ctx := context.TODO()
 
 	for i := 0; i < 4; i++ {
-		p := Path("test", fmt.Sprintf("%d", i))
+		p := keys.Path("test", fmt.Sprintf("%d", i))
 		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 		err = changes.ChangeAdd(ctx, "testchanges", p)
@@ -21,14 +22,14 @@ func testChanges(t *testing.T, ds DocumentStore, changes Changes) {
 		change, err := changes.Change(ctx, "testchanges", p)
 		require.NoError(t, err)
 		require.Equal(t, p, change.Path)
-		require.True(t, TimeToMillis(change.Timestamp) > 1234567890000)
+		require.True(t, keys.TimeToMillis(change.Timestamp) > 1234567890000)
 	}
 
 	iter, err := ds.Documents(ctx, "test", nil)
 	require.NoError(t, err)
 	iter.Release()
 
-	iter, err = ds.Documents(ctx, "test", &DocumentsOpts{Index: 1, Limit: 2})
+	iter, err = ds.Documents(ctx, "test", &keys.DocumentsOpts{Index: 1, Limit: 2})
 	require.NoError(t, err)
 	doc, err := iter.Next()
 	require.NoError(t, err)
@@ -58,7 +59,7 @@ func testChanges(t *testing.T, ds DocumentStore, changes Changes) {
 	require.Equal(t, len(recent), len(entries3))
 
 	for i := 4; i < 6; i++ {
-		p := Path("test", fmt.Sprintf("%d", i))
+		p := keys.Path("test", fmt.Sprintf("%d", i))
 		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 		err = changes.ChangeAdd(ctx, "testchanges", p)

@@ -90,6 +90,12 @@ func (s Statement) URL() string {
 	return "/" + s.KID.String() + "/" + fmt.Sprintf("%d", s.Seq)
 }
 
+// SpecificSerialization is the specific serialization or the bytes to sign.
+// It is the statement serialized without the sig value.
+func (s Statement) SpecificSerialization() []byte {
+	return s.serialized
+}
+
 type statementFormat struct {
 	Sig       []byte `json:".sig"`
 	Data      []byte `json:"data"`

@@ -1,4 +1,4 @@
-package keys
+package keys_test
 
 import (
 	"bytes"
@@ -6,12 +6,13 @@ import (
 	"log"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSaveLoadEdX25519Key(t *testing.T) {
-	ks := NewMemKeystore()
-	signKey := GenerateEdX25519Key()
+	ks := keys.NewMemKeystore()
+	signKey := keys.GenerateEdX25519Key()
 	err := ks.SaveSignKey(signKey)
 	require.NoError(t, err)
 	signKeyOut, err := ks.SignKey(signKey.ID())
@@ -21,17 +22,17 @@ func TestSaveLoadEdX25519Key(t *testing.T) {
 }
 
 func TestEdX25519KeySeed(t *testing.T) {
-	signKey := GenerateEdX25519Key()
+	signKey := keys.GenerateEdX25519Key()
 	seed := signKey.Seed()
-	signKeyOut := NewEdX25519KeyFromSeed(seed)
+	signKeyOut := keys.NewEdX25519KeyFromSeed(seed)
 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
 }
 
 func TestEdX25519KeySignVerify(t *testing.T) {
-	signKey := GenerateEdX25519Key()
+	signKey := keys.GenerateEdX25519Key()
 
 	b := []byte("test message")
-	sig := Sign(b, signKey)
+	sig := keys.Sign(b, signKey)
 
 	bout, err := signKey.PublicKey().Verify(sig)
 	require.NoError(t, err)
@@ -49,18 +50,18 @@ func TestEdX25519KeySignVerify(t *testing.T) {
 }
 
 func TestNewEdX25519KeyFromPrivateKey(t *testing.T) {
-	_ = NewEdX25519KeyFromPrivateKey(Bytes64(bytes.Repeat([]byte{0x01}, 64)))
+	_ = keys.NewEdX25519KeyFromPrivateKey(keys.Bytes64(bytes.Repeat([]byte{0x01}, 64)))
 }
 
 func ExampleGenerateEdX25519Key() {
-	alice := GenerateEdX25519Key()
+	alice := keys.GenerateEdX25519Key()
 	fmt.Printf("Alice: %s\n", alice.ID())
 }
 
 func ExampleSign() {
-	alice := GenerateEdX25519Key()
+	alice := keys.GenerateEdX25519Key()
 	msg := "I'm alice 🤓"
-	sig := Sign([]byte(msg), alice)
+	sig := keys.Sign([]byte(msg), alice)
 	out, err := alice.PublicKey().Verify(sig)
 	if err != nil {
 		log.Fatal(err)

@@ -1,39 +1,40 @@
-package keys
+package keys_test
 
 import (
 	"context"
 	"sync"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWatch(t *testing.T) {
-	fi := NewMem()
+	fi := keys.NewMem()
 	ctx := context.TODO()
 
-	root1 := Path("testwatch1")
-	root2 := Path("testwatch2")
+	root1 := keys.Path("testwatch1")
+	root2 := keys.Path("testwatch2")
 
 	start := sync.WaitGroup{}
 	start.Add(2)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	ln1 := func(e *WatchEvent) {
+	ln1 := func(e *keys.WatchEvent) {
 		switch e.Status {
-		case WatchStatusStarting:
+		case keys.WatchStatusStarting:
 			start.Done()
-		case WatchStatusData:
+		case keys.WatchStatusData:
 			fi.StopWatching(root1)
 		}
 	}
 
-	ln2 := func(e *WatchEvent) {
+	ln2 := func(e *keys.WatchEvent) {
 		switch e.Status {
-		case WatchStatusStarting:
+		case keys.WatchStatusStarting:
 			start.Done()
-		case WatchStatusData:
+		case keys.WatchStatusData:
 			fi.StopWatching(root2)
 		}
 	}
@@ -52,27 +53,27 @@ func TestWatch(t *testing.T) {
 
 	start.Wait()
 
-	err := fi.Create(ctx, Path(root1, "val1"), []byte("testdata1"))
+	err := fi.Create(ctx, keys.Path(root1, "val1"), []byte("testdata1"))
 	require.NoError(t, err)
 
-	err = fi.Create(ctx, Path(root2, "val2"), []byte("testdata2"))
+	err = fi.Create(ctx, keys.Path(root2, "val2"), []byte("testdata2"))
 	require.NoError(t, err)
 
 	wg.Wait()
 }
 
 func TestWatching(t *testing.T) {
-	fi := NewMem()
+	fi := keys.NewMem()
 
 	start := sync.WaitGroup{}
 	start.Add(2)
 	stop := sync.WaitGroup{}
 	stop.Add(2)
-	ln := func(e *WatchEvent) {
+	ln := func(e *keys.WatchEvent) {
 		switch e.Status {
-		case WatchStatusStarting:
+		case keys.WatchStatusStarting:
 			start.Done()
-		case WatchStatusStopping:
+		case keys.WatchStatusStopping:
 			stop.Done()
 		}
 	}

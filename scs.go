@@ -27,6 +27,8 @@ type SigchainStore interface {
 
 	// Now is current time.
 	Now() time.Time
+	// SetTimeNow sets clock.
+	SetTimeNow(nowFn func() time.Time)
 }
 
 type sigchainStore struct {

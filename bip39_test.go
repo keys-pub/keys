@@ -1,33 +1,34 @@
-package keys
+package keys_test
 
 import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPhrase(t *testing.T) {
-	b, err := PhraseToBytes("invalid phrase", false)
+	b, err := keys.PhraseToBytes("invalid phrase", false)
 	require.EqualError(t, err, "invalid phrase")
 	require.Nil(t, b)
 
-	b, err = PhraseToBytes("shove quiz copper settle harvest victory shell fade soft neck awake churn craft venue pause utility service degree invite inspire swing detect pipe sibling", false)
+	b, err = keys.PhraseToBytes("shove quiz copper settle harvest victory shell fade soft neck awake churn craft venue pause utility service degree invite inspire swing detect pipe sibling", false)
 	require.NoError(t, err)
 	require.Equal(t, "c715fcbfe23697e7715a8ece527440946321e4e85f82c42739d83aadc078e956", hex.EncodeToString(b[:]))
 
-	b, err = PhraseToBytes("shove quiz copper settle harvest victory shell fade soft neck awake churn", false)
+	b, err = keys.PhraseToBytes("shove quiz copper settle harvest victory shell fade soft neck awake churn", false)
 	require.EqualError(t, err, "invalid phrase")
 	require.EqualError(t, errors.Cause(err), "Checksum incorrect")
 	require.Nil(t, b)
 }
 
 func TestPhraseFromKey(t *testing.T) {
-	key := RandKey()[:]
-	phrase, err := BytesToPhrase(key)
+	key := keys.RandKey()[:]
+	phrase, err := keys.BytesToPhrase(key)
 	require.NoError(t, err)
-	keyOut, err := PhraseToBytes(phrase, false)
+	keyOut, err := keys.PhraseToBytes(phrase, false)
 	require.NoError(t, err)
 	require.Equal(t, key, keyOut[:])
 }

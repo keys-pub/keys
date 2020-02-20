@@ -1,23 +1,24 @@
-package keys
+package keys_test
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewX25519KeyFromPrivateKey(t *testing.T) {
 	// Test new X25519Key and X25519Key from private key are the same
-	X25519Key := GenerateX25519Key()
-	X25519KeyOut := NewX25519KeyFromPrivateKey(X25519Key.PrivateKey())
+	X25519Key := keys.GenerateX25519Key()
+	X25519KeyOut := keys.NewX25519KeyFromPrivateKey(X25519Key.PrivateKey())
 
 	require.Equal(t, X25519Key.PrivateKey(), X25519KeyOut.PrivateKey())
 	require.Equal(t, X25519Key.PublicKey(), X25519KeyOut.PublicKey())
 }
 
 func TestX25519KeyConversion(t *testing.T) {
-	sk := GenerateEdX25519Key()
+	sk := keys.GenerateEdX25519Key()
 	bk := sk.X25519Key()
 
 	bpk := sk.PublicKey().X25519PublicKey()
@@ -26,6 +27,6 @@ func TestX25519KeyConversion(t *testing.T) {
 }
 
 func ExampleGenerateX25519Key() {
-	alice := GenerateX25519Key()
+	alice := keys.GenerateX25519Key()
 	fmt.Printf("Alice: %s\n", alice.ID())
 }

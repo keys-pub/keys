@@ -1,4 +1,4 @@
-package keys
+package keys_test
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +16,7 @@ type clock struct {
 }
 
 func newClock() *clock {
-	t := TimeFromMillis(1234567890000)
+	t := keys.TimeFromMillis(1234567890000)
 	return &clock{
 		t: t,
 	}
@@ -27,46 +28,46 @@ func (c *clock) Now() time.Time {
 }
 
 func TestMem(t *testing.T) {
-	mem := NewMem()
+	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)
 	require.Equal(t, "mem://", mem.URI())
 	testDocumentStore(t, mem)
 }
 
 func TestMemPath(t *testing.T) {
-	mem := NewMem()
+	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)
 	testDocumentStorePath(t, mem)
 }
 
 func TestMemListOptions(t *testing.T) {
-	mem := NewMem()
+	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)
 	testDocumentStoreListOptions(t, mem)
 }
 
 func TestMemChanges(t *testing.T) {
-	mem := NewMem()
+	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)
 	testChanges(t, mem, mem)
 }
 
 func TestMemMetadata(t *testing.T) {
-	mem := NewMem()
+	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)
 	testMetadata(t, mem)
 }
 
-func testDocumentStore(t *testing.T, ds DocumentStore) {
+func testDocumentStore(t *testing.T, ds keys.DocumentStore) {
 	ctx := context.TODO()
 
 	for i := 10; i <= 30; i = i + 10 {
-		p := Path("test1", fmt.Sprintf("key%d", i))
+		p := keys.Path("test1", fmt.Sprintf("key%d", i))
 		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 	}
 	for i := 10; i <= 30; i = i + 10 {
-		p := Path("test0", fmt.Sprintf("key%d", i))
+		p := keys.Path("test0", fmt.Sprintf("key%d", i))
 		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 	}
@@ -122,19 +123,19 @@ func testDocumentStore(t *testing.T, ds DocumentStore) {
 	var b bytes.Buffer
 	iter, err = ds.Documents(context.TODO(), "test0", nil)
 	require.NoError(t, err)
-	SpewOut(iter, nil, &b)
+	keys.SpewOut(iter, nil, &b)
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
 	iter, err = ds.Documents(context.TODO(), "test0", nil)
 	require.NoError(t, err)
-	spew, err := Spew(iter, nil)
+	spew, err := keys.Spew(iter, nil)
 	require.NoError(t, err)
 	require.Equal(t, b.String(), spew.String())
 	require.Equal(t, expected, spew.String())
 	iter.Release()
 
-	iter, err = ds.Documents(context.TODO(), "test0", &DocumentsOpts{Prefix: "key1", PathOnly: true})
+	iter, err = ds.Documents(context.TODO(), "test0", &keys.DocumentsOpts{Prefix: "key1", PathOnly: true})
 	require.NoError(t, err)
 	doc, err = iter.Next()
 	require.NoError(t, err)
@@ -166,7 +167,7 @@ func testDocumentStore(t *testing.T, ds DocumentStore) {
 	require.EqualError(t, err, "only root collections supported")
 }
 
-func testDocumentStorePath(t *testing.T, ds DocumentStore) {
+func testDocumentStorePath(t *testing.T, ds keys.DocumentStore) {
 	ctx := context.TODO()
 
 	err := ds.Create(ctx, "test/1", []byte("value1"))
@@ -184,7 +185,7 @@ func testDocumentStorePath(t *testing.T, ds DocumentStore) {
 	require.True(t, ok)
 }
 
-func testDocumentStoreListOptions(t *testing.T, ds DocumentStore) {
+func testDocumentStoreListOptions(t *testing.T, ds keys.DocumentStore) {
 	ctx := context.TODO()
 
 	err := ds.Create(ctx, "/test/1", []byte("val1"))
@@ -195,23 +196,23 @@ func testDocumentStoreListOptions(t *testing.T, ds DocumentStore) {
 	require.NoError(t, err)
 
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, Path("a", fmt.Sprintf("e%d", i)), []byte("🤓"))
+		err := ds.Create(ctx, keys.Path("a", fmt.Sprintf("e%d", i)), []byte("🤓"))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, Path("b", fmt.Sprintf("ea%d", i)), []byte("😎"))
+		err := ds.Create(ctx, keys.Path("b", fmt.Sprintf("ea%d", i)), []byte("😎"))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, Path("b", fmt.Sprintf("eb%d", i)), []byte("😎"))
+		err := ds.Create(ctx, keys.Path("b", fmt.Sprintf("eb%d", i)), []byte("😎"))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, Path("b", fmt.Sprintf("ec%d", i)), []byte("😎"))
+		err := ds.Create(ctx, keys.Path("b", fmt.Sprintf("ec%d", i)), []byte("😎"))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, Path("c", fmt.Sprintf("e%d", i)), []byte("😎"))
+		err := ds.Create(ctx, keys.Path("c", fmt.Sprintf("e%d", i)), []byte("😎"))
 		require.NoError(t, err)
 	}
 
@@ -231,7 +232,7 @@ func testDocumentStoreListOptions(t *testing.T, ds DocumentStore) {
 
 	iter, err = ds.Documents(context.TODO(), "test", nil)
 	require.NoError(t, err)
-	b, err := Spew(iter, nil)
+	b, err := keys.Spew(iter, nil)
 	require.NoError(t, err)
 	expected := `/test/1 val1
 /test/2 val2
@@ -240,7 +241,7 @@ func testDocumentStoreListOptions(t *testing.T, ds DocumentStore) {
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
-	iter, err = ds.Documents(ctx, "b", &DocumentsOpts{Prefix: "eb"})
+	iter, err = ds.Documents(ctx, "b", &keys.DocumentsOpts{Prefix: "eb"})
 	require.NoError(t, err)
 	paths = []string{}
 	for {
@@ -255,7 +256,7 @@ func testDocumentStoreListOptions(t *testing.T, ds DocumentStore) {
 	require.Equal(t, []string{"/b/eb1", "/b/eb2"}, paths)
 }
 
-func testMetadata(t *testing.T, ds DocumentStore) {
+func testMetadata(t *testing.T, ds keys.DocumentStore) {
 	ctx := context.TODO()
 
 	err := ds.Create(ctx, "/test/key1", []byte("value1"))
@@ -264,7 +265,7 @@ func testMetadata(t *testing.T, ds DocumentStore) {
 	doc, err := ds.Get(ctx, "/test/key1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, TimeMs(1234567890001), TimeToMillis(doc.CreatedAt))
+	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(doc.CreatedAt))
 
 	err = ds.Set(ctx, "/test/key1", []byte("value1b"))
 	require.NoError(t, err)
@@ -272,6 +273,6 @@ func testMetadata(t *testing.T, ds DocumentStore) {
 	doc, err = ds.Get(ctx, "/test/key1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, TimeMs(1234567890001), TimeToMillis(doc.CreatedAt))
-	require.Equal(t, TimeMs(1234567890002), TimeToMillis(doc.UpdatedAt))
+	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(doc.CreatedAt))
+	require.Equal(t, keys.TimeMs(1234567890002), keys.TimeToMillis(doc.UpdatedAt))
 }

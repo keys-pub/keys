@@ -23,7 +23,8 @@ func saltpackEnd(brand string) string {
 	return fmt.Sprintf("END %s MESSAGE.", brand)
 }
 
-func breakString(msg string, wordLen int, lineLen int) string {
+// BreakString breaks words and lines.
+func BreakString(msg string, wordLen int, lineLen int) string {
 	words := []string{}
 	lines := []string{}
 	for i := 0; i < len(msg); i += wordLen {
@@ -47,7 +48,8 @@ func stripTags(body string) string {
 	return re.ReplaceAllString(body, "")
 }
 
-func findSaltpack(msg string, isHTML bool) (string, string) {
+// FindSaltpack finds saltpack message in a string.
+func FindSaltpack(msg string, isHTML bool) (string, string) {
 	if isHTML {
 		msg = html.UnescapeString(msg)
 	}
@@ -57,7 +59,7 @@ func findSaltpack(msg string, isHTML bool) (string, string) {
 
 	brand, out := "", ""
 	if len(s) >= 2 {
-		brand = strings.TrimSpace(trimSaltpack(s[1], true))
+		brand = strings.TrimSpace(TrimSaltpack(s[1], true))
 	}
 	if len(s) >= 3 {
 		out = s[2]
@@ -68,6 +70,6 @@ func findSaltpack(msg string, isHTML bool) (string, string) {
 		out = stripTags(out)
 	}
 
-	out = trimSaltpack(out, false)
+	out = TrimSaltpack(out, false)
 	return out, brand
 }
