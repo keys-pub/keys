@@ -220,6 +220,8 @@ func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
 }
 
 // User result for user name@service.
+// Retrieves cached result. If Update(kid) has not been called or there is no
+// user statement, this will return nil.
 func (u *UserStore) User(ctx context.Context, user string) (*UserResult, error) {
 	res, err := u.get(ctx, indexUser, user)
 	if err != nil {
