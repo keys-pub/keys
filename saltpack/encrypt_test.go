@@ -1,24 +1,27 @@
-package saltpack
+package saltpack_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/saltpack"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEncrypt(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ksa.SaveBoxKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ksb.SaveBoxKey(bob)
 
@@ -39,11 +42,11 @@ func TestEncrypt(t *testing.T) {
 func TestEncryptAnon(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err := ksb.SaveBoxKey(bob)
 
@@ -60,13 +63,13 @@ func TestEncryptAnon(t *testing.T) {
 func TestEncryptStream(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateX25519Key()
 	err := ksa.SaveBoxKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateX25519Key()
 	err = ksb.SaveBoxKey(bob)
 	message := []byte("hi bob")
@@ -91,13 +94,14 @@ func TestEncryptStream(t *testing.T) {
 func TestEncryptStreamAnon(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateX25519Key()
 	err := ksb.SaveBoxKey(bob)
+	require.NoError(t, err)
 
 	message := []byte("hi bob, its anon")
 
@@ -125,13 +129,13 @@ func TestEncryptOpenError(t *testing.T) {
 	bob := keys.GenerateX25519Key()
 	err = ksa.SaveBoxKey(bob)
 	require.NoError(t, err)
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 
 	encrypted, err := spa.Encrypt([]byte("alice's message"), alice, bob.ID())
 	require.NoError(t, err)
 
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 
 	_, _, err = spb.Decrypt(encrypted)
 	require.EqualError(t, err, "no decryption key found for message")
@@ -140,15 +144,17 @@ func TestEncryptOpenError(t *testing.T) {
 func TestEncryptWithEdX25519Key(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ksa.SaveSignKey(alice)
+	require.NoError(t, err)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ksb.SaveSignKey(bob)
+	require.NoError(t, err)
 
 	message := []byte("hi bob")
 
@@ -159,4 +165,59 @@ func TestEncryptWithEdX25519Key(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.Equal(t, alice.X25519Key().PublicKey().ID(), sender)
+}
+
+func ExampleSaltpack_Encrypt() {
+	ks := keys.NewMemKeystore()
+	sp := saltpack.NewSaltpack(ks)
+	// For armored output
+	sp.SetArmored(true)
+
+	// Alice
+	alice := keys.GenerateEdX25519Key()
+	if err := ks.SaveSignKey(alice); err != nil {
+		log.Fatal(err)
+	}
+
+	// Bob
+	bob := keys.GenerateEdX25519Key()
+
+	message := []byte("hi bob")
+
+	// Encrypt from alice to bob
+	encrypted, err := sp.Encrypt(message, alice.X25519Key(), bob.ID())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Encrypted: %s", string(encrypted))
+}
+
+func ExampleSaltpack_Decrypt() {
+	// Alice
+	ksa := keys.NewMemKeystore()
+	spa := saltpack.NewSaltpack(ksa)
+	alice := keys.GenerateEdX25519Key()
+	err := ksa.SaveSignKey(alice)
+
+	// Bob
+	ksb := keys.NewMemKeystore()
+	spb := saltpack.NewSaltpack(ksb)
+	bob := keys.GenerateEdX25519Key()
+	err = ksb.SaveSignKey(bob)
+
+	message := []byte("hi bob")
+
+	// Encrypt from alice to bob
+	encrypted, err := spa.Encrypt(message, alice.X25519Key(), bob.ID())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Decrypt
+	out, signer, err := spb.Decrypt(encrypted)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Signer: %s\n", signer)
+	fmt.Printf("Decrypted: %s\n", string(out))
 }

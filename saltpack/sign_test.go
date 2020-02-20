@@ -1,18 +1,21 @@
-package saltpack
+package saltpack_test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/saltpack"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSignVerifyDefault(t *testing.T) {
+func TestSignVerify(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	sp := NewSaltpack(nil)
+	sp := saltpack.NewSaltpack(nil)
 
 	alice := keys.GenerateEdX25519Key()
 
@@ -21,14 +24,67 @@ func TestSignVerifyDefault(t *testing.T) {
 	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
-	messageOut, sender, err := sp.Verify(sig)
+	messageOut, signer, err := sp.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.Equal(t, alice.PublicKey().ID(), signer)
+}
+
+func ExampleSaltpack_Sign() {
+	ks := keys.NewKeystore()
+	sp := saltpack.NewSaltpack(ks)
+	sp.SetArmored(true)
+
+	alice := keys.GenerateEdX25519Key()
+
+	message := []byte("hi from alice")
+
+	sig, err := sp.Sign(message, alice)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Signed: %s", string(sig))
+}
+
+func ExampleSaltpack_SignDetached() {
+	ks := keys.NewKeystore()
+	sp := saltpack.NewSaltpack(ks)
+	sp.SetArmored(true)
+
+	alice := keys.GenerateEdX25519Key()
+
+	message := []byte("hi from alice")
+
+	sig, err := sp.SignDetached(message, alice)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Signed (detached): %s", string(sig))
+}
+
+func ExampleSaltpack_Verify() {
+	ks := keys.NewKeystore()
+	sp := saltpack.NewSaltpack(ks)
+
+	alice := keys.GenerateEdX25519Key()
+
+	message := []byte("hi from alice")
+
+	sig, err := sp.Sign(message, alice)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out, signer, err := sp.Verify(sig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Signer: %s\n", signer)
+	fmt.Printf("Out: %s\n", string(out))
 }
 
 func TestSignVerifyArmored(t *testing.T) {
-	sp := NewSaltpack(nil)
+	sp := saltpack.NewSaltpack(nil)
 	sp.SetArmored(true)
 	alice := keys.GenerateEdX25519Key()
 
@@ -37,20 +93,14 @@ func TestSignVerifyArmored(t *testing.T) {
 	sig, err := sp.Sign(message, alice)
 	require.NoError(t, err)
 
-	messageOut, sender, err := sp.Verify(sig)
+	messageOut, signer, err := sp.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
-	require.Equal(t, alice.PublicKey().ID(), sender)
-
-	// Verify with some prefix text
-	armored2 := stripBefore("some prefix text: \n" + string(sig) + "some suffix text")
-	messageOut2, _, err := sp.Verify([]byte(armored2))
-	require.NoError(t, err)
-	require.Equal(t, message, messageOut2)
+	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
 func TestSignVerifyDetached(t *testing.T) {
-	sp := NewSaltpack(nil)
+	sp := saltpack.NewSaltpack(nil)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi")
@@ -58,13 +108,13 @@ func TestSignVerifyDetached(t *testing.T) {
 	sig, err := sp.SignDetached(message, alice)
 	require.NoError(t, err)
 
-	sender, err := sp.VerifyDetached(sig, message)
+	signer, err := sp.VerifyDetached(sig, message)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
 func TestSignVerifyStream(t *testing.T) {
-	sp := NewSaltpack(nil)
+	sp := saltpack.NewSaltpack(nil)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("I'm alice")
@@ -78,16 +128,16 @@ func TestSignVerifyStream(t *testing.T) {
 	encrypted.Close()
 
 	var reader io.Reader = bytes.NewReader(buf.Bytes())
-	stream, sender, err := sp.NewVerifyStream(reader)
+	stream, signer, err := sp.NewVerifyStream(reader)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.Equal(t, alice.PublicKey().ID(), signer)
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 }
 
-func TestStrip(t *testing.T) {
+func TestStripBefore(t *testing.T) {
 	sig := "BEGIN SALTPACK SIGNED MESSAGE. XXXXXXXX END SALTPACK SIGNED MESSAGE."
-	message := stripBefore("Some text in the beginning to ignore: " + sig)
+	message := saltpack.StripBefore("Some text in the beginning to ignore: " + sig)
 	require.Equal(t, sig, message)
 }

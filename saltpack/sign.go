@@ -36,11 +36,11 @@ func (s *Saltpack) Verify(b []byte) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
+	signer, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
-	return out, sender, nil
+	return out, signer, nil
 }
 
 func (s *Saltpack) verifyArmored(msg string) ([]byte, keys.ID, error) {
@@ -48,11 +48,11 @@ func (s *Saltpack) verifyArmored(msg string) ([]byte, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
+	signer, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
-	return out, sender, nil
+	return out, signer, nil
 }
 
 func bytesToID(b []byte, typ keys.KeyType) (keys.ID, error) {
@@ -82,11 +82,11 @@ func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
 		return "", convertErr(err)
 	}
 
-	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
+	signer, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to verify")
 	}
-	return sender, nil
+	return signer, nil
 }
 
 // NewSignStream ...
@@ -112,11 +112,11 @@ func (s *Saltpack) NewVerifyStream(r io.Reader) (io.Reader, keys.ID, error) {
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
+	signer, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
-	return reader, sender, nil
+	return reader, signer, nil
 }
 
 // NewVerifyArmoredStream ...
@@ -125,15 +125,15 @@ func (s *Saltpack) NewVerifyArmoredStream(r io.Reader) (io.Reader, keys.ID, erro
 	if err != nil {
 		return nil, "", convertErr(err)
 	}
-	sender, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
+	signer, err := bytesToID(spk.ToKID(), keys.EdX25519Public)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
-	return reader, sender, nil
+	return reader, signer, nil
 }
 
-// stripBefore removes text before BEGIN.
-func stripBefore(message string) string {
+// StripBefore removes text before BEGIN.
+func StripBefore(message string) string {
 	n := strings.Index(message, "BEGIN")
 	if n == 0 {
 		return message

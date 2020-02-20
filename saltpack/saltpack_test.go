@@ -1,1 +1,1 @@
-package saltpack
+package saltpack_test

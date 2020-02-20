@@ -1,4 +1,4 @@
-package saltpack
+package saltpack_test
 
 import (
 	"bytes"
@@ -6,19 +6,20 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/saltpack"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSigncrypt(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveSignKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
 	err = ksb.SaveSignKey(bob)
 
@@ -42,13 +43,13 @@ func TestSigncrypt(t *testing.T) {
 func TestSigncryptStream(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemKeystore()
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveSignKey(alice)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
 	err = ksb.SaveSignKey(bob)
 	message := []byte("hi bob")
@@ -76,13 +77,13 @@ func TestSigncryptOpenError(t *testing.T) {
 	bob := keys.GenerateEdX25519Key()
 	err = ksa.SaveSignKey(bob)
 	require.NoError(t, err)
-	spa := NewSaltpack(ksa)
+	spa := saltpack.NewSaltpack(ksa)
 
 	encrypted, err := spa.Signcrypt([]byte("alice's message"), alice, bob.ID())
 	require.NoError(t, err)
 
 	ksb := keys.NewMemKeystore()
-	spb := NewSaltpack(ksb)
+	spb := saltpack.NewSaltpack(ksb)
 
 	_, _, err = spb.SigncryptOpen(encrypted)
 	require.EqualError(t, err, "no decryption key found for message")
