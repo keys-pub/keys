@@ -65,6 +65,7 @@ func ExampleSaltpack_SignDetached() {
 func ExampleSaltpack_Verify() {
 	ks := keys.NewKeystore()
 	sp := saltpack.NewSaltpack(ks)
+	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
 
