@@ -52,6 +52,11 @@ func TestNewEdX25519KeyFromPrivateKey(t *testing.T) {
 	_ = NewEdX25519KeyFromPrivateKey(Bytes64(bytes.Repeat([]byte{0x01}, 64)))
 }
 
+func ExampleGenerateEdX25519Key() {
+	alice := GenerateEdX25519Key()
+	fmt.Printf("Alice: %s\n", alice.ID())
+}
+
 func ExampleSign() {
 	alice := GenerateEdX25519Key()
 	msg := "I'm alice 🤓"
