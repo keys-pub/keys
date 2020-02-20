@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,4 +23,9 @@ func TestX25519KeyConversion(t *testing.T) {
 	bpk := sk.PublicKey().X25519PublicKey()
 
 	require.Equal(t, bk.PublicKey().Bytes()[:], bpk.Bytes()[:])
+}
+
+func ExampleGenerateX25519Key() {
+	alice := GenerateX25519Key()
+	fmt.Printf("Alice: %s\n", alice.ID())
 }
