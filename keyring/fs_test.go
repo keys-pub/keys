@@ -1,16 +1,17 @@
-package keyring
+package keyring_test
 
 import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
-func testFS(t *testing.T) Keyring {
+func testFS(t *testing.T) keyring.Keyring {
 	dir, err := ioutil.TempDir("", "KeysTest.keyring")
 	require.NoError(t, err)
-	kr, err := NewFS(dir)
+	kr, err := keyring.NewFS(dir)
 	require.NoError(t, err)
 	return kr
 }

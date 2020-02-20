@@ -1,22 +1,23 @@
-package keyring
+package keyring_test
 
 import (
 	"testing"
 
+	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
 func TestItem(t *testing.T) {
 	secretKey := randKey()
-	item := NewItem("account1", NewStringSecret("password"), "passphrase")
-	item.SetSecretFor("website", NewStringSecret("keys.app"))
+	item := keyring.NewItem("account1", keyring.NewStringSecret("password"), "passphrase")
+	item.SetSecretFor("website", keyring.NewStringSecret("keys.app"))
 	b, err := item.Marshal(secretKey)
 	require.NoError(t, err)
 
 	_, err = item.Marshal(nil)
 	require.EqualError(t, err, "no secret key specified")
 
-	itemOut, err := DecodeItem(b, secretKey)
+	itemOut, err := keyring.DecodeItem(b, secretKey)
 	require.NoError(t, err)
 
 	require.Equal(t, item.ID, itemOut.ID)
@@ -27,10 +28,10 @@ func TestItem(t *testing.T) {
 	require.Equal(t, "", item.SecretFor("notfound").String())
 
 	secretKey2 := randKey()
-	_, err = DecodeItem(b, secretKey2)
+	_, err = keyring.DecodeItem(b, secretKey2)
 	require.EqualError(t, err, "invalid keyring auth")
 
-	itemOut3, err := DecodeItem(b, nil)
+	itemOut3, err := keyring.DecodeItem(b, nil)
 	require.NoError(t, err)
 	require.Equal(t, item.ID, itemOut3.ID)
 	require.Equal(t, item.Type, itemOut3.Type)

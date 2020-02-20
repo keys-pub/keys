@@ -1,13 +1,14 @@
-package keyring
+package keyring_test
 
 import (
 	"testing"
 
+	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
-func testMem(t *testing.T) Keyring {
-	kr := NewMem()
+func testMem(t *testing.T) keyring.Keyring {
+	kr := keyring.NewMem()
 	// Reset since NewMem returns unlocked keyring.
 	reerr := kr.Reset()
 	require.NoError(t, reerr)

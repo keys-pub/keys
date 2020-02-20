@@ -1,23 +1,25 @@
-package keyring
+package keyring_test
 
 import (
 	"bytes"
+	"crypto/rand"
 	"testing"
 
+	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
 func TestKeyring(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
 	testKeyring(t, kr)
 }
 
-func testKeyring(t *testing.T, kr Keyring) {
+func testKeyring(t *testing.T, kr keyring.Keyring) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := NewPasswordAuth("password123", salt)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
 
 	err = kr.Unlock(auth)
@@ -28,7 +30,7 @@ func testKeyring(t *testing.T, kr Keyring) {
 	require.Nil(t, item)
 
 	// Set/Get "abc"
-	err = kr.Set(NewItem("abc", NewStringSecret("password"), "type1"))
+	err = kr.Set(keyring.NewItem("abc", keyring.NewStringSecret("password"), "type1"))
 	require.NoError(t, err)
 
 	item, err = kr.Get("abc")
@@ -46,7 +48,7 @@ func testKeyring(t *testing.T, kr Keyring) {
 	require.False(t, has2)
 
 	// Set (update)
-	err = kr.Set(NewItem("abc", NewStringSecret("newpassword"), ""))
+	err = kr.Set(keyring.NewItem("abc", keyring.NewStringSecret("newpassword"), ""))
 	require.NoError(t, err)
 
 	item, err = kr.Get("abc")
@@ -56,11 +58,11 @@ func testKeyring(t *testing.T, kr Keyring) {
 	require.Equal(t, []byte("newpassword"), item.Secret().Data)
 
 	// Set (hidden)
-	err = kr.Set(NewItem(".ck", NewStringSecret("password"), ""))
+	err = kr.Set(keyring.NewItem(".ck", keyring.NewStringSecret("password"), ""))
 	require.NoError(t, err)
 
 	// Set "xyz"
-	err = kr.Set(NewItem("xyz", NewStringSecret("xpassword"), "type2"))
+	err = kr.Set(keyring.NewItem("xyz", keyring.NewStringSecret("xpassword"), "type2"))
 	require.NoError(t, err)
 
 	// List
@@ -70,7 +72,7 @@ func testKeyring(t *testing.T, kr Keyring) {
 	require.Equal(t, items[0].ID, "abc")
 	require.Equal(t, items[1].ID, "xyz")
 
-	items2, err := kr.List(&ListOpts{Types: []string{"type2"}})
+	items2, err := kr.List(&keyring.ListOpts{Types: []string{"type2"}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(items2))
 	require.Equal(t, items2[0].ID, "xyz")
@@ -106,22 +108,22 @@ func testKeyring(t *testing.T, kr Keyring) {
 }
 
 func TestReset(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
 	testReset(t, kr)
 }
 
-func testReset(t *testing.T, kr Keyring) {
+func testReset(t *testing.T, kr keyring.Keyring) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := NewPasswordAuth("password123", salt)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
 
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
 
-	err = kr.Set(NewItem("key1", NewStringSecret("password"), ""))
+	err = kr.Set(keyring.NewItem("key1", keyring.NewStringSecret("password"), ""))
 	require.NoError(t, err)
 
 	salt, err = kr.Salt()
@@ -134,7 +136,7 @@ func testReset(t *testing.T, kr Keyring) {
 	reerr := kr.Reset()
 	require.NoError(t, reerr)
 
-	err = kr.Set(NewItem("key1", NewStringSecret("password"), ""))
+	err = kr.Set(keyring.NewItem("key1", keyring.NewStringSecret("password"), ""))
 	require.EqualError(t, err, "keyring is locked")
 
 	authed, err := kr.Authed()
@@ -145,7 +147,7 @@ func testReset(t *testing.T, kr Keyring) {
 	require.NoError(t, err)
 	require.NotEqual(t, salt, salt3)
 
-	auth2, err := NewPasswordAuth("newpassword123", salt)
+	auth2, err := keyring.NewPasswordAuth("newpassword123", salt)
 	require.NoError(t, err)
 	err = kr.Unlock(auth2)
 	require.NoError(t, err)
@@ -154,14 +156,14 @@ func testReset(t *testing.T, kr Keyring) {
 }
 
 func TestUnlock(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testUnlock(t, kr)
 }
 
-func testUnlock(t *testing.T, kr Keyring) {
-	err := kr.Set(NewItem("key1", NewStringSecret("password"), ""))
+func testUnlock(t *testing.T, kr keyring.Keyring) {
+	err := kr.Set(keyring.NewItem("key1", keyring.NewStringSecret("password"), ""))
 	require.EqualError(t, err, "keyring is locked")
 
 	_, err = kr.Get("key1")
@@ -171,10 +173,10 @@ func testUnlock(t *testing.T, kr Keyring) {
 	require.EqualError(t, err, "keyring is locked")
 
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err = kr.Unlock(NewKeyAuth(key))
+	err = kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
-	err = kr.Set(NewItem("key1", NewStringSecret("password"), ""))
+	err = kr.Set(keyring.NewItem("key1", keyring.NewStringSecret("password"), ""))
 	require.NoError(t, err)
 
 	err = kr.Lock()
@@ -189,27 +191,27 @@ func testUnlock(t *testing.T, kr Keyring) {
 }
 
 func TestSetErrors(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err = kr.Unlock(NewKeyAuth(key))
+	err = kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
-	err = kr.Set(NewItem("", NewSecret(nil), ""))
+	err = kr.Set(keyring.NewItem("", keyring.NewSecret(nil), ""))
 	require.EqualError(t, err, "no id")
 }
 
 func TestReserved(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testReserved(t, kr)
 }
 
-func testReserved(t *testing.T, kr Keyring) {
+func testReserved(t *testing.T, kr keyring.Keyring) {
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err := kr.Unlock(NewKeyAuth(key))
+	err := kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
 	_, err = kr.Get("#key")
@@ -217,8 +219,43 @@ func testReserved(t *testing.T, kr Keyring) {
 	_, err = kr.Get("#salt")
 	require.EqualError(t, err, "keyring id prefix reserved #salt")
 
-	err = kr.Set(NewItem("#key", NewSecret(nil), ""))
+	err = kr.Set(keyring.NewItem("#key", keyring.NewSecret(nil), ""))
 	require.EqualError(t, err, "keyring id prefix reserved #key")
-	err = kr.Set(NewItem("#salt", NewSecret(nil), ""))
+	err = kr.Set(keyring.NewItem("#salt", keyring.NewSecret(nil), ""))
 	require.EqualError(t, err, "keyring id prefix reserved #salt")
+}
+
+func randBytes(length int) []byte {
+	buf := make([]byte, length)
+	if _, err := rand.Read(buf); err != nil {
+		panic(err)
+	}
+	return buf
+}
+
+func rand24() *[24]byte {
+	b := randBytes(24)
+	var b24 [24]byte
+	copy(b24[:], b[:24])
+	return &b24
+}
+
+func randKey() keyring.SecretKey {
+	return keyring.SecretKey(rand32())
+}
+
+func rand32() *[32]byte {
+	b := randBytes(32)
+	var b32 [32]byte
+	copy(b32[:], b[:32])
+	return &b32
+}
+
+func bytes32(b []byte) *[32]byte {
+	if len(b) != 32 {
+		panic("not 32 bytes")
+	}
+	var b32 [32]byte
+	copy(b32[:], b)
+	return &b32
 }

@@ -1,26 +1,27 @@
-package keyring
+package keyring_test
 
 import (
 	"bytes"
 	"testing"
 
+	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuth(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
 }
 
-func testAuth(t *testing.T, kr Keyring) {
+func testAuth(t *testing.T, kr keyring.Keyring) {
 	authed, err := kr.Authed()
 	require.NoError(t, err)
 	require.False(t, authed)
 
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := NewPasswordAuth("password123", salt)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
@@ -29,7 +30,7 @@ func testAuth(t *testing.T, kr Keyring) {
 	require.NoError(t, err)
 	require.True(t, authed2)
 
-	item := NewItem("key1", NewStringSecret("secret"), "")
+	item := keyring.NewItem("key1", keyring.NewStringSecret("secret"), "")
 	err = kr.Set(item)
 	require.NoError(t, err)
 
@@ -44,7 +45,7 @@ func testAuth(t *testing.T, kr Keyring) {
 	require.EqualError(t, err, "keyring id prefix reserved #auth")
 
 	// Test invalid password
-	auth2, err := NewPasswordAuth("invalidpassword", salt)
+	auth2, err := keyring.NewPasswordAuth("invalidpassword", salt)
 	require.NoError(t, err)
 	err = kr.Unlock(auth2)
 	require.EqualError(t, err, "invalid keyring auth")
@@ -66,16 +67,16 @@ func testAuth(t *testing.T, kr Keyring) {
 }
 
 func TestStore(t *testing.T) {
-	kr, err := NewKeyring("KeysTest")
+	kr, err := keyring.NewKeyring("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := NewPasswordAuth("password123", salt)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
 
-	st := NewStore()
+	st := keyring.NewStore()
 
 	kh, err := st.Get("KeysTest", "#auth")
 	require.NoError(t, err)
