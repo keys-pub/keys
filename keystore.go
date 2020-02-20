@@ -9,61 +9,47 @@ import (
 
 // Keystore can saves to the keyring.
 type Keystore struct {
-	keyringFn KeyringFn
+	kr keyring.Keyring
 }
 
 // ErrNoKeyring if no keyring is set.
 var ErrNoKeyring = errors.New("no keyring set")
 
 // NewKeystore constructs a Keystore.
-func NewKeystore() *Keystore {
-	return &Keystore{}
+func NewKeystore(kr keyring.Keyring) *Keystore {
+	return &Keystore{
+		kr: kr,
+	}
+}
+
+// Keyring for Keystore.
+func (k *Keystore) Keyring() (keyring.Keyring, error) {
+	if k.kr == nil {
+		return nil, ErrNoKeyring
+	}
+	return k.kr, nil
 }
 
 // NewMemKeystore returns Keystore backed by an in memory keyring.
+// This is useful for testing or ephemeral key stores.
 func NewMemKeystore() *Keystore {
-	ks := NewKeystore()
-	ks.SetKeyring(keyring.NewMem())
-	return ks
-}
-
-// SetKeyring sets the keyring.
-func (k *Keystore) SetKeyring(kr keyring.Keyring) {
-	k.keyringFn = func() keyring.Keyring {
-		return kr
-	}
-}
-
-// KeyringFn returns a keyring.
-type KeyringFn func() keyring.Keyring
-
-// SetKeyringFn sets a keyring provider.
-func (k *Keystore) SetKeyringFn(keyringFn KeyringFn) {
-	k.keyringFn = keyringFn
-}
-
-// Keyring ...
-func (k *Keystore) Keyring() keyring.Keyring {
-	if k.keyringFn == nil {
-		return nil
-	}
-	return k.keyringFn()
+	return NewKeystore(keyring.NewMem())
 }
 
 // get returns a keyring Item for an id.
 func (k *Keystore) get(id string) (*keyring.Item, error) {
-	if k.Keyring() == nil {
+	if k.kr == nil {
 		return nil, ErrNoKeyring
 	}
-	return k.Keyring().Get(id)
+	return k.kr.Get(id)
 }
 
 // set an item in the keyring.
 func (k *Keystore) set(item *keyring.Item) error {
-	if k.Keyring() == nil {
+	if k.kr == nil {
 		return ErrNoKeyring
 	}
-	return k.Keyring().Set(item)
+	return k.kr.Set(item)
 }
 
 // SignKey returns sign key for a key identifier.
@@ -149,7 +135,11 @@ func (k *Keystore) Delete(kid ID) (bool, error) {
 		return false, errors.Errorf("failed to delete in keystore: empty id specified")
 	}
 	logger.Infof("Keystore deleting: %s", kid)
-	return k.Keyring().Delete(kid.String())
+	kr, err := k.Keyring()
+	if err != nil {
+		return false, err
+	}
+	return kr.Delete(kid.String())
 }
 
 // Key for id.
@@ -196,7 +186,11 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 	for _, t := range opts.Types {
 		itemTypes = append(itemTypes, string(t))
 	}
-	items, err := k.Keyring().List(&keyring.ListOpts{Types: itemTypes})
+	kr, err := k.Keyring()
+	if err != nil {
+		return nil, err
+	}
+	items, err := kr.List(&keyring.ListOpts{Types: itemTypes})
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +214,11 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 // Also includes box keys converted from sign keys.
 func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 	logger.Debugf("Loading box keys...")
-	items, err := k.Keyring().List(&keyring.ListOpts{
+	kr, err := k.Keyring()
+	if err != nil {
+		return nil, err
+	}
+	items, err := kr.List(&keyring.ListOpts{
 		Types: []string{string(X25519), string(EdX25519)},
 	})
 	if err != nil {
@@ -240,7 +238,11 @@ func (k *Keystore) BoxKeys() ([]*BoxKey, error) {
 
 // SignKeys from the Keystore.
 func (k Keystore) SignKeys() ([]*SignKey, error) {
-	items, err := k.Keyring().List(&keyring.ListOpts{
+	kr, err := k.Keyring()
+	if err != nil {
+		return nil, err
+	}
+	items, err := kr.List(&keyring.ListOpts{
 		Types: []string{string(EdX25519)},
 	})
 	if err != nil {
@@ -260,7 +262,11 @@ func (k Keystore) SignKeys() ([]*SignKey, error) {
 // SignPublicKeys from the Keystore.
 // Includes public keys of SignKey's.
 func (k Keystore) SignPublicKeys() ([]*SignPublicKey, error) {
-	items, err := k.Keyring().List(&keyring.ListOpts{
+	kr, err := k.Keyring()
+	if err != nil {
+		return nil, err
+	}
+	items, err := kr.List(&keyring.ListOpts{
 		Types: []string{
 			string(EdX25519),
 			string(EdX25519Public),

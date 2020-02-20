@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/saltpack"
 	"github.com/stretchr/testify/require"
 )
@@ -168,16 +169,12 @@ func TestEncryptWithEdX25519Key(t *testing.T) {
 }
 
 func ExampleSaltpack_Encrypt() {
-	ks := keys.NewMemKeystore()
-	sp := saltpack.NewSaltpack(ks)
+	sp := saltpack.NewSaltpack(nil)
 	// For armored output
 	sp.SetArmored(true)
 
 	// Alice
 	alice := keys.GenerateEdX25519Key()
-	if err := ks.SaveSignKey(alice); err != nil {
-		log.Fatal(err)
-	}
 
 	// Bob
 	bob := keys.GenerateEdX25519Key()
@@ -189,35 +186,76 @@ func ExampleSaltpack_Encrypt() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Encrypted: %s", string(encrypted))
+	fmt.Printf("%d", len(encrypted))
+	// Output: 375
 }
 
 func ExampleSaltpack_Decrypt() {
 	// Alice
-	ksa := keys.NewMemKeystore()
-	spa := saltpack.NewSaltpack(ksa)
+	krAlice, err := keyring.NewKeyring("AliceKeyring")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Remove this Reset() if you want to keep the Keyring
+	defer krAlice.Reset()
+	if err := keyring.UnlockWithPassword(krAlice, "alicepassword"); err != nil {
+		log.Fatal(err)
+	}
+	ksAlice := keys.NewKeystore(krAlice)
+	spAlice := saltpack.NewSaltpack(ksAlice)
 	alice := keys.GenerateEdX25519Key()
-	err := ksa.SaveSignKey(alice)
+	if err := ksAlice.SaveSignKey(alice); err != nil {
+		log.Fatal(err)
+	}
 
 	// Bob
-	ksb := keys.NewMemKeystore()
-	spb := saltpack.NewSaltpack(ksb)
+	krBob, err := keyring.NewKeyring("BobKeyring")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Remove this Reset() if you want to keep the Keyring
+	defer krBob.Reset()
+	if err := keyring.UnlockWithPassword(krBob, "bobpassword"); err != nil {
+		log.Fatal(err)
+	}
+	ksBob := keys.NewKeystore(krBob)
+	spBob := saltpack.NewSaltpack(ksBob)
 	bob := keys.GenerateEdX25519Key()
-	err = ksb.SaveSignKey(bob)
+	if err = ksBob.SaveSignKey(bob); err != nil {
+		log.Fatal(err)
+	}
 
 	message := []byte("hi bob")
 
-	// Encrypt from alice to bob
-	encrypted, err := spa.Encrypt(message, alice.X25519Key(), bob.ID())
+	// Alice encrypt's to bob (and alice)
+	encrypted, err := spAlice.Encrypt(message, alice.X25519Key(), bob.ID(), alice.ID())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Decrypt
-	out, signer, err := spb.Decrypt(encrypted)
+	// Bob decrypt's
+	out, signer, err := spBob.Decrypt(encrypted)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Signer: %s\n", signer)
-	fmt.Printf("Decrypted: %s\n", string(out))
+	if signer == alice.X25519Key().ID() {
+		fmt.Printf("Signer is alice\n")
+	}
+	fmt.Printf("%s\n", string(out))
+
+	// Alice can decrypt too
+	out, signer, err = spAlice.Decrypt(encrypted)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if signer == alice.X25519Key().ID() {
+		fmt.Printf("Signer is alice\n")
+	}
+	fmt.Printf("%s\n", string(out))
+
+	// Output:
+	// Signer is alice
+	// hi bob
+	// Signer is alice
+	// hi bob
 }

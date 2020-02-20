@@ -115,7 +115,9 @@ func TestKeystoreList(t *testing.T) {
 	require.NoError(t, err)
 
 	// Put passphrase in keyring to ensure it doesn't confuse us
-	err = ks.Keyring().Set(keys.NewPassphraseItem("passphrase1", "password"))
+	kr, err := ks.Keyring()
+	require.NoError(t, err)
+	err = kr.Set(keys.NewPassphraseItem("passphrase1", "password"))
 	require.NoError(t, err)
 
 	out, err := ks.Keys(nil)

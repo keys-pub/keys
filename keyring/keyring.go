@@ -76,6 +76,22 @@ type Store interface {
 	Exists(service string, id string) (bool, error)
 }
 
+// UnlockWithPassword unlocks a Keyring with a password.
+func UnlockWithPassword(kr Keyring, password string) error {
+	salt, err := kr.Salt()
+	if err != nil {
+		return err
+	}
+	auth, err := NewPasswordAuth(password, salt)
+	if err != nil {
+		return err
+	}
+	if err = kr.Unlock(auth); err != nil {
+		return err
+	}
+	return nil
+}
+
 func getItem(st Store, service string, id string, key SecretKey) (*Item, error) {
 	if key == nil {
 		return nil, ErrLocked
