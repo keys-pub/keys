@@ -33,26 +33,19 @@ type keyDocument struct {
 
 // UserStore is the environment for user results.
 type UserStore struct {
-	dst             DocumentStore
-	scs             SigchainStore
-	req             Requestor
-	nowFn           func() time.Time
-	enabledServices *StringSet
+	dst   DocumentStore
+	scs   SigchainStore
+	req   Requestor
+	nowFn func() time.Time
 }
 
 // NewUserStore creates UserStore.
-func NewUserStore(dst DocumentStore, scs SigchainStore, services []string, req Requestor, nowFn func() time.Time) (*UserStore, error) {
-	for _, service := range services {
-		if err := validateServiceSupported(service); err != nil {
-			return nil, err
-		}
-	}
+func NewUserStore(dst DocumentStore, scs SigchainStore, req Requestor, nowFn func() time.Time) (*UserStore, error) {
 	return &UserStore{
-		dst:             dst,
-		scs:             scs,
-		enabledServices: NewStringSet(services...),
-		nowFn:           nowFn,
-		req:             req,
+		dst:   dst,
+		scs:   scs,
+		nowFn: nowFn,
+		req:   req,
 	}, nil
 }
 

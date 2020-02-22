@@ -12,7 +12,7 @@ import (
 )
 
 func testUserStore(t *testing.T, dst keys.DocumentStore, scs keys.SigchainStore, req *keys.MockRequestor, clock *clock) *keys.UserStore {
-	ust, err := keys.NewUserStore(dst, scs, []string{keys.Twitter, keys.Github}, req, clock.Now)
+	ust, err := keys.NewUserStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
 	return ust
 }
@@ -25,7 +25,7 @@ func TestNewUserForTwitterSigning(t *testing.T) {
 	dst := keys.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	user, err := keys.NewUserForSigning(ust, sk.ID(), keys.Twitter, "123456789012345")
+	user, err := keys.NewUserForSigning(ust, sk.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	msg, err := user.Sign(sk)
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestNewUserMarshal(t *testing.T) {
 	dst := keys.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	user, err := keys.NewUser(ust, sk.ID(), keys.Twitter, "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
+	user, err := keys.NewUser(ust, sk.ID(), "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(user)
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.Equal(t, user.Service, userOut.Service)
 	require.Equal(t, user.URL, userOut.URL)
 
-	user, err = keys.NewUserForSigning(ust, sk.ID(), keys.Twitter, "123456789012345")
+	user, err = keys.NewUserForSigning(ust, sk.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	b, err = json.Marshal(user)
 	require.NoError(t, err)
@@ -204,14 +204,14 @@ func TestUserResultTwitter(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
 
-	user, err := keys.NewUserForSigning(ust, sk.ID(), keys.Twitter, "bob")
+	user, err := keys.NewUserForSigning(ust, sk.ID(), "twitter", "bob")
 	require.NoError(t, err)
 	msg, err := user.Sign(sk)
 	require.NoError(t, err)
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.PublicKey())
-	stu, err := keys.NewUser(ust, sk.ID(), keys.Twitter, "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
+	stu, err := keys.NewUser(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := keys.GenerateUserStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -231,7 +231,7 @@ func TestUserResultTwitter(t *testing.T) {
 	require.NotNil(t, result)
 	require.NotNil(t, result.User)
 	require.Equal(t, keys.UserStatusOK, result.Status)
-	require.Equal(t, keys.Twitter, result.User.Service)
+	require.Equal(t, "twitter", result.User.Service)
 	require.Equal(t, "bob", result.User.Name)
 	require.Equal(t, keys.TimeMs(1234567890004), result.VerifiedAt)
 	require.Equal(t, keys.TimeMs(1234567890003), result.Timestamp)
@@ -247,7 +247,7 @@ func TestUserUnverified(t *testing.T) {
 	ust := testUserStore(t, dst, scs, req, clock)
 
 	sc := keys.NewSigchain(sk.PublicKey())
-	stu, err := keys.NewUser(ust, sk.ID(), keys.Twitter, "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
+	stu, err := keys.NewUser(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := keys.GenerateUserStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -350,20 +350,20 @@ func TestNewUser(t *testing.T) {
 	require.EqualError(t, uerr, "name is empty")
 	require.Nil(t, u8)
 
-	u9, uerr := keys.NewUser(ust, sk.ID(), keys.Twitter, "@gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	u9, uerr := keys.NewUser(ust, sk.ID(), "twitter", "@gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
 	require.NoError(t, uerr)
 	require.NotNil(t, u9)
 	require.Equal(t, "gbrltest", u9.Name)
 
-	u10, uerr0 := keys.NewUser(ust, sk.ID(), keys.Twitter, "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	u10, uerr0 := keys.NewUser(ust, sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr0, "user name should be lowercase")
 	require.Nil(t, u10)
 
-	u11, uerr1 := keys.NewUser(ust, sk.ID(), keys.Twitter, "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
+	u11, uerr1 := keys.NewUser(ust, sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr1, "user name has non-ASCII characters")
 	require.Nil(t, u11)
 
-	u12, uerr := keys.NewUser(ust, sk.ID(), keys.Twitter, "gbrltest", "twitter.com/gbrltest/status/1234", 1)
+	u12, uerr := keys.NewUser(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "invalid scheme for url twitter.com/gbrltest/status/1234")
 	require.Nil(t, u12)
 }

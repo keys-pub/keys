@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -103,7 +102,12 @@ func (u *User) UnmarshalJSON(b []byte) error {
 
 // NewUser returns User used in a signing statement.
 func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string, seq int) (*User, error) {
-	user, err := newUser(ust, kid, service, name, rawurl)
+	svc, err := newUserService(service)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := newUser(ust, kid, svc, name, rawurl)
 	if err != nil {
 		return nil, err
 	}
@@ -114,15 +118,34 @@ func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string,
 	return user, nil
 }
 
-func newUser(ust *UserStore, kid ID, service string, name string, rawurl string) (*User, error) {
-	name = normalizeName(service, name)
+// UserService describes a user service.
+type UserService interface {
+	Name() string
+	NormalizeName(string) string
+	ValidateURL(name string, u *url.URL) error
+	ValidateName(name string) error
+}
+
+func newUserService(service string) (UserService, error) {
+	switch service {
+	case Twitter.Name():
+		return Twitter, nil
+	case Github.Name():
+		return Github, nil
+	default:
+		return nil, errors.Errorf("invalid service %s", service)
+	}
+}
+
+func newUser(ust *UserStore, kid ID, service UserService, name string, rawurl string) (*User, error) {
+	name = service.NormalizeName(name)
 	url, err := normalizeURL(rawurl)
 	if err != nil {
 		return nil, err
 	}
 	user := &User{
 		KID:     kid,
-		Service: service,
+		Service: service.Name(),
 		Name:    name,
 		URL:     url,
 	}
@@ -134,76 +157,19 @@ func newUser(ust *UserStore, kid ID, service string, name string, rawurl string)
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
 func NewUserForSigning(ust *UserStore, kid ID, service string, name string) (*User, error) {
-	name = normalizeName(service, name)
-	if err := ust.validateServiceAndName(service, name); err != nil {
+	svc, err := newUserService(service)
+	if err != nil {
+		return nil, err
+	}
+	name = svc.NormalizeName(name)
+	if err := ust.validateServiceAndName(svc, name); err != nil {
 		return nil, err
 	}
 	return &User{
 		KID:     kid,
-		Service: service,
+		Service: svc.Name(),
 		Name:    name,
 	}, nil
-}
-
-func validateServiceSupported(service string) error {
-	// TODO: gitlab
-	switch service {
-	case Twitter, Github:
-	default:
-		return errors.Errorf("invalid service %s", service)
-	}
-	return nil
-}
-
-// verifyURL verifies URL for service.
-// For github, the url should be https://gist.github.com/{name}/{gistid}.
-// For twitter, the url should be https://twitter.com/{name}/status/{id}.
-func verifyURL(service string, name string, u *url.URL) error {
-	switch service {
-	case Github:
-		if u.Scheme != "https" {
-			return errors.Errorf("invalid scheme for url %s", u)
-		}
-		if u.Host != "gist.github.com" {
-			return errors.Errorf("invalid host for url %s", u)
-		}
-		path := u.Path
-		path = strings.TrimPrefix(path, "/")
-		paths := strings.Split(path, "/")
-		if len(paths) != 2 {
-			return errors.Errorf("path invalid %s for url %s", paths, u)
-		}
-		if paths[0] != name {
-			return errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
-		}
-		return nil
-	case Twitter:
-		if u.Scheme != "https" {
-			return errors.Errorf("invalid scheme for url %s", u)
-		}
-		if u.Host != "twitter.com" {
-			return errors.Errorf("invalid host for url %s", u)
-		}
-		path := u.Path
-		path = strings.TrimPrefix(path, "/")
-		paths := strings.Split(path, "/")
-		if len(paths) != 3 {
-			return errors.Errorf("path invalid %s for url %s", paths, u)
-		}
-		if paths[0] != name {
-			return errors.Errorf("path invalid (name mismatch) for url %s", u)
-		}
-		return nil
-	default:
-		return errors.Errorf("unknown service %s", service)
-	}
-}
-
-func normalizeName(service string, name string) string {
-	if isTwitter(service) && len(name) > 0 && name[0] == '@' {
-		return name[1:]
-	}
-	return name
 }
 
 func normalizeURL(s string) (string, error) {
@@ -214,76 +180,28 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-// Twitter service name.
-const Twitter = "twitter"
-
-// Github service name.
-const Github = "github"
-
-func isTwitter(s string) bool {
-	switch s {
-	case Twitter:
-		return true
-	default:
-		return false
-	}
-}
-
-func (u *UserStore) validateServiceAndName(service string, name string) error {
-	if len(service) == 0 {
-		return errors.Errorf("service is empty")
-	}
-
-	if err := validateServiceSupported(service); err != nil {
-		return err
-	}
-
-	if u.enabledServices.Size() == 0 {
-		return errors.Errorf("no services enabled")
-	}
-
-	if !u.enabledServices.Contains(service) {
-		return errors.Errorf("%s service is not enabled", service)
-	}
-
+func (u *UserStore) validateServiceAndName(service UserService, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
-
-	// Normalize twitter name
-	if isTwitter(service) && name[0] == '@' {
-		name = name[1:]
-	}
-
-	isASCII := IsASCII([]byte(name))
-	if !isASCII {
-		return errors.Errorf("user name has non-ASCII characters")
-	}
-	hu := HasUpper(name)
-	if hu {
-		return errors.Errorf("user name should be lowercase")
-	}
-
-	if isTwitter(service) && len(name) > 15 {
-		return errors.Errorf("twitter name too long")
-	}
-
-	if service == Github && len(name) > 39 {
-		return errors.Errorf("github name too long")
-	}
-
-	return nil
+	return service.ValidateName(name)
 }
 
 func (u *UserStore) validate(user *User) error {
-	if err := u.validateServiceAndName(user.Service, user.Name); err != nil {
+	service, err := newUserService(user.Service)
+	if err != nil {
+		return err
+	}
+
+	if err := u.validateServiceAndName(service, user.Name); err != nil {
 		return err
 	}
 	ur, err := url.Parse(user.URL)
 	if err != nil {
 		return err
 	}
-	if err := verifyURL(user.Service, user.Name, ur); err != nil {
+
+	if err := service.ValidateURL(user.Name, ur); err != nil {
 		return err
 	}
 	return nil

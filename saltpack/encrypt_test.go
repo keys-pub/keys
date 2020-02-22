@@ -177,12 +177,12 @@ func ExampleSaltpack_Encrypt() {
 	alice := keys.GenerateEdX25519Key()
 
 	// Bob
-	bob := keys.GenerateEdX25519Key()
+	bobID := keys.ID("kex1yy7amjzd5ld3k0uphvyetlz2vd8yy3fky64dut9jdf9qh852f0nsxjgv0m")
 
 	message := []byte("hi bob")
 
 	// Encrypt from alice to bob
-	encrypted, err := sp.Encrypt(message, alice.X25519Key(), bob.ID())
+	encrypted, err := sp.Encrypt(message, alice.X25519Key(), bobID)
 	if err != nil {
 		log.Fatal(err)
 	}

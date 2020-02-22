@@ -91,7 +91,7 @@ func TestSearchUsers(t *testing.T) {
 
 	// Add alice@twitter
 	alice2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32)))
-	saveUser(t, ust, scs, alice2, "alice", keys.Twitter, clock, req)
+	saveUser(t, ust, scs, alice2, "alice", "twitter", clock, req)
 	_, err = ust.Update(ctx, alice2.ID())
 	require.NoError(t, err)
 
@@ -101,7 +101,7 @@ func TestSearchUsers(t *testing.T) {
 	require.NotNil(t, results[0].UserResult)
 	require.Equal(t, alice2.ID(), results[0].UserResult.User.KID)
 	require.Equal(t, "alice", results[0].UserResult.User.Name)
-	require.Equal(t, keys.Twitter, results[0].UserResult.User.Service)
+	require.Equal(t, "twitter", results[0].UserResult.User.Service)
 	require.Equal(t, 1, results[0].UserResult.User.Seq)
 	require.NotNil(t, results[1].UserResult)
 	require.Equal(t, alice.ID(), results[1].UserResult.User.KID)
@@ -124,14 +124,14 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice2.ID(), results[0].UserResult.User.KID)
 	require.Equal(t, "alice", results[0].UserResult.User.Name)
-	require.Equal(t, keys.Twitter, results[0].UserResult.User.Service)
+	require.Equal(t, "twitter", results[0].UserResult.User.Service)
 
 	results, err = ust.Search(ctx, &keys.UserSearchRequest{Query: "alice@twitter"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice2.ID(), results[0].UserResult.User.KID)
 	require.Equal(t, "alice", results[0].UserResult.User.Name)
-	require.Equal(t, keys.Twitter, results[0].UserResult.User.Service)
+	require.Equal(t, "twitter", results[0].UserResult.User.Service)
 
 	// Check Documents
 	iter, err := dst.Documents(context.TODO(), "kid", nil)
@@ -283,9 +283,9 @@ func TestExpired(t *testing.T) {
 func saveUser(t *testing.T, ust *keys.UserStore, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *clock, mock *keys.MockRequestor) *keys.Statement {
 	url := ""
 	switch service {
-	case keys.Github:
+	case "github":
 		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
-	case keys.Twitter:
+	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
 	default:
 		t.Fatal("unsupported service in test")
