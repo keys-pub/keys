@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
@@ -193,14 +194,14 @@ func statementBytesToSign(st *Statement) []byte {
 
 func statementBytes(st *Statement, sig []byte) []byte {
 	mes := []MarshalValue{
-		NewStringEntry(".sig", MustEncode(sig, Base64)),
+		NewStringEntry(".sig", encoding.MustEncode(sig, encoding.Base64)),
 	}
 	if len(st.Data) != 0 {
-		mes = append(mes, NewStringEntry("data", MustEncode(st.Data, Base64)))
+		mes = append(mes, NewStringEntry("data", encoding.MustEncode(st.Data, encoding.Base64)))
 	}
 	mes = append(mes, NewStringEntry("kid", st.KID.String()))
 	if len(st.Prev) != 0 {
-		mes = append(mes, NewStringEntry("prev", MustEncode(st.Prev, Base64)))
+		mes = append(mes, NewStringEntry("prev", encoding.MustEncode(st.Prev, encoding.Base64)))
 	}
 	if st.Revoke != 0 {
 		mes = append(mes, NewIntEntry("revoke", st.Revoke))

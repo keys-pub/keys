@@ -1,4 +1,4 @@
-package keys
+package encoding
 
 import (
 	"strings"

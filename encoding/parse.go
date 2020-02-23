@@ -1,27 +1,10 @@
-package keys
+package encoding
 
 import (
-	"fmt"
 	"html"
 	"regexp"
 	"strings"
 )
-
-// saltpackStart start of a saltpack message.
-func saltpackStart(brand string) string {
-	if brand == "" {
-		return "BEGIN MESSAGE."
-	}
-	return fmt.Sprintf("BEGIN %s MESSAGE.", brand)
-}
-
-// saltpackEnd end of a saltpack message.
-func saltpackEnd(brand string) string {
-	if brand == "" {
-		return "END MESSAGE."
-	}
-	return fmt.Sprintf("END %s MESSAGE.", brand)
-}
 
 // BreakString breaks words and lines.
 func BreakString(msg string, wordLen int, lineLen int) string {

@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/keys-pub/keys/encoding"
 )
 
 // RandBytes returns random bytes of length.
@@ -30,7 +32,7 @@ func RandKey() *[SecretKeySize]byte {
 // RandPhrase creates random phrase (bip39 encoded random 32 bytes).
 func RandPhrase() string {
 	b := RandBytes(32)
-	phrase, err := BytesToPhrase(b)
+	phrase, err := encoding.BytesToPhrase(b)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +56,7 @@ func RandPassphrase(length int) string {
 		panic("passphrase length too short")
 	}
 	b := RandBytes(length)
-	s := MustEncode(b, Base62)
+	s := encoding.MustEncode(b, encoding.Base62)
 	return s[:length]
 }
 
@@ -94,7 +96,7 @@ func Rand32P4(n uint32) *[32]byte {
 // RandString generates a random string.
 func RandString(n int) string {
 	buf := RandBytes(n)
-	s := MustEncode(buf, Base62)
+	s := encoding.MustEncode(buf, encoding.Base62)
 	return s
 }
 
