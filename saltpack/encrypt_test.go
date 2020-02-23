@@ -226,9 +226,6 @@ func ExampleSaltpack_Decrypt() {
 	if err := ks.SaveKey(bob); err != nil {
 		log.Fatal(err)
 	}
-	if err := ks.SavePublicKey(aliceID); err != nil {
-		log.Fatal(err)
-	}
 
 	// Bob decrypt's
 	out, signer, err := sp.Decrypt(encrypted)
