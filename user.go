@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/services"
 	"github.com/pkg/errors"
 )
 
@@ -102,7 +104,7 @@ func (u *User) UnmarshalJSON(b []byte) error {
 
 // NewUser returns User used in a signing statement.
 func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string, seq int) (*User, error) {
-	svc, err := newUserService(service)
+	svc, err := services.NewService(service)
 	if err != nil {
 		return nil, err
 	}
@@ -118,27 +120,8 @@ func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string,
 	return user, nil
 }
 
-// UserService describes a user service.
-type UserService interface {
-	Name() string
-	NormalizeName(string) string
-	ValidateURL(name string, u *url.URL) error
-	ValidateName(name string) error
-}
-
-func newUserService(service string) (UserService, error) {
-	switch service {
-	case Twitter.Name():
-		return Twitter, nil
-	case Github.Name():
-		return Github, nil
-	default:
-		return nil, errors.Errorf("invalid service %s", service)
-	}
-}
-
-func newUser(ust *UserStore, kid ID, service UserService, name string, rawurl string) (*User, error) {
-	name = service.NormalizeName(name)
+func newUser(ust *UserStore, kid ID, service services.Service, name string, rawurl string) (*User, error) {
+	name = service.NormalizeUsername(name)
 	url, err := normalizeURL(rawurl)
 	if err != nil {
 		return nil, err
@@ -157,11 +140,11 @@ func newUser(ust *UserStore, kid ID, service UserService, name string, rawurl st
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
 func NewUserForSigning(ust *UserStore, kid ID, service string, name string) (*User, error) {
-	svc, err := newUserService(service)
+	svc, err := services.NewService(service)
 	if err != nil {
 		return nil, err
 	}
-	name = svc.NormalizeName(name)
+	name = svc.NormalizeUsername(name)
 	if err := ust.validateServiceAndName(svc, name); err != nil {
 		return nil, err
 	}
@@ -180,15 +163,15 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-func (u *UserStore) validateServiceAndName(service UserService, name string) error {
+func (u *UserStore) validateServiceAndName(service services.Service, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
-	return service.ValidateName(name)
+	return service.ValidateUsername(name)
 }
 
 func (u *UserStore) validate(user *User) error {
-	service, err := newUserService(user.Service)
+	service, err := services.NewService(user.Service)
 	if err != nil {
 		return err
 	}
@@ -201,7 +184,7 @@ func (u *UserStore) validate(user *User) error {
 		return err
 	}
 
-	if err := service.ValidateURL(user.Name, ur); err != nil {
+	if _, err := service.ValidateURL(user.Name, ur); err != nil {
 		return err
 	}
 	return nil
@@ -247,7 +230,7 @@ func (u *User) Sign(key *EdX25519Key) (string, error) {
 	}
 	sig := key.Sign(b)
 	// No brand for user message to keep it under 280 characters (for twitter)
-	msg := EncodeSaltpack(sig, "")
+	msg := encoding.EncodeSaltpack(sig, "")
 	return msg, nil
 }
 
@@ -255,7 +238,7 @@ func (u *User) Sign(key *EdX25519Key) (string, error) {
 // If user is specified, we will verify it matches the User in the verified
 // message.
 func VerifyUser(msg string, spk SigchainPublicKey, user *User) (*User, error) {
-	b, _, err := DecodeSaltpack(msg, false)
+	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
 		return nil, err
 	}

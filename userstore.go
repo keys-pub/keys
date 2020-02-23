@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/services"
 	"github.com/pkg/errors"
 )
 
@@ -136,10 +138,8 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 	if result == nil {
 		return errors.Errorf("no user specified")
 	}
+	logger.Infof("Update user %s", result.User.String())
 
-	result.Timestamp = TimeToMillis(u.Now())
-
-	logger.Infof("Resulting user %s", result.User.String())
 	ur, err := url.Parse(result.User.URL)
 	if err != nil {
 		logger.Warningf("Failed to parse user url: %s", err)
@@ -147,6 +147,18 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		result.Status = UserStatusFailure
 		return nil
 	}
+
+	service, err := services.NewService(result.User.Service)
+	if err != nil {
+		return err
+	}
+	ur, err = service.ValidateURL(result.User.Name, ur)
+	if err != nil {
+		return err
+	}
+
+	result.Timestamp = TimeToMillis(u.Now())
+
 	logger.Infof("Requesting %s", ur)
 	body, err := u.req.RequestURL(ctx, ur)
 	if err != nil {
@@ -160,7 +172,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		return nil
 	}
 
-	msg, _ := FindSaltpack(string(body), true)
+	msg, _ := encoding.FindSaltpack(string(body), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
 		result.Err = "user signed message content not found"
@@ -175,6 +187,11 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		result.Err = err.Error()
 		result.Status = UserStatusFailure
 		return nil
+	}
+
+	// Service may require additional checks
+	if err := service.CheckURLContent(result.User.Name, body); err != nil {
+		return err
 	}
 
 	logger.Infof("Verified %s", result.User.KID)
