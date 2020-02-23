@@ -60,7 +60,7 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
 
-	spkConv, err := ks.FindEdX25519PublicKey(sk.PublicKey().X25519PublicKey())
+	spkConv, err := ks.FindEdX25519PublicKey(sk.PublicKey().X25519PublicKey().ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Bytes(), spkConv.Bytes())
 
@@ -68,7 +68,7 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 	err = ks.SaveEdX25519PublicKey(spk)
 	require.NoError(t, err)
 
-	spkConv2, err := ks.FindEdX25519PublicKey(spk.X25519PublicKey())
+	spkConv2, err := ks.FindEdX25519PublicKey(spk.X25519PublicKey().ID())
 	require.NoError(t, err)
 	require.Equal(t, spk.Bytes(), spkConv2.Bytes())
 }

@@ -87,14 +87,17 @@ func NewEdX25519PublicKey(b *[ed25519.PublicKeySize]byte) *EdX25519PublicKey {
 	}
 }
 
-// EdX25519PublicKeyFromID converts ID to EdX25519PublicKey.
-func EdX25519PublicKeyFromID(id ID) (*EdX25519PublicKey, error) {
+// NewEdX25519PublicKeyFromID converts ID to EdX25519PublicKey.
+func NewEdX25519PublicKeyFromID(id ID) (*EdX25519PublicKey, error) {
+	if id == "" {
+		return nil, errors.Errorf("empty id")
+	}
 	hrp, b, err := id.Decode()
 	if err != nil {
 		return nil, err
 	}
 	if hrp != edx25519KeyHRP {
-		return nil, errors.Errorf("invalid key type")
+		return nil, errors.Errorf("invalid key type for edx25519")
 	}
 	if len(b) != ed25519.PublicKeySize {
 		return nil, errors.Errorf("invalid ed25519 public key bytes")
@@ -103,6 +106,38 @@ func EdX25519PublicKeyFromID(id ID) (*EdX25519PublicKey, error) {
 		id:        id,
 		publicKey: Bytes32(b),
 	}, nil
+}
+
+// PublicKeyIDEquals returns true if public keys are equal.
+// It will also compare EdX25519 public key and X25519 public keys.
+func PublicKeyIDEquals(expected ID, kid ID) bool {
+	if expected == kid {
+		return true
+	}
+	if expected.IsEdX25519() && kid.IsX25519() {
+		spk, err := NewEdX25519PublicKeyFromID(expected)
+		if err != nil {
+			panic(err)
+		}
+		return kid == spk.X25519PublicKey().ID()
+	}
+	if kid.IsEdX25519() && expected.IsX25519() {
+		spk, err := NewEdX25519PublicKeyFromID(kid)
+		if err != nil {
+			panic(err)
+		}
+		return expected == spk.X25519PublicKey().ID()
+	}
+	return false
+}
+
+// NewX25519PublicKeyFromEdX25519ID creates public key from EdX25519 key ID.
+func NewX25519PublicKeyFromEdX25519ID(id ID) (*X25519PublicKey, error) {
+	spk, err := NewEdX25519PublicKeyFromID(id)
+	if err != nil {
+		return nil, err
+	}
+	return spk.X25519PublicKey(), nil
 }
 
 // ID for sign public key.

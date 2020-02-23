@@ -12,14 +12,14 @@ import (
 // Encrypt bytes to recipients.
 // Sender can be nil, if you want it to be anonymous.
 // https://saltpack.org/encryption-format-v2
-func (s *Saltpack) Encrypt(b []byte, sender *keys.X25519Key, recipients ...keys.ID) ([]byte, error) {
+func (s *Saltpack) Encrypt(b []byte, signer *keys.X25519Key, recipients ...keys.ID) ([]byte, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
 	}
 	var sbk ksaltpack.BoxSecretKey
-	if sender != nil {
-		sbk = newBoxKey(sender)
+	if signer != nil {
+		sbk = newBoxKey(signer)
 	}
 	if s.armor {
 		s, err := ksaltpack.EncryptArmor62Seal(ksaltpack.Version2(), b, sbk, recs, s.armorBrand)
@@ -35,44 +35,46 @@ func (s *Saltpack) Decrypt(b []byte) ([]byte, keys.ID, error) {
 	}
 	info, out, err := ksaltpack.Open(encryptVersionValidator, b, s)
 	if err != nil {
-		return nil, "", convertErr(err)
+		return nil, "", convertBoxKeyErr(err)
 	}
-	sender := keys.ID("")
+	signer := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
+		kid, err := x25519KeyID(info.SenderKey.ToKID())
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
+		signer = kid
 	}
-	return out, sender, nil
+	return out, signer, nil
 }
 
 func (s *Saltpack) decryptArmored(b []byte) ([]byte, keys.ID, error) {
 	// TODO: Casting to string could be a performance issue
 	info, out, _, err := ksaltpack.Dearmor62DecryptOpen(encryptVersionValidator, string(b), s)
 	if err != nil {
-		return nil, "", convertErr(err)
+		return nil, "", convertBoxKeyErr(err)
 	}
-	sender := keys.ID("")
+	signer := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
+		kid, err := x25519KeyID(info.SenderKey.ToKID())
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
+		signer = kid
 	}
-	return out, sender, nil
+	return out, signer, nil
 }
 
 // NewEncryptStream creates an encrypted io.WriteCloser.
 // Sender can be nil, if you want it to be anonymous.
-func (s *Saltpack) NewEncryptStream(w io.Writer, sender *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
+func (s *Saltpack) NewEncryptStream(w io.Writer, signer *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
 	}
 	var sbk ksaltpack.BoxSecretKey
-	if sender != nil {
-		sbk = newBoxKey(sender)
+	if signer != nil {
+		sbk = newBoxKey(signer)
 	}
 	if s.armor {
 		return ksaltpack.NewEncryptArmor62Stream(ksaltpack.Version2(), w, sbk, recs, s.armorBrand)
@@ -87,30 +89,32 @@ func (s *Saltpack) NewDecryptStream(r io.Reader) (io.Reader, keys.ID, error) {
 	}
 	info, stream, err := ksaltpack.NewDecryptStream(encryptVersionValidator, r, s)
 	if err != nil {
-		return nil, "", convertErr(err)
+		return nil, "", convertBoxKeyErr(err)
 	}
-	sender := keys.ID("")
+	signer := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
+		kid, err := x25519KeyID(info.SenderKey.ToKID())
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
+		signer = kid
 	}
-	return stream, sender, nil
+	return stream, signer, nil
 }
 
 func (s *Saltpack) newDecryptArmoredStream(r io.Reader) (io.Reader, keys.ID, error) {
 	// TODO: Specifying nil for resolver will panic if box keys not found
 	info, stream, _, err := ksaltpack.NewDearmor62DecryptStream(encryptVersionValidator, r, s)
 	if err != nil {
-		return nil, "", convertErr(err)
+		return nil, "", convertBoxKeyErr(err)
 	}
-	sender := keys.ID("")
+	signer := keys.ID("")
 	if !info.SenderIsAnon {
-		sender, err = bytesToID(info.SenderKey.ToKID(), keys.X25519Public)
+		kid, err := x25519KeyID(info.SenderKey.ToKID())
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "failed to decrypt")
 		}
+		signer = kid
 	}
-	return stream, sender, nil
+	return stream, signer, nil
 }

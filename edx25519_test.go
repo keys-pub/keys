@@ -53,6 +53,16 @@ func TestNewEdX25519KeyFromPrivateKey(t *testing.T) {
 	_ = keys.NewEdX25519KeyFromPrivateKey(keys.Bytes64(bytes.Repeat([]byte{0x01}, 64)))
 }
 
+func TestPublicKeyIDEquals(t *testing.T) {
+	sk := keys.GenerateEdX25519Key()
+	bid := sk.X25519Key().ID()
+
+	require.True(t, keys.PublicKeyIDEquals(sk.ID(), sk.ID()))
+	require.True(t, keys.PublicKeyIDEquals(sk.ID(), bid))
+	require.True(t, keys.PublicKeyIDEquals(bid, bid))
+	require.True(t, keys.PublicKeyIDEquals(bid, sk.ID()))
+}
+
 func ExampleGenerateEdX25519Key() {
 	alice := keys.GenerateEdX25519Key()
 	fmt.Printf("Alice: %s\n", alice.ID())

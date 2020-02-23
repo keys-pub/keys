@@ -93,6 +93,30 @@ func (k *Keystore) X25519Key(kid ID) (*X25519Key, error) {
 	return AsX25519Key(item)
 }
 
+// SavePublicKey saves a public key from a key identifier.
+func (k *Keystore) SavePublicKey(kid ID) error {
+	hrp, b, err := kid.Decode()
+	if err != nil {
+		return err
+	}
+	switch hrp {
+	case x25519KeyHRP:
+		if len(b) != 32 {
+			return errors.Errorf("invalid id public key bytes")
+		}
+		bpk := NewX25519PublicKey(Bytes32(b))
+		return k.SaveX25519PublicKey(bpk)
+	case edx25519KeyHRP:
+		if len(b) != 32 {
+			return errors.Errorf("invalid id public key bytes")
+		}
+		spk := NewEdX25519PublicKey(Bytes32(b))
+		return k.SaveEdX25519PublicKey(spk)
+	default:
+		return errors.Errorf("unrecognized key type")
+	}
+}
+
 // SaveEdX25519Key saves a EdX25519Key to the Keystore.
 func (k *Keystore) SaveEdX25519Key(signKey *EdX25519Key) error {
 	return k.set(NewEdX25519KeyItem(signKey))
@@ -310,41 +334,15 @@ func (k *Keystore) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
 	return AsX25519PublicKey(item)
 }
 
-// EdX25519PublicKeyForID converts ID to a sign public key.
-func EdX25519PublicKeyForID(id ID) (*EdX25519PublicKey, error) {
-	if id == "" {
-		return nil, errors.Errorf("empty id")
-	}
-	if id.IsEdX25519() {
-		return EdX25519PublicKeyFromID(id)
-	}
-	return nil, errors.Errorf("unrecognized id %s", id)
-}
-
-// X25519PublicKeyForID converts ID to a box public key.
-// If the key is a sign key type it will convert to a box public key.
-func X25519PublicKeyForID(id ID) (*X25519PublicKey, error) {
-	if id == "" {
-		return nil, errors.Errorf("empty id")
-	}
-	if id.IsX25519() {
-		return X25519PublicKeyFromID(id)
-	}
-	if id.IsEdX25519() {
-		spk, err := EdX25519PublicKeyFromID(id)
-		if err != nil {
-			return nil, err
-		}
-		return spk.X25519PublicKey(), nil
-	}
-	return nil, errors.Errorf("unrecognized id %s", id)
-}
-
 // FindEdX25519PublicKey searches all our EdX25519 public keys for a match to a converted
 // X25519 public key.
-func (k *Keystore) FindEdX25519PublicKey(bpk *X25519PublicKey) (*EdX25519PublicKey, error) {
-	logger.Debugf("Finding edx25519 key from an x25519 key %s", bpk.ID())
+func (k *Keystore) FindEdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
+	logger.Debugf("Finding edx25519 key from an x25519 key %s", kid)
 	spks, err := k.EdX25519PublicKeys()
+	if err != nil {
+		return nil, err
+	}
+	bpk, err := NewX25519PublicKeyFromID(kid)
 	if err != nil {
 		return nil, err
 	}

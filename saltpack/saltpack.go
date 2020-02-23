@@ -17,6 +17,7 @@ type Saltpack struct {
 
 // Keystore ...
 type Keystore interface {
+	// X25519Keys return all X25519 box keys in the Keystore to try to decrypt.
 	X25519Keys() ([]*keys.X25519Key, error)
 }
 
@@ -153,7 +154,7 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
 	publicKeys := make([]ksaltpack.BoxPublicKey, 0, len(recipients))
 	for _, r := range recipients {
-		pk, err := keys.X25519PublicKeyForID(r)
+		pk, err := keys.NewX25519PublicKeyFromID(r)
 		if err != nil {
 			return nil, errors.Wrapf(err, "invalid recipient")
 		}
@@ -163,4 +164,20 @@ func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey
 		publicKeys = append(publicKeys, newBoxPublicKey(pk))
 	}
 	return publicKeys, nil
+}
+
+func x25519KeyID(senderKey []byte) (keys.ID, error) {
+	if len(senderKey) != 32 {
+		return "", errors.Errorf("invalid sender key")
+	}
+	bpk := keys.NewX25519PublicKey(keys.Bytes32(senderKey))
+	return bpk.ID(), nil
+}
+
+func edX25519KeyID(senderKey []byte) (keys.ID, error) {
+	if len(senderKey) != 32 {
+		return "", errors.Errorf("invalid sender key")
+	}
+	bpk := keys.NewEdX25519PublicKey(keys.Bytes32(senderKey))
+	return bpk.ID(), nil
 }

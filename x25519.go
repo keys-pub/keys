@@ -63,21 +63,6 @@ func GenerateX25519Key() *X25519Key {
 	return NewX25519KeyFromSeed(Rand32())
 }
 
-// X25519PublicKeyFromID converts ID to X25519PublicKey.
-func X25519PublicKeyFromID(id ID) (*X25519PublicKey, error) {
-	hrp, b, err := id.Decode()
-	if err != nil {
-		return nil, err
-	}
-	if hrp != x25519KeyHRP {
-		return nil, errors.Errorf("invalid key type")
-	}
-	if len(b) != 32 {
-		return nil, errors.Errorf("invalid box public key bytes")
-	}
-	return NewX25519PublicKey(Bytes32(b)), nil
-}
-
 // NewX25519KeyFromSeed from seed.
 func NewX25519KeyFromSeed(seed *[32]byte) *X25519Key {
 	publicKey, privateKey, err := box.GenerateKey(bytes.NewReader(seed[:]))
@@ -99,6 +84,32 @@ func NewX25519KeyFromPrivateKey(privateKey *[32]byte) *X25519Key {
 		id:         MustID(x25519KeyHRP, publicKey[:]),
 		privateKey: privateKey,
 		publicKey:  NewX25519PublicKey(publicKey),
+	}
+}
+
+// NewX25519PublicKeyFromID converts ID to X25519PublicKey.
+func NewX25519PublicKeyFromID(id ID) (*X25519PublicKey, error) {
+	if id == "" {
+		return nil, errors.Errorf("empty id")
+	}
+	hrp, b, err := id.Decode()
+	if err != nil {
+		return nil, err
+	}
+	switch hrp {
+	case x25519KeyHRP:
+		if len(b) != 32 {
+			return nil, errors.Errorf("invalid box public key bytes")
+		}
+		return NewX25519PublicKey(Bytes32(b)), nil
+	case edx25519KeyHRP:
+		spk, err := NewEdX25519PublicKeyFromID(id)
+		if err != nil {
+			return nil, err
+		}
+		return spk.X25519PublicKey(), nil
+	default:
+		return nil, errors.Errorf("unrecognized key type")
 	}
 }
 

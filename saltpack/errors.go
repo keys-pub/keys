@@ -2,21 +2,30 @@ package saltpack
 
 import (
 	"github.com/keys-pub/keys"
-	"github.com/pkg/errors"
 
 	ksaltpack "github.com/keybase/saltpack"
 )
 
-func convertErr(err error) error {
+func convertSignKeyErr(err error) error {
 	if kerr, ok := err.(ksaltpack.ErrNoSenderKey); ok {
-		id, err := bytesToID(kerr.Sender, keys.EdX25519Public)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse sender key")
+		if len(kerr.Sender) == 32 {
+			spk := keys.NewEdX25519PublicKey(keys.Bytes32(kerr.Sender))
+			return keys.NewErrNotFound(spk.ID().String())
 		}
-		return keys.NewErrNotFound(id.String())
 	}
 	// if err == ksaltpack.ErrNoDecryptionKey {
-	// 	return keys.NewErrNotFound("", keys.PublicKeyType)
+	// }
+	return err
+}
+
+func convertBoxKeyErr(err error) error {
+	if kerr, ok := err.(ksaltpack.ErrNoSenderKey); ok {
+		if len(kerr.Sender) == 32 {
+			bpk := keys.NewX25519PublicKey(keys.Bytes32(kerr.Sender))
+			return keys.NewErrNotFound(bpk.ID().String())
+		}
+	}
+	// if err == ksaltpack.ErrNoDecryptionKey {
 	// }
 	return err
 }
