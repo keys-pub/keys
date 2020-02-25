@@ -48,6 +48,9 @@ func doRequest(client *http.Client, method string, u string, body []byte, option
 		return nil, nil, err
 	}
 
+	req.Header.Set("User-Agent", "keys.pub")
+	req.Header.Set("Host", "reddit.com")
+
 	for _, opt := range options {
 		opt(req)
 	}

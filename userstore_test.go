@@ -159,7 +159,7 @@ func TestUserResultGithubWrongName(t *testing.T) {
 
 	result, err := ust.CheckSigchain(context.TODO(), sc)
 	require.NotNil(t, result)
-	require.Equal(t, keys.UserStatusFailure, result.Status)
+	require.Equal(t, keys.UserStatusStatementInvalid, result.Status)
 	require.Equal(t, result.Err, "name mismatch alice != alice2")
 }
 
@@ -191,7 +191,7 @@ func TestUserResultGithubWrongService(t *testing.T) {
 
 	result, err := ust.CheckSigchain(context.TODO(), sc)
 	require.NotNil(t, result)
-	require.Equal(t, keys.UserStatusFailure, result.Status)
+	require.Equal(t, keys.UserStatusStatementInvalid, result.Status)
 	require.Equal(t, result.Err, "service mismatch github != github2")
 }
 
@@ -233,6 +233,51 @@ func TestUserResultTwitter(t *testing.T) {
 	require.Equal(t, keys.UserStatusOK, result.Status)
 	require.Equal(t, "twitter", result.User.Service)
 	require.Equal(t, "bob", result.User.Name)
+	require.Equal(t, keys.TimeMs(1234567890004), result.VerifiedAt)
+	require.Equal(t, keys.TimeMs(1234567890003), result.Timestamp)
+}
+
+func TestUserResultReddit(t *testing.T) {
+	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
+	// services.SetLogger(keys.NewLogger(keys.DebugLevel))
+
+	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+
+	clock := newClock()
+	req := keys.NewMockRequestor()
+	dst := keys.NewMem()
+	scs := keys.NewSigchainStore(dst)
+	ust := testUserStore(t, dst, scs, req, clock)
+
+	user, err := keys.NewUserForSigning(ust, sk.ID(), "reddit", "charlie")
+	require.NoError(t, err)
+	msg, err := user.Sign(sk)
+	require.NoError(t, err)
+	t.Logf(msg)
+
+	sc := keys.NewSigchain(sk.PublicKey())
+	stu, err := keys.NewUser(ust, sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
+	require.NoError(t, err)
+	st, err := keys.GenerateUserStatement(sc, stu, sk, clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st)
+	require.NoError(t, err)
+	err = scs.SaveSigchain(sc)
+	require.NoError(t, err)
+
+	_, err = keys.GenerateUserStatement(sc, stu, sk, clock.Now())
+	require.EqualError(t, err, "user set in sigchain already")
+
+	err = req.SetResponseFile("https://reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", "testdata/reddit/charlie.json")
+	require.NoError(t, err)
+
+	result, err := ust.Update(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.User)
+	require.Equal(t, keys.UserStatusOK, result.Status)
+	require.Equal(t, "reddit", result.User.Service)
+	require.Equal(t, "charlie", result.User.Name)
 	require.Equal(t, keys.TimeMs(1234567890004), result.VerifiedAt)
 	require.Equal(t, keys.TimeMs(1234567890003), result.Timestamp)
 }

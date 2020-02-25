@@ -117,9 +117,9 @@ func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResul
 			User: user,
 		}
 	}
-	if err := u.updateResult(ctx, result, sc.PublicKey()); err != nil {
-		return nil, err
-	}
+
+	u.updateResult(ctx, result, sc.PublicKey())
+
 	return result, nil
 }
 
@@ -128,33 +128,35 @@ func (u *UserStore) Check(ctx context.Context, user *User, spk SigchainPublicKey
 	res := &UserResult{
 		User: user,
 	}
-	if err := u.updateResult(ctx, res, spk); err != nil {
-		return nil, err
-	}
+	u.updateResult(ctx, res, spk)
 	return res, nil
 }
 
-func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk SigchainPublicKey) error {
+// updateResult updates the specified result.
+func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk SigchainPublicKey) {
 	if result == nil {
-		return errors.Errorf("no user specified")
+		panic("no user result specified")
 	}
 	logger.Infof("Update user %s", result.User.String())
 
 	ur, err := url.Parse(result.User.URL)
 	if err != nil {
-		logger.Warningf("Failed to parse user url: %s", err)
 		result.Err = err.Error()
 		result.Status = UserStatusFailure
-		return nil
+		return
 	}
 
 	service, err := services.NewService(result.User.Service)
 	if err != nil {
-		return err
+		result.Err = err.Error()
+		result.Status = UserStatusFailure
+		return
 	}
 	ur, err = service.ValidateURL(result.User.Name, ur)
 	if err != nil {
-		return err
+		result.Err = err.Error()
+		result.Status = UserStatusFailure
+		return
 	}
 
 	result.Timestamp = TimeToMillis(u.Now())
@@ -165,40 +167,49 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 		if errHTTP, ok := errors.Cause(err).(ErrHTTP); ok && errHTTP.StatusCode == 404 {
 			result.Err = err.Error()
 			result.Status = UserStatusResourceNotFound
-			return nil
+			return
 		}
 		result.Err = err.Error()
 		result.Status = UserStatusConnFailure
-		return nil
+		return
 	}
 
-	msg, _ := encoding.FindSaltpack(string(body), true)
-	if msg == "" {
-		logger.Warningf("User statement content not found")
-		result.Err = "user signed message content not found"
-		result.Status = UserStatusContentNotFound
-		return nil
-	}
-
-	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
-	_, err = VerifyUser(verifyMsg, spk, result.User)
+	b, err := service.CheckContent(result.User.Name, body)
 	if err != nil {
-		logger.Warningf("Failed to verify statement: %s", err)
+		logger.Warningf("Failed to check content: %s", err)
 		result.Err = err.Error()
-		result.Status = UserStatusFailure
-		return nil
+		result.Status = UserStatusContentInvalid
+		return
 	}
 
-	// Service may require additional checks
-	if err := service.CheckURLContent(result.User.Name, body); err != nil {
-		return err
+	st, err := VerifyContent(b, result, spk)
+	if err != nil {
+		result.Err = err.Error()
+		result.Status = st
+		return
 	}
 
 	logger.Infof("Verified %s", result.User.KID)
 	result.Err = ""
 	result.Status = UserStatusOK
 	result.VerifiedAt = TimeToMillis(u.Now())
-	return nil
+}
+
+// VerifyContent checks content.
+func VerifyContent(b []byte, result *UserResult, spk SigchainPublicKey) (UserStatus, error) {
+	msg, _ := encoding.FindSaltpack(string(b), true)
+	if msg == "" {
+		logger.Warningf("User statement content not found")
+		return UserStatusContentNotFound, errors.Errorf("user signed message content not found")
+	}
+
+	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
+	if _, err := VerifyUser(verifyMsg, spk, result.User); err != nil {
+		logger.Warningf("Failed to verify statement: %s", err)
+		return UserStatusStatementInvalid, err
+	}
+
+	return UserStatusOK, nil
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.

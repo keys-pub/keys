@@ -22,8 +22,10 @@ type Service interface {
 	// ValidateName validates the service user name.
 	ValidateUsername(name string) error
 
-	// CheckURLContent checks content if there are additional requirements.
-	CheckURLContent(name string, b []byte) error
+	// CheckContent returns data with statement.
+	// For Twitter, Github there is no check since the user owns the URL location.
+	// For Reddit, we need to verify the listing, author and subreddit and return only the listing text.
+	CheckContent(name string, b []byte) ([]byte, error)
 }
 
 // NewService returns a service by name.

@@ -60,6 +60,6 @@ func (s *twitter) ValidateUsername(name string) error {
 	return nil
 }
 
-func (s *twitter) CheckURLContent(name string, b []byte) error {
-	return nil
+func (s *twitter) CheckContent(name string, b []byte) ([]byte, error) {
+	return b, nil
 }

@@ -57,6 +57,6 @@ func (s *github) ValidateUsername(name string) error {
 	return nil
 }
 
-func (s *github) CheckURLContent(name string, b []byte) error {
-	return nil
+func (s *github) CheckContent(name string, b []byte) ([]byte, error) {
+	return b, nil
 }

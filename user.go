@@ -64,6 +64,10 @@ const (
 	UserStatusResourceNotFound UserStatus = "resource-not-found"
 	// UserStatusContentNotFound if resource was found, but message was missing.
 	UserStatusContentNotFound UserStatus = "content-not-found"
+	// UserStatusStatementInvalid if statement was found but was invalid.
+	UserStatusStatementInvalid UserStatus = "statement-invalid"
+	// UserStatusContentInvalid if statement was valid, but other data was invalid.
+	UserStatusContentInvalid UserStatus = "content-invalid"
 	// UserStatusConnFailure if there was a network connection failure.
 	UserStatusConnFailure UserStatus = "connection-fail"
 	// UserStatusFailure is any other failure.
@@ -238,11 +242,13 @@ func (u *User) Sign(key *EdX25519Key) (string, error) {
 // If user is specified, we will verify it matches the User in the verified
 // message.
 func VerifyUser(msg string, spk SigchainPublicKey, user *User) (*User, error) {
+	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
 		return nil, err
 	}
 
+	logger.Debugf("Verifying msg...")
 	bout, err := spk.Verify(b)
 	if err != nil {
 		return nil, err
@@ -252,6 +258,7 @@ func VerifyUser(msg string, spk SigchainPublicKey, user *User) (*User, error) {
 	if err := json.Unmarshal(bout, &userDec); err != nil {
 		return nil, err
 	}
+	logger.Debugf("User: %v", userDec)
 	if userDec.Name == "" {
 		return nil, errors.Errorf("user message invalid: no name")
 	}
