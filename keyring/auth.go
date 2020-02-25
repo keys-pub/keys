@@ -26,9 +26,6 @@ func (k keyAuth) Key() SecretKey {
 
 // NewPasswordAuth generates key from password, salt and secret key.
 func NewPasswordAuth(password string, salt []byte) (Auth, error) {
-	if len(password) < 10 {
-		return nil, errors.Errorf("password too short")
-	}
 	if len(salt) < 16 {
 		return nil, errors.Errorf("not enough salt")
 	}
