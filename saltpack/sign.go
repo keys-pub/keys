@@ -11,27 +11,26 @@ import (
 
 // Sign ...
 func (s *Saltpack) Sign(b []byte, key *keys.EdX25519Key) ([]byte, error) {
-	if s.armor {
-		s, err := ksaltpack.SignArmor62(ksaltpack.Version1(), b, newSignKey(key), s.armorBrand)
-		return []byte(s), err
-	}
 	return ksaltpack.Sign(ksaltpack.Version1(), b, newSignKey(key))
+}
+
+// SignArmored ...
+func (s *Saltpack) SignArmored(b []byte, brand string, key *keys.EdX25519Key) (string, error) {
+	return ksaltpack.SignArmor62(ksaltpack.Version1(), b, newSignKey(key), brand)
 }
 
 // SignDetached ...
 func (s *Saltpack) SignDetached(b []byte, key *keys.EdX25519Key) ([]byte, error) {
-	if s.armor {
-		s, err := ksaltpack.SignDetachedArmor62(ksaltpack.Version1(), b, newSignKey(key), s.armorBrand)
-		return []byte(s), err
-	}
 	return ksaltpack.SignDetached(ksaltpack.Version1(), b, newSignKey(key))
+}
+
+// SignArmoredDetached ...
+func (s *Saltpack) SignArmoredDetached(b []byte, brand string, key *keys.EdX25519Key) (string, error) {
+	return ksaltpack.SignDetachedArmor62(ksaltpack.Version1(), b, newSignKey(key), brand)
 }
 
 // Verify ...
 func (s *Saltpack) Verify(b []byte) ([]byte, keys.ID, error) {
-	if s.armor {
-		return s.verifyArmored(string(b))
-	}
 	spk, out, err := ksaltpack.Verify(signVersionValidator, b, s)
 	if err != nil {
 		return nil, "", convertSignKeyErr(err)
@@ -43,7 +42,8 @@ func (s *Saltpack) Verify(b []byte) ([]byte, keys.ID, error) {
 	return out, signer, nil
 }
 
-func (s *Saltpack) verifyArmored(msg string) ([]byte, keys.ID, error) {
+// VerifyArmored ...
+func (s *Saltpack) VerifyArmored(msg string) ([]byte, keys.ID, error) {
 	spk, out, _, err := ksaltpack.Dearmor62Verify(signVersionValidator, msg, s)
 	if err != nil {
 		return nil, "", convertSignKeyErr(err)
@@ -57,21 +57,23 @@ func (s *Saltpack) verifyArmored(msg string) ([]byte, keys.ID, error) {
 
 // VerifyDetached ...
 func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
-	var spk ksaltpack.SigningPublicKey
-	if s.armor {
-		s, _, err := ksaltpack.Dearmor62VerifyDetached(signVersionValidator, b, string(sig), s)
-		if err != nil {
-			return "", convertSignKeyErr(err)
-		}
-		spk = s
-	} else {
-		s, err := ksaltpack.VerifyDetached(signVersionValidator, b, sig, s)
-		if err != nil {
-			return "", convertSignKeyErr(err)
-		}
-		spk = s
+	spk, err := ksaltpack.VerifyDetached(signVersionValidator, b, sig, s)
+	if err != nil {
+		return "", convertSignKeyErr(err)
 	}
+	signer, err := edX25519KeyID(spk.ToKID())
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to verify")
+	}
+	return signer, nil
+}
 
+// VerifyArmoredDetached ...
+func (s *Saltpack) VerifyArmoredDetached(sig string, b []byte) (keys.ID, error) {
+	spk, _, err := ksaltpack.Dearmor62VerifyDetached(signVersionValidator, b, sig, s)
+	if err != nil {
+		return "", convertSignKeyErr(err)
+	}
 	signer, err := edX25519KeyID(spk.ToKID())
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to verify")
@@ -81,23 +83,26 @@ func (s *Saltpack) VerifyDetached(sig []byte, b []byte) (keys.ID, error) {
 
 // NewSignStream ...
 func (s *Saltpack) NewSignStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
-	if detached && s.armor {
-		return ksaltpack.NewSignDetachedArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), s.armorBrand)
-	}
-	if s.armor {
-		return ksaltpack.NewSignArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), s.armorBrand)
-	}
-	if detached {
-		return ksaltpack.NewSignDetachedStream(ksaltpack.Version1(), w, newSignKey(key))
-	}
 	return ksaltpack.NewSignStream(ksaltpack.Version1(), w, newSignKey(key))
+}
+
+// NewSignArmoredDetachedStream ...
+func (s *Saltpack) NewSignArmoredDetachedStream(w io.Writer, brand string, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+	return ksaltpack.NewSignDetachedArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), brand)
+}
+
+// NewSignArmoredStream ...
+func (s *Saltpack) NewSignArmoredStream(w io.Writer, brand string, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+	return ksaltpack.NewSignArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), brand)
+}
+
+// NewSignDetachedStream ...
+func (s *Saltpack) NewSignDetachedStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+	return ksaltpack.NewSignDetachedStream(ksaltpack.Version1(), w, newSignKey(key))
 }
 
 // NewVerifyStream ...
 func (s *Saltpack) NewVerifyStream(r io.Reader) (io.Reader, keys.ID, error) {
-	if s.armor {
-		return s.NewVerifyArmoredStream(r)
-	}
 	spk, reader, err := ksaltpack.NewVerifyStream(signVersionValidator, r, s)
 	if err != nil {
 		return nil, "", convertSignKeyErr(err)

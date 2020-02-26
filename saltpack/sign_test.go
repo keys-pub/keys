@@ -3,7 +3,6 @@ package saltpack_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"testing"
@@ -40,13 +39,12 @@ func TestSignVerify(t *testing.T) {
 
 func ExampleSaltpack_Sign() {
 	sp := saltpack.NewSaltpack(nil)
-	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.Sign(message, alice)
+	sig, err := sp.SignArmored(message, "", alice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,13 +54,12 @@ func ExampleSaltpack_Sign() {
 
 func ExampleSaltpack_SignDetached() {
 	sp := saltpack.NewSaltpack(nil)
-	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.SignDetached(message, alice)
+	sig, err := sp.SignArmoredDetached(message, "", alice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,18 +69,17 @@ func ExampleSaltpack_SignDetached() {
 
 func ExampleSaltpack_Verify() {
 	sp := saltpack.NewSaltpack(nil)
-	sp.SetArmored(true)
 
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.Sign(message, alice)
+	sig, err := sp.SignArmored(message, "", alice)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	out, signer, err := sp.Verify(sig)
+	out, signer, err := sp.VerifyArmored(sig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,34 +94,18 @@ func ExampleSaltpack_Verify() {
 
 func TestSignVerifyArmored(t *testing.T) {
 	sp := saltpack.NewSaltpack(nil)
-	sp.SetArmored(true)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi")
 
-	sig, err := sp.Sign(message, alice)
+	sig, err := sp.SignArmored(message, "", alice)
 	require.NoError(t, err)
 
-	messageOut, signer, err := sp.Verify(sig)
+	messageOut, signer, err := sp.VerifyArmored(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
-
-func TestSignVerifyDetached(t *testing.T) {
-	sp := saltpack.NewSaltpack(nil)
-	alice := keys.GenerateEdX25519Key()
-
-	message := []byte("hi")
-
-	sig, err := sp.SignDetached(message, alice)
-	require.NoError(t, err)
-
-	signer, err := sp.VerifyDetached(sig, message)
-	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), signer)
-}
-
 func TestSignVerifyStream(t *testing.T) {
 	sp := saltpack.NewSaltpack(nil)
 	alice := keys.GenerateEdX25519Key()
@@ -133,18 +113,34 @@ func TestSignVerifyStream(t *testing.T) {
 	message := []byte("I'm alice")
 
 	var buf bytes.Buffer
-	encrypted, err := sp.NewSignStream(&buf, alice, false)
+	signed, err := sp.NewSignStream(&buf, alice, false)
 	require.NoError(t, err)
-	n, err := encrypted.Write(message)
+	n, err := signed.Write(message)
 	require.NoError(t, err)
 	require.Equal(t, len(message), n)
-	encrypted.Close()
+	signed.Close()
 
-	var reader io.Reader = bytes.NewReader(buf.Bytes())
+	reader := bytes.NewReader(buf.Bytes())
 	stream, signer, err := sp.NewVerifyStream(reader)
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 	out, err := ioutil.ReadAll(stream)
+	require.NoError(t, err)
+	require.Equal(t, message, out)
+
+	var buf2 bytes.Buffer
+	signed2, err := sp.NewSignArmoredStream(&buf2, "", alice, false)
+	require.NoError(t, err)
+	n, err = signed2.Write(message)
+	require.NoError(t, err)
+	require.Equal(t, len(message), n)
+	signed2.Close()
+
+	reader = bytes.NewReader(buf2.Bytes())
+	stream, signer, err = sp.NewVerifyArmoredStream(reader)
+	require.NoError(t, err)
+	require.Equal(t, alice.PublicKey().ID(), signer)
+	out, err = ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 }

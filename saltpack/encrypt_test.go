@@ -36,6 +36,14 @@ func TestEncrypt(t *testing.T) {
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), sender)
 
+	encrypted2, err := spa.EncryptArmored(message, "", alice, bob.ID())
+	require.NoError(t, err)
+
+	out, sender, err = spb.DecryptArmored(encrypted2)
+	require.NoError(t, err)
+	require.Equal(t, message, out)
+	require.Equal(t, alice.PublicKey().ID(), sender)
+
 	_, err = spa.Encrypt(message, alice, keys.ID(""))
 	require.EqualError(t, err, "invalid recipient: empty id")
 }
@@ -90,6 +98,20 @@ func TestEncryptStream(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 
+	var buf2 bytes.Buffer
+	encrypted2, err := spa.NewEncryptArmoredStream(&buf2, "", alice, bob.ID())
+	require.NoError(t, err)
+	n, err = encrypted2.Write(message)
+	require.NoError(t, err)
+	require.Equal(t, len(message), n)
+	encrypted2.Close()
+
+	stream, sender, err = spb.NewDecryptArmoredStream(&buf2)
+	require.NoError(t, err)
+	require.Equal(t, alice.PublicKey().ID(), sender)
+	out, err = ioutil.ReadAll(stream)
+	require.NoError(t, err)
+	require.Equal(t, message, out)
 }
 
 func TestEncryptStreamAnon(t *testing.T) {
@@ -170,8 +192,6 @@ func TestEncryptWithEdX25519Key(t *testing.T) {
 
 func ExampleSaltpack_Encrypt() {
 	sp := saltpack.NewSaltpack(nil)
-	// For armored output
-	sp.SetArmored(true)
 
 	// Alice
 	alice := keys.GenerateEdX25519Key()
@@ -182,7 +202,7 @@ func ExampleSaltpack_Encrypt() {
 	message := []byte("hi bob")
 
 	// Encrypt from alice to bob
-	encrypted, err := sp.Encrypt(message, alice.X25519Key(), bobID)
+	encrypted, err := sp.EncryptArmored(message, "", alice.X25519Key(), bobID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -193,12 +213,12 @@ func ExampleSaltpack_Encrypt() {
 func ExampleSaltpack_Decrypt() {
 	// Message from Alice
 	aliceID := keys.ID("kex1vrpxw9rqmf49kygc7ujjrdlx8lkzaarjc3s24j73xlqxhwvsyx2sw06r82")
-	encrypted := []byte(`BEGIN SALTPACK ENCRYPTED MESSAGE. 
+	encrypted := `BEGIN SALTPACK ENCRYPTED MESSAGE. 
 	kcJn5brvybfNjz6 D5ll2Nk0YusOJBf 9x1CB6V3o7cdMOV ZPenXvEVhLpMBj0 8rJiM2GJTyXbhDn 
 	cGIoczvWtRoxL5r 3EIPrfVqpwhLDke LfCV6YykdYdGwY1 lUfrzkOIUGdeURb HDSwgrTSrcexwj3 
 	ix9Mw1FVXQGBwBV yil8lLyD1q0VFGv KmgJYyARppqQEIF HgAsZq0BJL6Dosz WGrFalmG90QA6PO 
 	avDlwRXMDbjKFvE wQtaBDKXVSBaM9k 0Xu0CfdGUkEICbN vZNV67cGqEz2IiH kr8. 
-	END SALTPACK ENCRYPTED MESSAGE.`)
+	END SALTPACK ENCRYPTED MESSAGE.`
 
 	// Bob creates a Keyring and Keystore
 	kr, err := keyring.NewKeyring("BobKeyring")
@@ -212,7 +232,6 @@ func ExampleSaltpack_Decrypt() {
 	}
 	ks := keys.NewKeystore(kr)
 	sp := saltpack.NewSaltpack(ks)
-	sp.SetArmored(true)
 
 	kmsg := `BEGIN EDX25519 KEY MESSAGE.
 	E9zL57KzBY1CIdJ d5tlpnyCIX8R5DB oLswy2g17kbfK4s CwryRUoII3ZNk3l
@@ -228,7 +247,7 @@ func ExampleSaltpack_Decrypt() {
 	}
 
 	// Bob decrypt's
-	out, signer, err := sp.Decrypt(encrypted)
+	out, signer, err := sp.DecryptArmored(encrypted)
 	if err != nil {
 		log.Fatal(err)
 	}

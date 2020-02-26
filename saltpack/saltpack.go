@@ -10,9 +10,7 @@ import (
 
 // Saltpack provider.
 type Saltpack struct {
-	keys       Keystore
-	armor      bool
-	armorBrand string
+	keys Keystore
 }
 
 // Keystore ...
@@ -54,26 +52,6 @@ func encryptVersionValidator(version ksaltpack.Version) error {
 	default:
 		return errors.Errorf("unrecognized version %d.%d", version.Major, version.Minor)
 	}
-}
-
-// SetArmored to set whether data is armored.
-func (s *Saltpack) SetArmored(b bool) {
-	s.armor = b
-}
-
-// Armored ...
-func (s *Saltpack) Armored() bool {
-	return s.armor
-}
-
-// SetArmorBrand sets the armor brand (if armored).
-func (s *Saltpack) SetArmorBrand(brand string) {
-	s.armorBrand = brand
-}
-
-// ArmorBrand ...
-func (s *Saltpack) ArmorBrand() string {
-	return s.armorBrand
 }
 
 // CreateEphemeralKey creates a random ephemeral key.
