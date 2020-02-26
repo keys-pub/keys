@@ -36,7 +36,7 @@ func TestEncrypt(t *testing.T) {
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), sender)
 
-	encrypted2, err := spa.EncryptArmored(message, "", alice, bob.ID())
+	encrypted2, err := spa.EncryptArmored(message, alice, bob.ID())
 	require.NoError(t, err)
 
 	out, sender, err = spb.DecryptArmored(encrypted2)
@@ -99,7 +99,7 @@ func TestEncryptStream(t *testing.T) {
 	require.Equal(t, message, out)
 
 	var buf2 bytes.Buffer
-	encrypted2, err := spa.NewEncryptArmoredStream(&buf2, "", alice, bob.ID())
+	encrypted2, err := spa.NewEncryptArmoredStream(&buf2, alice, bob.ID())
 	require.NoError(t, err)
 	n, err = encrypted2.Write(message)
 	require.NoError(t, err)
@@ -202,7 +202,7 @@ func ExampleSaltpack_Encrypt() {
 	message := []byte("hi bob")
 
 	// Encrypt from alice to bob
-	encrypted, err := sp.EncryptArmored(message, "", alice.X25519Key(), bobID)
+	encrypted, err := sp.EncryptArmored(message, alice.X25519Key(), bobID)
 	if err != nil {
 		log.Fatal(err)
 	}

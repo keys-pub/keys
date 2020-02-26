@@ -44,7 +44,7 @@ func ExampleSaltpack_Sign() {
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.SignArmored(message, "", alice)
+	sig, err := sp.SignArmored(message, alice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func ExampleSaltpack_SignDetached() {
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.SignArmoredDetached(message, "", alice)
+	sig, err := sp.SignArmoredDetached(message, alice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func ExampleSaltpack_Verify() {
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.SignArmored(message, "", alice)
+	sig, err := sp.SignArmored(message, alice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestSignVerifyArmored(t *testing.T) {
 
 	message := []byte("hi")
 
-	sig, err := sp.SignArmored(message, "", alice)
+	sig, err := sp.SignArmored(message, alice)
 	require.NoError(t, err)
 
 	messageOut, signer, err := sp.VerifyArmored(sig)
@@ -129,7 +129,7 @@ func TestSignVerifyStream(t *testing.T) {
 	require.Equal(t, message, out)
 
 	var buf2 bytes.Buffer
-	signed2, err := sp.NewSignArmoredStream(&buf2, "", alice, false)
+	signed2, err := sp.NewSignArmoredStream(&buf2, alice, false)
 	require.NoError(t, err)
 	n, err = signed2.Write(message)
 	require.NoError(t, err)

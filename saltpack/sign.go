@@ -15,8 +15,8 @@ func (s *Saltpack) Sign(b []byte, key *keys.EdX25519Key) ([]byte, error) {
 }
 
 // SignArmored ...
-func (s *Saltpack) SignArmored(b []byte, brand string, key *keys.EdX25519Key) (string, error) {
-	return ksaltpack.SignArmor62(ksaltpack.Version1(), b, newSignKey(key), brand)
+func (s *Saltpack) SignArmored(b []byte, key *keys.EdX25519Key) (string, error) {
+	return ksaltpack.SignArmor62(ksaltpack.Version1(), b, newSignKey(key), "")
 }
 
 // SignDetached ...
@@ -25,8 +25,8 @@ func (s *Saltpack) SignDetached(b []byte, key *keys.EdX25519Key) ([]byte, error)
 }
 
 // SignArmoredDetached ...
-func (s *Saltpack) SignArmoredDetached(b []byte, brand string, key *keys.EdX25519Key) (string, error) {
-	return ksaltpack.SignDetachedArmor62(ksaltpack.Version1(), b, newSignKey(key), brand)
+func (s *Saltpack) SignArmoredDetached(b []byte, key *keys.EdX25519Key) (string, error) {
+	return ksaltpack.SignDetachedArmor62(ksaltpack.Version1(), b, newSignKey(key), "")
 }
 
 // Verify ...
@@ -87,13 +87,13 @@ func (s *Saltpack) NewSignStream(w io.Writer, key *keys.EdX25519Key, detached bo
 }
 
 // NewSignArmoredDetachedStream ...
-func (s *Saltpack) NewSignArmoredDetachedStream(w io.Writer, brand string, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
-	return ksaltpack.NewSignDetachedArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), brand)
+func (s *Saltpack) NewSignArmoredDetachedStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+	return ksaltpack.NewSignDetachedArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), "")
 }
 
 // NewSignArmoredStream ...
-func (s *Saltpack) NewSignArmoredStream(w io.Writer, brand string, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
-	return ksaltpack.NewSignArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), brand)
+func (s *Saltpack) NewSignArmoredStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+	return ksaltpack.NewSignArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), "")
 }
 
 // NewSignDetachedStream ...

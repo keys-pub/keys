@@ -33,7 +33,7 @@ func TestSigncrypt(t *testing.T) {
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), sender)
 
-	encrypted2, err := spa.SigncryptArmored(message, "", alice, bob.ID())
+	encrypted2, err := spa.SigncryptArmored(message, alice, bob.ID())
 	require.NoError(t, err)
 
 	out, sender, err = spb.SigncryptArmoredOpen(encrypted2)
@@ -78,7 +78,7 @@ func TestSigncryptStream(t *testing.T) {
 	require.Equal(t, message, out)
 
 	var buf2 bytes.Buffer
-	encrypted2, err := spa.NewSigncryptArmoredStream(&buf2, "", alice, bob.ID())
+	encrypted2, err := spa.NewSigncryptArmoredStream(&buf2, alice, bob.ID())
 	require.NoError(t, err)
 	n, err = encrypted2.Write(message)
 	require.NoError(t, err)

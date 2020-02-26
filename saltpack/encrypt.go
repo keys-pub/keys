@@ -27,7 +27,7 @@ func (s *Saltpack) Encrypt(b []byte, signer *keys.X25519Key, recipients ...keys.
 // EncryptArmored to recipients.
 // Sender can be nil, if you want it to be anonymous.
 // https://saltpack.org/encryption-format-v2
-func (s *Saltpack) EncryptArmored(b []byte, brand string, signer *keys.X25519Key, recipients ...keys.ID) (string, error) {
+func (s *Saltpack) EncryptArmored(b []byte, signer *keys.X25519Key, recipients ...keys.ID) (string, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return "", err
@@ -36,7 +36,7 @@ func (s *Saltpack) EncryptArmored(b []byte, brand string, signer *keys.X25519Key
 	if signer != nil {
 		sbk = newBoxKey(signer)
 	}
-	return ksaltpack.EncryptArmor62Seal(ksaltpack.Version2(), b, sbk, recs, brand)
+	return ksaltpack.EncryptArmor62Seal(ksaltpack.Version2(), b, sbk, recs, "")
 }
 
 // Decrypt bytes.
@@ -92,7 +92,7 @@ func (s *Saltpack) NewEncryptStream(w io.Writer, signer *keys.X25519Key, recipie
 
 // NewEncryptArmoredStream creates an encrypted armored io.WriteCloser.
 // Sender can be nil, if you want it to be anonymous.
-func (s *Saltpack) NewEncryptArmoredStream(w io.Writer, brand string, signer *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
+func (s *Saltpack) NewEncryptArmoredStream(w io.Writer, signer *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := s.boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (s *Saltpack) NewEncryptArmoredStream(w io.Writer, brand string, signer *ke
 	if signer != nil {
 		sbk = newBoxKey(signer)
 	}
-	return ksaltpack.NewEncryptArmor62Stream(ksaltpack.Version2(), w, sbk, recs, brand)
+	return ksaltpack.NewEncryptArmor62Stream(ksaltpack.Version2(), w, sbk, recs, "")
 }
 
 // NewDecryptStream create decryption stream.
