@@ -66,14 +66,16 @@ type ListOpts struct {
 	Types []string
 }
 
-// Store is the system keyring implementation.
+// Store is the cross platform keyring interface that a Keyring uses.
 type Store interface {
 	Get(service string, id string) ([]byte, error)
 	Set(service string, id string, data []byte, typ string) error
 	Delete(service string, id string) (bool, error)
 
 	IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error)
+	List(service string, key SecretKey, opts *ListOpts) ([]*Item, error)
 	Exists(service string, id string) (bool, error)
+	Reset(service string) error
 }
 
 // UnlockWithPassword unlocks a Keyring with a password.
@@ -174,6 +176,18 @@ func salt(st Store, service string) ([]byte, error) {
 	return salt, nil
 }
 
+// NewKeyring creates a new Keyring with backing Store.
+func NewKeyring(service string, st Store) (Keyring, error) {
+	if service == "" {
+		return nil, errors.Errorf("no service specified")
+	}
+	kr, err := newKeyring(st, service)
+	if err != nil {
+		return nil, err
+	}
+	return kr, nil
+}
+
 func newKeyring(st Store, service string) (*keyring, error) {
 	return &keyring{st: st, service: service}, nil
 }
@@ -220,24 +234,28 @@ func (k *keyring) Delete(id string) (bool, error) {
 }
 
 func (k *keyring) List(opts *ListOpts) ([]*Item, error) {
+	return k.st.List(k.service, k.key, opts)
+}
+
+func listDefault(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
 	if opts == nil {
 		opts = &ListOpts{}
 	}
-	if k.key == nil {
+	if key == nil {
 		return nil, ErrLocked
 	}
 
-	ids, err := k.st.IDs(k.service, "", false, false)
+	ids, err := st.IDs(service, "", false, false)
 	if err != nil {
 		return nil, err
 	}
 	items := make([]*Item, 0, len(ids))
 	for _, id := range ids {
-		b, err := k.st.Get(k.service, id)
+		b, err := st.Get(service, id)
 		if err != nil {
 			return nil, err
 		}
-		item, err := DecodeItem(b, k.key)
+		item, err := DecodeItem(b, key)
 		if err != nil {
 			return nil, err
 		}
@@ -293,16 +311,23 @@ func (k *keyring) Authed() (bool, error) {
 // }
 
 func (k *keyring) Reset() error {
-	ids, err := k.st.IDs(k.service, "", true, true)
+	if err := k.st.Reset(k.service); err != nil {
+		return err
+	}
+	return k.Lock()
+}
+
+func resetDefault(st Store, service string) error {
+	ids, err := st.IDs(service, "", true, true)
 	if err != nil {
 		return err
 	}
 	for _, id := range ids {
-		if _, err := k.st.Delete(k.service, id); err != nil {
+		if _, err := st.Delete(service, id); err != nil {
 			return err
 		}
 	}
-	return k.Lock()
+	return nil
 }
 
 func contains(strs []string, s string) bool {

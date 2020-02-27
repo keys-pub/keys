@@ -8,76 +8,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewKeyring ...
-func NewKeyring(service string) (Keyring, error) {
-	if service == "" {
-		return nil, errors.Errorf("no service specified")
-	}
-	kr, err := newKeyring(NewStore(), service)
-	if err != nil {
-		return nil, err
-	}
-	return &darwin{kr}, nil
-}
-
-type darwin struct {
-	*keyring
-}
-
-// List items.
-func (k *darwin) List(opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	if k.key == nil {
-		return nil, ErrLocked
-	}
-	listQuery := keychain.NewItem()
-	listQuery.SetSecClass(keychain.SecClassGenericPassword)
-	listQuery.SetService(k.service)
-	// if k.skc != nil {
-	// 	query.SetMatchSearchList(*k.skc)
-	// }
-
-	listQuery.SetMatchLimit(keychain.MatchLimitAll)
-	// listQuery.SetReturnData(true)
-	listQuery.SetReturnAttributes(true)
-	results, err := keychain.QueryItem(listQuery)
-	if err != nil {
-		return nil, err
-	} else if len(results) == 0 {
-		return []*Item{}, nil
-	}
-
-	items := make([]*Item, 0, len(results))
-	for _, r := range results {
-		if strings.HasPrefix(r.Account, hiddenPrefix) || strings.HasPrefix(r.Account, reservedPrefix) {
-			continue
-		}
-		item, err := getItem(NewStore(), k.service, r.Account, k.key)
-		if err != nil {
-			return nil, err
-		}
-		if item == nil {
-			continue
-		}
-		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
-			continue
-		}
-		items = append(items, item)
-	}
-
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].ID < items[j].ID
-	})
-
-	return items, nil
-}
-
 type sys struct{}
 
-// NewStore returns keyring store.
-func NewStore() Store {
+// System returns keyring store for darwin.
+func System() Store {
 	return sys{}
 }
 
@@ -146,6 +80,59 @@ func (k sys) Exists(service string, id string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+	if opts == nil {
+		opts = &ListOpts{}
+	}
+	if key == nil {
+		return nil, ErrLocked
+	}
+	listQuery := keychain.NewItem()
+	listQuery.SetSecClass(keychain.SecClassGenericPassword)
+	listQuery.SetService(service)
+	// if k.skc != nil {
+	// 	query.SetMatchSearchList(*k.skc)
+	// }
+
+	listQuery.SetMatchLimit(keychain.MatchLimitAll)
+	// listQuery.SetReturnData(true)
+	listQuery.SetReturnAttributes(true)
+	results, err := keychain.QueryItem(listQuery)
+	if err != nil {
+		return nil, err
+	} else if len(results) == 0 {
+		return []*Item{}, nil
+	}
+
+	items := make([]*Item, 0, len(results))
+	for _, r := range results {
+		if strings.HasPrefix(r.Account, hiddenPrefix) || strings.HasPrefix(r.Account, reservedPrefix) {
+			continue
+		}
+		item, err := getItem(k, service, r.Account, key)
+		if err != nil {
+			return nil, err
+		}
+		if item == nil {
+			continue
+		}
+		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
+			continue
+		}
+		items = append(items, item)
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+
+	return items, nil
+}
+
+func (k sys) Reset(service string) error {
+	return resetDefault(k, service)
 }
 
 func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {

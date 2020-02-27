@@ -221,7 +221,7 @@ func ExampleSaltpack_Decrypt() {
 	END SALTPACK ENCRYPTED MESSAGE.`
 
 	// Bob creates a Keyring and Keystore
-	kr, err := keyring.NewKeyring("BobKeyring")
+	kr, err := keyring.NewKeyring("BobKeyring", keyring.System())
 	if err != nil {
 		log.Fatal(err)
 	}

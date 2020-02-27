@@ -5,61 +5,10 @@ import (
 	"strings"
 
 	"github.com/danieljoos/wincred"
-	"github.com/pkg/errors"
 )
 
-func NewKeyring(service string) (Keyring, error) {
-	if service == "" {
-		return nil, errors.Errorf("no service specified")
-	}
-	kr, err := newKeyring(NewStore(), service)
-	if err != nil {
-		return nil, err
-	}
-	return &windows{kr}, nil
-}
-
-type windows struct {
-	*keyring
-}
-
-// List items.
-func (k *windows) List(opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	if k.key == nil {
-		return nil, ErrLocked
-	}
-	creds, err := wincred.List()
-	if err != nil {
-		return nil, err
-	}
-	items := []*Item{}
-	for _, cred := range creds {
-		if strings.HasPrefix(cred.TargetName, k.service+"/") {
-			id := cred.TargetName[len(k.service+"/"):]
-			if strings.HasPrefix(id, hiddenPrefix) || strings.HasPrefix(id, reservedPrefix) {
-				continue
-			}
-			item, err := DecodeItem(cred.CredentialBlob, k.key)
-			if err != nil {
-				return nil, err
-			}
-			if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
-				continue
-			}
-			items = append(items, item)
-		}
-	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].ID < items[j].ID
-	})
-	return items, nil
-}
-
-// NewStore returns keyring store.
-func NewStore() Store {
+// System returns keyring store for windows.
+func System() Store {
 	return sys{}
 }
 
@@ -120,6 +69,40 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
+func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+	if opts == nil {
+		opts = &ListOpts{}
+	}
+	if key == nil {
+		return nil, ErrLocked
+	}
+	creds, err := wincred.List()
+	if err != nil {
+		return nil, err
+	}
+	items := []*Item{}
+	for _, cred := range creds {
+		if strings.HasPrefix(cred.TargetName, service+"/") {
+			id := cred.TargetName[len(service+"/"):]
+			if strings.HasPrefix(id, hiddenPrefix) || strings.HasPrefix(id, reservedPrefix) {
+				continue
+			}
+			item, err := DecodeItem(cred.CredentialBlob, key)
+			if err != nil {
+				return nil, err
+			}
+			if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
+				continue
+			}
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
+}
+
 func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	creds, err := wincred.List()
 	if err != nil {
@@ -143,6 +126,10 @@ func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bo
 	}
 	sort.Strings(ids)
 	return ids, nil
+}
+
+func (k sys) Reset(service string) error {
+	return resetDefault(k, service)
 }
 
 // Utility to dump wincred list:

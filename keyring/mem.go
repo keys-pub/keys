@@ -10,7 +10,7 @@ import (
 // NewMem returns an in memory Keyring useful for testing or ephemeral keys.
 // The Keyring is unlocked (setup with a random key).
 func NewMem() Keyring {
-	kr, err := newKeyring(&mem{map[string][]byte{}}, "")
+	kr, err := newKeyring(NewMemStore(), "")
 	if err != nil {
 		panic(err)
 	}
@@ -19,6 +19,11 @@ func NewMem() Keyring {
 		panic(err)
 	}
 	return kr
+}
+
+// NewMemStore returns in memory keyring.Store.
+func NewMemStore() Store {
+	return &mem{map[string][]byte{}}
 }
 
 type mem struct {
@@ -38,6 +43,14 @@ func (k mem) Set(service string, id string, data []byte, typ string) error {
 	}
 	k.items[id] = data
 	return nil
+}
+
+func (k mem) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+	return listDefault(k, service, key, opts)
+}
+
+func (k mem) Reset(service string) error {
+	return resetDefault(k, service)
 }
 
 func (k mem) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {

@@ -5,59 +5,9 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus"
-	"github.com/pkg/errors"
 	gokeyring "github.com/zalando/go-keyring"
 	ss "github.com/zalando/go-keyring/secret_service"
 )
-
-// NewKeyring ...
-func NewKeyring(service string) (Keyring, error) {
-	if service == "" {
-		return nil, errors.Errorf("no service specified")
-	}
-	kr, err := newKeyring(NewStore(), service)
-	if err != nil {
-		return nil, err
-	}
-	return &linux{kr}, nil
-}
-
-type linux struct {
-	*keyring
-}
-
-// List items.
-func (k *linux) List(opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	if k.key == nil {
-		return nil, ErrLocked
-	}
-	svc, err := ss.NewSecretService()
-	if err != nil {
-		return nil, err
-	}
-	return list(svc, k.service, k.key, opts)
-}
-
-// Reset removes all values.
-func (k *linux) Reset() error {
-	svc, err := ss.NewSecretService()
-	if err != nil {
-		return err
-	}
-	paths, err := objectPaths(svc, k.service)
-	if err != nil {
-		return err
-	}
-	for _, p := range paths {
-		if err := svc.Delete(p); err != nil {
-			return err
-		}
-	}
-	return k.Lock()
-}
 
 func objectPaths(svc *ss.SecretService, service string) ([]dbus.ObjectPath, error) {
 	collection := svc.GetLoginCollection()
@@ -75,7 +25,7 @@ func objectPaths(svc *ss.SecretService, service string) ([]dbus.ObjectPath, erro
 	return svc.SearchItems(collection, search)
 }
 
-func list(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
 	if opts == nil {
 		opts = &ListOpts{}
 	}
@@ -121,8 +71,8 @@ func list(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) 
 	return items, nil
 }
 
-// NewStore returns keyring store.
-func NewStore() Store {
+// System returns keyring store for linux.
+func System() Store {
 	return sys{}
 }
 
@@ -155,12 +105,43 @@ func (k sys) Delete(service string, id string) (bool, error) {
 	return true, nil
 }
 
+func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+	if opts == nil {
+		opts = &ListOpts{}
+	}
+	if key == nil {
+		return nil, ErrLocked
+	}
+	svc, err := ss.NewSecretService()
+	if err != nil {
+		return nil, err
+	}
+	return secretServiceList(svc, service, key, opts)
+}
+
+func (k sys) Reset(service string) error {
+	svc, err := ss.NewSecretService()
+	if err != nil {
+		return err
+	}
+	paths, err := objectPaths(svc, service)
+	if err != nil {
+		return err
+	}
+	for _, p := range paths {
+		if err := svc.Delete(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	svc, err := ss.NewSecretService()
 	if err != nil {
 		return nil, err
 	}
-	items, err := list(svc, service, nil, nil)
+	items, err := secretServiceList(svc, service, nil, nil)
 	if err != nil {
 		return nil, err
 	}

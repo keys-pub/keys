@@ -12,26 +12,16 @@ import (
 // NewFS creates a Keyring using the local filesystem. This is an alternate
 // Keyring implementation that is platform agnostic.
 func NewFS(dir string) (Keyring, error) {
-	kr, err := newKeyring(fs{dir: dir}, "")
+	kr, err := newKeyring(NewFSStore(dir), "")
 	if err != nil {
 		return nil, err
 	}
-	return &fkr{kr, dir}, nil
+	return kr, nil
 }
 
-type fkr struct {
-	*keyring
-	dir string
-}
-
-func (k *fkr) Reset() error {
-	if k.dir == "" {
-		return errors.Errorf("empty dir")
-	}
-	if err := os.RemoveAll(k.dir); err != nil {
-		return err
-	}
-	return k.Lock()
+// NewFSStore returns keyring.Store backed by the filesystem.
+func NewFSStore(dir string) Store {
+	return fs{dir: dir}
 }
 
 type fs struct {
@@ -79,6 +69,17 @@ func (k fs) IDs(service string, prefix string, showHidden bool, showReserved boo
 		ids = append(ids, id)
 	}
 	return ids, nil
+}
+
+func (k fs) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+	return listDefault(k, service, key, opts)
+}
+
+func (k fs) Reset(service string) error {
+	if err := os.RemoveAll(k.dir); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (k fs) Exists(service string, id string) (bool, error) {
