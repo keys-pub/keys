@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"testing"
 	"time"
 
@@ -138,17 +137,13 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := keys.Spew(iter, nil)
 	require.NoError(t, err)
-	expected, err := ioutil.ReadFile("testdata/kid.spew")
-	require.NoError(t, err)
-	require.Equal(t, string(expected), spew.String())
+	require.Equal(t, testdata(t, "testdata/kid.spew"), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)
 	spew, err = keys.Spew(iter, nil)
 	require.NoError(t, err)
-	expected, err = ioutil.ReadFile("testdata/user.spew")
-	require.NoError(t, err)
-	require.Equal(t, string(expected), spew.String())
+	require.Equal(t, testdata(t, "testdata/user.spew"), spew.String())
 }
 
 func TestSearchUsersRequestErrors(t *testing.T) {
@@ -212,9 +207,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := keys.Spew(iter, nil)
 	require.NoError(t, err)
-	expected, err := ioutil.ReadFile("testdata/kid2.spew")
-	require.NoError(t, err)
-	require.Equal(t, string(expected), spew.String())
+	require.Equal(t, testdata(t, "testdata/kid2.spew"), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)

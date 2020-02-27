@@ -6,11 +6,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
+
+func testdata(t *testing.T, path string) string {
+	expected, err := ioutil.ReadFile(path)
+	require.NoError(t, err)
+	return strings.ReplaceAll(string(expected), "\r\n", "\n")
+}
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
@@ -88,9 +95,7 @@ func TestSigchain(t *testing.T) {
 
 	spew, err := sc.Spew()
 	require.NoError(t, err)
-	expected, err := ioutil.ReadFile("testdata/sc2.spew")
-	require.NoError(t, err)
-	require.Equal(t, string(expected), spew.String())
+	require.Equal(t, testdata(t, "testdata/sc2.spew"), spew.String())
 }
 
 func TestSigchainJSON(t *testing.T) {
