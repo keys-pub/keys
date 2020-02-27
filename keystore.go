@@ -235,9 +235,9 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 }
 
 // X25519Keys from the Keystore.
-// Also includes box keys converted from sign keys.
+// Also includes edx25519 keys converted to x25519 keys.
 func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
-	logger.Debugf("Loading box keys...")
+	logger.Debugf("Loading x25519 keys...")
 	kr, err := k.Keyring()
 	if err != nil {
 		return nil, err
@@ -256,7 +256,7 @@ func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
 		}
 		keys = append(keys, key)
 	}
-	logger.Debugf("Found %d box keys", len(keys))
+	logger.Debugf("Found %d x25519 keys", len(keys))
 	return keys, nil
 }
 
