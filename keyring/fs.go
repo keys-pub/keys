@@ -12,7 +12,11 @@ import (
 // NewFS creates a Keyring using the local filesystem. This is an alternate
 // Keyring implementation that is platform agnostic.
 func NewFS(dir string) (Keyring, error) {
-	kr, err := newKeyring(NewFSStore(dir), "")
+	fs, err := NewFSStore(dir)
+	if err != nil {
+		return nil, err
+	}
+	kr, err := newKeyring(fs, "")
 	if err != nil {
 		return nil, err
 	}
@@ -20,8 +24,11 @@ func NewFS(dir string) (Keyring, error) {
 }
 
 // NewFSStore returns keyring.Store backed by the filesystem.
-func NewFSStore(dir string) Store {
-	return fs{dir: dir}
+func NewFSStore(dir string) (Store, error) {
+	if dir == "" || dir == "/" {
+		return nil, errors.Errorf("invalid directory")
+	}
+	return fs{dir: dir}, nil
 }
 
 type fs struct {
@@ -29,14 +36,24 @@ type fs struct {
 }
 
 func (k fs) Get(service string, id string) ([]byte, error) {
+	if id == "" {
+		return nil, errors.Errorf("no id specified")
+	}
+	if strings.Contains(id, ".") || strings.Contains(id, "/") || strings.Contains(id, "\\") {
+		return nil, errors.Errorf("invalid id")
+	}
+
 	path := filepath.Join(k.dir, id)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, nil
 	}
-	return ioutil.ReadFile(path)
+	return ioutil.ReadFile(path) // #nosec
 }
 
 func (k fs) Set(service string, id string, data []byte, typ string) error {
+	if id == "" {
+		return errors.Errorf("no id specified")
+	}
 	path := filepath.Join(k.dir, id)
 	if err := os.MkdirAll(k.dir, 0700); err != nil {
 		return err

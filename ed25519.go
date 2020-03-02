@@ -47,7 +47,9 @@ func ed25519PublicKeyToX25519(pk ed25519.PublicKey) []byte {
 
 func ed25519PrivateKeyToX25519(pk ed25519.PrivateKey) []byte {
 	h := sha512.New()
-	h.Write(pk.Seed())
+	if _, err := h.Write(pk.Seed()); err != nil {
+		panic(err)
+	}
 	out := h.Sum(nil)
 	return out[:curve25519.ScalarSize]
 }

@@ -85,8 +85,7 @@ func TestUserResultGithub(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
 
-	err := req.SetResponseFile("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", "testdata/github/70281cc427850c272a8574af4d8564d9")
-	require.NoError(t, err)
+	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdataBytes(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
 
 	user, err := keys.NewUserForSigning(ust, sk.ID(), "github", "alice")
 	require.NoError(t, err)
@@ -146,8 +145,7 @@ func TestUserResultGithubWrongName(t *testing.T) {
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.PublicKey())
-	err = req.SetResponseFile("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7")
-	require.NoError(t, err)
+	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdataBytes(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
 	user2, err := keys.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	b2, err := json.Marshal(user2)
@@ -158,6 +156,7 @@ func TestUserResultGithubWrongName(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := ust.CheckSigchain(context.TODO(), sc)
+	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, keys.UserStatusStatementInvalid, result.Status)
 	require.Equal(t, result.Err, "name mismatch alice != alice2")
@@ -178,8 +177,7 @@ func TestUserResultGithubWrongService(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf(msg)
 
-	err = req.SetResponseFile("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", "testdata/github/bd679134acba688cbcc0a65fa0890d76")
-	require.NoError(t, err)
+	req.SetResponse("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", testdataBytes(t, "testdata/github/bd679134acba688cbcc0a65fa0890d76"))
 	user, err := keys.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(user)
@@ -190,6 +188,7 @@ func TestUserResultGithubWrongService(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := ust.CheckSigchain(context.TODO(), sc)
+	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, keys.UserStatusStatementInvalid, result.Status)
 	require.Equal(t, result.Err, "service mismatch github != github2")
@@ -223,8 +222,7 @@ func TestUserResultTwitter(t *testing.T) {
 	_, err = keys.GenerateUserStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	err = req.SetResponseFile("https://twitter.com/bob/status/1205589994380783616", "testdata/twitter/1205589994380783616")
-	require.NoError(t, err)
+	req.SetResponse("https://twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
 
 	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -268,8 +266,7 @@ func TestUserResultReddit(t *testing.T) {
 	_, err = keys.GenerateUserStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	err = req.SetResponseFile("https://reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", "testdata/reddit/charlie.json")
-	require.NoError(t, err)
+	req.SetResponse("https://reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdataBytes(t, "testdata/reddit/charlie.json"))
 
 	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)

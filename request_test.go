@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func _TestReddit(t *testing.T) {
+func TestReddit(t *testing.T) {
+	t.Skip()
 	req := keys.NewHTTPRequestor()
 
 	ur, err := url.Parse("https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")

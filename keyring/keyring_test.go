@@ -246,13 +246,6 @@ func randBytes(length int) []byte {
 	return buf
 }
 
-func rand24() *[24]byte {
-	b := randBytes(24)
-	var b24 [24]byte
-	copy(b24[:], b[:24])
-	return &b24
-}
-
 func randKey() keyring.SecretKey {
 	return keyring.SecretKey(rand32())
 }

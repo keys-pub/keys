@@ -228,15 +228,6 @@ func (m *Mem) Delete(ctx context.Context, path string) (bool, error) {
 	return true, nil
 }
 
-func remove(s []string, r string) []string {
-	for i, v := range s {
-		if v == r {
-			return append(s[:i], s[i+1:]...)
-		}
-	}
-	return s
-}
-
 type watch struct {
 	ln WatchLn
 	wg *sync.WaitGroup

@@ -12,6 +12,7 @@ func testValidateURL(t *testing.T, service services.Service, name string, urs st
 	ur, err := url.Parse(urs)
 	require.NoError(t, err)
 	urout, err := service.ValidateURL(name, ur)
+	require.NoError(t, err)
 	require.Equal(t, expected, urout.String())
 }
 

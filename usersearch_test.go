@@ -35,10 +35,8 @@ func TestSearchUsers(t *testing.T) {
 	// Add alice@github
 	saveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
-	ids := []keys.ID{}
 	for i := 10; i < 15; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
-		ids = append(ids, key.ID())
 		name := fmt.Sprintf("name%d", i)
 		saveUser(t, ust, scs, key, name, "github", clock, req)
 		_, err = ust.Update(ctx, key.ID())
@@ -137,13 +135,13 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := keys.Spew(iter, nil)
 	require.NoError(t, err)
-	require.Equal(t, testdata(t, "testdata/kid.spew"), spew.String())
+	require.Equal(t, testdataString(t, "testdata/kid.spew"), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)
 	spew, err = keys.Spew(iter, nil)
 	require.NoError(t, err)
-	require.Equal(t, testdata(t, "testdata/user.spew"), spew.String())
+	require.Equal(t, testdataString(t, "testdata/user.spew"), spew.String())
 }
 
 func TestSearchUsersRequestErrors(t *testing.T) {
@@ -207,7 +205,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := keys.Spew(iter, nil)
 	require.NoError(t, err)
-	require.Equal(t, testdata(t, "testdata/kid2.spew"), spew.String())
+	require.Equal(t, testdataString(t, "testdata/kid2.spew"), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)

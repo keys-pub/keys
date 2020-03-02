@@ -123,7 +123,8 @@ func testDocumentStore(t *testing.T, ds keys.DocumentStore) {
 	var b bytes.Buffer
 	iter, err = ds.Documents(context.TODO(), "test0", nil)
 	require.NoError(t, err)
-	keys.SpewOut(iter, nil, &b)
+	err = keys.SpewOut(iter, nil, &b)
+	require.NoError(t, err)
 	require.Equal(t, expected, b.String())
 	iter.Release()
 

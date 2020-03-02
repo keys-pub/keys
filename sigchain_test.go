@@ -13,10 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testdata(t *testing.T, path string) string {
+func testdataString(t *testing.T, path string) string {
 	expected, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 	return strings.ReplaceAll(string(expected), "\r\n", "\n")
+}
+
+func testdataBytes(t *testing.T, path string) []byte {
+	b, err := ioutil.ReadFile(path)
+	require.NoError(t, err)
+	return b
 }
 
 func TestSigchain(t *testing.T) {
@@ -95,7 +101,7 @@ func TestSigchain(t *testing.T) {
 
 	spew, err := sc.Spew()
 	require.NoError(t, err)
-	require.Equal(t, testdata(t, "testdata/sc2.spew"), spew.String())
+	require.Equal(t, testdataString(t, "testdata/sc2.spew"), spew.String())
 }
 
 func TestSigchainJSON(t *testing.T) {
@@ -175,12 +181,12 @@ func TestSigchainUsers(t *testing.T) {
 
 	user2, err := keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
-	st2, err := keys.GenerateUserStatement(sc, user2, alice, clock.Now())
+	_, err = keys.GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 
 	user2, err = keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
 	require.NoError(t, err)
-	st2, err = keys.GenerateUserStatement(sc, user2, alice, clock.Now())
+	st2, err := keys.GenerateUserStatement(sc, user2, alice, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st2)
 	require.NoError(t, err)
