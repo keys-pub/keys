@@ -71,7 +71,9 @@ func (s *Sigchain) Spew() (*bytes.Buffer, error) {
 		out.Write([]byte(value))
 		out.Write([]byte("\n"))
 	}
-	_ = w.Flush()
+	if err := w.Flush(); err != nil {
+		return nil, err
+	}
 	return &out, nil
 }
 

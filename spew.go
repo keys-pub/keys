@@ -68,7 +68,9 @@ func SpewOut(iter DocumentIterator, opts *SpewOpts, out io.Writer) error {
 			}
 			fmt.Fprintf(w, "%s\t%s\n", key, value)
 		}
-		_ = w.Flush()
+		if err := w.Flush(); err != nil {
+			return err
+		}
 	case SpewFormatFlat:
 		for {
 			doc, err := iter.Next()
@@ -85,9 +87,15 @@ func SpewOut(iter DocumentIterator, opts *SpewOpts, out io.Writer) error {
 			} else {
 				value = string(doc.Data)
 			}
-			_, _ = out.Write([]byte(fmt.Sprintf("%s\n", key)))
-			_, _ = out.Write([]byte(fmt.Sprintf("%s\n", value)))
-			_, _ = out.Write([]byte(fmt.Sprintf("\n")))
+			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", key))); err != nil {
+				return err
+			}
+			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", value))); err != nil {
+				return err
+			}
+			if _, err := out.Write([]byte(fmt.Sprintf("\n"))); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
