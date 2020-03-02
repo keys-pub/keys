@@ -2,7 +2,6 @@ package keys_test
 
 import (
 	"bytes"
-	"io/ioutil"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -132,8 +131,5 @@ func TestSigchainStoreSpew(t *testing.T) {
 
 	spew, err := sc.Spew()
 	require.NoError(t, err)
-
-	expected, err := ioutil.ReadFile("testdata/sc1.spew")
-	require.NoError(t, err)
-	require.Equal(t, string(expected), spew.String())
+	require.Equal(t, testdata(t, "testdata/sc1.spew"), spew.String())
 }

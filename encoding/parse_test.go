@@ -3,11 +3,18 @@ package encoding_test
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/keys-pub/keys/encoding"
 	"github.com/stretchr/testify/require"
 )
+
+func testdata(t *testing.T, path string) string {
+	expected, err := ioutil.ReadFile(path)
+	require.NoError(t, err)
+	return strings.ReplaceAll(string(expected), "\r\n", "\n")
+}
 
 func TestBreakString(t *testing.T) {
 	s := ""
@@ -27,10 +34,8 @@ func TestTrimSaltpack(t *testing.T) {
 }
 
 func TestFindInTwitter(t *testing.T) {
-	b, err := ioutil.ReadFile("../testdata/twitter/1205589994380783616")
-	require.NoError(t, err)
-
-	s, brand := encoding.FindSaltpack(string(b), true)
+	data := testdata(t, "../testdata/twitter/1205589994380783616")
+	s, brand := encoding.FindSaltpack(data, true)
 	expected := `FD0Lv2C2AtvqD1XEwqDo1tOTkv8LKisQMlS6gluxz0npc1S2MuNVOfTph934h1xXQqj5EtueEBntfhbDceoOBETCKq6Xr2MZHgg4UNRDbZy2loGoGN3Mvxd4r7FIwpZOJPE1JEqD2gGjkgLByR9CFG2aCgRgZZwl5UAa46bmBzjE5yyl9oNKSO6lAVCOrl3JBganxnssAnkQt3vM3TdJOf`
 	require.Equal(t, expected, s)
 	require.Equal(t, "", brand)
