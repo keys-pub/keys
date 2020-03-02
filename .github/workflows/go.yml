@@ -11,13 +11,12 @@ jobs:
         with:
           args: go get github.com/securego/gosec/cmd/gosec; gosec ./... # https://github.com/securego/gosec
   golangci-lint:
-    name: runner / golangci-lint
+    name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
-      - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v1
+      - uses: actions/checkout@v2
+      - name: Run golangci-lint
+        uses: actions-contrib/golangci-lint@v1
   test:
     strategy:
       matrix:
