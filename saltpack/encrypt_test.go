@@ -16,12 +16,14 @@ func TestEncrypt(t *testing.T) {
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ksa.SaveX25519Key(alice)
+	require.NoError(t, err)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ksb.SaveX25519Key(bob)
+	require.NoError(t, err)
 
 	message := []byte("hi bob")
 
@@ -55,6 +57,7 @@ func TestEncryptAnon(t *testing.T) {
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err := ksb.SaveX25519Key(bob)
+	require.NoError(t, err)
 
 	message := []byte("hi bob")
 	// Anon sender
@@ -72,12 +75,14 @@ func TestEncryptStream(t *testing.T) {
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateX25519Key()
 	err := ksa.SaveX25519Key(alice)
+	require.NoError(t, err)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateX25519Key()
 	err = ksb.SaveX25519Key(bob)
+	require.NoError(t, err)
 	message := []byte("hi bob")
 
 	var buf bytes.Buffer
@@ -146,6 +151,7 @@ func TestEncryptOpenError(t *testing.T) {
 	ksa := keys.NewMemKeystore()
 	alice := keys.GenerateX25519Key()
 	err := ksa.SaveX25519Key(alice)
+	require.NoError(t, err)
 	bob := keys.GenerateX25519Key()
 	err = ksa.SaveX25519Key(bob)
 	require.NoError(t, err)

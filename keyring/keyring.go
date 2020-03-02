@@ -181,6 +181,7 @@ func NewKeyring(service string, st Store) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
+	logger.Debugf("New Keyring (%s)")
 	kr, err := newKeyring(st, service)
 	if err != nil {
 		return nil, err
@@ -207,10 +208,6 @@ func reserved(s string) string {
 }
 
 const hiddenPrefix = "."
-
-func hidden(s string) string {
-	return hiddenPrefix + s
-}
 
 func (k *keyring) Get(id string) (*Item, error) {
 	if strings.HasPrefix(id, reservedPrefix) {

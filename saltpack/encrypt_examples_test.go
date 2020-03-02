@@ -47,7 +47,7 @@ func ExampleSaltpack_Decrypt() {
 		log.Fatal(err)
 	}
 	// Remove this Reset() if you want to keep the Keyring
-	defer kr.Reset()
+	defer func() { _ = kr.Reset() }()
 	if err := keyring.UnlockWithPassword(kr, "bobpassword"); err != nil {
 		log.Fatal(err)
 	}

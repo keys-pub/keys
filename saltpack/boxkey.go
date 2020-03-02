@@ -1,8 +1,6 @@
 package saltpack
 
 import (
-	"bytes"
-
 	ksaltpack "github.com/keybase/saltpack"
 	"github.com/keys-pub/keys"
 	"github.com/pkg/errors"
@@ -116,8 +114,4 @@ func (b boxPrecomputedSharedKey) Unbox(nonce ksaltpack.Nonce, msg []byte) ([]byt
 func (b boxPrecomputedSharedKey) Box(nonce ksaltpack.Nonce, msg []byte) []byte {
 	out := box.SealAfterPrecomputation([]byte{}, msg, (*[24]byte)(&nonce), (*[32]byte)(&b))
 	return out
-}
-
-func bytesJoin(b ...[]byte) []byte {
-	return bytes.Join(b, []byte{})
 }

@@ -16,12 +16,14 @@ func TestSigncrypt(t *testing.T) {
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveEdX25519Key(alice)
+	require.NoError(t, err)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
 	err = ksb.SaveEdX25519Key(bob)
+	require.NoError(t, err)
 
 	message := []byte("hi bob")
 
@@ -54,12 +56,14 @@ func TestSigncryptStream(t *testing.T) {
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveEdX25519Key(alice)
+	require.NoError(t, err)
 
 	// Bob
 	ksb := keys.NewMemKeystore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
 	err = ksb.SaveEdX25519Key(bob)
+	require.NoError(t, err)
 	message := []byte("hi bob")
 
 	var buf bytes.Buffer

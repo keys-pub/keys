@@ -91,9 +91,7 @@ func (s *StringSet) Clear() {
 func (s *StringSet) Strings() []string {
 	// Copy to prevent caller changing s.keys
 	keys := make([]string, 0, len(s.keys))
-	for _, k := range s.keys {
-		keys = append(keys, k)
-	}
+	keys = append(keys, s.keys...)
 	return keys
 }
 

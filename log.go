@@ -47,21 +47,6 @@ func NewLogger(lev LogLevel) Logger {
 	return &defaultLog{Level: lev}
 }
 
-func parseLogLevel(s string) (LogLevel, bool) {
-	switch s {
-	case "debug":
-		return DebugLevel, true
-	case "info":
-		return InfoLevel, true
-	case "warn":
-		return WarnLevel, true
-	case "err":
-		return ErrLevel, true
-	default:
-		return InfoLevel, false
-	}
-}
-
 func (l LogLevel) String() string {
 	switch l {
 	case DebugLevel:

@@ -36,14 +36,14 @@ func signVersionValidator(version ksaltpack.Version) error {
 	}
 }
 
-func signcryptVersionValidator(version ksaltpack.Version) error {
-	switch version.Major {
-	case 1:
-		return nil
-	default:
-		return errors.Errorf("unrecognized version %d.%d", version.Major, version.Minor)
-	}
-}
+// func signcryptVersionValidator(version ksaltpack.Version) error {
+// 	switch version.Major {
+// 	case 1:
+// 		return nil
+// 	default:
+// 		return errors.Errorf("unrecognized version %d.%d", version.Major, version.Minor)
+// 	}
+// }
 
 func encryptVersionValidator(version ksaltpack.Version) error {
 	switch version.Major {

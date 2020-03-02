@@ -24,10 +24,6 @@ func rand24() *[24]byte {
 	return &b24
 }
 
-func randKey() SecretKey {
-	return SecretKey(rand32())
-}
-
 func rand32() *[32]byte {
 	b := randBytes(32)
 	var b32 [32]byte

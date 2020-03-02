@@ -171,16 +171,6 @@ func (r *MockRequestor) SetError(url string, err error) {
 	r.resp[url] = &mockResponse{err: err}
 }
 
-// SetResponseFile ...
-func (r *MockRequestor) SetResponseFile(url string, path string) error {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	r.SetResponse(url, b)
-	return nil
-}
-
 // RequestURL ...
 func (r *MockRequestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
 	return r.Response(u.String())

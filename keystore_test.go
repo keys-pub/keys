@@ -143,7 +143,8 @@ func TestKeystoreList(t *testing.T) {
 func TestKeystoreConcurrent(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	sk := keys.GenerateEdX25519Key()
-	ks.SaveEdX25519Key(sk)
+	err := ks.SaveEdX25519Key(sk)
+	require.NoError(t, err)
 
 	skOut, err := ks.EdX25519Key(sk.ID())
 	require.NoError(t, err)

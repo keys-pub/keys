@@ -91,14 +91,6 @@ func (u *UserStore) Update(ctx context.Context, kid ID) (*UserResult, error) {
 	return result, nil
 }
 
-func userResultsStrings(res []*UserResult) []string {
-	out := make([]string, 0, len(res))
-	for _, r := range res {
-		out = append(out, r.String())
-	}
-	return out
-}
-
 // CheckSigchain looks for user in a Sigchain.
 func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResult, error) {
 	user, err := sc.User()
