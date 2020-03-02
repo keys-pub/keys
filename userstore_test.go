@@ -223,7 +223,6 @@ func TestUserResultTwitter(t *testing.T) {
 	require.EqualError(t, err, "user set in sigchain already")
 
 	req.SetResponse("https://twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
-	require.NoError(t, err)
 
 	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
