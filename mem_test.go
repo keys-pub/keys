@@ -27,6 +27,16 @@ func (c *clock) Now() time.Time {
 	return c.t
 }
 
+func TestClock(t *testing.T) {
+	clock := newClock()
+	t1 := clock.Now()
+	tf1 := t1.Format(keys.RFC3339Milli)
+	require.Equal(t, "2009-02-13T23:31:30.001Z", tf1)
+	t2 := clock.Now()
+	tf2 := t2.Format(keys.RFC3339Milli)
+	require.Equal(t, "2009-02-13T23:31:30.002Z", tf2)
+}
+
 func TestMem(t *testing.T) {
 	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)
