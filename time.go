@@ -52,7 +52,7 @@ func TimeToMillis(t time.Time) TimeMs {
 	if t.IsZero() {
 		return 0
 	}
-	return TimeMs(t.UnixNano() / int64(time.Millisecond))
+	return TimeMs(t.UTC().UnixNano() / int64(time.Millisecond))
 }
 
 // TimePtrToMillis returns milliseconds since epoch from time.Time.
@@ -69,5 +69,5 @@ func TimeFromMillis(m TimeMs) time.Time {
 	if m == 0 {
 		return time.Time{}
 	}
-	return time.Unix(0, int64(m)*int64(time.Millisecond))
+	return time.Unix(0, int64(m)*int64(time.Millisecond)).UTC()
 }
