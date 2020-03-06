@@ -181,7 +181,7 @@ func NewKeyring(service string, st Store) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
-	logger.Debugf("New Keyring (%s)")
+	logger.Debugf("New Keyring (%s)", service)
 	kr, err := newKeyring(st, service)
 	if err != nil {
 		return nil, err
