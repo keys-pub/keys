@@ -39,41 +39,45 @@ func (s *Saltpack) EncryptArmored(b []byte, signer *keys.X25519Key, recipients .
 	return ksaltpack.EncryptArmor62Seal(ksaltpack.Version2(), b, sbk, recs, "")
 }
 
+func x25519SenderKey(info *ksaltpack.MessageKeyInfo) (*keys.X25519PublicKey, error) {
+	var sender *keys.X25519PublicKey
+	if !info.SenderIsAnon {
+		b := info.SenderKey.ToKID()
+		if len(b) != 32 {
+			return nil, errors.Errorf("invalid (x25519) sender key")
+		}
+		sender = keys.NewX25519PublicKey(keys.Bytes32(b))
+	}
+	return sender, nil
+}
+
 // Decrypt bytes.
 // If there was a signer, will return a X25519 key ID.
-func (s *Saltpack) Decrypt(b []byte) ([]byte, keys.ID, error) {
+func (s *Saltpack) Decrypt(b []byte) ([]byte, *keys.X25519PublicKey, error) {
 	info, out, err := ksaltpack.Open(encryptVersionValidator, b, s)
 	if err != nil {
-		return nil, "", convertBoxKeyErr(err)
+		return nil, nil, convertBoxKeyErr(err)
 	}
-	signer := keys.ID("")
-	if !info.SenderIsAnon {
-		kid, err := x25519KeyID(info.SenderKey.ToKID())
-		if err != nil {
-			return nil, "", errors.Wrapf(err, "failed to decrypt")
-		}
-		signer = kid
+	sender, err := x25519SenderKey(info)
+	if err != nil {
+		return nil, nil, err
 	}
-	return out, signer, nil
+	return out, sender, nil
 }
 
 // DecryptArmored text.
 // If there was a signer, will return a X25519 key ID.
-func (s *Saltpack) DecryptArmored(str string) ([]byte, keys.ID, error) {
+func (s *Saltpack) DecryptArmored(str string) ([]byte, *keys.X25519PublicKey, error) {
 	// TODO: Casting to string could be a performance issue
 	info, out, _, err := ksaltpack.Dearmor62DecryptOpen(encryptVersionValidator, str, s)
 	if err != nil {
-		return nil, "", convertBoxKeyErr(err)
+		return nil, nil, convertBoxKeyErr(err)
 	}
-	signer := keys.ID("")
-	if !info.SenderIsAnon {
-		kid, err := x25519KeyID(info.SenderKey.ToKID())
-		if err != nil {
-			return nil, "", errors.Wrapf(err, "failed to decrypt")
-		}
-		signer = kid
+	sender, err := x25519SenderKey(info)
+	if err != nil {
+		return nil, nil, err
 	}
-	return out, signer, nil
+	return out, sender, nil
 }
 
 // NewEncryptStream creates an encrypted io.WriteCloser.
@@ -106,37 +110,29 @@ func (s *Saltpack) NewEncryptArmoredStream(w io.Writer, signer *keys.X25519Key, 
 
 // NewDecryptStream create decryption stream.
 // If there was a signer, will return a X25519 key ID.
-func (s *Saltpack) NewDecryptStream(r io.Reader) (io.Reader, keys.ID, error) {
+func (s *Saltpack) NewDecryptStream(r io.Reader) (io.Reader, *keys.X25519PublicKey, error) {
 	info, stream, err := ksaltpack.NewDecryptStream(encryptVersionValidator, r, s)
 	if err != nil {
-		return nil, "", convertBoxKeyErr(err)
+		return nil, nil, convertBoxKeyErr(err)
 	}
-	signer := keys.ID("")
-	if !info.SenderIsAnon {
-		kid, err := x25519KeyID(info.SenderKey.ToKID())
-		if err != nil {
-			return nil, "", errors.Wrapf(err, "failed to decrypt")
-		}
-		signer = kid
+	sender, err := x25519SenderKey(info)
+	if err != nil {
+		return nil, nil, err
 	}
-	return stream, signer, nil
+	return stream, sender, nil
 }
 
 // NewDecryptArmoredStream creates decryption stream.
 // If there was a signer, will return a X25519 key ID.
-func (s *Saltpack) NewDecryptArmoredStream(r io.Reader) (io.Reader, keys.ID, error) {
+func (s *Saltpack) NewDecryptArmoredStream(r io.Reader) (io.Reader, *keys.X25519PublicKey, error) {
 	// TODO: Specifying nil for resolver will panic if box keys not found
 	info, stream, _, err := ksaltpack.NewDearmor62DecryptStream(encryptVersionValidator, r, s)
 	if err != nil {
-		return nil, "", convertBoxKeyErr(err)
+		return nil, nil, convertBoxKeyErr(err)
 	}
-	signer := keys.ID("")
-	if !info.SenderIsAnon {
-		kid, err := x25519KeyID(info.SenderKey.ToKID())
-		if err != nil {
-			return nil, "", errors.Wrapf(err, "failed to decrypt")
-		}
-		signer = kid
+	sender, err := x25519SenderKey(info)
+	if err != nil {
+		return nil, nil, err
 	}
-	return stream, signer, nil
+	return stream, sender, nil
 }

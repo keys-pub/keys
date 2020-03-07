@@ -33,7 +33,8 @@ func TestSigncrypt(t *testing.T) {
 	out, sender, err := spb.SigncryptOpen(encrypted)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 
 	encrypted2, err := spa.SigncryptArmored(message, alice, bob.ID())
 	require.NoError(t, err)
@@ -41,7 +42,8 @@ func TestSigncrypt(t *testing.T) {
 	out, sender, err = spb.SigncryptArmoredOpen(encrypted2)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 
 	_, err = spa.Signcrypt(message, alice, keys.ID(""))
 	require.EqualError(t, err, "invalid recipient: empty id")
@@ -76,7 +78,8 @@ func TestSigncryptStream(t *testing.T) {
 
 	stream, sender, err := spb.NewSigncryptOpenStream(&buf)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
@@ -91,7 +94,8 @@ func TestSigncryptStream(t *testing.T) {
 
 	stream, sender, err = spb.NewSigncryptArmoredOpenStream(&buf2)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 	out, err = ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)

@@ -66,16 +66,25 @@ func ExampleSaltpack_Decrypt() {
 	if err := ks.SaveKey(bob); err != nil {
 		log.Fatal(err)
 	}
+	if err := ks.SavePublicKey(aliceID); err != nil {
+		log.Fatal(err)
+	}
 
 	// Bob decrypt's
-	out, signer, err := sp.DecryptArmored(encrypted)
+	out, sender, err := sp.DecryptArmored(encrypted)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// The signer from Saltpack Decrypt is a x25519 ID, so compare using
-	// keys.PublicKeyIDEquals.
-	if keys.PublicKeyIDEquals(aliceID, signer) {
-		fmt.Printf("signer is alice\n")
+
+	// The sender from Saltpack Decrypt is a x25519 ID, so find the corresponding edx25519 key.
+	if sender != nil {
+		pk, err := ks.FindEdX25519PublicKey(sender.ID())
+		if err != nil {
+			log.Fatal(err)
+		}
+		if pk != nil && pk.ID() == aliceID {
+			fmt.Printf("signer is alice\n")
+		}
 	}
 	fmt.Printf("%s\n", string(out))
 

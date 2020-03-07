@@ -33,7 +33,8 @@ func TestEncrypt(t *testing.T) {
 	out, sender, err := spb.Decrypt(encrypted)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 
 	encrypted2, err := spa.EncryptArmored(message, alice, bob.ID())
 	require.NoError(t, err)
@@ -41,7 +42,17 @@ func TestEncrypt(t *testing.T) {
 	out, sender, err = spb.DecryptArmored(encrypted2)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
+
+	// Decrypt without last character '.'
+	// TODO: Patch keybase/saltpack to allow
+	// trunc := encrypted2[:len(encrypted2)-2]
+	// out, sender, err = spb.DecryptArmored(trunc)
+	// require.NoError(t, err)
+	// require.Equal(t, message, out)
+	// require.NotNil(t, sender)
+	// require.Equal(t, alice.PublicKey().ID(), sender.ID())
 
 	_, err = spa.Encrypt(message, alice, keys.ID(""))
 	require.EqualError(t, err, "invalid recipient: empty id")
@@ -66,7 +77,7 @@ func TestEncryptAnon(t *testing.T) {
 	out, sender, err := spb.Decrypt(encrypted)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, keys.ID(""), sender)
+	require.Nil(t, sender)
 }
 
 func TestEncryptStream(t *testing.T) {
@@ -95,7 +106,8 @@ func TestEncryptStream(t *testing.T) {
 
 	stream, sender, err := spb.NewDecryptStream(&buf)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
@@ -110,7 +122,8 @@ func TestEncryptStream(t *testing.T) {
 
 	stream, sender, err = spb.NewDecryptArmoredStream(&buf2)
 	require.NoError(t, err)
-	require.Equal(t, alice.PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.PublicKey().ID(), sender.ID())
 	out, err = ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
@@ -141,7 +154,7 @@ func TestEncryptStreamAnon(t *testing.T) {
 
 	stream, sender, err := spb.NewDecryptStream(&buf)
 	require.NoError(t, err)
-	require.Equal(t, keys.ID(""), sender)
+	require.Nil(t, sender)
 	out, err := ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
@@ -190,5 +203,6 @@ func TestEncryptWithEdX25519Key(t *testing.T) {
 	out, sender, err := spb.Decrypt(encrypted)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
-	require.Equal(t, alice.X25519Key().PublicKey().ID(), sender)
+	require.NotNil(t, sender)
+	require.Equal(t, alice.X25519Key().PublicKey().ID(), sender.ID())
 }

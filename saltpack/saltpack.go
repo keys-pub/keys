@@ -144,13 +144,13 @@ func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey
 	return publicKeys, nil
 }
 
-func x25519KeyID(senderKey []byte) (keys.ID, error) {
-	if len(senderKey) != 32 {
-		return "", errors.Errorf("invalid sender key")
-	}
-	bpk := keys.NewX25519PublicKey(keys.Bytes32(senderKey))
-	return bpk.ID(), nil
-}
+// func x25519KeyID(senderKey []byte) (keys.ID, error) {
+// 	if len(senderKey) != 32 {
+// 		return "", errors.Errorf("invalid sender key")
+// 	}
+// 	bpk := keys.NewX25519PublicKey(keys.Bytes32(senderKey))
+// 	return bpk.ID(), nil
+// }
 
 func edX25519KeyID(senderKey []byte) (keys.ID, error) {
 	if len(senderKey) != 32 {
