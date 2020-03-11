@@ -46,7 +46,7 @@ func ParseID(s string) (ID, error) {
 	}
 	_, _, err := bech32.Decode(s)
 	if err != nil {
-		return "", errors.Wrapf(err, "invalid id")
+		return "", errors.Wrapf(err, "invalid ID")
 	}
 	return ID(s), nil
 }
