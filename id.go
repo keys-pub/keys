@@ -116,8 +116,8 @@ func (i ID) IsX25519() bool {
 	return hrp == x25519KeyHRP
 }
 
-// KeyType returns public key type that ID represents or empty string if unknown.
-func (i ID) KeyType() KeyType {
+// PublicKeyType returns public key type that ID represents or empty string if unknown.
+func (i ID) PublicKeyType() KeyType {
 	hrp, _, err := i.Decode()
 	if err != nil {
 		return ""
