@@ -129,7 +129,7 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 	return newSignPublicKey(keys.NewEdX25519PublicKey(spk))
 }
 
-func (s *Saltpack) boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
+func boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
 	publicKeys := make([]ksaltpack.BoxPublicKey, 0, len(recipients))
 	for _, r := range recipients {
 		pk, err := keys.NewX25519PublicKeyFromID(r)

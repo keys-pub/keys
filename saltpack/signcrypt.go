@@ -12,7 +12,7 @@ import (
 // Signcrypt to recipients.
 // https://saltpack.org/signcryption-format
 func (s *Saltpack) Signcrypt(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) ([]byte, error) {
-	recs, err := s.boxPublicKeys(recipients)
+	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (s *Saltpack) Signcrypt(b []byte, sender *keys.EdX25519Key, recipients ...k
 
 // SigncryptArmored to recipients.
 func (s *Saltpack) SigncryptArmored(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) (string, error) {
-	recs, err := s.boxPublicKeys(recipients)
+	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return "", err
 	}
@@ -77,7 +77,7 @@ func (s *Saltpack) SigncryptArmoredOpen(str string) ([]byte, *keys.EdX25519Publi
 
 // NewSigncryptStream creates a signcrypt stream.
 func (s *Saltpack) NewSigncryptStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
-	recs, err := s.boxPublicKeys(recipients)
+	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Saltpack) NewSigncryptStream(w io.Writer, sender *keys.EdX25519Key, rec
 
 // NewSigncryptArmoredStream creates a signcrypt stream.
 func (s *Saltpack) NewSigncryptArmoredStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
-	recs, err := s.boxPublicKeys(recipients)
+	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
 	}
