@@ -93,9 +93,10 @@ func Rand32P4(n uint32) *[32]byte {
 	return r
 }
 
-// RandString generates a random string.
-func RandString(n int) string {
-	buf := RandBytes(n)
+// RandIDString generates a random string [a-zA-Z0-9] for use as an identifier.
+// The length of the string is 43 which is 32 bytes encoded as Base62.
+func RandIDString() string {
+	buf := RandBytes(32)
 	s := encoding.MustEncode(buf, encoding.Base62)
 	return s
 }

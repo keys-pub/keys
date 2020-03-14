@@ -71,7 +71,7 @@ func TestRandUsername(t *testing.T) {
 	}
 }
 
-func TestRandString(t *testing.T) {
-	s := keys.RandString(32)
+func TestRandIDString(t *testing.T) {
+	s := keys.RandIDString()
 	require.Equal(t, 43, len(s))
 }
