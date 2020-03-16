@@ -56,12 +56,6 @@ func TestMemListOptions(t *testing.T) {
 	testDocumentStoreListOptions(t, mem)
 }
 
-func TestMemChanges(t *testing.T) {
-	mem := keys.NewMem()
-	mem.SetTimeNow(newClock().Now)
-	testChanges(t, mem, mem)
-}
-
 func TestMemMetadata(t *testing.T) {
 	mem := keys.NewMem()
 	mem.SetTimeNow(newClock().Now)

@@ -3,6 +3,7 @@ package keys_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -10,69 +11,102 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMemChanges(t *testing.T) {
+	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
+	mem := keys.NewMem()
+	mem.SetTimeNow(newClock().Now)
+	testChanges(t, mem, mem)
+}
+
 func testChanges(t *testing.T, ds keys.DocumentStore, changes keys.Changes) {
 	ctx := context.TODO()
 
-	for i := 0; i < 4; i++ {
-		p := keys.Path("test", fmt.Sprintf("%d", i))
+	paths := []string{}
+	length := 40
+
+	for i := 0; i < length; i++ {
+		p := keys.Path("test", fmt.Sprintf("%s-%06d", keys.RandIDString(), i))
+		paths = append(paths, p)
 		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
-		err = changes.ChangeAdd(ctx, "testchanges", p)
+		err = changes.ChangeAdd(ctx, "test-changes", p)
 		require.NoError(t, err)
-		change, err := changes.Change(ctx, "testchanges", p)
+		change, err := changes.Change(ctx, "test-changes", p)
 		require.NoError(t, err)
 		require.Equal(t, p, change.Path)
-		require.True(t, keys.TimeToMillis(change.Timestamp) > 1234567890000)
+		require.True(t, !change.Timestamp.IsZero())
 	}
 
-	iter, err := ds.Documents(ctx, "test", nil)
-	require.NoError(t, err)
-	iter.Release()
+	sorted := stringsCopy(paths)
+	sort.Strings(sorted)
 
-	iter, err = ds.Documents(ctx, "test", &keys.DocumentsOpts{Index: 1, Limit: 2})
+	iter, err := ds.Documents(ctx, "test", &keys.DocumentsOpts{Index: 1, Limit: 2})
 	require.NoError(t, err)
 	doc, err := iter.Next()
 	require.NoError(t, err)
-	require.Equal(t, "/test/1", doc.Path)
+	require.Equal(t, sorted[1], doc.Path)
+	doc, err = iter.Next()
+	require.NoError(t, err)
+	require.Equal(t, sorted[2], doc.Path)
 	iter.Release()
 
-	recent, ts, err := changes.Changes(ctx, "testchanges", time.Time{}, 0)
+	// Changes (limit=10, asc)
+	recent, ts, err := changes.Changes(ctx, "test-changes", time.Time{}, 10, keys.Ascending)
 	require.NoError(t, err)
-	require.Equal(t, 4, len(recent))
+	require.Equal(t, 10, len(recent))
 	recentPaths := []string{}
 	for _, doc := range recent {
 		recentPaths = append(recentPaths, doc.Path)
 	}
-	require.Equal(t, []string{"/test/0", "/test/1", "/test/2", "/test/3"}, recentPaths)
+	require.Equal(t, paths[0:10], recentPaths)
 
-	recent2, _, err := changes.Changes(ctx, "testchanges", time.Time{}, 2)
+	// Changes (ts, asc)
+	recent, ts, err = changes.Changes(ctx, "test-changes", ts, 10, keys.Ascending)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(recent2))
-	recentPaths2 := []string{}
-	for _, doc := range recent2 {
-		recentPaths2 = append(recentPaths2, doc.Path)
+	require.False(t, ts.IsZero())
+	require.Equal(t, 10, len(recent))
+	recentPaths = []string{}
+	for _, doc := range recent {
+		recentPaths = append(recentPaths, doc.Path)
 	}
-	require.Equal(t, []string{"/test/0", "/test/1"}, recentPaths2)
+	require.Equal(t, paths[9:19], recentPaths)
 
-	entries3, err := ds.GetAll(ctx, recentPaths)
+	revpaths := reverseCopy(paths)
+
+	// Changes (limit=10, desc)
+	recent, ts, err = changes.Changes(ctx, "test-changes", time.Time{}, 10, keys.Descending)
 	require.NoError(t, err)
-	require.Equal(t, len(recent), len(entries3))
-
-	for i := 4; i < 6; i++ {
-		p := keys.Path("test", fmt.Sprintf("%d", i))
-		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
-		require.NoError(t, err)
-		err = changes.ChangeAdd(ctx, "testchanges", p)
-		require.NoError(t, err)
+	require.Equal(t, 10, len(recent))
+	require.False(t, ts.IsZero())
+	recentPaths = []string{}
+	for _, doc := range recent {
+		recentPaths = append(recentPaths, doc.Path)
 	}
+	require.Equal(t, revpaths[0:10], recentPaths)
 
-	recent3, ts3, err := changes.Changes(ctx, "testchanges", ts, 0)
+	// Changes (limit=5, ts, desc)
+	recent, ts, err = changes.Changes(ctx, "test-changes", ts, 5, keys.Descending)
 	require.NoError(t, err)
-	require.False(t, ts3.IsZero())
-	require.Equal(t, 3, len(recent3))
-	recentPaths3 := []string{}
-	for _, doc := range recent3 {
-		recentPaths3 = append(recentPaths3, doc.Path)
+	require.Equal(t, 5, len(recent))
+	require.False(t, ts.IsZero())
+	recentPaths = []string{}
+	for _, doc := range recent {
+		recentPaths = append(recentPaths, doc.Path)
 	}
-	require.Equal(t, []string{"/test/3", "/test/4", "/test/5"}, recentPaths3)
+	require.Equal(t, revpaths[9:14], recentPaths)
+}
+
+func stringsCopy(s []string) []string {
+	a := make([]string, len(s))
+	copy(a, s)
+	return a
+}
+
+func reverseCopy(s []string) []string {
+	a := make([]string, len(s))
+	for i, j := 0, len(s)-1; i < len(s); i++ {
+		a[i] = s[j]
+		j--
+	}
+	return a
 }

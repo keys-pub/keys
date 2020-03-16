@@ -13,9 +13,17 @@ type Change struct {
 	Timestamp time.Time `json:"ts" firestore:"ts"`
 }
 
+// Direction is ascending or descending.
+type Direction string
+
+const (
+	Ascending  Direction = "asc"
+	Descending Direction = "desc"
+)
+
 // Changes describes changes to a path.
 type Changes interface {
 	ChangeAdd(ctx context.Context, name string, ref string) error
 	Change(ctx context.Context, name string, ref string) (*Change, error)
-	Changes(ctx context.Context, name string, from time.Time, limit int) ([]*Change, time.Time, error)
+	Changes(ctx context.Context, name string, from time.Time, limit int, direction Direction) ([]*Change, time.Time, error)
 }

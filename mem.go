@@ -300,10 +300,17 @@ func (m *Mem) Change(ctx context.Context, name string, ref string) (*Change, err
 	return &change, nil
 }
 
+func min(n1 int, n2 int) int {
+	if n1 < n2 {
+		return n1
+	}
+	return n2
+}
+
 // Changes ...
-func (m *Mem) Changes(ctx context.Context, name string, from time.Time, limit int) ([]*Change, time.Time, error) {
-	docs := make([]*Change, 0, m.paths.Size())
-	to := time.Time{}
+func (m *Mem) Changes(ctx context.Context, name string, ts time.Time, limit int, direction Direction) ([]*Change, time.Time, error) {
+	changes := make([]*Change, 0, m.paths.Size())
+
 	for _, p := range m.paths.Strings() {
 		if !strings.HasPrefix(p, Path(name)+"/") {
 			continue
@@ -315,27 +322,60 @@ func (m *Mem) Changes(ctx context.Context, name string, from time.Time, limit in
 		if doc == nil {
 			return nil, time.Time{}, errors.Errorf("path not found %s", p)
 		}
-		var el Change
-		if err := json.Unmarshal(doc.Data, &el); err != nil {
+		var change Change
+		if err := json.Unmarshal(doc.Data, &change); err != nil {
 			return nil, time.Time{}, err
 		}
-		if from.IsZero() || from == el.Timestamp || el.Timestamp.After(from) {
-			docs = append(docs, &el)
-			if el.Timestamp.After(to) {
-				to = el.Timestamp
+		changes = append(changes, &change)
+	}
+	switch direction {
+	case Ascending:
+		sort.Slice(changes, func(i, j int) bool {
+			if changes[i].Timestamp == changes[j].Timestamp {
+				return changes[i].Path < changes[j].Path
+			}
+			return changes[i].Timestamp.Before(changes[j].Timestamp)
+		})
+	case Descending:
+		sort.Slice(changes, func(i, j int) bool {
+			if changes[i].Timestamp == changes[j].Timestamp {
+				return changes[i].Path > changes[j].Path
+			}
+			return changes[i].Timestamp.After(changes[j].Timestamp)
+		})
+	}
+
+	if !ts.IsZero() {
+		index := 0
+		switch direction {
+		case Ascending:
+			for i, c := range changes {
+				if c.Timestamp == ts || c.Timestamp.After(ts) {
+					index = i
+					break
+				}
+			}
+		case Descending:
+			for i, c := range changes {
+				if c.Timestamp == ts || c.Timestamp.Before(ts) {
+					index = i
+					break
+				}
 			}
 		}
-		if limit != 0 && len(docs) >= limit {
-			break
-		}
+		changes = changes[index:]
 	}
-	sort.Slice(docs, func(i, j int) bool {
-		if docs[i].Timestamp == docs[j].Timestamp {
-			return docs[i].Path < docs[j].Path
-		}
-		return docs[i].Timestamp.Before(docs[j].Timestamp)
-	})
-	return docs, to, nil
+
+	if limit > 0 {
+		changes = changes[0:min(limit, len(changes))]
+	}
+
+	to := ts
+	if len(changes) > 0 {
+		to = changes[len(changes)-1].Timestamp
+	}
+
+	return changes, to, nil
 }
 
 // Watch ...
