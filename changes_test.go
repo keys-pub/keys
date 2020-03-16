@@ -14,11 +14,12 @@ import (
 func TestMemChanges(t *testing.T) {
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 	mem := keys.NewMem()
-	mem.SetTimeNow(newClock().Now)
-	testChanges(t, mem, mem)
+	clock := newClock()
+	mem.SetTimeNow(clock.Now)
+	testChanges(t, mem, mem, clock)
 }
 
-func testChanges(t *testing.T, ds keys.DocumentStore, changes keys.Changes) {
+func testChanges(t *testing.T, ds keys.DocumentStore, changes keys.Changes, clock *clock) {
 	ctx := context.TODO()
 
 	paths := []string{}
@@ -71,6 +72,14 @@ func testChanges(t *testing.T, ds keys.DocumentStore, changes keys.Changes) {
 	}
 	require.Equal(t, paths[9:19], recentPaths)
 
+	// Changes (now)
+	now := clock.Now()
+	recent, ts, err = changes.Changes(ctx, "test-changes", now, 100, keys.Ascending)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(recent))
+	require.Equal(t, now, ts)
+
+	// Descending
 	revpaths := reverseCopy(paths)
 
 	// Changes (limit=10, desc)

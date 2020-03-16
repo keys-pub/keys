@@ -346,11 +346,13 @@ func (m *Mem) Changes(ctx context.Context, name string, ts time.Time, limit int,
 	}
 
 	if !ts.IsZero() {
-		index := 0
+		logger.Debugf("Finding index for %s", ts)
+		index := -1
 		switch direction {
 		case Ascending:
 			for i, c := range changes {
 				if c.Timestamp == ts || c.Timestamp.After(ts) {
+					logger.Infof("Found index %d", i)
 					index = i
 					break
 				}
@@ -358,15 +360,21 @@ func (m *Mem) Changes(ctx context.Context, name string, ts time.Time, limit int,
 		case Descending:
 			for i, c := range changes {
 				if c.Timestamp == ts || c.Timestamp.Before(ts) {
+					logger.Infof("Found index %d", i)
 					index = i
 					break
 				}
 			}
 		}
-		changes = changes[index:]
+		if index == -1 {
+			changes = []*Change{}
+		} else {
+			logger.Infof("Truncating from index %d", index)
+			changes = changes[index:]
+		}
 	}
 
-	if limit > 0 {
+	if limit > 0 && len(changes) > 0 {
 		changes = changes[0:min(limit, len(changes))]
 	}
 
