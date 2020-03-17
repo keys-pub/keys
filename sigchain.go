@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: Implement merkle tree to verify global sigchain state?
+
 // Sigchain is a chain of signed statements by a sign key.
 type Sigchain struct {
 	kid        ID
