@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/danieljoos/wincred v1.0.2
 	github.com/davecgh/go-spew v1.1.1
+	github.com/flynn/noise v0.0.0-20180327030543-2492fe189ae6
 	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/keybase/go-codec v0.0.0-20180928230036-164397562123 // indirect
 	github.com/keybase/go-keychain v0.0.0-20191220220820-f65a47cbe0b1
