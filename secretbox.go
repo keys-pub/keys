@@ -41,6 +41,7 @@ func openSecretBox(encrypted []byte, secretKey SecretKey) ([]byte, error) {
 }
 
 // EncryptWithPassword encrypts bytes with a password.
+// Uses argon2.IDKey(password, salt, 1, 64*1024, 4, 32) with 16 byte salt.
 func EncryptWithPassword(b []byte, password string) []byte {
 	salt := Rand16()
 	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
@@ -48,7 +49,7 @@ func EncryptWithPassword(b []byte, password string) []byte {
 	return bytesJoin(salt[:], encrypted)
 }
 
-// DecryptWithPassword decrypts bytes with a password.
+// DecryptWithPassword decrypts bytes using a password.
 func DecryptWithPassword(encrypted []byte, password string) ([]byte, error) {
 	if len(encrypted) < 16 {
 		return nil, errors.Errorf("failed to decrypt with a password: not enough bytes")
