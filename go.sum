@@ -14,7 +14,6 @@ github.com/keybase/go-keychain v0.0.0-20191220220820-f65a47cbe0b1 h1:Lk38J60jgB0
 github.com/keybase/go-keychain v0.0.0-20191220220820-f65a47cbe0b1/go.mod h1:JJNrCn9otv/2QP4D7SMJBgaleKpOf66PnW6F5WGNRIc=
 github.com/keybase/saltpack v0.0.0-20190828020936-3f47e8e2e6ec h1:ejQ18jEAjyiFen49m7h8x46kzC3heD/HbUiOPzBLVWg=
 github.com/keybase/saltpack v0.0.0-20190828020936-3f47e8e2e6ec/go.mod h1:loEJH62iafRcA8ZYlUEq9WgJh/Z9BHdHHfAmxzacQng=
-github.com/keys-pub/keysd v0.0.23 h1:t166nYPZFhXUP/s1pv5QUjln5Q3j+WF1Y2gJWd+7iJI=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
