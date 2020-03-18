@@ -67,7 +67,7 @@ func (k *Keystore) EdX25519Key(kid ID) (*EdX25519Key, error) {
 
 // EdX25519PublicKey returns sign public key from the Keystore.
 // Since the public key itself is in the ID, you can convert the ID without
-// getting it from the keystore via EdX25519PublicKeyForID.
+// getting it from the keystore via NewEdX25519PublicKeyFromID.
 func (k *Keystore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	logger.Infof("Keystore load sign public key for %s", kid)
 	item, err := k.get(kid.String())
