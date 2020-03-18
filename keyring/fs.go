@@ -9,14 +9,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: If linux dbus not available, automatically choose fs keyring?
+
 // NewFS creates a Keyring using the local filesystem. This is an alternate
 // Keyring implementation that is platform agnostic.
-func NewFS(dir string) (Keyring, error) {
+func NewFS(service string, dir string) (Keyring, error) {
+	if service == "" {
+		return nil, errors.Errorf("no service specified")
+	}
 	fs, err := NewFSStore(dir)
 	if err != nil {
 		return nil, err
 	}
-	kr, err := newKeyring(fs, "")
+	kr, err := NewKeyring(service, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +48,7 @@ func (k fs) Get(service string, id string) ([]byte, error) {
 		return nil, errors.Errorf("failed to get keyring item: invalid id %q", id)
 	}
 
-	path := filepath.Join(k.dir, id)
+	path := filepath.Join(k.dir, service, id)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -54,10 +59,11 @@ func (k fs) Set(service string, id string, data []byte, typ string) error {
 	if id == "" {
 		return errors.Errorf("no id specified")
 	}
-	path := filepath.Join(k.dir, id)
-	if err := os.MkdirAll(k.dir, 0700); err != nil {
+	dir := filepath.Join(k.dir, service)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
+	path := filepath.Join(dir, id)
 	if err := ioutil.WriteFile(path, data, 0600); err != nil {
 		return errors.Wrapf(err, "failed to write file")
 	}
@@ -66,6 +72,11 @@ func (k fs) Set(service string, id string, data []byte, typ string) error {
 
 func (k fs) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
 	path := filepath.Join(k.dir, service)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return []string{}, nil
+	}
+
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -93,7 +104,8 @@ func (k fs) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error)
 }
 
 func (k fs) Reset(service string) error {
-	if err := os.RemoveAll(k.dir); err != nil {
+	path := filepath.Join(k.dir, service)
+	if err := os.RemoveAll(path); err != nil {
 		return err
 	}
 	return nil

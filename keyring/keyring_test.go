@@ -38,6 +38,11 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
 
+	// List
+	items, err := kr.List(nil)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(items))
+
 	item, err := kr.Get("abc")
 	require.NoError(t, err)
 	require.Nil(t, item)
@@ -79,7 +84,7 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 
 	// List
-	items, err := kr.List(nil)
+	items, err = kr.List(nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(items))
 	require.Equal(t, items[0].ID, "abc")
