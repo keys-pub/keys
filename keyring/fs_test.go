@@ -20,6 +20,15 @@ func TestFSKeyring(t *testing.T) {
 	kr := testFS(t)
 	defer func() { _ = kr.Reset() }()
 	testKeyring(t, kr)
+
+	_, err := kr.Get(".")
+	require.EqualError(t, err, `failed to get keyring item: invalid id "."`)
+	_, err = kr.Get("..")
+	require.EqualError(t, err, `failed to get keyring item: invalid id ".."`)
+	_, err = kr.Get("foo/bar")
+	require.EqualError(t, err, `failed to get keyring item: invalid id "foo/bar"`)
+	_, err = kr.Get(`\foo`)
+	require.EqualError(t, err, `failed to get keyring item: invalid id "\\foo"`)
 }
 
 func TestFSReset(t *testing.T) {

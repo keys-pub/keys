@@ -37,10 +37,10 @@ type fs struct {
 
 func (k fs) Get(service string, id string) ([]byte, error) {
 	if id == "" {
-		return nil, errors.Errorf("no id specified")
+		return nil, errors.Errorf("failed to get keyring item: no id specified")
 	}
-	if strings.Contains(id, ".") || strings.Contains(id, "/") || strings.Contains(id, "\\") {
-		return nil, errors.Errorf("invalid id")
+	if id == "." || id == ".." || strings.Contains(id, "/") || strings.Contains(id, "\\") {
+		return nil, errors.Errorf("failed to get keyring item: invalid id %q", id)
 	}
 
 	path := filepath.Join(k.dir, id)
