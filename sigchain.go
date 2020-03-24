@@ -188,8 +188,8 @@ func sigchainPreviousHash(prev *Statement) (*[32]byte, error) {
 	return prevHash, nil
 }
 
-// GenerateRevoke creates a revoke Statement.
-func GenerateRevoke(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, error) {
+// NewRevokeStatement creates a revoke Statement.
+func NewRevokeStatement(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, error) {
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
@@ -233,7 +233,7 @@ func GenerateRevoke(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, erro
 
 // Revoke a signed statement in the Sigchain.
 func (s *Sigchain) Revoke(revoke int, sk *EdX25519Key) (*Statement, error) {
-	st, err := GenerateRevoke(s, revoke, sk)
+	st, err := NewRevokeStatement(s, revoke, sk)
 	if err != nil {
 		return nil, err
 	}

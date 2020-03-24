@@ -13,8 +13,7 @@ func TestSignedStatement(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	st, err := keys.NewSignedStatement(bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
-	require.NoError(t, err)
+	st := keys.NewSignedStatement(bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 
 	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.NoError(t, err)
@@ -72,7 +71,7 @@ func TestStatementJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	// Revoke
-	revoke, err := keys.GenerateRevoke(sc, 1, sk)
+	revoke, err := keys.NewRevokeStatement(sc, 1, sk)
 	require.NoError(t, err)
 
 	b2, err := json.Marshal(revoke)
@@ -131,7 +130,7 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 
 	// Revoke
-	revoke, err := keys.GenerateRevoke(sc, 1, sk)
+	revoke, err := keys.NewRevokeStatement(sc, 1, sk)
 	require.NoError(t, err)
 
 	data2 := revoke.SpecificSerialization()
