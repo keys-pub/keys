@@ -111,12 +111,7 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 		return nil, err
 	}
 
-	spk, err := StatementPublicKeyFromID(kid)
-	if err != nil {
-		return nil, err
-	}
-
-	sc := NewSigchain(spk)
+	sc := NewSigchain(kid)
 	for {
 		doc, err := iter.Next()
 		if err != nil {

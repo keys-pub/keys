@@ -50,7 +50,7 @@ type StatementPublicKey interface {
 // Use NewSignedStatement for a signed Statement outside a Sigchain.
 func NewStatement(sig []byte, data []byte, spk StatementPublicKey, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
 	st := NewUnverifiedStatement(sig, data, spk.ID(), seq, prev, revoke, typ, ts)
-	if err := st.Verify(spk); err != nil {
+	if err := st.Verify(); err != nil {
 		return nil, err
 	}
 	return st, nil
@@ -165,13 +165,14 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 }
 
 // Verify statement.
-func (s *Statement) Verify(spk StatementPublicKey) error {
-	if spk == nil {
-		return errors.Errorf("missing sigchain public key")
-	}
+func (s *Statement) Verify() error {
 	b := bytesJoin(s.Sig, s.serialized)
-	_, err := spk.Verify(b)
+
+	spk, err := StatementPublicKeyFromID(s.KID)
 	if err != nil {
+		return err
+	}
+	if _, err := spk.Verify(b); err != nil {
 		return err
 	}
 	return nil

@@ -29,7 +29,7 @@ func TestSigchainStatement(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	require.Equal(t, 0, sc.Length())
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestStatementJSON(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
@@ -95,7 +95,7 @@ func TestStatementJSON(t *testing.T) {
 func TestStatementSpecificSerialization(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
@@ -159,7 +159,7 @@ func TestStatementKeyURL(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())

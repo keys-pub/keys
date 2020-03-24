@@ -285,7 +285,7 @@ func saveUser(t *testing.T, ust *keys.UserStore, scs keys.SigchainStore, key *ke
 	sc, err := scs.Sigchain(key.ID())
 	require.NoError(t, err)
 	if sc == nil {
-		sc = keys.NewSigchain(key.PublicKey())
+		sc = keys.NewSigchain(key.ID())
 	}
 
 	user, err := keys.NewUser(ust, key.ID(), service, name, url, sc.LastSeq()+1)
@@ -314,7 +314,7 @@ func TestNewSigchainUserStatement(t *testing.T) {
 
 	req := keys.NewMockRequestor()
 	ust := testUserStore(t, dst, scs, req, clock)
-	sc := keys.NewSigchain(key.PublicKey())
+	sc := keys.NewSigchain(key.ID())
 	user, err := keys.NewUser(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
 	st, err := keys.NewUserSigchainStatement(sc, user, key, clock.Now())

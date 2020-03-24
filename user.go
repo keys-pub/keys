@@ -241,9 +241,14 @@ func (u *User) Sign(key *EdX25519Key) (string, error) {
 // VerifyUser armored message for a user.
 // If user is specified, we will verify it matches the User in the verified
 // message.
-func VerifyUser(msg string, spk StatementPublicKey, user *User) (*User, error) {
+func VerifyUser(msg string, kid ID, user *User) (*User, error) {
 	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
+	if err != nil {
+		return nil, err
+	}
+
+	spk, err := StatementPublicKeyFromID(kid)
 	if err != nil {
 		return nil, err
 	}

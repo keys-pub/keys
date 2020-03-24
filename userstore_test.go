@@ -39,7 +39,7 @@ END MESSAGE.`
 	require.False(t, len(msg) > 280)
 	require.Equal(t, 274, len(msg))
 
-	out, err := keys.VerifyUser(msg, sk.PublicKey(), user)
+	out, err := keys.VerifyUser(msg, sk.ID(), user)
 	require.NoError(t, err)
 	require.Equal(t, user.Service, out.Service)
 	require.Equal(t, user.Name, out.Name)
@@ -92,10 +92,10 @@ func TestUserResultGithub(t *testing.T) {
 	msg, err := user.Sign(sk)
 	require.NoError(t, err)
 	t.Logf(msg)
-	_, err = keys.VerifyUser(msg, sk.PublicKey(), user)
+	_, err = keys.VerifyUser(msg, sk.ID(), user)
 	require.NoError(t, err)
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	stu, err := keys.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := keys.NewUserSigchainStatement(sc, stu, sk, clock.Now())
@@ -144,7 +144,7 @@ func TestUserResultGithubWrongName(t *testing.T) {
 	require.NotEqual(t, "", msg)
 	t.Logf(msg)
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdataBytes(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
 	user2, err := keys.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestUserResultGithubWrongService(t *testing.T) {
 	dst := keys.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 
 	muser := &keys.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}
 	msg, err := muser.Sign(sk)
@@ -209,7 +209,7 @@ func TestUserResultTwitter(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf(msg)
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	stu, err := keys.NewUser(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := keys.NewUserSigchainStatement(sc, stu, sk, clock.Now())
@@ -253,7 +253,7 @@ func TestUserResultReddit(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf(msg)
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	stu, err := keys.NewUser(ust, sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := keys.NewUserSigchainStatement(sc, stu, sk, clock.Now())
@@ -288,7 +288,7 @@ func TestUserUnverified(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testUserStore(t, dst, scs, req, clock)
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 	stu, err := keys.NewUser(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := keys.NewUserSigchainStatement(sc, stu, sk, clock.Now())
@@ -307,7 +307,7 @@ func TestUserUnverified(t *testing.T) {
 
 func TestCheckNoUsers(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 
 	req := keys.NewMockRequestor()
 	clock := newClock()
@@ -341,14 +341,14 @@ func TestVerifyUser(t *testing.T) {
 	msg, err := u.Sign(sk)
 	require.NoError(t, err)
 
-	uout, err := keys.VerifyUser(msg, sk.PublicKey(), nil)
+	uout, err := keys.VerifyUser(msg, sk.ID(), nil)
 	require.NoError(t, err)
 
 	require.Equal(t, "gabriel", uout.Name)
 	require.Equal(t, "github", uout.Service)
 	require.Equal(t, sk.ID(), uout.KID)
 
-	_, err = keys.VerifyUser(msg, sk.PublicKey(), uout)
+	_, err = keys.VerifyUser(msg, sk.ID(), uout)
 	require.NoError(t, err)
 }
 

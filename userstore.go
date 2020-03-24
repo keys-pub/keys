@@ -100,7 +100,7 @@ func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResul
 	if user == nil {
 		return nil, nil
 	}
-	result, err := u.result(ctx, sc.ID())
+	result, err := u.result(ctx, sc.KID())
 	if err != nil {
 		return nil, err
 	}
@@ -110,22 +110,22 @@ func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResul
 		}
 	}
 
-	u.updateResult(ctx, result, sc.PublicKey())
+	u.updateResult(ctx, result, sc.KID())
 
 	return result, nil
 }
 
 // Check a user. Doesn't index result.
-func (u *UserStore) Check(ctx context.Context, user *User, spk StatementPublicKey) (*UserResult, error) {
+func (u *UserStore) Check(ctx context.Context, user *User, kid ID) (*UserResult, error) {
 	res := &UserResult{
 		User: user,
 	}
-	u.updateResult(ctx, res, spk)
+	u.updateResult(ctx, res, kid)
 	return res, nil
 }
 
 // updateResult updates the specified result.
-func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk StatementPublicKey) {
+func (u *UserStore) updateResult(ctx context.Context, result *UserResult, kid ID) {
 	if result == nil {
 		panic("no user result specified")
 	}
@@ -174,7 +174,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk St
 		return
 	}
 
-	st, err := VerifyContent(b, result, spk)
+	st, err := VerifyContent(b, result, kid)
 	if err != nil {
 		result.Err = err.Error()
 		result.Status = st
@@ -188,7 +188,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk St
 }
 
 // VerifyContent checks content.
-func VerifyContent(b []byte, result *UserResult, spk StatementPublicKey) (UserStatus, error) {
+func VerifyContent(b []byte, result *UserResult, kid ID) (UserStatus, error) {
 	msg, _ := encoding.FindSaltpack(string(b), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
@@ -196,7 +196,7 @@ func VerifyContent(b []byte, result *UserResult, spk StatementPublicKey) (UserSt
 	}
 
 	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
-	if _, err := VerifyUser(verifyMsg, spk, result.User); err != nil {
+	if _, err := VerifyUser(verifyMsg, kid, result.User); err != nil {
 		logger.Warningf("Failed to verify statement: %s", err)
 		return UserStatusStatementInvalid, err
 	}

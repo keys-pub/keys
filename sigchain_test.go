@@ -29,7 +29,7 @@ func TestSigchain(t *testing.T) {
 	clock := newClock()
 	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := keys.NewSigchain(alice.PublicKey())
+	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())
 
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), alice, "test", clock.Now())
@@ -108,7 +108,7 @@ func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := keys.NewSigchain(sk.PublicKey())
+	sc := keys.NewSigchain(sk.ID())
 
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
@@ -151,7 +151,7 @@ func TestSigchainUsers(t *testing.T) {
 	ust := testUserStore(t, dst, scs, req, clock)
 	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	sc := keys.NewSigchain(alice.PublicKey())
+	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())
 
 	user, err := sc.User()
@@ -203,7 +203,7 @@ func TestSigchainUsers(t *testing.T) {
 func ExampleNewSigchain() {
 	clock := newClock()
 	alice := keys.GenerateEdX25519Key()
-	sc := keys.NewSigchain(alice.PublicKey())
+	sc := keys.NewSigchain(alice.ID())
 
 	// Create root statement
 	st, err := keys.NewSigchainStatement(sc, []byte("hi! 🤓"), alice, "", clock.Now())

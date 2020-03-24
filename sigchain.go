@@ -15,7 +15,6 @@ import (
 // Sigchain is a chain of signed statements by a sign key.
 type Sigchain struct {
 	kid        ID
-	spk        StatementPublicKey
 	statements []*Statement
 	revokes    map[int]*Statement
 }
@@ -29,28 +28,22 @@ func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
 const RevokeLabel = "revoke"
 
 // NewSigchain returns a new Sigchain for a EdX25519PublicKey.
-func NewSigchain(spk StatementPublicKey) *Sigchain {
+func NewSigchain(kid ID) *Sigchain {
 	return &Sigchain{
-		kid:        spk.ID(),
-		spk:        spk,
+		kid:        kid,
 		statements: []*Statement{},
 		revokes:    map[int]*Statement{},
 	}
 }
 
-// ID is the sign public key ID.
-func (s *Sigchain) ID() ID {
+// KID is the sign public key ID.
+func (s *Sigchain) KID() ID {
 	return s.kid
 }
 
 // Statements are all the signed statements.
 func (s Sigchain) Statements() []*Statement {
 	return s.statements
-}
-
-// PublicKey is public key for the sigchain.
-func (s *Sigchain) PublicKey() StatementPublicKey {
-	return s.spk
 }
 
 // Spew shows formatted sigchain output.
@@ -154,7 +147,7 @@ func NewSigchainStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, t
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
-	if sc.ID() != sk.ID() {
+	if sc.KID() != sk.ID() {
 		return nil, errors.Errorf("invalid sigchain sign public key")
 	}
 
@@ -200,7 +193,7 @@ func GenerateRevoke(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, erro
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}
-	if sc.ID() != sk.ID() {
+	if sc.KID() != sk.ID() {
 		return nil, errors.Errorf("invalid sigchain sign public key")
 	}
 	if revoke < 1 {
@@ -226,7 +219,7 @@ func GenerateRevoke(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, erro
 		return nil, err
 	}
 	st := Statement{
-		KID:    sc.ID(),
+		KID:    sc.KID(),
 		Seq:    seq,
 		Prev:   prevHash[:],
 		Revoke: revoke,
@@ -256,7 +249,7 @@ func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 	if st.KID != s.kid {
 		return errors.Errorf("invalid statement kid")
 	}
-	if err := st.Verify(s.spk); err != nil {
+	if err := st.Verify(); err != nil {
 		return err
 	}
 
