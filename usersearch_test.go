@@ -291,7 +291,7 @@ func saveUser(t *testing.T, ust *keys.UserStore, scs keys.SigchainStore, key *ke
 	user, err := keys.NewUser(ust, key.ID(), service, name, url, sc.LastSeq()+1)
 	require.NoError(t, err)
 
-	st, err := keys.GenerateUserStatement(sc, user, key, clock.Now())
+	st, err := keys.NewUserSigchainStatement(sc, user, key, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -306,7 +306,7 @@ func saveUser(t *testing.T, ust *keys.UserStore, scs keys.SigchainStore, key *ke
 	return st
 }
 
-func TestGenerateUserStatement(t *testing.T) {
+func TestNewSigchainUserStatement(t *testing.T) {
 	clock := newClock()
 	dst := keys.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -317,13 +317,13 @@ func TestGenerateUserStatement(t *testing.T) {
 	sc := keys.NewSigchain(key.PublicKey())
 	user, err := keys.NewUser(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
-	st, err := keys.GenerateUserStatement(sc, user, key, clock.Now())
+	st, err := keys.NewUserSigchainStatement(sc, user, key, clock.Now())
 	require.NoError(t, err)
 	require.Equal(t, st.Seq, user.Seq)
 
 	user, err = keys.NewUser(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
 	require.NoError(t, err)
-	_, err = keys.GenerateUserStatement(sc, user, key, clock.Now())
+	_, err = keys.NewUserSigchainStatement(sc, user, key, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 }
 

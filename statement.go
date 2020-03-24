@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Statement in a Sigchain.
+// Statement signed.
 type Statement struct {
 	// Sig is the signature bytes.
 	Sig []byte
@@ -21,11 +21,11 @@ type Statement struct {
 	// KID is the key that signed.
 	KID ID
 
-	// Seq in a sigchain (1 is root).
+	// Seq in a sigchain (1 is root, optional if not in sigchain).
 	Seq int
-	// Prev is a hash of the previous item in the sigchain.
+	// Prev is a hash of the previous item in the sigchain (optional if root).
 	Prev []byte
-	// Revoke refers to a previous signed seq to revoke.
+	// Revoke refers to a previous signed seq to revoke (optional).
 	Revoke int
 
 	// Type (optional).
@@ -38,9 +38,17 @@ type Statement struct {
 	serialized []byte
 }
 
+// StatementPublicKey is public key for a Statement.
+type StatementPublicKey interface {
+	ID() ID
+	Verify(b []byte) ([]byte, error)
+	VerifyDetached(sig []byte, b []byte) error
+}
+
 // NewStatement creates a new statement from specified parameters.
-// Use GenerateStatement for an easier construction.
-func NewStatement(sig []byte, data []byte, spk SigchainPublicKey, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
+// Use NewSigchainStatement for a signed Sigchain Statement.
+// Use NewSignedStatement for a signed Statement outside a Sigchain.
+func NewStatement(sig []byte, data []byte, spk StatementPublicKey, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
 	st := NewUnverifiedStatement(sig, data, spk.ID(), seq, prev, revoke, typ, ts)
 	if err := st.Verify(spk); err != nil {
 		return nil, err
@@ -62,6 +70,21 @@ func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byt
 	}
 	st.serialized = statementBytesToSign(st)
 	return st
+}
+
+// NewSignedStatement creates a signed Statement.
+// Use NewSigchainStatement if part of a Sigchain.
+func NewSignedStatement(b []byte, sk *EdX25519Key, typ string, ts time.Time) (*Statement, error) {
+	st := &Statement{
+		Data:      b,
+		KID:       sk.ID(),
+		Timestamp: ts,
+		Type:      typ,
+	}
+	if err := signStatement(st, sk); err != nil {
+		return nil, err
+	}
+	return st, nil
 }
 
 // Key for a Statement.
@@ -142,7 +165,7 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 }
 
 // Verify statement.
-func (s *Statement) Verify(spk SigchainPublicKey) error {
+func (s *Statement) Verify(spk StatementPublicKey) error {
 	if spk == nil {
 		return errors.Errorf("missing sigchain public key")
 	}
@@ -206,7 +229,9 @@ func statementBytes(st *Statement, sig []byte) []byte {
 	if st.Revoke != 0 {
 		mes = append(mes, NewIntEntry("revoke", st.Revoke))
 	}
-	mes = append(mes, NewIntEntry("seq", st.Seq))
+	if st.Seq != 0 {
+		mes = append(mes, NewIntEntry("seq", st.Seq))
+	}
 	if !st.Timestamp.IsZero() {
 		mes = append(mes, NewIntEntry("ts", int(TimeToMillis(st.Timestamp))))
 	}

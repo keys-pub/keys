@@ -116,7 +116,7 @@ func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResul
 }
 
 // Check a user. Doesn't index result.
-func (u *UserStore) Check(ctx context.Context, user *User, spk SigchainPublicKey) (*UserResult, error) {
+func (u *UserStore) Check(ctx context.Context, user *User, spk StatementPublicKey) (*UserResult, error) {
 	res := &UserResult{
 		User: user,
 	}
@@ -125,7 +125,7 @@ func (u *UserStore) Check(ctx context.Context, user *User, spk SigchainPublicKey
 }
 
 // updateResult updates the specified result.
-func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk SigchainPublicKey) {
+func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk StatementPublicKey) {
 	if result == nil {
 		panic("no user result specified")
 	}
@@ -188,7 +188,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, spk Si
 }
 
 // VerifyContent checks content.
-func VerifyContent(b []byte, result *UserResult, spk SigchainPublicKey) (UserStatus, error) {
+func VerifyContent(b []byte, result *UserResult, spk StatementPublicKey) (UserStatus, error) {
 	msg, _ := encoding.FindSaltpack(string(b), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")

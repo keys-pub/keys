@@ -15,28 +15,21 @@ import (
 // Sigchain is a chain of signed statements by a sign key.
 type Sigchain struct {
 	kid        ID
-	spk        SigchainPublicKey
+	spk        StatementPublicKey
 	statements []*Statement
 	revokes    map[int]*Statement
 }
 
-// SigchainPublicKeyFromID converts ID to SigchainPublicKey.
-func SigchainPublicKeyFromID(id ID) (SigchainPublicKey, error) {
+// StatementPublicKeyFromID converts ID to StatementPublicKey.
+func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
 	return NewEdX25519PublicKeyFromID(id)
-}
-
-// SigchainPublicKey is public key for sigchain.
-type SigchainPublicKey interface {
-	ID() ID
-	Verify(b []byte) ([]byte, error)
-	VerifyDetached(sig []byte, b []byte) error
 }
 
 // RevokeLabel is label for revoking an earlier statement
 const RevokeLabel = "revoke"
 
 // NewSigchain returns a new Sigchain for a EdX25519PublicKey.
-func NewSigchain(spk SigchainPublicKey) *Sigchain {
+func NewSigchain(spk StatementPublicKey) *Sigchain {
 	return &Sigchain{
 		kid:        spk.ID(),
 		spk:        spk,
@@ -56,7 +49,7 @@ func (s Sigchain) Statements() []*Statement {
 }
 
 // PublicKey is public key for the sigchain.
-func (s *Sigchain) PublicKey() SigchainPublicKey {
+func (s *Sigchain) PublicKey() StatementPublicKey {
 	return s.spk
 }
 
@@ -156,8 +149,8 @@ func signStatement(st *Statement, signKey *EdX25519Key) error {
 	return nil
 }
 
-// GenerateStatement creates Statement to be added to the Sigchain.
-func GenerateStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, ts time.Time) (*Statement, error) {
+// NewSigchainStatement creates a signed Statement to be added to the Sigchain.
+func NewSigchainStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, ts time.Time) (*Statement, error) {
 	if sc == nil {
 		return nil, errors.Errorf("no sigchain specified")
 	}

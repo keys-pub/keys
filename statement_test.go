@@ -9,13 +9,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStatement(t *testing.T) {
+func TestSignedStatement(t *testing.T) {
+	clock := newClock()
+	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+
+	st, err := keys.NewSignedStatement(bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
+	require.NoError(t, err)
+
+	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	require.NoError(t, err)
+	require.Equal(t, st.Bytes(), st2.Bytes())
+
+	rk := keys.GenerateEdX25519Key()
+	_, err = keys.NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	require.EqualError(t, err, "verify failed")
+}
+
+func TestSigchainStatement(t *testing.T) {
 	clock := newClock()
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	sc := keys.NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
-	st, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
+	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
 	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
@@ -34,7 +50,7 @@ func TestStatementJSON(t *testing.T) {
 	sc := keys.NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
-	st, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
+	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
 	b, err := json.Marshal(st)
@@ -82,7 +98,7 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	sc := keys.NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
-	st, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
+	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
 	data := st.SpecificSerialization()
@@ -146,7 +162,7 @@ func TestStatementKeyURL(t *testing.T) {
 	sc := keys.NewSigchain(sk.PublicKey())
 	require.Equal(t, 0, sc.Length())
 
-	st, err := keys.GenerateStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
+	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
 
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077-000000000000001", st.Key())

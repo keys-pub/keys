@@ -111,7 +111,7 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 		return nil, err
 	}
 
-	spk, err := SigchainPublicKeyFromID(kid)
+	spk, err := StatementPublicKeyFromID(kid)
 	if err != nil {
 		return nil, err
 	}

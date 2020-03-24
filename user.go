@@ -197,9 +197,9 @@ func (u *UserStore) validate(user *User) error {
 // ErrUserAlreadySet is user already set in sigchain.
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
-// GenerateUserStatement for a user to add to the sigchain.
-// Returns ErrUserAlreadySet is user already exists in the sigchain.
-func GenerateUserStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time.Time) (*Statement, error) {
+// NewUserSigchainStatement for a user to add to a Sigchain.
+// Returns ErrUserAlreadySet is user already exists in the Sigchain.
+func NewUserSigchainStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time.Time) (*Statement, error) {
 	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}
@@ -216,7 +216,7 @@ func GenerateUserStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time.Ti
 	if err != nil {
 		return nil, err
 	}
-	st, err := GenerateStatement(sc, b, sk, "user", ts)
+	st, err := NewSigchainStatement(sc, b, sk, "user", ts)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (u *User) Sign(key *EdX25519Key) (string, error) {
 // VerifyUser armored message for a user.
 // If user is specified, we will verify it matches the User in the verified
 // message.
-func VerifyUser(msg string, spk SigchainPublicKey, user *User) (*User, error) {
+func VerifyUser(msg string, spk StatementPublicKey, user *User) (*User, error) {
 	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
