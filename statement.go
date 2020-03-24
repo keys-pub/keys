@@ -74,7 +74,7 @@ func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byt
 
 // NewSignedStatement creates a signed Statement.
 // Use NewSigchainStatement if part of a Sigchain.
-func NewSignedStatement(b []byte, sk *EdX25519Key, typ string, ts time.Time) (*Statement, error) {
+func NewSignedStatement(b []byte, sk *EdX25519Key, typ string, ts time.Time) *Statement {
 	st := &Statement{
 		Data:      b,
 		KID:       sk.ID(),
@@ -82,9 +82,9 @@ func NewSignedStatement(b []byte, sk *EdX25519Key, typ string, ts time.Time) (*S
 		Type:      typ,
 	}
 	if err := signStatement(st, sk); err != nil {
-		return nil, err
+		panic(err)
 	}
-	return st, nil
+	return st
 }
 
 // Key for a Statement.
