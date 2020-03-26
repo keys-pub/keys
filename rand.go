@@ -22,7 +22,7 @@ func RandBytes(length int) []byte {
 }
 
 // RandKey generates a random secret key.
-func RandKey() *[SecretKeySize]byte {
+func RandKey() SecretKey {
 	b := RandBytes(SecretKeySize)
 	var ba [SecretKeySize]byte
 	copy(ba[:], b[:SecretKeySize])
