@@ -28,6 +28,12 @@ func (r UserResult) String() string {
 	return fmt.Sprintf("%s:%s;err=%s", r.Status, r.User, r.Err)
 }
 
+// Expired returns true if result is older than dt.
+func (r UserResult) Expired(now time.Time, dt time.Duration) bool {
+	ts := TimeFromMillis(r.Timestamp)
+	return (ts.IsZero() || now.Sub(ts) > dt)
+}
+
 type keyDocument struct {
 	KID        ID          `json:"kid"`
 	UserResult *UserResult `json:"result,omitempty"`
