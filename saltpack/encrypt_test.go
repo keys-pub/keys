@@ -56,6 +56,10 @@ func TestEncrypt(t *testing.T) {
 
 	_, err = spa.Encrypt(message, alice, keys.ID(""))
 	require.EqualError(t, err, "invalid recipient: empty id")
+
+	// Duplicate recipient
+	_, err = spa.Encrypt(message, alice, bob.ID(), bob.ID())
+	require.NoError(t, err)
 }
 
 func TestEncryptAnon(t *testing.T) {

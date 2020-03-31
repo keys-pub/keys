@@ -50,6 +50,10 @@ func TestSigncrypt(t *testing.T) {
 
 	_, err = spa.Signcrypt(message, nil, bob.ID())
 	require.EqualError(t, err, "no sender specified")
+
+	// Duplicate recipient
+	_, err = spa.Signcrypt(message, alice, bob.ID(), bob.ID())
+	require.NoError(t, err)
 }
 
 func TestSigncryptStream(t *testing.T) {

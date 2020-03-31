@@ -1,6 +1,7 @@
 package saltpack
 
 import (
+	"bytes"
 	"crypto/subtle"
 
 	ksaltpack "github.com/keybase/saltpack"
@@ -129,6 +130,15 @@ func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 	return newSignPublicKey(keys.NewEdX25519PublicKey(spk))
 }
 
+func containsBoxPublicKey(pk ksaltpack.BoxPublicKey, pks []ksaltpack.BoxPublicKey) bool {
+	for _, p := range pks {
+		if bytes.Equal(p.ToKID(), pk.ToKID()) {
+			return true
+		}
+	}
+	return false
+}
+
 func boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
 	publicKeys := make([]ksaltpack.BoxPublicKey, 0, len(recipients))
 	for _, r := range recipients {
@@ -139,7 +149,10 @@ func boxPublicKeys(recipients []keys.ID) ([]ksaltpack.BoxPublicKey, error) {
 		if pk == nil {
 			return nil, errors.Wrapf(err, "recipient not found %s", r)
 		}
-		publicKeys = append(publicKeys, newBoxPublicKey(pk))
+		bpk := newBoxPublicKey(pk)
+		if !containsBoxPublicKey(bpk, publicKeys) {
+			publicKeys = append(publicKeys, bpk)
+		}
 	}
 	return publicKeys, nil
 }
