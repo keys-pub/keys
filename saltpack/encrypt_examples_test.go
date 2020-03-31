@@ -76,7 +76,8 @@ func ExampleSaltpack_Decrypt() {
 		log.Fatal(err)
 	}
 
-	// The sender from Saltpack Decrypt is a x25519 ID, so find the corresponding edx25519 key.
+	// The sender from Saltpack Decrypt is a X25519 public key, so find the
+	// corresponding EdX25519 public key.
 	if sender != nil {
 		pk, err := ks.FindEdX25519PublicKey(sender.ID())
 		if err != nil {
