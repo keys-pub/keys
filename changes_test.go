@@ -32,10 +32,6 @@ func testChanges(t *testing.T, ds keys.DocumentStore, changes keys.Changes, cloc
 		require.NoError(t, err)
 		err = changes.ChangeAdd(ctx, "test-changes", p)
 		require.NoError(t, err)
-		change, err := changes.Change(ctx, "test-changes", p)
-		require.NoError(t, err)
-		require.Equal(t, p, change.Path)
-		require.True(t, !change.Timestamp.IsZero())
 	}
 
 	sorted := stringsCopy(paths)

@@ -19,6 +19,7 @@ type DocumentStore interface {
 	Get(ctx context.Context, path string) (*Document, error)
 
 	// GetAll at paths.
+	// If a path is not found, it is ignored.
 	GetAll(ctx context.Context, paths []string) ([]*Document, error)
 
 	// Exists, if exists at path.
@@ -26,6 +27,8 @@ type DocumentStore interface {
 
 	// Delete at path.
 	Delete(ctx context.Context, path string) (bool, error)
+	// If a path is not found, it is ignored.
+	DeleteAll(ctx context.Context, paths []string) error
 
 	// Documents for Document's.
 	Documents(ctx context.Context, parent string, opts *DocumentsOpts) (DocumentIterator, error)

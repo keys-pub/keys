@@ -228,6 +228,16 @@ func (m *Mem) Delete(ctx context.Context, path string) (bool, error) {
 	return true, nil
 }
 
+func (m *Mem) DeleteAll(ctx context.Context, paths []string) error {
+	for _, p := range paths {
+		_, err := m.Delete(ctx, p)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type watch struct {
 	ln WatchLn
 	wg *sync.WaitGroup
@@ -244,7 +254,7 @@ func (m *Mem) GetAll(ctx context.Context, paths []string) ([]*Document, error) {
 	for _, p := range paths {
 		doc := m.document(Path(p))
 		if doc == nil {
-			return nil, errors.Errorf("missing document in GetAll")
+			continue
 		}
 		docs = append(docs, doc)
 	}
@@ -267,7 +277,7 @@ func randBytes(length int) []byte {
 
 // ChangeAdd ...
 func (m *Mem) ChangeAdd(ctx context.Context, name string, ref string) error {
-	path := activityPath(name, ref)
+	path := Path(name, Rand3262())
 	b, err := json.Marshal(Change{
 		Path:      ref,
 		Timestamp: m.nowFn(),
@@ -276,28 +286,6 @@ func (m *Mem) ChangeAdd(ctx context.Context, name string, ref string) error {
 		return err
 	}
 	return m.Create(ctx, path, b)
-}
-
-func activityPath(name string, ref string) string {
-	s := strings.ReplaceAll(ref, "/", "-")
-	return Path(name, s)
-}
-
-// Change ...
-func (m *Mem) Change(ctx context.Context, name string, ref string) (*Change, error) {
-	path := activityPath(name, ref)
-	doc, err := m.Get(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	if doc == nil {
-		return nil, nil
-	}
-	var change Change
-	if err := json.Unmarshal(doc.Data, &change); err != nil {
-		return nil, err
-	}
-	return &change, nil
 }
 
 func min(n1 int, n2 int) int {

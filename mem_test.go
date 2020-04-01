@@ -281,3 +281,22 @@ func testMetadata(t *testing.T, ds keys.DocumentStore) {
 	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(doc.CreatedAt))
 	require.Equal(t, keys.TimeMs(1234567890002), keys.TimeToMillis(doc.UpdatedAt))
 }
+
+func TestDeleteAll(t *testing.T) {
+	mem := keys.NewMem()
+
+	err := mem.Set(context.TODO(), "/test/key1", []byte("val1"))
+	require.NoError(t, err)
+	err = mem.Set(context.TODO(), "/test/key2", []byte("val2"))
+	require.NoError(t, err)
+
+	err = mem.DeleteAll(context.TODO(), []string{"/test/key1", "/test/key2", "/test/key3"})
+	require.NoError(t, err)
+
+	doc, err := mem.Get(context.TODO(), "/test/key1")
+	require.NoError(t, err)
+	require.Nil(t, doc)
+	doc, err = mem.Get(context.TODO(), "/test/key2")
+	require.NoError(t, err)
+	require.Nil(t, doc)
+}
