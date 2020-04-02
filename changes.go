@@ -23,6 +23,6 @@ const (
 
 // Changes describes changes to a path.
 type Changes interface {
-	ChangeAdd(ctx context.Context, name string, ref string) error
+	ChangeAdd(ctx context.Context, name string, id string, ref string) error
 	Changes(ctx context.Context, name string, from time.Time, limit int, direction Direction) ([]*Change, time.Time, error)
 }

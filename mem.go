@@ -276,8 +276,8 @@ func randBytes(length int) []byte {
 }
 
 // ChangeAdd ...
-func (m *Mem) ChangeAdd(ctx context.Context, name string, ref string) error {
-	path := Path(name, Rand3262())
+func (m *Mem) ChangeAdd(ctx context.Context, name string, id string, ref string) error {
+	path := Path(name, id)
 	b, err := json.Marshal(Change{
 		Path:      ref,
 		Timestamp: m.nowFn(),
