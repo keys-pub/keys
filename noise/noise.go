@@ -8,7 +8,7 @@ import (
 
 // Noise protocol for keys.pub.
 // See http://www.noiseprotocol.org/.
-type Noise struct {
+type Handshake struct {
 	initiator bool
 	state     *noise.HandshakeState
 	csI0      *noise.CipherState
@@ -17,7 +17,7 @@ type Noise struct {
 	csR1      *noise.CipherState
 }
 
-// NewNoise returns Noise for X25519Key sender and recipient.
+// NewHandshake returns Handshake for X25519Key sender and recipient.
 //
 // The cipher suite used is:
 // Curve25519 ECDH, ChaCha20-Poly1305 AEAD, BLAKE2b hash.
@@ -29,14 +29,14 @@ type Noise struct {
 // One of the Noise participants should be the initiator.
 //
 // The order of the handshake writes/reads should be:
-// (1) Initiator: HandshakeWrite
-// (2) Responder: HandshakeRead
-// (3) Initiator: HandshakeRead
-// (4) Responder: HandshakeWrite
+// (1) Initiator: Write
+// (2) Responder: Read
+// (3) Initiator: Read
+// (4) Responder: Write
 //
 // Then handshake is complete (HandshakeComplete) and you will be able to Encrypt and Decrypt.
 //
-func NewNoise(sender *keys.X25519Key, recipient *keys.X25519PublicKey, initiator bool) (*Noise, error) {
+func NewHandshake(sender *keys.X25519Key, recipient *keys.X25519PublicKey, initiator bool) (*Handshake, error) {
 	dhKey := noise.DHKey{
 		Private: sender.PrivateKey()[:],
 		Public:  sender.PublicKey().Bytes(),
@@ -58,23 +58,23 @@ func NewNoise(sender *keys.X25519Key, recipient *keys.X25519PublicKey, initiator
 		return nil, err
 	}
 
-	return &Noise{
+	return &Handshake{
 		initiator: initiator,
 		state:     state,
 	}, nil
 }
 
-// HandshakeWrite performs handshake write.
+// Write performs handshake write.
 // You can include optional payload bytes, as the pattern allows zero-RTT
 // encryption, meaning the initiator can encrypt the first handshake payload.
 //
 // The order of the handshake writes/reads should be:
-// (1) Initiator: HandshakeWrite
-// (2) Responder: HandshakeRead
-// (3) Initiator: HandshakeRead
-// (4) Responder: HandshakeWrite
-func (n *Noise) HandshakeWrite(payload []byte) ([]byte, error) {
-	if n.HandshakeComplete() {
+// (1) Initiator: Write
+// (2) Responder: Read
+// (3) Initiator: Read
+// (4) Responder: Write
+func (n *Handshake) Write(payload []byte) ([]byte, error) {
+	if n.Complete() {
 		return nil, errors.Errorf("handshake already complete")
 	}
 	out, csR0, csR1, err := n.state.WriteMessage(nil, payload)
@@ -88,17 +88,17 @@ func (n *Noise) HandshakeWrite(payload []byte) ([]byte, error) {
 	return out, nil
 }
 
-// HandshakeRead performs handshake read, returning optional payload if it was
-// included in the HandshakeWrite, as the pattern allows zero-RTT
-// encryption, meaning the initiator can encrypt the first handshake payload.
+// Read performs handshake read, returning optional payload if it was included
+// in the Write, as the pattern allows zero-RTT encryption, meaning the
+// initiator can encrypt the first handshake payload.
 //
 // The order of the handshake writes/reads should be:
-// (1) Initiator: HandshakeWrite
-// (2) Responder: HandshakeRead
-// (3) Initiator: HandshakeRead
-// (4) Responder: HandshakeWrite
-func (n *Noise) HandshakeRead(b []byte) ([]byte, error) {
-	if n.HandshakeComplete() {
+// (1) Initiator: Write
+// (2) Responder: Read
+// (3) Initiator: Read
+// (4) Responder: Write
+func (n *Handshake) Read(b []byte) ([]byte, error) {
+	if n.Complete() {
 		return nil, errors.Errorf("handshake already complete")
 	}
 	out, csI0, csI1, err := n.state.ReadMessage(nil, b)
@@ -112,14 +112,14 @@ func (n *Noise) HandshakeRead(b []byte) ([]byte, error) {
 	return out, nil
 }
 
-// HandshakeComplete returns true if handshake is complete and Encrypt/Decrypt
+// Complete returns true if handshake is complete and Encrypt/Decrypt
 // are available.
-func (n *Noise) HandshakeComplete() bool {
+func (n *Handshake) Complete() bool {
 	return n.csI0 != nil || n.csR0 != nil
 }
 
 // Encrypt to out.
-func (n *Noise) Encrypt(out, ad, plaintext []byte) ([]byte, error) {
+func (n *Handshake) Encrypt(out, ad, plaintext []byte) ([]byte, error) {
 	if n.initiator {
 		if n.csI0 == nil {
 			return nil, errors.Errorf("no cipher for encrypt (I)")
@@ -133,7 +133,7 @@ func (n *Noise) Encrypt(out, ad, plaintext []byte) ([]byte, error) {
 }
 
 // Decrypt to out.
-func (n *Noise) Decrypt(out, ad, ciphertext []byte) ([]byte, error) {
+func (n *Handshake) Decrypt(out, ad, ciphertext []byte) ([]byte, error) {
 	if n.initiator {
 		if n.csI1 == nil {
 			return nil, errors.Errorf("no cipher for decrypt (I)")
