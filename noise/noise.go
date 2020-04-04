@@ -6,15 +6,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Cipher provides symmetric encryption and decryption after a successful
+// handshake.
+type Cipher interface {
+	Encrypt(out, ad, plaintext []byte) ([]byte, error)
+	Decrypt(out, ad, ciphertext []byte) ([]byte, error)
+}
+
 // Noise protocol for keys.pub.
 // See http://www.noiseprotocol.org/.
 type Handshake struct {
 	initiator bool
 	state     *noise.HandshakeState
-	csI0      *noise.CipherState
-	csI1      *noise.CipherState
-	csR0      *noise.CipherState
-	csR1      *noise.CipherState
+
+	csI0 *noise.CipherState
+	csI1 *noise.CipherState
+	csR0 *noise.CipherState
+	csR1 *noise.CipherState
 }
 
 // NewHandshake returns Handshake for X25519Key sender and recipient.
@@ -118,30 +126,11 @@ func (n *Handshake) Complete() bool {
 	return n.csI0 != nil || n.csR0 != nil
 }
 
-// Encrypt to out.
-func (n *Handshake) Encrypt(out, ad, plaintext []byte) ([]byte, error) {
-	if n.initiator {
-		if n.csI0 == nil {
-			return nil, errors.Errorf("no cipher for encrypt (I)")
-		}
-		return n.csI0.Encrypt(out, ad, plaintext), nil
+// Cipher provides symmetric encryption and decryption after a successful
+// handshake.
+func (n *Handshake) Cipher() (Cipher, error) {
+	if !n.Complete() {
+		return nil, errors.Errorf("handshake not complete")
 	}
-	if n.csR1 == nil {
-		return nil, errors.Errorf("no cipher for encrypt (R)")
-	}
-	return n.csR1.Encrypt(out, ad, plaintext), nil
-}
-
-// Decrypt to out.
-func (n *Handshake) Decrypt(out, ad, ciphertext []byte) ([]byte, error) {
-	if n.initiator {
-		if n.csI1 == nil {
-			return nil, errors.Errorf("no cipher for decrypt (I)")
-		}
-		return n.csI1.Decrypt(out, ad, ciphertext)
-	}
-	if n.csR0 == nil {
-		return nil, errors.Errorf("no cipher for decrypt (R)")
-	}
-	return n.csR0.Decrypt(out, ad, ciphertext)
+	return newCipherState(n), nil
 }

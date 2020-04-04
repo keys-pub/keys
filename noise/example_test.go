@@ -42,12 +42,20 @@ func ExampleNewHandshake() {
 	}
 
 	// transport I -> R
-	encrypted, err := na.Encrypt(nil, nil, []byte("hello"))
+	ca, err := na.Cipher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	encrypted, err := ca.Encrypt(nil, nil, []byte("hello"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	decrypted, err := nb.Decrypt(nil, nil, encrypted)
+	cb, err := nb.Cipher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	decrypted, err := cb.Decrypt(nil, nil, encrypted)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewNoise(t *testing.T) {
+func TestNewHandshake(t *testing.T) {
 	alice := keys.GenerateX25519Key()
 	bob := keys.GenerateX25519Key()
 
@@ -40,17 +40,22 @@ func TestNewNoise(t *testing.T) {
 	require.True(t, na.Complete())
 	require.True(t, nb.Complete())
 
-	// transport I -> R
-	encrypted, err := na.Encrypt(nil, nil, []byte("hello"))
+	ca, err := na.Cipher()
 	require.NoError(t, err)
-	decrypted, err := nb.Decrypt(nil, nil, encrypted)
+	cb, err := nb.Cipher()
+	require.NoError(t, err)
+
+	// transport I -> R
+	encrypted, err := ca.Encrypt(nil, nil, []byte("hello"))
+	require.NoError(t, err)
+	decrypted, err := cb.Decrypt(nil, nil, encrypted)
 	require.NoError(t, err)
 	require.Equal(t, "hello", string(decrypted))
 
 	// transport R -> I
-	encrypted, err = nb.Encrypt(nil, nil, []byte("what time is the meeting?"))
+	encrypted, err = cb.Encrypt(nil, nil, []byte("what time is the meeting?"))
 	require.NoError(t, err)
-	decrypted, err = na.Decrypt(nil, nil, encrypted)
+	decrypted, err = ca.Decrypt(nil, nil, encrypted)
 	require.NoError(t, err)
 	require.Equal(t, "what time is the meeting?", string(decrypted))
 }
