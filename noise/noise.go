@@ -25,7 +25,7 @@ type Handshake struct {
 	csR1 *noise.CipherState
 }
 
-// NewHandshake returns Handshake for X25519Key sender and recipient.
+// NewHandshake returns a Handshake for X25519Key sender and recipient.
 //
 // The cipher suite used is:
 // Curve25519 ECDH, ChaCha20-Poly1305 AEAD, BLAKE2b hash.
@@ -42,7 +42,7 @@ type Handshake struct {
 // (3) Initiator: Read
 // (4) Responder: Write
 //
-// Then handshake is complete (HandshakeComplete) and you will be able to Encrypt and Decrypt.
+// When the handshake is complete, use the Cipher to Encrypt/Decrypt.
 //
 func NewHandshake(sender *keys.X25519Key, recipient *keys.X25519PublicKey, initiator bool) (*Handshake, error) {
 	dhKey := noise.DHKey{
