@@ -1,7 +1,9 @@
 # Keyring
 
+Securely store secrets.
+
 This package provides a cross platform keyring using system APIs (macOS/keychain,
-Windows/wincred, Linux/SecretService), protected by a password derived key.
+Windows/wincred, Linux/SecretService) or filesystem, protected by a password derived key.
 
 For more details visit **[keys.pub](https://keys.pub)**.
 
