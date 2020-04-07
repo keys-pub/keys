@@ -2,9 +2,7 @@ package saltpack_test
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -37,61 +35,6 @@ func TestSignVerify(t *testing.T) {
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
-func ExampleSaltpack_Sign() {
-	sp := saltpack.NewSaltpack(nil)
-
-	alice := keys.GenerateEdX25519Key()
-
-	message := []byte("hi from alice")
-
-	sig, err := sp.SignArmored(message, alice)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%d", len(sig))
-	// Output: 376
-}
-
-func ExampleSaltpack_SignDetached() {
-	sp := saltpack.NewSaltpack(nil)
-
-	alice := keys.GenerateEdX25519Key()
-
-	message := []byte("hi from alice")
-
-	sig, err := sp.SignArmoredDetached(message, alice)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%d", len(sig))
-	// Output: 263
-}
-
-func ExampleSaltpack_Verify() {
-	sp := saltpack.NewSaltpack(nil)
-
-	alice := keys.GenerateEdX25519Key()
-
-	message := []byte("hi from alice")
-
-	sig, err := sp.SignArmored(message, alice)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	out, signer, err := sp.VerifyArmored(sig)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if signer == alice.ID() {
-		fmt.Printf("Signer is alice\n")
-	}
-	fmt.Printf("%s\n", string(out))
-	// Output:
-	// Signer is alice
-	// hi from alice
-}
-
 func TestSignVerifyArmored(t *testing.T) {
 	sp := saltpack.NewSaltpack(nil)
 	alice := keys.GenerateEdX25519Key()
@@ -106,6 +49,7 @@ func TestSignVerifyArmored(t *testing.T) {
 	require.Equal(t, message, messageOut)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
+
 func TestSignVerifyStream(t *testing.T) {
 	sp := saltpack.NewSaltpack(nil)
 	alice := keys.GenerateEdX25519Key()
