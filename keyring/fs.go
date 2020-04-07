@@ -17,7 +17,7 @@ func NewFS(service string, dir string) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
-	fs, err := NewFSStore(dir)
+	fs, err := FS(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -28,8 +28,8 @@ func NewFS(service string, dir string) (Keyring, error) {
 	return kr, nil
 }
 
-// NewFSStore returns keyring.Store backed by the filesystem.
-func NewFSStore(dir string) (Store, error) {
+// FS returns keyring.Store backed by the filesystem.
+func FS(dir string) (Store, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}

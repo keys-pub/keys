@@ -177,6 +177,12 @@ func salt(st Store, service string) ([]byte, error) {
 }
 
 // NewKeyring creates a new Keyring with backing Store.
+//
+// Use keyring.System() for the default system Store.
+// On macOS this is the Keychain, on Windows wincred and linux SecretService.
+//
+// On other environments, you can use a filesystem backed Store by specifying
+// keyring.FS(dir).
 func NewKeyring(service string, st Store) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
