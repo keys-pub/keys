@@ -3,6 +3,7 @@ package keyring
 import (
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -38,6 +39,14 @@ func FS(dir string) (Store, error) {
 
 type fs struct {
 	dir string
+}
+
+func defaultFSDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, ".keyring"), nil
 }
 
 func (k fs) Get(service string, id string) ([]byte, error) {

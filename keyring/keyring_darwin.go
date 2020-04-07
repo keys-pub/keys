@@ -11,7 +11,7 @@ import (
 type sys struct{}
 
 // System returns keyring store for darwin.
-func System() Store {
+func system() Store {
 	return sys{}
 }
 

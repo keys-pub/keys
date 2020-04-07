@@ -8,7 +8,7 @@ import (
 )
 
 // System returns keyring store for windows.
-func System() Store {
+func system() Store {
 	return sys{}
 }
 

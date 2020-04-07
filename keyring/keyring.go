@@ -2,6 +2,8 @@ package keyring
 
 import (
 	"crypto/subtle"
+	"os/exec"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -76,6 +78,31 @@ type Store interface {
 	List(service string, key SecretKey, opts *ListOpts) ([]*Item, error)
 	Exists(service string, id string) (bool, error)
 	Reset(service string) error
+}
+
+// System returns system keyring store.
+func System() Store {
+	return system()
+}
+
+// System returns system keyring store or FS if unavailable.
+// On linux, if dbus is not available, uses the filesystem at ~/.keyring.
+func SystemOrFS() Store {
+	if runtime.GOOS == "linux" {
+		path, err := exec.LookPath("dbus-launch")
+		if err != nil || path == "" {
+			dir, err := defaultFSDir()
+			if err != nil {
+				panic(err)
+			}
+			fs, err := FS(dir)
+			if err != nil {
+				panic(err)
+			}
+			return fs
+		}
+	}
+	return system()
 }
 
 // UnlockWithPassword unlocks a Keyring with a password.

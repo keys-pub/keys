@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleNewKeyring() {
-	kr, err := keyring.NewKeyring("AppName", keyring.System())
+	kr, err := keyring.NewKeyring("AppName", keyring.SystemOrFS())
 	if err != nil {
 		log.Fatal(err)
 	}

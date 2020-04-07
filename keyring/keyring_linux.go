@@ -72,7 +72,7 @@ func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opt
 }
 
 // System returns keyring store for linux.
-func System() Store {
+func system() Store {
 	return sys{}
 }
 

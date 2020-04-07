@@ -3,27 +3,14 @@ package keyring_test
 import (
 	"bytes"
 	"crypto/rand"
-	"os/exec"
-	"runtime"
 	"testing"
 
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
-func testStore(t *testing.T) keyring.Store {
-	if runtime.GOOS == "linux" {
-		path, err := exec.LookPath("dbus-launch")
-		if err != nil || path == "" {
-			t.Skip()
-			return nil
-		}
-	}
-	return keyring.System()
-}
-
 func TestKeyring(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", testStore(t))
+	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -126,7 +113,7 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestReset(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", testStore(t))
+	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -174,7 +161,7 @@ func testReset(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestUnlock(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", testStore(t))
+	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testUnlock(t, kr)
@@ -209,7 +196,7 @@ func testUnlock(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestSetErrors(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", testStore(t))
+	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
@@ -221,7 +208,7 @@ func TestSetErrors(t *testing.T) {
 }
 
 func TestReserved(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", testStore(t))
+	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testReserved(t, kr)
