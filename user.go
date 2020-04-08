@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/services"
+	"github.com/keys-pub/keys/link"
 	"github.com/pkg/errors"
 )
 
@@ -108,7 +108,7 @@ func (u *User) UnmarshalJSON(b []byte) error {
 
 // NewUser returns User used in a signing statement.
 func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string, seq int) (*User, error) {
-	svc, err := services.NewService(service)
+	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string,
 	return user, nil
 }
 
-func newUser(ust *UserStore, kid ID, service services.Service, name string, rawurl string) (*User, error) {
+func newUser(ust *UserStore, kid ID, service link.Service, name string, rawurl string) (*User, error) {
 	name = service.NormalizeUsername(name)
 	url, err := normalizeURL(rawurl)
 	if err != nil {
@@ -144,7 +144,7 @@ func newUser(ust *UserStore, kid ID, service services.Service, name string, rawu
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
 func NewUserForSigning(ust *UserStore, kid ID, service string, name string) (*User, error) {
-	svc, err := services.NewService(service)
+	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-func (u *UserStore) validateServiceAndName(service services.Service, name string) error {
+func (u *UserStore) validateServiceAndName(service link.Service, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
@@ -175,7 +175,7 @@ func (u *UserStore) validateServiceAndName(service services.Service, name string
 }
 
 func (u *UserStore) validate(user *User) error {
-	service, err := services.NewService(user.Service)
+	service, err := link.NewService(user.Service)
 	if err != nil {
 		return err
 	}

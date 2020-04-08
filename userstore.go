@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/services"
+	"github.com/keys-pub/keys/link"
 	"github.com/pkg/errors"
 )
 
@@ -144,7 +144,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, kid ID
 		return
 	}
 
-	service, err := services.NewService(result.User.Service)
+	service, err := link.NewService(result.User.Service)
 	if err != nil {
 		result.Err = err.Error()
 		result.Status = UserStatusFailure
