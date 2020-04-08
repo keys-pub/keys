@@ -363,8 +363,12 @@ func (k *Keystore) SaveKey(key Key) error {
 		return k.SaveEdX25519Key(v)
 	case *X25519Key:
 		return k.SaveX25519Key(v)
+	case *EdX25519PublicKey:
+		return k.SaveEdX25519PublicKey(v)
+	case *X25519PublicKey:
+		return k.SaveX25519PublicKey(v)
 	default:
-		return errors.Errorf("unsupported key")
+		return errors.Errorf("failed to save key: unsupported key type")
 	}
 }
 

@@ -130,3 +130,20 @@ func (i ID) PublicKeyType() KeyType {
 	}
 	return ""
 }
+
+// Key is the public key from an ID.
+func (i ID) Key() (Key, error) {
+	hrp, b, err := i.Decode()
+	if err != nil {
+		return nil, err
+	}
+	switch hrp {
+	case edx25519KeyHRP:
+		return NewEdX25519PublicKey(Bytes32(b)), nil
+	case x25519KeyHRP:
+		return NewX25519PublicKey(Bytes32(b)), nil
+	default:
+		return nil, errors.Errorf("unsupported id key type")
+	}
+
+}
