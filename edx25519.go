@@ -52,7 +52,7 @@ func NewEdX25519KeyFromPrivateKey(privateKey *[ed25519.PrivateKeySize]byte) *EdX
 
 // X25519Key converts EdX25519Key to X25519Key.
 func (k *EdX25519Key) X25519Key() *X25519Key {
-	secretKey := ed25519PrivateKeyToX25519(ed25519.PrivateKey(k.privateKey[:]))
+	secretKey := ed25519PrivateKeyToCurve25519(ed25519.PrivateKey(k.privateKey[:]))
 	if len(secretKey) != 32 {
 		panic("failed to convert key: invalid secret key bytes")
 	}
@@ -167,7 +167,7 @@ func (s EdX25519PublicKey) Bytes32() *[32]byte {
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.
 func (s EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 	edpk := ed25519.PublicKey(s.publicKey[:])
-	bpk := ed25519PublicKeyToX25519(edpk)
+	bpk := ed25519PublicKeyToCurve25519(edpk)
 	if len(bpk) != 32 {
 		panic("unable to convert key: invalid public key bytes")
 	}

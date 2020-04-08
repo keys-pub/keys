@@ -16,7 +16,7 @@ import (
 
 var x25519P, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819949", 10)
 
-func ed25519PublicKeyToX25519(pk ed25519.PublicKey) []byte {
+func ed25519PublicKeyToCurve25519(pk ed25519.PublicKey) []byte {
 	// ed25519.PublicKey is a little endian representation of the y-coordinate,
 	// with the most significant bit set based on the sign of the x-coordinate.
 	bigEndianY := make([]byte, ed25519.PublicKeySize)
@@ -45,7 +45,7 @@ func ed25519PublicKeyToX25519(pk ed25519.PublicKey) []byte {
 	return out
 }
 
-func ed25519PrivateKeyToX25519(pk ed25519.PrivateKey) []byte {
+func ed25519PrivateKeyToCurve25519(pk ed25519.PrivateKey) []byte {
 	h := sha512.New()
 	if _, err := h.Write(pk.Seed()); err != nil {
 		panic(err)
