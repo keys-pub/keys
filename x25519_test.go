@@ -14,7 +14,7 @@ func TestNewX25519KeyFromPrivateKey(t *testing.T) {
 	X25519KeyOut := keys.NewX25519KeyFromPrivateKey(X25519Key.PrivateKey())
 
 	require.Equal(t, X25519Key.PrivateKey(), X25519KeyOut.PrivateKey())
-	require.Equal(t, X25519Key.PublicKey(), X25519KeyOut.PublicKey())
+	require.Equal(t, X25519Key.PublicKey().Bytes(), X25519KeyOut.PublicKey().Bytes())
 }
 
 func TestX25519KeyConversion(t *testing.T) {

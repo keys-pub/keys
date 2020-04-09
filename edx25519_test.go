@@ -18,7 +18,7 @@ func TestSaveLoadEdX25519Key(t *testing.T) {
 	signKeyOut, err := ks.EdX25519Key(signKey.ID())
 	require.NoError(t, err)
 	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
-	require.Equal(t, signKey.PublicKey(), signKeyOut.PublicKey())
+	require.Equal(t, signKey.PublicKey().Bytes(), signKeyOut.PublicKey().Bytes())
 }
 
 func TestEdX25519KeySeed(t *testing.T) {

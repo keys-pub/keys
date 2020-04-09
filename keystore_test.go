@@ -9,15 +9,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEdX25519KeyItem(t *testing.T) {
+func TestEdX25519Key(t *testing.T) {
+	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
+
 	ks := keys.NewMemKeystore()
 	sk := keys.GenerateEdX25519Key()
+	sk.Metadata().Notes = "test notes"
+
 	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
 	skOut, err := ks.EdX25519Key(sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.PrivateKey()[:], skOut.PrivateKey()[:])
 	require.Equal(t, sk.PublicKey().Bytes()[:], skOut.PublicKey().Bytes()[:])
+	require.Equal(t, "test notes", skOut.Metadata().Notes)
 
 	sks, err := ks.EdX25519Keys()
 	require.NoError(t, err)
@@ -27,6 +32,18 @@ func TestEdX25519KeyItem(t *testing.T) {
 	spkOut, err := ks.EdX25519PublicKey(sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Bytes()[:], spkOut.Bytes()[:])
+
+	// Update metadata and save
+	skOut.Metadata().Notes = "test notes #2"
+	// updatedAt := skOut.Metadata().UpdatedAt.Add(time.Second)
+	// skOut.Metadata().UpdatedAt = updatedAt
+	err = ks.SaveEdX25519Key(skOut)
+	require.NoError(t, err)
+	skOut2, err := ks.EdX25519Key(sk.ID())
+	require.NoError(t, err)
+	require.Equal(t, "test notes #2", skOut2.Metadata().Notes)
+	require.Equal(t, skOut.Metadata().CreatedAt, skOut2.Metadata().CreatedAt)
+	// require.Equal(t, updatedAt, skOut2.Metadata().UpdatedAt)
 
 	err = ks.SaveEdX25519PublicKey(sk.PublicKey())
 	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")
@@ -39,7 +56,7 @@ func TestEdX25519KeyItem(t *testing.T) {
 	require.Nil(t, skOut)
 }
 
-func TestEdX25519PublicKeyItem(t *testing.T) {
+func TestEdX25519PublicKey(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	spk := keys.GenerateEdX25519Key().PublicKey()
 	err := ks.SaveEdX25519PublicKey(spk)
@@ -73,7 +90,7 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 	require.Equal(t, spk.Bytes(), spkConv2.Bytes())
 }
 
-func TestX25519KeyItem(t *testing.T) {
+func TestX25519Key(t *testing.T) {
 	ks := keys.NewMemKeystore()
 	bk := keys.GenerateX25519Key()
 	err := ks.SaveX25519Key(bk)
@@ -112,12 +129,6 @@ func TestKeystoreList(t *testing.T) {
 
 	bk2 := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
 	err = ks.SaveX25519PublicKey(bk2.PublicKey())
-	require.NoError(t, err)
-
-	// Put passphrase in keyring to ensure it doesn't confuse us
-	kr, err := ks.Keyring()
-	require.NoError(t, err)
-	err = kr.Set(keys.NewPassphraseItem("passphrase1", "password"))
 	require.NoError(t, err)
 
 	out, err := ks.Keys(nil)

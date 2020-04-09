@@ -1,6 +1,8 @@
 package keys
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/nacl/sign"
@@ -10,6 +12,7 @@ import (
 type EdX25519PublicKey struct {
 	id        ID
 	publicKey *[ed25519.PublicKeySize]byte
+	metadata  *Metadata
 }
 
 // EdX25519 key.
@@ -43,10 +46,7 @@ func NewEdX25519KeyFromPrivateKey(privateKey *[ed25519.PrivateKeySize]byte) *EdX
 
 	return &EdX25519Key{
 		privateKey: &privateKeyBytes,
-		publicKey: &EdX25519PublicKey{
-			id:        MustID(edx25519KeyHRP, publicKeyBytes[:]),
-			publicKey: &publicKeyBytes,
-		},
+		publicKey:  NewEdX25519PublicKey(&publicKeyBytes),
 	}
 }
 
@@ -74,16 +74,23 @@ func (k EdX25519Key) Bytes() []byte {
 	return k.privateKey[:]
 }
 
+// Metadata for key.
+func (k EdX25519Key) Metadata() *Metadata {
+	return k.publicKey.metadata
+}
+
 // Bytes64 for key.
 func (k EdX25519Key) Bytes64() *[64]byte {
 	return k.privateKey
 }
 
 // NewEdX25519PublicKey creates a EdX25519PublicKey.
+// Metadata is optional.
 func NewEdX25519PublicKey(b *[ed25519.PublicKeySize]byte) *EdX25519PublicKey {
 	return &EdX25519PublicKey{
 		id:        MustID(edx25519KeyHRP, b[:]),
 		publicKey: b,
+		metadata:  &Metadata{},
 	}
 }
 
@@ -164,6 +171,11 @@ func (s EdX25519PublicKey) Bytes32() *[32]byte {
 	return s.publicKey
 }
 
+// Metadata for key.
+func (k EdX25519PublicKey) Metadata() *Metadata {
+	return k.metadata
+}
+
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.
 func (s EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 	edpk := ed25519.PublicKey(s.publicKey[:])
@@ -171,7 +183,10 @@ func (s EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 	if len(bpk) != 32 {
 		panic("unable to convert key: invalid public key bytes")
 	}
-	return NewX25519PublicKey(Bytes32(bpk))
+	key := NewX25519PublicKey(Bytes32(bpk))
+	// TODO: Copy metadata?
+	// key.metadata = s.metadata
+	return key
 }
 
 // Verify verifies a message and signature with public key.
@@ -250,5 +265,8 @@ func SignDetached(b []byte, sk *EdX25519Key) []byte {
 func GenerateEdX25519Key() *EdX25519Key {
 	logger.Infof("Generating EdX25519 key...")
 	seed := Rand32()
-	return NewEdX25519KeyFromSeed(seed)
+	key := NewEdX25519KeyFromSeed(seed)
+	key.Metadata().CreatedAt = time.Now()
+	// key.Metadata().UpdatedAt = time.Now()
+	return key
 }

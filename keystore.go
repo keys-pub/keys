@@ -7,27 +7,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: Rename to KeyStore?
+
 // Keystore can saves to the keyring.
 type Keystore struct {
 	kr keyring.Keyring
 }
-
-// ErrNoKeyring if no keyring is set.
-var ErrNoKeyring = errors.New("no keyring set")
 
 // NewKeystore constructs a Keystore.
 func NewKeystore(kr keyring.Keyring) *Keystore {
 	return &Keystore{
 		kr: kr,
 	}
-}
-
-// Keyring for Keystore.
-func (k *Keystore) Keyring() (keyring.Keyring, error) {
-	if k.kr == nil {
-		return nil, ErrNoKeyring
-	}
-	return k.kr, nil
 }
 
 // NewMemKeystore returns Keystore backed by an in memory keyring.
@@ -38,17 +29,11 @@ func NewMemKeystore() *Keystore {
 
 // get returns a keyring Item for an id.
 func (k *Keystore) get(id string) (*keyring.Item, error) {
-	if k.kr == nil {
-		return nil, ErrNoKeyring
-	}
 	return k.kr.Get(id)
 }
 
 // set an item in the keyring.
 func (k *Keystore) set(item *keyring.Item) error {
-	if k.kr == nil {
-		return ErrNoKeyring
-	}
 	return k.kr.Set(item)
 }
 
@@ -93,30 +78,6 @@ func (k *Keystore) X25519Key(kid ID) (*X25519Key, error) {
 	return AsX25519Key(item)
 }
 
-// SavePublicKey saves a public key from a key identifier.
-func (k *Keystore) SavePublicKey(kid ID) error {
-	hrp, b, err := kid.Decode()
-	if err != nil {
-		return err
-	}
-	switch hrp {
-	case x25519KeyHRP:
-		if len(b) != 32 {
-			return errors.Errorf("invalid id public key bytes")
-		}
-		bpk := NewX25519PublicKey(Bytes32(b))
-		return k.SaveX25519PublicKey(bpk)
-	case edx25519KeyHRP:
-		if len(b) != 32 {
-			return errors.Errorf("invalid id public key bytes")
-		}
-		spk := NewEdX25519PublicKey(Bytes32(b))
-		return k.SaveEdX25519PublicKey(spk)
-	default:
-		return errors.Errorf("unrecognized key type")
-	}
-}
-
 // SaveEdX25519Key saves a EdX25519Key to the Keystore.
 func (k *Keystore) SaveEdX25519Key(signKey *EdX25519Key) error {
 	return k.set(NewEdX25519KeyItem(signKey))
@@ -133,6 +94,15 @@ func (k *Keystore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
 	}
 	return k.set(NewEdX25519PublicKeyItem(spk))
+}
+
+// SavePublicKey saves a public key from a key identifier.
+func (k *Keystore) SavePublicKey(kid ID) error {
+	key, err := kid.Key()
+	if err != nil {
+		return err
+	}
+	return k.SaveKey(key)
 }
 
 // SaveX25519Key saves a X25519Key to the Keystore.
@@ -159,11 +129,7 @@ func (k *Keystore) Delete(kid ID) (bool, error) {
 		return false, errors.Errorf("failed to delete in keystore: empty id specified")
 	}
 	logger.Infof("Keystore deleting: %s", kid)
-	kr, err := k.Keyring()
-	if err != nil {
-		return false, err
-	}
-	return kr.Delete(kid.String())
+	return k.kr.Delete(kid.String())
 }
 
 // Key for id.
@@ -206,15 +172,11 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 		opts = &Opts{}
 	}
 	logger.Debugf("Keys %+v", opts)
-	itemTypes := make([]string, 0, len(opts.Types)*2)
+	itemTypes := make([]string, 0, len(opts.Types))
 	for _, t := range opts.Types {
 		itemTypes = append(itemTypes, string(t))
 	}
-	kr, err := k.Keyring()
-	if err != nil {
-		return nil, err
-	}
-	items, err := kr.List(&keyring.ListOpts{Types: itemTypes})
+	items, err := k.kr.List(&keyring.ListOpts{Types: itemTypes})
 	if err != nil {
 		return nil, err
 	}
@@ -237,12 +199,8 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 // X25519Keys from the Keystore.
 // Also includes edx25519 keys converted to x25519 keys.
 func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
-	logger.Debugf("Loading x25519 keys...")
-	kr, err := k.Keyring()
-	if err != nil {
-		return nil, err
-	}
-	items, err := kr.List(&keyring.ListOpts{
+	logger.Debugf("Listing x25519 keys...")
+	items, err := k.kr.List(&keyring.ListOpts{
 		Types: []string{string(X25519), string(EdX25519)},
 	})
 	if err != nil {
@@ -262,11 +220,7 @@ func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
 
 // EdX25519Keys from the Keystore.
 func (k Keystore) EdX25519Keys() ([]*EdX25519Key, error) {
-	kr, err := k.Keyring()
-	if err != nil {
-		return nil, err
-	}
-	items, err := kr.List(&keyring.ListOpts{
+	items, err := k.kr.List(&keyring.ListOpts{
 		Types: []string{string(EdX25519)},
 	})
 	if err != nil {
@@ -286,11 +240,7 @@ func (k Keystore) EdX25519Keys() ([]*EdX25519Key, error) {
 // EdX25519PublicKeys from the Keystore.
 // Includes public keys of EdX25519Key's.
 func (k Keystore) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
-	kr, err := k.Keyring()
-	if err != nil {
-		return nil, err
-	}
-	items, err := kr.List(&keyring.ListOpts{
+	items, err := k.kr.List(&keyring.ListOpts{
 		Types: []string{
 			string(EdX25519),
 			string(EdX25519Public),
