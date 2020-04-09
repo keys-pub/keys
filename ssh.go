@@ -4,6 +4,9 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+// From:
+// https://github.com/FiloSottile/age/blob/master/internal/age/ssh.go
+
 package keys
 
 import (
@@ -17,15 +20,6 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
-
-// func SSHFingerprint(pk ssh.PublicKey) string {
-// 	h := sha256.New()
-// 	if _, err := h.Write(pk.Marshal()); err != nil {
-// 		panic(err)
-// 	}
-// 	hh := h.Sum(nil)
-// 	return encoding.MustEncode(hh[:4], encoding.Base64)
-// }
 
 func ParseSSHPublicKey(s string) (*EdX25519PublicKey, error) {
 	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(s))
