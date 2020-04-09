@@ -9,7 +9,7 @@ import (
 
 // TODO: Rename to KeyStore?
 
-// Keystore can saves to the keyring.
+// Keystore saves keys to the keyring.
 type Keystore struct {
 	kr keyring.Keyring
 }
@@ -25,6 +25,11 @@ func NewKeystore(kr keyring.Keyring) *Keystore {
 // This is useful for testing or ephemeral key stores.
 func NewMemKeystore() *Keystore {
 	return NewKeystore(keyring.NewMem())
+}
+
+func (k *Keystore) Keyring() keyring.Keyring {
+	return k.kr
+
 }
 
 // get returns a keyring Item for an id.
