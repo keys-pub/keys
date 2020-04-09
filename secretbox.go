@@ -9,23 +9,23 @@ import (
 )
 
 // SecretBoxSeal encrypt using SecretKey.
-func SecretBoxSeal(b []byte, secretKey SecretKey) []byte {
+func SecretBoxSeal(b []byte, secretKey *[32]byte) []byte {
 	nonce := Rand24()
 	return sealSecretBox(b, nonce, secretKey)
 }
 
-func sealSecretBox(b []byte, nonce *[24]byte, secretKey SecretKey) []byte {
+func sealSecretBox(b []byte, nonce *[24]byte, secretKey *[32]byte) []byte {
 	encrypted := secretbox.Seal(nil, b, nonce, secretKey)
 	encrypted = append(nonce[:], encrypted...)
 	return encrypted
 }
 
 // SecretBoxOpen decrypt using SecretKey.
-func SecretBoxOpen(encrypted []byte, secretKey SecretKey) ([]byte, error) {
+func SecretBoxOpen(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
 	return openSecretBox(encrypted, secretKey)
 }
 
-func openSecretBox(encrypted []byte, secretKey SecretKey) ([]byte, error) {
+func openSecretBox(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
 	if len(encrypted) < 24 {
 		return nil, errors.Errorf("not enough bytes")
 	}
@@ -45,7 +45,7 @@ func openSecretBox(encrypted []byte, secretKey SecretKey) ([]byte, error) {
 func EncryptWithPassword(b []byte, password string) []byte {
 	salt := Rand16()
 	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
-	encrypted := SecretBoxSeal(b, SecretKey(Bytes32(key)))
+	encrypted := SecretBoxSeal(b, Bytes32(key))
 	return bytesJoin(salt[:], encrypted)
 }
 
@@ -57,7 +57,7 @@ func DecryptWithPassword(encrypted []byte, password string) ([]byte, error) {
 	salt := encrypted[0:16]
 	b := encrypted[16:]
 	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
-	out, err := SecretBoxOpen(b, SecretKey(Bytes32(key)))
+	out, err := SecretBoxOpen(b, Bytes32(key))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to decrypt with a password")
 	}

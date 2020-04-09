@@ -21,14 +21,6 @@ func RandBytes(length int) []byte {
 	return buf
 }
 
-// RandKey generates a random secret key.
-func RandKey() SecretKey {
-	b := RandBytes(SecretKeySize)
-	var ba [SecretKeySize]byte
-	copy(ba[:], b[:SecretKeySize])
-	return &ba
-}
-
 // RandPhrase creates random phrase (bip39 encoded random 32 bytes).
 func RandPhrase() string {
 	b := RandBytes(32)

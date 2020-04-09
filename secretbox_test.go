@@ -9,7 +9,7 @@ import (
 )
 
 func TestSecretBox(t *testing.T) {
-	sk := keys.GenerateSecretKey()
+	sk := keys.Rand32()
 	b := []byte{0x01, 0x02, 0x03}
 	encrypted := keys.SecretBoxSeal(b, sk)
 	out, err := keys.SecretBoxOpen(encrypted, sk)
