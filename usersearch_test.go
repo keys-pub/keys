@@ -187,9 +187,16 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].UserResult)
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), results[0].UserResult.User.KID)
 	require.Equal(t, keys.UserStatusConnFailure, results[0].UserResult.Status)
 	require.Equal(t, keys.TimeMs(1234567890007), results[0].UserResult.Timestamp)
 	require.Equal(t, keys.TimeMs(1234567890004), results[0].UserResult.VerifiedAt)
+
+	// List by status
+	fail, err := ust.Status(ctx, keys.UserStatusConnFailure)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(fail))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
 	req.SetError("https://gist.github.com/alice/1", keys.ErrHTTP{StatusCode: 404})

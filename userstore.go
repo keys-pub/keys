@@ -358,6 +358,37 @@ func indexName(user *User) string {
 	return fmt.Sprintf("%s@%s", user.Name, user.Service)
 }
 
+// Status returns KIDs that match a status.
+func (u *UserStore) Status(ctx context.Context, st UserStatus) ([]ID, error) {
+	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
+	if err != nil {
+		return nil, err
+	}
+	kids := make([]ID, 0, 100)
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			return nil, err
+		}
+		if doc == nil {
+			break
+		}
+		var keyDoc keyDocument
+		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+			return nil, err
+		}
+		if keyDoc.UserResult != nil {
+			if keyDoc.UserResult.Status == st {
+				kids = append(kids, keyDoc.UserResult.User.KID)
+				break
+			}
+		}
+	}
+	iter.Release()
+
+	return kids, nil
+}
+
 // Expired returns KIDs that haven't been checked in a duration.
 func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error) {
 	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
@@ -379,6 +410,7 @@ func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error)
 		}
 		if keyDoc.UserResult != nil {
 			ts := TimeFromMillis(keyDoc.UserResult.Timestamp)
+
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.UserResult.User.KID)
 				break
