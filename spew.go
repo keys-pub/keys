@@ -93,7 +93,7 @@ func SpewOut(iter DocumentIterator, opts *SpewOpts, out io.Writer) error {
 			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", value))); err != nil {
 				return err
 			}
-			if _, err := out.Write([]byte(fmt.Sprintf("\n"))); err != nil {
+			if _, err := out.Write([]byte("\n")); err != nil {
 				return err
 			}
 		}
