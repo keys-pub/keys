@@ -8,7 +8,8 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
-// SecretBoxSeal encrypt using SecretKey.
+// SecretBoxSeal encrypts using a key.
+// It prepends the nonce the the encrypted bytes.
 func SecretBoxSeal(b []byte, secretKey *[32]byte) []byte {
 	nonce := Rand24()
 	return sealSecretBox(b, nonce, secretKey)
@@ -20,7 +21,8 @@ func sealSecretBox(b []byte, nonce *[24]byte, secretKey *[32]byte) []byte {
 	return encrypted
 }
 
-// SecretBoxOpen decrypt using SecretKey.
+// SecretBoxOpen decrypt using a key.
+// It assumes a 24 byte nonce before the encrypted bytes.
 func SecretBoxOpen(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
 	return openSecretBox(encrypted, secretKey)
 }
