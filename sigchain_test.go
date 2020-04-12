@@ -143,63 +143,6 @@ func TestSigchainJSON(t *testing.T) {
 	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
 }
 
-func TestSigchainUsers(t *testing.T) {
-	clock := newClock()
-	req := keys.NewMockRequestor()
-	dst := keys.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust := testUserStore(t, dst, scs, req, clock)
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
-
-	sc := keys.NewSigchain(alice.ID())
-	require.Equal(t, 0, sc.Length())
-
-	user, err := sc.User()
-	require.NoError(t, err)
-	require.Nil(t, user)
-
-	user, err = keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
-	require.NoError(t, err)
-	st, err := keys.NewUserSigchainStatement(sc, user, alice, clock.Now())
-	require.NoError(t, err)
-	err = sc.Add(st)
-	require.NoError(t, err)
-
-	user, err = sc.User()
-	require.NoError(t, err)
-	require.NotNil(t, user)
-	require.Equal(t, "alice", user.Name)
-	require.Equal(t, "github", user.Service)
-	require.Equal(t, "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", user.URL)
-	require.Equal(t, 1, user.Seq)
-
-	_, err = sc.Revoke(1, alice)
-	require.NoError(t, err)
-	user, err = sc.User()
-	require.NoError(t, err)
-	require.Nil(t, user)
-
-	user2, err := keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
-	require.NoError(t, err)
-	_, err = keys.NewUserSigchainStatement(sc, user2, alice, clock.Now())
-	require.EqualError(t, err, "user seq mismatch")
-
-	user2, err = keys.NewUser(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
-	require.NoError(t, err)
-	st2, err := keys.NewUserSigchainStatement(sc, user2, alice, clock.Now())
-	require.NoError(t, err)
-	err = sc.Add(st2)
-	require.NoError(t, err)
-
-	user, err = sc.User()
-	require.NoError(t, err)
-	require.NotNil(t, user)
-	require.Equal(t, "alice", user.Name)
-	require.Equal(t, "github", user.Service)
-	require.Equal(t, "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", user.URL)
-	require.Equal(t, 3, user.Seq)
-}
-
 func ExampleNewSigchain() {
 	clock := newClock()
 	alice := keys.GenerateEdX25519Key()

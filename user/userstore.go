@@ -1,4 +1,4 @@
-package keys
+package user
 
 import (
 	"context"
@@ -7,49 +7,50 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/link"
 	"github.com/pkg/errors"
 )
 
-// UserResult is result of a user result.
-type UserResult struct {
-	Err        string     `json:"err,omitempty"`
-	Status     UserStatus `json:"status"`
-	Timestamp  TimeMs     `json:"ts"`
-	User       *User      `json:"user"`
-	VerifiedAt TimeMs     `json:"vts"`
+// Result is result of a user result.
+type Result struct {
+	Err        string      `json:"err,omitempty"`
+	Status     Status      `json:"status"`
+	Timestamp  keys.TimeMs `json:"ts"`
+	User       *User       `json:"user"`
+	VerifiedAt keys.TimeMs `json:"vts"`
 }
 
-func (r UserResult) String() string {
-	if r.Status == UserStatusOK {
+func (r Result) String() string {
+	if r.Status == StatusOK {
 		return fmt.Sprintf("%s:%s(%d)", r.Status, r.User, r.VerifiedAt)
 	}
 	return fmt.Sprintf("%s:%s;err=%s", r.Status, r.User, r.Err)
 }
 
 // Expired returns true if result is older than dt.
-func (r UserResult) Expired(now time.Time, dt time.Duration) bool {
-	ts := TimeFromMillis(r.Timestamp)
+func (r Result) Expired(now time.Time, dt time.Duration) bool {
+	ts := keys.TimeFromMillis(r.Timestamp)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
 type keyDocument struct {
-	KID        ID          `json:"kid"`
-	UserResult *UserResult `json:"result,omitempty"`
+	KID    keys.ID `json:"kid"`
+	Result *Result `json:"result,omitempty"`
 }
 
-// UserStore is the environment for user results.
-type UserStore struct {
-	dst   DocumentStore
-	scs   SigchainStore
-	req   Requestor
+// Store is the environment for user results.
+type Store struct {
+	dst   keys.DocumentStore
+	scs   keys.SigchainStore
+	req   keys.Requestor
 	nowFn func() time.Time
 }
 
-// NewUserStore creates UserStore.
-func NewUserStore(dst DocumentStore, scs SigchainStore, req Requestor, nowFn func() time.Time) (*UserStore, error) {
-	return &UserStore{
+// NewStore creates Store.
+func NewStore(dst keys.DocumentStore, scs keys.SigchainStore, req keys.Requestor, nowFn func() time.Time) (*Store, error) {
+	return &Store{
 		dst:   dst,
 		scs:   scs,
 		nowFn: nowFn,
@@ -58,17 +59,17 @@ func NewUserStore(dst DocumentStore, scs SigchainStore, req Requestor, nowFn fun
 }
 
 // Now returns current time.
-func (u *UserStore) Now() time.Time {
+func (u *Store) Now() time.Time {
 	return u.nowFn()
 }
 
 // Requestor ...
-func (u *UserStore) Requestor() Requestor {
+func (u *Store) Requestor() keys.Requestor {
 	return u.req
 }
 
 // Update index for sigchain KID.
-func (u *UserStore) Update(ctx context.Context, kid ID) (*UserResult, error) {
+func (u *Store) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
@@ -85,11 +86,11 @@ func (u *UserStore) Update(ctx context.Context, kid ID) (*UserResult, error) {
 	}
 
 	keyDoc := &keyDocument{
-		KID:        kid,
-		UserResult: result,
+		KID:    kid,
+		Result: result,
 	}
 
-	logger.Infof("Indexing %s: %+v", keyDoc.KID, keyDoc.UserResult)
+	logger.Infof("Indexing %s: %+v", keyDoc.KID, keyDoc.Result)
 	if err := u.index(ctx, keyDoc); err != nil {
 		return nil, err
 	}
@@ -98,12 +99,12 @@ func (u *UserStore) Update(ctx context.Context, kid ID) (*UserResult, error) {
 }
 
 // CheckSigchain looks for user in a Sigchain.
-func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResult, error) {
-	user, err := sc.User()
+func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
+	usr, err := ResolveSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
-	if user == nil {
+	if usr == nil {
 		return nil, nil
 	}
 	result, err := u.result(ctx, sc.KID())
@@ -111,8 +112,8 @@ func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResul
 		return nil, err
 	}
 	if result == nil {
-		result = &UserResult{
-			User: user,
+		result = &Result{
+			User: usr,
 		}
 	}
 
@@ -122,8 +123,8 @@ func (u *UserStore) CheckSigchain(ctx context.Context, sc *Sigchain) (*UserResul
 }
 
 // Check a user. Doesn't index result.
-func (u *UserStore) Check(ctx context.Context, user *User, kid ID) (*UserResult, error) {
-	res := &UserResult{
+func (u *Store) Check(ctx context.Context, user *User, kid keys.ID) (*Result, error) {
+	res := &Result{
 		User: user,
 	}
 	u.updateResult(ctx, res, kid)
@@ -131,7 +132,7 @@ func (u *UserStore) Check(ctx context.Context, user *User, kid ID) (*UserResult,
 }
 
 // updateResult updates the specified result.
-func (u *UserStore) updateResult(ctx context.Context, result *UserResult, kid ID) {
+func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 	if result == nil {
 		panic("no user result specified")
 	}
@@ -140,35 +141,35 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, kid ID
 	ur, err := url.Parse(result.User.URL)
 	if err != nil {
 		result.Err = err.Error()
-		result.Status = UserStatusFailure
+		result.Status = StatusFailure
 		return
 	}
 
 	service, err := link.NewService(result.User.Service)
 	if err != nil {
 		result.Err = err.Error()
-		result.Status = UserStatusFailure
+		result.Status = StatusFailure
 		return
 	}
 	ur, err = service.ValidateURL(result.User.Name, ur)
 	if err != nil {
 		result.Err = err.Error()
-		result.Status = UserStatusFailure
+		result.Status = StatusFailure
 		return
 	}
 
-	result.Timestamp = TimeToMillis(u.Now())
+	result.Timestamp = keys.TimeToMillis(u.Now())
 
 	logger.Infof("Requesting %s", ur)
 	body, err := u.req.RequestURL(ctx, ur)
 	if err != nil {
-		if errHTTP, ok := errors.Cause(err).(ErrHTTP); ok && errHTTP.StatusCode == 404 {
+		if errHTTP, ok := errors.Cause(err).(keys.ErrHTTP); ok && errHTTP.StatusCode == 404 {
 			result.Err = err.Error()
-			result.Status = UserStatusResourceNotFound
+			result.Status = StatusResourceNotFound
 			return
 		}
 		result.Err = err.Error()
-		result.Status = UserStatusConnFailure
+		result.Status = StatusConnFailure
 		return
 	}
 
@@ -176,7 +177,7 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, kid ID
 	if err != nil {
 		logger.Warningf("Failed to check content: %s", err)
 		result.Err = err.Error()
-		result.Status = UserStatusContentInvalid
+		result.Status = StatusContentInvalid
 		return
 	}
 
@@ -189,29 +190,29 @@ func (u *UserStore) updateResult(ctx context.Context, result *UserResult, kid ID
 
 	logger.Infof("Verified %s", result.User.KID)
 	result.Err = ""
-	result.Status = UserStatusOK
-	result.VerifiedAt = TimeToMillis(u.Now())
+	result.Status = StatusOK
+	result.VerifiedAt = keys.TimeToMillis(u.Now())
 }
 
 // VerifyContent checks content.
-func VerifyContent(b []byte, result *UserResult, kid ID) (UserStatus, error) {
+func VerifyContent(b []byte, result *Result, kid keys.ID) (Status, error) {
 	msg, _ := encoding.FindSaltpack(string(b), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
-		return UserStatusContentNotFound, errors.Errorf("user signed message content not found")
+		return StatusContentNotFound, errors.Errorf("user signed message content not found")
 	}
 
 	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
-	if _, err := VerifyUser(verifyMsg, kid, result.User); err != nil {
+	if _, err := Verify(verifyMsg, kid, result.User); err != nil {
 		logger.Warningf("Failed to verify statement: %s", err)
-		return UserStatusStatementInvalid, err
+		return StatusStatementInvalid, err
 	}
 
-	return UserStatusOK, nil
+	return StatusOK, nil
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.
-func (u *UserStore) ValidateStatement(st *Statement) error {
+func (u *Store) ValidateStatement(st *keys.Statement) error {
 	if st.Type != "user" {
 		return errors.Errorf("invalid user statement: %s != %s", st.Type, "user")
 	}
@@ -228,7 +229,7 @@ func (u *UserStore) ValidateStatement(st *Statement) error {
 // Get user result for KID.
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
-func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
+func (u *Store) Get(ctx context.Context, kid keys.ID) (*Result, error) {
 	res, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
@@ -236,13 +237,13 @@ func (u *UserStore) Get(ctx context.Context, kid ID) (*UserResult, error) {
 	if res == nil {
 		return nil, nil
 	}
-	return res.UserResult, nil
+	return res.Result, nil
 }
 
 // User result for user name@service.
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
-func (u *UserStore) User(ctx context.Context, user string) (*UserResult, error) {
+func (u *Store) User(ctx context.Context, user string) (*Result, error) {
 	res, err := u.get(ctx, indexUser, user)
 	if err != nil {
 		return nil, err
@@ -250,14 +251,14 @@ func (u *UserStore) User(ctx context.Context, user string) (*UserResult, error) 
 	if res == nil {
 		return nil, nil
 	}
-	return res.UserResult, nil
+	return res.Result, nil
 }
 
-func (u *UserStore) get(ctx context.Context, index string, val string) (*keyDocument, error) {
+func (u *Store) get(ctx context.Context, index string, val string) (*keyDocument, error) {
 	if val == "" {
 		return nil, errors.Errorf("empty value")
 	}
-	path := Path(index, val)
+	path := keys.Path(index, val)
 	doc, err := u.dst.Get(ctx, path)
 	if err != nil {
 		return nil, err
@@ -272,7 +273,7 @@ func (u *UserStore) get(ctx context.Context, index string, val string) (*keyDocu
 	return &keyDoc, nil
 }
 
-func (u *UserStore) result(ctx context.Context, kid ID) (*UserResult, error) {
+func (u *Store) result(ctx context.Context, kid keys.ID) (*Result, error) {
 	doc, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
@@ -280,12 +281,12 @@ func (u *UserStore) result(ctx context.Context, kid ID) (*UserResult, error) {
 	if doc == nil {
 		return nil, nil
 	}
-	return doc.UserResult, nil
+	return doc.Result, nil
 }
 
-func (u *UserStore) removeUser(ctx context.Context, user *User) error {
+func (u *Store) removeUser(ctx context.Context, user *User) error {
 	name := fmt.Sprintf("%s@%s", user.Name, user.Service)
-	namePath := Path(indexUser, name)
+	namePath := keys.Path(indexUser, name)
 	logger.Infof("Removing user %s: %s", user.KID, name)
 	if _, err := u.dst.Delete(ctx, namePath); err != nil {
 		return err
@@ -296,17 +297,17 @@ func (u *UserStore) removeUser(ctx context.Context, user *User) error {
 const indexKID = "kid"
 const indexUser = "user"
 
-func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
+func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	// Remove existing if different
 	existing, err := u.get(ctx, indexKID, keyDoc.KID.String())
 	if err != nil {
 		return err
 	}
-	if existing != nil && existing.UserResult != nil && existing.UserResult.User != nil {
-		if keyDoc.UserResult == nil || keyDoc.UserResult.User == nil ||
-			(existing.UserResult.User.Name != keyDoc.UserResult.User.Name &&
-				existing.UserResult.User.Service != keyDoc.UserResult.User.Service) {
-			if err := u.removeUser(ctx, existing.UserResult.User); err != nil {
+	if existing != nil && existing.Result != nil && existing.Result.User != nil {
+		if keyDoc.Result == nil || keyDoc.Result.User == nil ||
+			(existing.Result.User.Name != keyDoc.Result.User.Name &&
+				existing.Result.User.Service != keyDoc.Result.User.Service) {
+			if err := u.removeUser(ctx, existing.Result.User); err != nil {
 				return err
 			}
 		}
@@ -318,34 +319,34 @@ func (u *UserStore) index(ctx context.Context, keyDoc *keyDocument) error {
 	}
 	logger.Debugf("Data to index: %s", string(data))
 
-	kidPath := Path(indexKID, keyDoc.KID.String())
+	kidPath := keys.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
 	if err := u.dst.Set(ctx, kidPath, data); err != nil {
 		return err
 	}
 
-	if keyDoc.UserResult != nil {
+	if keyDoc.Result != nil {
 		index := false
-		if keyDoc.UserResult.VerifiedAt == 0 {
-			logger.Errorf("Never verified user result in indexing: %v", keyDoc.UserResult)
+		if keyDoc.Result.VerifiedAt == 0 {
+			logger.Errorf("Never verified user result in indexing: %v", keyDoc.Result)
 		} else {
-			switch keyDoc.UserResult.Status {
+			switch keyDoc.Result.Status {
 			// Index result if status ok, or a transient error
-			case UserStatusOK, UserStatusConnFailure:
+			case StatusOK, StatusConnFailure:
 				index = true
 			}
 		}
 
 		if index {
-			name := indexName(keyDoc.UserResult.User)
-			namePath := Path(indexUser, name)
-			logger.Infof("Indexing user result %s %s", namePath, keyDoc.UserResult.User.KID)
+			name := indexName(keyDoc.Result.User)
+			namePath := keys.Path(indexUser, name)
+			logger.Infof("Indexing user result %s %s", namePath, keyDoc.Result.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
 				return err
 			}
 		} else {
-			logger.Infof("Removing failed user %s", keyDoc.UserResult.User)
-			if err := u.removeUser(ctx, keyDoc.UserResult.User); err != nil {
+			logger.Infof("Removing failed user %s", keyDoc.Result.User)
+			if err := u.removeUser(ctx, keyDoc.Result.User); err != nil {
 				return err
 			}
 		}
@@ -359,12 +360,12 @@ func indexName(user *User) string {
 }
 
 // Status returns KIDs that match a status.
-func (u *UserStore) Status(ctx context.Context, st UserStatus) ([]ID, error) {
+func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
 	if err != nil {
 		return nil, err
 	}
-	kids := make([]ID, 0, 100)
+	kids := make([]keys.ID, 0, 100)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -377,9 +378,9 @@ func (u *UserStore) Status(ctx context.Context, st UserStatus) ([]ID, error) {
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		if keyDoc.UserResult != nil {
-			if keyDoc.UserResult.Status == st {
-				kids = append(kids, keyDoc.UserResult.User.KID)
+		if keyDoc.Result != nil {
+			if keyDoc.Result.Status == st {
+				kids = append(kids, keyDoc.Result.User.KID)
 				break
 			}
 		}
@@ -390,12 +391,12 @@ func (u *UserStore) Status(ctx context.Context, st UserStatus) ([]ID, error) {
 }
 
 // Expired returns KIDs that haven't been checked in a duration.
-func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error) {
+func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error) {
 	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
 	if err != nil {
 		return nil, err
 	}
-	kids := make([]ID, 0, 100)
+	kids := make([]keys.ID, 0, 100)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -408,11 +409,11 @@ func (u *UserStore) Expired(ctx context.Context, dt time.Duration) ([]ID, error)
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		if keyDoc.UserResult != nil {
-			ts := TimeFromMillis(keyDoc.UserResult.Timestamp)
+		if keyDoc.Result != nil {
+			ts := keys.TimeFromMillis(keyDoc.Result.Timestamp)
 
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
-				kids = append(kids, keyDoc.UserResult.User.KID)
+				kids = append(kids, keyDoc.Result.User.KID)
 				break
 			}
 		}

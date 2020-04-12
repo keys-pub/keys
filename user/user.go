@@ -1,4 +1,4 @@
-package keys
+package user
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/link"
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ import (
 // URL, signed into a sigchain at (KID, seq).
 type User struct {
 	Name    string
-	KID     ID
+	KID     keys.ID
 	Seq     int
 	Service string
 	URL     string
@@ -39,41 +40,41 @@ func (u User) MarshalJSON() ([]byte, error) {
 
 // Bytes is a serialized User.
 func (u User) Bytes() []byte {
-	mes := []MarshalValue{}
+	mes := []keys.MarshalValue{}
 
-	mes = append(mes, NewStringEntry("k", u.KID.String()))
-	mes = append(mes, NewStringEntry("n", u.Name))
+	mes = append(mes, keys.NewStringEntry("k", u.KID.String()))
+	mes = append(mes, keys.NewStringEntry("n", u.Name))
 
 	if u.Seq != 0 {
-		mes = append(mes, NewIntEntry("sq", u.Seq))
+		mes = append(mes, keys.NewIntEntry("sq", u.Seq))
 	}
-	mes = append(mes, NewStringEntry("sr", u.Service))
+	mes = append(mes, keys.NewStringEntry("sr", u.Service))
 	if u.URL != "" {
-		mes = append(mes, NewStringEntry("u", u.URL))
+		mes = append(mes, keys.NewStringEntry("u", u.URL))
 	}
-	return Marshal(mes)
+	return keys.Marshal(mes)
 }
 
-// UserStatus is the status of the user statement.
-type UserStatus string
+// Status is the status of the user statement.
+type Status string
 
 const (
-	// UserStatusOK if user was found and verified.
-	UserStatusOK UserStatus = "ok"
-	// UserStatusResourceNotFound if resource (URL) was not found.
-	UserStatusResourceNotFound UserStatus = "resource-not-found"
-	// UserStatusContentNotFound if resource was found, but message was missing.
-	UserStatusContentNotFound UserStatus = "content-not-found"
-	// UserStatusStatementInvalid if statement was found but was invalid.
-	UserStatusStatementInvalid UserStatus = "statement-invalid"
-	// UserStatusContentInvalid if statement was valid, but other data was invalid.
-	UserStatusContentInvalid UserStatus = "content-invalid"
-	// UserStatusConnFailure if there was a network connection failure.
-	UserStatusConnFailure UserStatus = "connection-fail"
-	// UserStatusFailure is any other failure.
-	UserStatusFailure UserStatus = "fail"
-	// UserStatusUnknown is unknown.
-	UserStatusUnknown UserStatus = "unknown"
+	// StatusOK if user was found and verified.
+	StatusOK Status = "ok"
+	// StatusResourceNotFound if resource (URL) was not found.
+	StatusResourceNotFound Status = "resource-not-found"
+	// StatusContentNotFound if resource was found, but message was missing.
+	StatusContentNotFound Status = "content-not-found"
+	// StatusStatementInvalid if statement was found but was invalid.
+	StatusStatementInvalid Status = "statement-invalid"
+	// StatusContentInvalid if statement was valid, but other data was invalid.
+	StatusContentInvalid Status = "content-invalid"
+	// StatusConnFailure if there was a network connection failure.
+	StatusConnFailure Status = "connection-fail"
+	// StatusFailure is any other failure.
+	StatusFailure Status = "fail"
+	// StatusUnknown is unknown.
+	StatusUnknown Status = "unknown"
 )
 
 // userFormat should stay ordered by JSON key names.
@@ -93,7 +94,7 @@ func (u *User) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	kid, err := ParseID(user.KID)
+	kid, err := keys.ParseID(user.KID)
 	if err != nil {
 		return err
 	}
@@ -107,43 +108,43 @@ func (u *User) UnmarshalJSON(b []byte) error {
 }
 
 // NewUser returns User used in a signing statement.
-func NewUser(ust *UserStore, kid ID, service string, name string, rawurl string, seq int) (*User, error) {
+func NewUser(ust *Store, kid keys.ID, service string, name string, rawurl string, seq int) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := newUser(ust, kid, svc, name, rawurl)
+	usr, err := newUser(ust, kid, svc, name, rawurl)
 	if err != nil {
 		return nil, err
 	}
 	if seq <= 0 {
 		return nil, errors.Errorf("invalid seq")
 	}
-	user.Seq = seq
-	return user, nil
+	usr.Seq = seq
+	return usr, nil
 }
 
-func newUser(ust *UserStore, kid ID, service link.Service, name string, rawurl string) (*User, error) {
+func newUser(ust *Store, kid keys.ID, service link.Service, name string, rawurl string) (*User, error) {
 	name = service.NormalizeUsername(name)
 	url, err := normalizeURL(rawurl)
 	if err != nil {
 		return nil, err
 	}
-	user := &User{
+	usr := &User{
 		KID:     kid,
 		Service: service.Name(),
 		Name:    name,
 		URL:     url,
 	}
-	if err := ust.validate(user); err != nil {
+	if err := ust.validate(usr); err != nil {
 		return nil, err
 	}
-	return user, nil
+	return usr, nil
 }
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
-func NewUserForSigning(ust *UserStore, kid ID, service string, name string) (*User, error) {
+func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
@@ -167,14 +168,14 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-func (u *UserStore) validateServiceAndName(service link.Service, name string) error {
+func (u *Store) validateServiceAndName(service link.Service, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
 	return service.ValidateUsername(name)
 }
 
-func (u *UserStore) validate(user *User) error {
+func (u *Store) validate(user *User) error {
 	service, err := link.NewService(user.Service)
 	if err != nil {
 		return err
@@ -199,12 +200,12 @@ var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
 // NewUserSigchainStatement for a user to add to a Sigchain.
 // Returns ErrUserAlreadySet is user already exists in the Sigchain.
-func NewUserSigchainStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time.Time) (*Statement, error) {
+func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, ts time.Time) (*keys.Statement, error) {
 	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}
 	// Check if we have an existing user set.
-	existing, err := sc.User()
+	existing, err := ResolveSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +217,7 @@ func NewUserSigchainStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time
 	if err != nil {
 		return nil, err
 	}
-	st, err := NewSigchainStatement(sc, b, sk, "user", ts)
+	st, err := keys.NewSigchainStatement(sc, b, sk, "user", ts)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +228,7 @@ func NewUserSigchainStatement(sc *Sigchain, user *User, sk *EdX25519Key, ts time
 }
 
 // Sign user into an armored message.
-func (u *User) Sign(key *EdX25519Key) (string, error) {
+func (u *User) Sign(key *keys.EdX25519Key) (string, error) {
 	b, err := json.Marshal(u)
 	if err != nil {
 		return "", err
@@ -238,17 +239,17 @@ func (u *User) Sign(key *EdX25519Key) (string, error) {
 	return msg, nil
 }
 
-// VerifyUser armored message for a user.
+// Verify armored message for a user.
 // If user is specified, we will verify it matches the User in the verified
 // message.
-func VerifyUser(msg string, kid ID, user *User) (*User, error) {
+func Verify(msg string, kid keys.ID, user *User) (*User, error) {
 	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
 		return nil, err
 	}
 
-	spk, err := StatementPublicKeyFromID(kid)
+	spk, err := keys.StatementPublicKeyFromID(kid)
 	if err != nil {
 		return nil, err
 	}
@@ -259,32 +260,45 @@ func VerifyUser(msg string, kid ID, user *User) (*User, error) {
 		return nil, err
 	}
 
-	var userDec User
-	if err := json.Unmarshal(bout, &userDec); err != nil {
+	var dec User
+	if err := json.Unmarshal(bout, &dec); err != nil {
 		return nil, err
 	}
-	logger.Debugf("User: %v", userDec)
-	if userDec.Name == "" {
+	logger.Debugf("User: %v", dec)
+	if dec.Name == "" {
 		return nil, errors.Errorf("user message invalid: no name")
 	}
-	if userDec.KID == "" {
+	if dec.KID == "" {
 		return nil, errors.Errorf("user message invalid: no kid")
 	}
-	if userDec.Service == "" {
+	if dec.Service == "" {
 		return nil, errors.Errorf("user message invalid: no service")
 	}
 
 	if user != nil {
-		if userDec.KID != user.KID {
-			return nil, errors.Errorf("kid mismatch %s != %s", user.KID, userDec.KID)
+		if dec.KID != user.KID {
+			return nil, errors.Errorf("kid mismatch %s != %s", user.KID, dec.KID)
 		}
-		if userDec.Service != user.Service {
-			return nil, errors.Errorf("service mismatch %s != %s", user.Service, userDec.Service)
+		if dec.Service != user.Service {
+			return nil, errors.Errorf("service mismatch %s != %s", user.Service, dec.Service)
 		}
-		if userDec.Name != user.Name {
-			return nil, errors.Errorf("name mismatch %s != %s", user.Name, userDec.Name)
+		if dec.Name != user.Name {
+			return nil, errors.Errorf("name mismatch %s != %s", user.Name, dec.Name)
 		}
 	}
 
-	return &userDec, nil
+	return &dec, nil
+}
+
+// ResolveSigchain returns User from a Sigchain.
+func ResolveSigchain(sc *keys.Sigchain) (*User, error) {
+	st := sc.FindLast("user")
+	if st == nil {
+		return nil, nil
+	}
+	var user User
+	if err := json.Unmarshal(st.Data, &user); err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

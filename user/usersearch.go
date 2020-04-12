@@ -1,32 +1,34 @@
-package keys
+package user
 
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/keys-pub/keys"
 )
 
-// UserSearchRequest ...
-type UserSearchRequest struct {
+// SearchRequest ...
+type SearchRequest struct {
 	// Query to search for.
 	Query string
 	// Limit number of results.
 	Limit int
 }
 
-// UserSearchResult ...
-type UserSearchResult struct {
-	KID        ID
-	UserResult *UserResult
+// SearchResult ...
+type SearchResult struct {
+	KID        keys.ID
+	Result *Result
 }
 
-func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*UserSearchResult, error) {
+func (u *Store) search(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
-	iter, err := u.dst.Documents(ctx, indexUser, &DocumentsOpts{Prefix: query})
+	iter, err := u.dst.Documents(ctx, indexUser, &keys.DocumentsOpts{Prefix: query})
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]*UserSearchResult, 0, limit)
+	results := make([]*SearchResult, 0, limit)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -43,9 +45,9 @@ func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*Use
 			return nil, err
 		}
 
-		results = append(results, &UserSearchResult{
+		results = append(results, &SearchResult{
 			KID:        keyDoc.KID,
-			UserResult: keyDoc.UserResult,
+			Result: keyDoc.Result,
 		})
 	}
 	iter.Release()
@@ -54,7 +56,7 @@ func (u *UserStore) search(ctx context.Context, query string, limit int) ([]*Use
 }
 
 // Search for users.
-func (u *UserStore) Search(ctx context.Context, req *UserSearchRequest) ([]*UserSearchResult, error) {
+func (u *Store) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
 	logger.Infof("Search users, query=%q, limit=%d", req.Query, req.Limit)
 	limit := req.Limit
 	if limit == 0 {

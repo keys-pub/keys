@@ -3,7 +3,6 @@ package keys
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"text/tabwriter"
 	"time"
 
@@ -290,19 +289,6 @@ func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 	}
 
 	return nil
-}
-
-// User (statement) signed into the sigchain.
-func (s *Sigchain) User() (*User, error) {
-	st := s.FindLast("user")
-	if st == nil {
-		return nil, nil
-	}
-	var user User
-	if err := json.Unmarshal(st.Data, &user); err != nil {
-		return nil, err
-	}
-	return &user, nil
 }
 
 // FindLast search from the last statement to the first, returning after
