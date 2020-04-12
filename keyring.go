@@ -9,7 +9,6 @@ import (
 
 const (
 	certificateItemType string = "cert-key-x509v3"
-	secretItemType      string = "secret"
 )
 
 // NewX25519KeyItem creates keyring item for X25519Key.
