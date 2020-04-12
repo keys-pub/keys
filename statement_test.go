@@ -17,7 +17,12 @@ func TestSignedStatement(t *testing.T) {
 
 	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.NoError(t, err)
-	require.Equal(t, st.Bytes(), st2.Bytes())
+
+	b1, err := st.Bytes()
+	require.NoError(t, err)
+	b2, err := st2.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, b1, b2)
 
 	rk := keys.GenerateEdX25519Key()
 	_, err = keys.NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
@@ -35,7 +40,11 @@ func TestSigchainStatement(t *testing.T) {
 
 	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
 	require.NoError(t, err)
-	require.Equal(t, st.Bytes(), st2.Bytes())
+	b1, err := st.Bytes()
+	require.NoError(t, err)
+	b2, err := st2.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, b1, b2)
 
 	rk := keys.GenerateEdX25519Key()
 	_, err = keys.NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
@@ -104,11 +113,14 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	expected := `{".sig":"","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expected, string(data))
 
-	dataOut := st.Bytes()
+	dataOut, err := st.Bytes()
+	require.NoError(t, err)
 	expectedOut := `{".sig":"+H4VoHKAzH8e7Fn0LTtabx1MSpmnEY7xejxzMLr13Cfu1uvj4LKDKJ8AWLP38OU+HDSqO9JYkR+MtM/o7JvzAw==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001,"type":"test"}`
 	require.Equal(t, expectedOut, string(dataOut))
 
-	require.Equal(t, expectedOut, string(st.Bytes()))
+	b, err := st.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, expectedOut, string(b))
 
 	stOut, err := keys.StatementFromBytes(dataOut)
 	require.NoError(t, err)
@@ -137,11 +149,14 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	expected2 := `{".sig":"","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"V/5ecc6cFRzsi83kcaqyahjXqWp+wTxFwpJMrk+MHXA=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expected2, string(data2))
 
-	dataOut2 := revoke.Bytes()
+	dataOut2, err := revoke.Bytes()
+	require.NoError(t, err)
 	expectedOut2 := `{".sig":"Ez8WFOCIjCM4SNRk6erV8t1+9tWT8Fz1lAbmxvEytV8CHwIQi3sfvrAd0JwB+oZEmMp3WC3VJMSEqkR07iS5Bw==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"V/5ecc6cFRzsi83kcaqyahjXqWp+wTxFwpJMrk+MHXA=","revoke":1,"seq":2,"type":"revoke"}`
 	require.Equal(t, expectedOut2, string(dataOut2))
 
-	require.Equal(t, expectedOut2, string(revoke.Bytes()))
+	rb, err := revoke.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, expectedOut2, string(rb))
 
 	stOut2, stOutErr2 := keys.StatementFromBytes(dataOut2)
 	require.NoError(t, stOutErr2)

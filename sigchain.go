@@ -52,7 +52,11 @@ func (s *Sigchain) Spew() (*bytes.Buffer, error) {
 	w.Init(&out, 0, 8, 1, ' ', 0)
 	for _, st := range s.statements {
 		key := Path("sigchain", st.URL())
-		value := string(st.Bytes())
+		b, err := st.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		value := string(b)
 		out.Write([]byte(key))
 		out.Write([]byte(" "))
 		out.Write([]byte(value))
@@ -123,7 +127,11 @@ func (s *Sigchain) AddAll(statements []*Statement) error {
 
 // SigchainHash returns hash for Sigchain Statement.
 func SigchainHash(st *Statement) (*[32]byte, error) {
-	h := sha256.Sum256(st.Bytes())
+	b, err := st.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	h := sha256.Sum256(b)
 	return &h, nil
 }
 
@@ -136,7 +144,11 @@ func signStatement(st *Statement, signKey *EdX25519Key) error {
 	if st.KID != signKey.ID() {
 		return errors.Errorf("sign failed: key id mismatch")
 	}
-	st.serialized = statementBytesToSign(st)
+	b, err := statementBytesToSign(st)
+	if err != nil {
+		return err
+	}
+	st.serialized = b
 	st.Sig = signKey.SignDetached(st.serialized)
 	return nil
 }

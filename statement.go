@@ -2,12 +2,12 @@ package keys
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/json"
 	"github.com/pkg/errors"
 )
 
@@ -49,7 +49,10 @@ type StatementPublicKey interface {
 // Use NewSigchainStatement for a signed Sigchain Statement.
 // Use NewSignedStatement for a signed Statement outside a Sigchain.
 func NewStatement(sig []byte, data []byte, spk StatementPublicKey, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
-	st := NewUnverifiedStatement(sig, data, spk.ID(), seq, prev, revoke, typ, ts)
+	st, err := NewUnverifiedStatement(sig, data, spk.ID(), seq, prev, revoke, typ, ts)
+	if err != nil {
+		return nil, err
+	}
 	if err := st.Verify(); err != nil {
 		return nil, err
 	}
@@ -57,7 +60,7 @@ func NewStatement(sig []byte, data []byte, spk StatementPublicKey, seq int, prev
 }
 
 // NewUnverifiedStatement creates an unverified statement.
-func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke int, typ string, ts time.Time) *Statement {
+func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
 	st := &Statement{
 		Sig:       sig,
 		Data:      data,
@@ -68,8 +71,12 @@ func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byt
 		Timestamp: ts,
 		Type:      typ,
 	}
-	st.serialized = statementBytesToSign(st)
-	return st
+	b, err := statementBytesToSign(st)
+	if err != nil {
+		return nil, err
+	}
+	st.serialized = b
+	return st, nil
 }
 
 // NewSignedStatement creates a signed Statement.
@@ -151,7 +158,10 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 	}
 	ts := TimeFromMillis(TimeMs(stf.Timestamp))
 
-	st := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
+	st, err := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
+	if err != nil {
+		return nil, err
+	}
 
 	// It is important to verify the original bytes match the specific
 	// serialization.
@@ -180,7 +190,7 @@ func (s *Statement) Verify() error {
 
 // MarshalJSON marshals statement to JSON.
 func (s Statement) MarshalJSON() ([]byte, error) {
-	return s.Bytes(), nil
+	return s.Bytes()
 }
 
 // UnmarshalJSON unmarshals a statement from JSON.
@@ -202,43 +212,46 @@ func (s *Statement) UnmarshalJSON(b []byte) error {
 }
 
 // Bytes is the serialized Statement.
-func (s *Statement) Bytes() []byte {
-	out := statementBytes(s, s.Sig)
+func (s *Statement) Bytes() ([]byte, error) {
+	out, err := statementBytes(s, s.Sig)
+	if err != nil {
+		return nil, err
+	}
 	expected := bytesJoin(out[0:9], out[97:])
 	if !bytes.Equal(expected, s.serialized) {
 		panic(errors.Errorf("statement bytes don't match specific serialization %s != %s", string(expected), string(s.serialized)))
 	}
 
-	return out
+	return out, nil
 }
 
-func statementBytesToSign(st *Statement) []byte {
+func statementBytesToSign(st *Statement) ([]byte, error) {
 	return statementBytes(st, nil)
 }
 
-func statementBytes(st *Statement, sig []byte) []byte {
-	mes := []MarshalValue{
-		NewStringEntry(".sig", encoding.MustEncode(sig, encoding.Base64)),
+func statementBytes(st *Statement, sig []byte) ([]byte, error) {
+	mes := []json.Value{
+		json.NewString(".sig", encoding.MustEncode(sig, encoding.Base64)),
 	}
 	if len(st.Data) != 0 {
-		mes = append(mes, NewStringEntry("data", encoding.MustEncode(st.Data, encoding.Base64)))
+		mes = append(mes, json.NewString("data", encoding.MustEncode(st.Data, encoding.Base64)))
 	}
-	mes = append(mes, NewStringEntry("kid", st.KID.String()))
+	mes = append(mes, json.NewString("kid", st.KID.String()))
 	if len(st.Prev) != 0 {
-		mes = append(mes, NewStringEntry("prev", encoding.MustEncode(st.Prev, encoding.Base64)))
+		mes = append(mes, json.NewString("prev", encoding.MustEncode(st.Prev, encoding.Base64)))
 	}
 	if st.Revoke != 0 {
-		mes = append(mes, NewIntEntry("revoke", st.Revoke))
+		mes = append(mes, json.NewInt("revoke", st.Revoke))
 	}
 	if st.Seq != 0 {
-		mes = append(mes, NewIntEntry("seq", st.Seq))
+		mes = append(mes, json.NewInt("seq", st.Seq))
 	}
 	if !st.Timestamp.IsZero() {
-		mes = append(mes, NewIntEntry("ts", int(TimeToMillis(st.Timestamp))))
+		mes = append(mes, json.NewInt("ts", int(TimeToMillis(st.Timestamp))))
 	}
 	if st.Type != "" {
-		mes = append(mes, NewStringEntry("type", st.Type))
+		mes = append(mes, json.NewString("type", st.Type))
 	}
 
-	return Marshal(mes)
+	return json.Marshal(mes)
 }

@@ -1,13 +1,13 @@
 package user
 
 import (
-	"encoding/json"
 	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/json"
 	"github.com/keys-pub/keys/link"
 	"github.com/pkg/errors"
 )
@@ -35,24 +35,24 @@ func (u User) String() string {
 
 // MarshalJSON marshals user to JSON.
 func (u User) MarshalJSON() ([]byte, error) {
-	return u.Bytes(), nil
+	return u.Bytes()
 }
 
 // Bytes is a serialized User.
-func (u User) Bytes() []byte {
-	mes := []keys.MarshalValue{}
+func (u User) Bytes() ([]byte, error) {
+	mes := []json.Value{}
 
-	mes = append(mes, keys.NewStringEntry("k", u.KID.String()))
-	mes = append(mes, keys.NewStringEntry("n", u.Name))
+	mes = append(mes, json.NewString("k", u.KID.String()))
+	mes = append(mes, json.NewString("n", u.Name))
 
 	if u.Seq != 0 {
-		mes = append(mes, keys.NewIntEntry("sq", u.Seq))
+		mes = append(mes, json.NewInt("sq", u.Seq))
 	}
-	mes = append(mes, keys.NewStringEntry("sr", u.Service))
+	mes = append(mes, json.NewString("sr", u.Service))
 	if u.URL != "" {
-		mes = append(mes, keys.NewStringEntry("u", u.URL))
+		mes = append(mes, json.NewString("u", u.URL))
 	}
-	return keys.Marshal(mes)
+	return json.Marshal(mes)
 }
 
 // Status is the status of the user statement.
@@ -213,7 +213,7 @@ func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Ke
 		return nil, ErrUserAlreadySet
 	}
 
-	b, err := json.Marshal(user)
+	b, err := user.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Ke
 
 // Sign user into an armored message.
 func (u *User) Sign(key *keys.EdX25519Key) (string, error) {
-	b, err := json.Marshal(u)
+	b, err := u.MarshalJSON()
 	if err != nil {
 		return "", err
 	}

@@ -89,7 +89,11 @@ func (s sigchainStore) SaveSigchain(sc *Sigchain) error {
 		return errors.Errorf("failed to save sigchain: no statements")
 	}
 	for _, st := range sc.Statements() {
-		if err := s.dst.Set(context.TODO(), Path("sigchain", st.Key()), st.Bytes()); err != nil {
+		b, err := st.Bytes()
+		if err != nil {
+			return err
+		}
+		if err := s.dst.Set(context.TODO(), Path("sigchain", st.Key()), b); err != nil {
 			return err
 		}
 	}

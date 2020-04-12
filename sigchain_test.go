@@ -117,16 +117,19 @@ func TestSigchainJSON(t *testing.T) {
 
 	st0 := sc.Statements()[0]
 	expectedStatement := `{".sig":"VV7Q1B54UZ5YBEmhTYt2tQACynfAWIZpZ+5sSwT+DJsRnvA2MAGW86hTVtso4optvXW2PvO0DACTPpMsC/SSDQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001}`
-	require.Equal(t, expectedStatement, string(st0.Bytes()))
+	b, err := st0.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, expectedStatement, string(b))
 
-	b, err := json.Marshal(st0)
+	b, err = json.Marshal(st0)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatement, string(b))
 
 	stb, err := keys.StatementFromBytes(b)
 	require.NoError(t, err)
-	bout := stb.Bytes()
-	require.Equal(t, expectedStatement, string(bout))
+	b, err = stb.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, expectedStatement, string(b))
 
 	st2, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x02}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
@@ -134,13 +137,17 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, siErr2)
 	entry2 := sc.Statements()[1]
 	expectedStatement2 := `{".sig":"eFHVVItCK0lwZzeeejBLdxAjqu1Fo3wFQ3U1/Q7J4HyimDp892A82jiaa8SOB+DekA3vEXkJicGkiGeuBFahDw==","data":"AgICAgICAgICAgICAgICAg==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"adAq4hsj899D6Y8T6ZnvxFG6EDtJaKcXe6Sk/D/VVLo=","seq":2,"ts":1234567890002}`
-	require.Equal(t, expectedStatement2, string(entry2.Bytes()))
+	b, err = entry2.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, expectedStatement2, string(b))
 
 	_, siErr3 := sc.Revoke(2, sk)
 	require.NoError(t, siErr3)
 	entry3 := sc.Statements()[2]
 	expectedStatement3 := `{".sig":"Y63sL8+BsoU7LmiHCCw6IEadu463H9Gx6B9F/WTgRBDBoIZHB3kwIeFChvlO/HFpqkK0AmkrO5AzW9/rps8JCQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"6PT7dojypKdO8YldF00QiWqBfRBh1f1D9y9C2Qn6v/Y=","revoke":2,"seq":3,"type":"revoke"}`
-	require.Equal(t, expectedStatement3, string(entry3.Bytes()))
+	b, err = entry3.Bytes()
+	require.NoError(t, err)
+	require.Equal(t, expectedStatement3, string(b))
 }
 
 func ExampleNewSigchain() {
