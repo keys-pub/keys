@@ -3,6 +3,7 @@ package keyring_test
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/keys-pub/keys/keyring"
 )
@@ -20,10 +21,8 @@ func ExampleNewKeyring() {
 	}
 
 	// Save secret
-	secret := keyring.NewSecret([]byte("mysecret"))
-	item := keyring.NewItem("id1", secret, "")
-
-	if err := kr.Set(item); err != nil {
+	item := keyring.NewItem("id1", []byte("mysecret"), "", time.Now())
+	if err := kr.Create(item); err != nil {
 		log.Fatal(err)
 	}
 
@@ -32,7 +31,7 @@ func ExampleNewKeyring() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("secret: %s\n", string(out.SecretData()))
+	fmt.Printf("secret: %s\n", string(out.Data))
 
 	// List secrets
 	items, err := kr.List(nil)
@@ -40,7 +39,7 @@ func ExampleNewKeyring() {
 		log.Fatal(err)
 	}
 	for _, item := range items {
-		fmt.Printf("%s: %v\n", item.ID, string(item.SecretData()))
+		fmt.Printf("%s: %v\n", item.ID, string(item.Data))
 	}
 
 	// Output:

@@ -13,7 +13,7 @@ import (
 type X25519PublicKey struct {
 	id        ID
 	publicKey *[32]byte
-	metadata  *Metadata
+	createdAt time.Time
 }
 
 // X25519 key type.
@@ -60,17 +60,16 @@ func (k X25519Key) PublicKey() *X25519PublicKey {
 	return k.publicKey
 }
 
-// Metadata for key.
-func (k X25519Key) Metadata() *Metadata {
-	return k.publicKey.metadata
+// CreatedAt ...
+func (k X25519Key) CreatedAt() time.Time {
+	return k.publicKey.createdAt
 }
 
 // GenerateX25519Key creates a new X25519Key.
 func GenerateX25519Key() *X25519Key {
 	logger.Infof("Generating X25519 key...")
 	key := NewX25519KeyFromSeed(Rand32())
-	key.Metadata().CreatedAt = time.Now()
-	// key.Metadata().UpdatedAt = time.Now()
+	key.publicKey.createdAt = time.Now()
 	return key
 }
 
@@ -144,7 +143,6 @@ func NewX25519PublicKey(b *[32]byte) *X25519PublicKey {
 	return &X25519PublicKey{
 		id:        id,
 		publicKey: b,
-		metadata:  &Metadata{},
 	}
 }
 
@@ -168,7 +166,7 @@ func (k X25519PublicKey) Bytes32() *[32]byte {
 	return k.publicKey
 }
 
-// Metadata for key.
-func (k X25519PublicKey) Metadata() *Metadata {
-	return k.metadata
+// CreatedAt ...
+func (k X25519PublicKey) CreatedAt() time.Time {
+	return k.createdAt
 }

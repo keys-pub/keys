@@ -13,8 +13,8 @@ type Key interface {
 	// Bytes are key data.
 	Bytes() []byte
 
-	// Metadata
-	Metadata() *Metadata
+	// CreatedAt.
+	CreatedAt() time.Time
 }
 
 // KeyType ...
@@ -24,10 +24,3 @@ var _ Key = &EdX25519Key{}
 var _ Key = &EdX25519PublicKey{}
 var _ Key = &X25519Key{}
 var _ Key = &X25519PublicKey{}
-
-// Metadata for key.
-type Metadata struct {
-	Notes     string
-	CreatedAt time.Time
-	// UpdatedAt time.Time
-}

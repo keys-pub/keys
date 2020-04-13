@@ -6,9 +6,22 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
+
+// ErrItemValueTooLarge is item value is too large.
+// ID is max of 256 bytes.
+// Type is max of 32 bytes.
+// Data is max of 2048 bytes.
+var ErrItemValueTooLarge = errors.New("keyring item value is too large")
+
+// ErrItemNotFound if item not found when trying to update.
+var ErrItemNotFound = errors.New("keyring item not found")
+
+// ErrItemAlreadyExists if item already exists trying to create.
+var ErrItemAlreadyExists = errors.New("keyring item already exists")
 
 // Keyring defines an interface for accessing keyring items.
 type Keyring interface {
@@ -16,9 +29,13 @@ type Keyring interface {
 	// Requires Unlock().
 	Get(id string) (*Item, error)
 
-	// Set item.
+	// Create item.
 	// Requires Unlock().
-	Set(i *Item) error
+	Create(i *Item) error
+
+	// Update item.
+	// Requires Unlock().
+	Update(id string, b []byte) error
 
 	// Delete item.
 	// Doesn't require Unlock().
@@ -85,7 +102,7 @@ func System() Store {
 	return system()
 }
 
-// System returns system keyring store or FS if unavailable.
+// SystemOrFS returns system keyring store or FS if unavailable.
 // On linux, if dbus is not available, uses the filesystem at ~/.keyring.
 func SystemOrFS() Store {
 	if runtime.GOOS == "linux" {
@@ -139,23 +156,30 @@ func setItem(st Store, service string, item *Item, key SecretKey) error {
 	if key == nil {
 		return ErrLocked
 	}
+	if len(item.ID) > 256 {
+		return ErrItemValueTooLarge
+	}
+	if len(item.Type) > 32 {
+		return ErrItemValueTooLarge
+	}
+	if len(item.Data) > 2048 {
+		return ErrItemValueTooLarge
+	}
+
 	data, err := item.Marshal(key)
 	if err != nil {
 		return err
 	}
+	// Max for windows credential blob
+	if len(data) > (5 * 512) {
+		return ErrItemValueTooLarge
+	}
 	return st.Set(service, item.ID, []byte(data), item.Type)
 }
-
-// ErrNotAnItem if value in keyring is not an encoded keyring item.
-// TODO: Add test.
-var ErrNotAnItem = errors.New("not an encoded keyring item")
 
 func decodeItem(b []byte, key SecretKey) (*Item, error) {
 	if b == nil {
 		return nil, nil
-	}
-	if !isItem(b) {
-		return nil, ErrNotAnItem
 	}
 	item, err := DecodeItem(b, key)
 	if err != nil {
@@ -176,12 +200,12 @@ func unlock(st Store, service string, auth Auth) (SecretKey, error) {
 		return nil, err
 	}
 	if item == nil {
-		err := setItem(st, service, NewItem(reserved("auth"), NewSecret(key[:]), ""), key)
+		err := setItem(st, service, NewItem(reserved("auth"), key[:], "", time.Now()), key)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		if subtle.ConstantTimeCompare(item.SecretData(), key[:]) != 1 {
+		if subtle.ConstantTimeCompare(item.Data, key[:]) != 1 {
 			return nil, errors.Errorf("invalid auth")
 		}
 	}
@@ -249,13 +273,41 @@ func (k *keyring) Get(id string) (*Item, error) {
 	return getItem(k.st, k.service, id, k.key)
 }
 
-func (k *keyring) Set(item *Item) error {
+func (k *keyring) Create(item *Item) error {
 	if item.ID == "" {
 		return errors.Errorf("no id")
 	}
 	if strings.HasPrefix(item.ID, reservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", item.ID)
 	}
+	existing, err := getItem(k.st, k.service, item.ID, k.key)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return ErrItemAlreadyExists
+	}
+
+	return setItem(k.st, k.service, item, k.key)
+}
+
+func (k *keyring) Update(id string, b []byte) error {
+	if id == "" {
+		return errors.Errorf("no id")
+	}
+	if strings.HasPrefix(id, reservedPrefix) {
+		return errors.Errorf("keyring id prefix reserved %s", id)
+	}
+
+	item, err := getItem(k.st, k.service, id, k.key)
+	if err != nil {
+		return err
+	}
+	if item == nil {
+		return ErrItemNotFound
+	}
+	item.Data = b
+
 	return setItem(k.st, k.service, item, k.key)
 }
 

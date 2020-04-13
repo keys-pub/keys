@@ -30,20 +30,10 @@ func (k *KeyStore) Keyring() keyring.Keyring {
 	return k.kr
 }
 
-// get returns a keyring Item for an id.
-func (k *KeyStore) get(id string) (*keyring.Item, error) {
-	return k.kr.Get(id)
-}
-
-// set an item in the keyring.
-func (k *KeyStore) set(item *keyring.Item) error {
-	return k.kr.Set(item)
-}
-
 // EdX25519Key returns sign key for a key identifier.
 func (k *KeyStore) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	logger.Infof("KeyStore load sign key for %s", kid)
-	item, err := k.get(kid.String())
+	item, err := k.kr.Get(kid.String())
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +48,7 @@ func (k *KeyStore) EdX25519Key(kid ID) (*EdX25519Key, error) {
 // getting it from the keystore via NewEdX25519PublicKeyFromID.
 func (k *KeyStore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	logger.Infof("KeyStore load sign public key for %s", kid)
-	item, err := k.get(kid.String())
+	item, err := k.kr.Get(kid.String())
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +61,7 @@ func (k *KeyStore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 // X25519Key returns a box key for an identifier
 func (k *KeyStore) X25519Key(kid ID) (*X25519Key, error) {
 	logger.Infof("KeyStore load box key for %s", kid)
-	item, err := k.get(kid.String())
+	item, err := k.kr.Get(kid.String())
 	if err != nil {
 		return nil, err
 	}
@@ -83,20 +73,20 @@ func (k *KeyStore) X25519Key(kid ID) (*X25519Key, error) {
 
 // SaveEdX25519Key saves a EdX25519Key to the KeyStore.
 func (k *KeyStore) SaveEdX25519Key(signKey *EdX25519Key) error {
-	return k.set(NewEdX25519KeyItem(signKey))
+	return k.kr.Create(NewEdX25519KeyItem(signKey))
 }
 
 // SaveEdX25519PublicKey saves EdX25519PublicKey to the KeyStore.
 func (k *KeyStore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 	// Check we don't clobber an existing sign key
-	item, err := k.get(spk.ID().String())
+	item, err := k.kr.Get(spk.ID().String())
 	if err != nil {
 		return err
 	}
 	if item != nil && item.Type != string(EdX25519Public) {
 		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
 	}
-	return k.set(NewEdX25519PublicKeyItem(spk))
+	return k.kr.Create(NewEdX25519PublicKeyItem(spk))
 }
 
 // SavePublicKey saves a public key from a key identifier.
@@ -110,20 +100,20 @@ func (k *KeyStore) SavePublicKey(kid ID) error {
 
 // SaveX25519Key saves a X25519Key to the KeyStore.
 func (k *KeyStore) SaveX25519Key(bk *X25519Key) error {
-	return k.set(NewX25519KeyItem(bk))
+	return k.kr.Create(NewX25519KeyItem(bk))
 }
 
 // SaveX25519PublicKey saves a X25519PublicKey to the KeyStore.
 func (k *KeyStore) SaveX25519PublicKey(bpk *X25519PublicKey) error {
 	// Check we don't clobber an existing box key
-	item, err := k.get(bpk.ID().String())
+	item, err := k.kr.Get(bpk.ID().String())
 	if err != nil {
 		return err
 	}
 	if item != nil && item.Type != string(X25519Public) {
 		return errors.Errorf("failed to save box public key: existing keyring item exists of alternate type")
 	}
-	return k.set(NewX25519PublicKeyItem(bpk))
+	return k.kr.Create(NewX25519PublicKeyItem(bpk))
 }
 
 // Delete removes an item from the keystore.
@@ -137,7 +127,7 @@ func (k *KeyStore) Delete(kid ID) (bool, error) {
 
 // Key for id.
 func (k *KeyStore) Key(id ID) (Key, error) {
-	item, err := k.get(id.String())
+	item, err := k.kr.Get(id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +267,7 @@ func (k KeyStore) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 // getting it from the keystore via X25519PublicKeyForID.
 func (k *KeyStore) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
 	logger.Infof("KeyStore load box public key for %s", kid)
-	item, err := k.get(kid.String())
+	item, err := k.kr.Get(kid.String())
 	if err != nil {
 		return nil, err
 	}
