@@ -50,12 +50,10 @@ func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opt
 		if secret == nil {
 			continue
 		}
-		if !isItem(secret.Value) {
-			continue
-		}
 		item, err := DecodeItem(secret.Value, key)
 		if err != nil {
-			return nil, err
+			continue
+			// return nil, err
 		}
 		if strings.HasPrefix(item.ID, hiddenPrefix) || strings.HasPrefix(item.ID, reservedPrefix) {
 			continue
