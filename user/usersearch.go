@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/ds"
 )
 
 // SearchRequest ...
@@ -24,7 +24,7 @@ type SearchResult struct {
 
 func (u *Store) search(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
-	iter, err := u.dst.Documents(ctx, indexUser, &docs.DocumentsOpts{Prefix: query})
+	iter, err := u.dst.Documents(ctx, indexUser, &ds.DocumentsOpts{Prefix: query})
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-package docs
+package ds
 
 // DocumentIterator is an iterator for Document's.
 type DocumentIterator interface {

@@ -1,40 +1,40 @@
-package docs_test
+package ds_test
 
 import (
 	"context"
 	"sync"
 	"testing"
 
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/ds"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWatch(t *testing.T) {
-	fi := docs.NewMem()
+	fi := ds.NewMem()
 	ctx := context.TODO()
 
-	root1 := docs.Path("testwatch1")
-	root2 := docs.Path("testwatch2")
+	root1 := ds.Path("testwatch1")
+	root2 := ds.Path("testwatch2")
 
 	start := sync.WaitGroup{}
 	start.Add(2)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	ln1 := func(e *docs.WatchEvent) {
+	ln1 := func(e *ds.WatchEvent) {
 		switch e.Status {
-		case docs.WatchStatusStarting:
+		case ds.WatchStatusStarting:
 			start.Done()
-		case docs.WatchStatusData:
+		case ds.WatchStatusData:
 			fi.StopWatching(root1)
 		}
 	}
 
-	ln2 := func(e *docs.WatchEvent) {
+	ln2 := func(e *ds.WatchEvent) {
 		switch e.Status {
-		case docs.WatchStatusStarting:
+		case ds.WatchStatusStarting:
 			start.Done()
-		case docs.WatchStatusData:
+		case ds.WatchStatusData:
 			fi.StopWatching(root2)
 		}
 	}
@@ -53,27 +53,27 @@ func TestWatch(t *testing.T) {
 
 	start.Wait()
 
-	err := fi.Create(ctx, docs.Path(root1, "val1"), []byte("testdata1"))
+	err := fi.Create(ctx, ds.Path(root1, "val1"), []byte("testdata1"))
 	require.NoError(t, err)
 
-	err = fi.Create(ctx, docs.Path(root2, "val2"), []byte("testdata2"))
+	err = fi.Create(ctx, ds.Path(root2, "val2"), []byte("testdata2"))
 	require.NoError(t, err)
 
 	wg.Wait()
 }
 
 func TestWatching(t *testing.T) {
-	fi := docs.NewMem()
+	fi := ds.NewMem()
 
 	start := sync.WaitGroup{}
 	start.Add(2)
 	stop := sync.WaitGroup{}
 	stop.Add(2)
-	ln := func(e *docs.WatchEvent) {
+	ln := func(e *ds.WatchEvent) {
 		switch e.Status {
-		case docs.WatchStatusStarting:
+		case ds.WatchStatusStarting:
 			start.Done()
-		case docs.WatchStatusStopping:
+		case ds.WatchStatusStopping:
 			stop.Done()
 		}
 	}

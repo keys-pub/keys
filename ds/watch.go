@@ -1,4 +1,4 @@
-package docs
+package ds
 
 // Watch for changes at path.
 type Watch interface {
