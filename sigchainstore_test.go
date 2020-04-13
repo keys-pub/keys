@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/docs"
 	"github.com/stretchr/testify/require"
 )
 
 func testSigchainStore(t *testing.T, clock *clock) keys.SigchainStore {
-	mem := keys.NewMem()
+	mem := docs.NewMem()
 	mem.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(mem)
 	scs.SetTimeNow(clock.Now)

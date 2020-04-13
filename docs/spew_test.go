@@ -1,4 +1,4 @@
-package keys
+package docs
 
 import (
 	"testing"

@@ -1,8 +1,7 @@
-package keys
+package docs
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"sort"
 	"strings"
@@ -265,14 +264,6 @@ func (m *Mem) GetAll(ctx context.Context, paths []string) ([]*Document, error) {
 func (m *Mem) Exists(ctx context.Context, path string) (bool, error) {
 	_, ok := m.values[Path(path)]
 	return ok, nil
-}
-
-func randBytes(length int) []byte {
-	buf := make([]byte, length)
-	if _, err := rand.Read(buf); err != nil {
-		panic(err)
-	}
-	return buf
 }
 
 // ChangeAdd ...

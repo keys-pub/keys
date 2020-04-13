@@ -1,4 +1,4 @@
-package keys
+package docs
 
 // Watch for changes at path.
 type Watch interface {
@@ -13,10 +13,6 @@ type WatchStatus string
 const (
 	// WatchStatusNone is an known status
 	WatchStatusNone WatchStatus = ""
-	// WatchStatusOutage is a status for a remote outage that persists
-	WatchStatusOutage WatchStatus = "outage"
-	// WatchStatusDisrupted is a status for a temporary disruption
-	WatchStatusDisrupted WatchStatus = "disrupted"
 	// WatchStatusStarting is a status for when watch is starting
 	WatchStatusStarting WatchStatus = "starting"
 	// WatchStatusStopping is a status for when watch is stopping

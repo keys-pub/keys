@@ -8,21 +8,32 @@ import (
 	"log"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
 )
 
+type clock struct {
+	t time.Time
+}
+
+func newClock() *clock {
+	t := keys.TimeFromMillis(1234567890000)
+	return &clock{
+		t: t,
+	}
+}
+
+func (c *clock) Now() time.Time {
+	c.t = c.t.Add(time.Millisecond)
+	return c.t
+}
+
 func testdataString(t *testing.T, path string) string {
 	expected, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 	return strings.ReplaceAll(string(expected), "\r\n", "\n")
-}
-
-func testdataBytes(t *testing.T, path string) []byte {
-	b, err := ioutil.ReadFile(path)
-	require.NoError(t, err)
-	return b
 }
 
 func TestSigchain(t *testing.T) {

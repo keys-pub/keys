@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/user"
 	"github.com/stretchr/testify/require"
 )
@@ -44,7 +45,7 @@ func testdataBytes(t *testing.T, path string) []byte {
 func TestSigchainUsers(t *testing.T) {
 	clock := newClock()
 	req := keys.NewMockRequestor()
-	dst := keys.NewMem()
+	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)

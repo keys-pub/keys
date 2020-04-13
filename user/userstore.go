@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/link"
 	"github.com/pkg/errors"
@@ -42,14 +43,14 @@ type keyDocument struct {
 
 // Store is the environment for user results.
 type Store struct {
-	dst   keys.DocumentStore
+	dst   docs.DocumentStore
 	scs   keys.SigchainStore
 	req   keys.Requestor
 	nowFn func() time.Time
 }
 
 // NewStore creates Store.
-func NewStore(dst keys.DocumentStore, scs keys.SigchainStore, req keys.Requestor, nowFn func() time.Time) (*Store, error) {
+func NewStore(dst docs.DocumentStore, scs keys.SigchainStore, req keys.Requestor, nowFn func() time.Time) (*Store, error) {
 	return &Store{
 		dst:   dst,
 		scs:   scs,
@@ -258,7 +259,7 @@ func (u *Store) get(ctx context.Context, index string, val string) (*keyDocument
 	if val == "" {
 		return nil, errors.Errorf("empty value")
 	}
-	path := keys.Path(index, val)
+	path := docs.Path(index, val)
 	doc, err := u.dst.Get(ctx, path)
 	if err != nil {
 		return nil, err
@@ -286,7 +287,7 @@ func (u *Store) result(ctx context.Context, kid keys.ID) (*Result, error) {
 
 func (u *Store) removeUser(ctx context.Context, user *User) error {
 	name := fmt.Sprintf("%s@%s", user.Name, user.Service)
-	namePath := keys.Path(indexUser, name)
+	namePath := docs.Path(indexUser, name)
 	logger.Infof("Removing user %s: %s", user.KID, name)
 	if _, err := u.dst.Delete(ctx, namePath); err != nil {
 		return err
@@ -319,7 +320,7 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	}
 	logger.Debugf("Data to index: %s", string(data))
 
-	kidPath := keys.Path(indexKID, keyDoc.KID.String())
+	kidPath := docs.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
 	if err := u.dst.Set(ctx, kidPath, data); err != nil {
 		return err
@@ -339,7 +340,7 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 
 		if index {
 			name := indexName(keyDoc.Result.User)
-			namePath := keys.Path(indexUser, name)
+			namePath := docs.Path(indexUser, name)
 			logger.Infof("Indexing user result %s %s", namePath, keyDoc.Result.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
 				return err

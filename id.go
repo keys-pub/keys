@@ -59,7 +59,7 @@ func IsValidID(s string) bool {
 
 // RandID returns random ID
 func RandID(hrp string) ID {
-	b := randBytes(32)
+	b := Rand32()
 	return MustID(hrp, b[:])
 }
 
@@ -146,4 +146,70 @@ func (i ID) Key() (Key, error) {
 		return nil, errors.Errorf("unsupported id key type")
 	}
 
+}
+
+// IDSet is a set of strings.
+type IDSet struct {
+	keysMap map[ID]bool
+	keys    []ID
+}
+
+// NewIDSet creates IDSet.
+func NewIDSet(ids ...ID) *IDSet {
+	return newIDSet(len(ids), ids...)
+}
+
+// NewIDSetWithCapacity ..
+func NewIDSetWithCapacity(capacity int) *IDSet {
+	return newIDSet(capacity)
+}
+
+func newIDSet(capacity int, ids ...ID) *IDSet {
+	keysMap := make(map[ID]bool, capacity)
+	keys := make([]ID, 0, capacity)
+	for _, v := range ids {
+		keysMap[v] = true
+		keys = append(keys, v)
+	}
+	return &IDSet{
+		keysMap: keysMap,
+		keys:    keys,
+	}
+}
+
+// Contains returns true if set contains string.
+func (s *IDSet) Contains(id ID) bool {
+	return s.keysMap[id]
+}
+
+// Add to set.
+func (s *IDSet) Add(id ID) {
+	if s.Contains(id) {
+		return
+	}
+	s.keysMap[id] = true
+	s.keys = append(s.keys, id)
+}
+
+// AddAll to set.
+func (s *IDSet) AddAll(ids []ID) {
+	for _, id := range ids {
+		s.Add(id)
+	}
+}
+
+// Clear set.
+func (s *IDSet) Clear() {
+	s.keysMap = map[ID]bool{}
+	s.keys = []ID{}
+}
+
+// IDs returns IDs in set.
+func (s *IDSet) IDs() []ID {
+	return s.keys
+}
+
+// Size for set.
+func (s *IDSet) Size() int {
+	return len(s.keys)
 }

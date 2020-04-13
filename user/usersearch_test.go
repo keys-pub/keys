@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/user"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,7 @@ func TestSearchUsers(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
-	dst := keys.NewMem()
+	dst := docs.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
@@ -134,13 +135,13 @@ func TestSearchUsers(t *testing.T) {
 	// Check Documents
 	iter, err := dst.Documents(context.TODO(), "kid", nil)
 	require.NoError(t, err)
-	spew, err := keys.Spew(iter, nil)
+	spew, err := docs.Spew(iter, nil)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/kid.spew"), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)
-	spew, err = keys.Spew(iter, nil)
+	spew, err = docs.Spew(iter, nil)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/user.spew"), spew.String())
 }
@@ -149,7 +150,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := newClock()
-	dst := keys.NewMem()
+	dst := docs.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
@@ -211,13 +212,13 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	// Check Documents
 	iter, err := dst.Documents(context.TODO(), "kid", nil)
 	require.NoError(t, err)
-	spew, err := keys.Spew(iter, nil)
+	spew, err := docs.Spew(iter, nil)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/kid2.spew"), spew.String())
 
 	iter, err = dst.Documents(context.TODO(), "user", nil)
 	require.NoError(t, err)
-	spew, err = keys.Spew(iter, nil)
+	spew, err = docs.Spew(iter, nil)
 	require.NoError(t, err)
 	require.Equal(t, "", spew.String())
 
@@ -233,7 +234,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 }
 
 func TestExpired(t *testing.T) {
-	dst := keys.NewMem()
+	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 
 	clock := newClock()
@@ -316,7 +317,7 @@ func saveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *keys.E
 
 func TestNewSigchainUserStatement(t *testing.T) {
 	clock := newClock()
-	dst := keys.NewMem()
+	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
@@ -338,7 +339,7 @@ func TestNewSigchainUserStatement(t *testing.T) {
 func TestSearch(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	clock := newClock()
-	dst := keys.NewMem()
+	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	req := keys.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)

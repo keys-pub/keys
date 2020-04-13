@@ -34,3 +34,22 @@ func TestNewID(t *testing.T) {
 		m[id] = true
 	}
 }
+
+func TestIDSet(t *testing.T) {
+	s := keys.NewIDSet(keys.ID("a"), keys.ID("b"), keys.ID("c"))
+	require.True(t, s.Contains(keys.ID("a")))
+	require.False(t, s.Contains(keys.ID("z")))
+	s.Add("z")
+	require.True(t, s.Contains(keys.ID("z")))
+	s.Add("z")
+	require.Equal(t, 4, s.Size())
+	s.AddAll([]keys.ID{"m", "n"})
+
+	expected := []keys.ID{keys.ID("a"), keys.ID("b"), keys.ID("c"), keys.ID("z"), keys.ID("m"), keys.ID("n")}
+	require.Equal(t, expected, s.IDs())
+
+	s.Clear()
+	require.False(t, s.Contains(keys.ID("a")))
+	require.False(t, s.Contains(keys.ID("z")))
+	require.Equal(t, 0, s.Size())
+}

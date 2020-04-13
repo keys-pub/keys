@@ -6,6 +6,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -51,7 +52,7 @@ func (s *Sigchain) Spew() (*bytes.Buffer, error) {
 	w := new(tabwriter.Writer)
 	w.Init(&out, 0, 8, 1, ' ', 0)
 	for _, st := range s.statements {
-		key := Path("sigchain", st.URL())
+		key := docs.Path("sigchain", st.URL())
 		b, err := st.Bytes()
 		if err != nil {
 			return nil, err

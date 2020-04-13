@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/docs"
 )
 
 // SearchRequest ...
@@ -17,13 +18,13 @@ type SearchRequest struct {
 
 // SearchResult ...
 type SearchResult struct {
-	KID        keys.ID
+	KID    keys.ID
 	Result *Result
 }
 
 func (u *Store) search(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
-	iter, err := u.dst.Documents(ctx, indexUser, &keys.DocumentsOpts{Prefix: query})
+	iter, err := u.dst.Documents(ctx, indexUser, &docs.DocumentsOpts{Prefix: query})
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (u *Store) search(ctx context.Context, query string, limit int) ([]*SearchR
 		}
 
 		results = append(results, &SearchResult{
-			KID:        keyDoc.KID,
+			KID:    keyDoc.KID,
 			Result: keyDoc.Result,
 		})
 	}
