@@ -12,7 +12,7 @@ import (
 )
 
 // ErrItemValueTooLarge is item value is too large.
-// ID is max of 256 bytes.
+// ID is max of 254 bytes.
 // Type is max of 32 bytes.
 // Data is max of 2048 bytes.
 var ErrItemValueTooLarge = errors.New("keyring item value is too large")
@@ -147,17 +147,21 @@ func getItem(st Store, service string, id string, key SecretKey) (*Item, error) 
 	return decodeItem(b, key)
 }
 
+const maxID = 254
+const maxType = 32
+const maxData = 2048
+
 func setItem(st Store, service string, item *Item, key SecretKey) error {
 	if key == nil {
 		return ErrLocked
 	}
-	if len(item.ID) > 255 {
+	if len(item.ID) > maxID {
 		return ErrItemValueTooLarge
 	}
-	if len(item.Type) > 32 {
+	if len(item.Type) > maxType {
 		return ErrItemValueTooLarge
 	}
-	if len(item.Data) > 2048 {
+	if len(item.Data) > maxData {
 		return ErrItemValueTooLarge
 	}
 

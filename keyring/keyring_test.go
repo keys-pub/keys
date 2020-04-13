@@ -225,6 +225,10 @@ func testReserved(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestLargeItems(t *testing.T) {
+	const maxID = 254
+	const maxType = 32
+	const maxData = 2048
+
 	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
@@ -233,12 +237,12 @@ func TestLargeItems(t *testing.T) {
 	err = kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
-	id := string(bytes.Repeat([]byte("a"), 255))
-	largeID := string(bytes.Repeat([]byte("a"), 256))
-	typ := string(bytes.Repeat([]byte("t"), 32))
-	largeType := string(bytes.Repeat([]byte("a"), 33))
+	id := string(bytes.Repeat([]byte("a"), maxID))
+	largeID := string(bytes.Repeat([]byte("a"), maxID+1))
+	typ := string(bytes.Repeat([]byte("t"), maxType))
+	largeType := string(bytes.Repeat([]byte("a"), maxType+1))
 
-	large := keys.RandBytes(4096)
+	large := keys.RandBytes(maxData + 1)
 	err = kr.Create(keyring.NewItem(id, large, typ, time.Now()))
 	require.EqualError(t, err, "keyring item value is too large")
 
@@ -247,7 +251,7 @@ func TestLargeItems(t *testing.T) {
 	err = kr.Create(keyring.NewItem(id, []byte{0x01}, largeType, time.Now()))
 	require.EqualError(t, err, "keyring item value is too large")
 
-	b := bytes.Repeat([]byte{0x01}, 2048)
+	b := bytes.Repeat([]byte{0x01}, maxData)
 	err = kr.Create(keyring.NewItem(id, b, typ, time.Now()))
 	require.NoError(t, err)
 
