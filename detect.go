@@ -5,6 +5,7 @@ import (
 	"unicode/utf8"
 )
 
+// DataType is the type of key data.
 type DataType = string
 
 const (
@@ -13,7 +14,7 @@ const (
 	// IDType is string identifier (keys.ID)
 	IDType DataType = "id"
 
-	// SaltpackType is armored saltpack encoding.
+	// SaltpackArmoredType is armored saltpack encoding.
 	SaltpackArmoredType DataType = "saltpack-armored"
 	// SaltpackType is binary saltpack encoding.
 	// SaltpackType DataType = "saltpack"

@@ -172,8 +172,8 @@ func (s EdX25519PublicKey) Bytes32() *[32]byte {
 }
 
 // Metadata for key.
-func (k EdX25519PublicKey) Metadata() *Metadata {
-	return k.metadata
+func (s EdX25519PublicKey) Metadata() *Metadata {
+	return s.metadata
 }
 
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.

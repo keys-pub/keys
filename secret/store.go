@@ -14,7 +14,7 @@ type Store struct {
 	nowFn func() time.Time
 }
 
-// NewKeystore constructs a Keystore.
+// NewKeyStore constructs a KeyStore.
 func NewStore(kr keyring.Keyring) *Store {
 	return &Store{
 		kr:    kr,

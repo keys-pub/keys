@@ -21,6 +21,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// ParseSSHPublicKey parses a SSH public key.
 func ParseSSHPublicKey(s string) (*EdX25519PublicKey, error) {
 	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(s))
 	if err != nil {
@@ -58,6 +59,7 @@ func trimLineSpace(b []byte) ([]byte, error) {
 	return []byte(strings.Join(out, "\n")), nil
 }
 
+// ParseSSHKey parses a SSH private key.
 func ParseSSHKey(pemBytes []byte, passphrase []byte, trim bool) (*EdX25519Key, error) {
 	if trim {
 		b, err := trimLineSpace(pemBytes)

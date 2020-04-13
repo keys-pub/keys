@@ -7,44 +7,42 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO: Rename to KeyStore?
-
-// Keystore saves keys to the keyring.
-type Keystore struct {
+// KeyStore saves keys to the keyring.
+type KeyStore struct {
 	kr keyring.Keyring
 }
 
-// NewKeystore constructs a Keystore.
-func NewKeystore(kr keyring.Keyring) *Keystore {
-	return &Keystore{
+// NewKeyStore constructs a KeyStore.
+func NewKeyStore(kr keyring.Keyring) *KeyStore {
+	return &KeyStore{
 		kr: kr,
 	}
 }
 
-// NewMemKeystore returns Keystore backed by an in memory keyring.
+// NewMemKeyStore returns KeyStore backed by an in memory keyring.
 // This is useful for testing or ephemeral key stores.
-func NewMemKeystore() *Keystore {
-	return NewKeystore(keyring.NewMem())
+func NewMemKeyStore() *KeyStore {
+	return NewKeyStore(keyring.NewMem())
 }
 
-func (k *Keystore) Keyring() keyring.Keyring {
+// Keyring used by KeyStore.
+func (k *KeyStore) Keyring() keyring.Keyring {
 	return k.kr
-
 }
 
 // get returns a keyring Item for an id.
-func (k *Keystore) get(id string) (*keyring.Item, error) {
+func (k *KeyStore) get(id string) (*keyring.Item, error) {
 	return k.kr.Get(id)
 }
 
 // set an item in the keyring.
-func (k *Keystore) set(item *keyring.Item) error {
+func (k *KeyStore) set(item *keyring.Item) error {
 	return k.kr.Set(item)
 }
 
 // EdX25519Key returns sign key for a key identifier.
-func (k *Keystore) EdX25519Key(kid ID) (*EdX25519Key, error) {
-	logger.Infof("Keystore load sign key for %s", kid)
+func (k *KeyStore) EdX25519Key(kid ID) (*EdX25519Key, error) {
+	logger.Infof("KeyStore load sign key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
 		return nil, err
@@ -55,11 +53,11 @@ func (k *Keystore) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	return AsEdX25519Key(item)
 }
 
-// EdX25519PublicKey returns sign public key from the Keystore.
+// EdX25519PublicKey returns sign public key from the KeyStore.
 // Since the public key itself is in the ID, you can convert the ID without
 // getting it from the keystore via NewEdX25519PublicKeyFromID.
-func (k *Keystore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
-	logger.Infof("Keystore load sign public key for %s", kid)
+func (k *KeyStore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
+	logger.Infof("KeyStore load sign public key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
 		return nil, err
@@ -71,8 +69,8 @@ func (k *Keystore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 }
 
 // X25519Key returns a box key for an identifier
-func (k *Keystore) X25519Key(kid ID) (*X25519Key, error) {
-	logger.Infof("Keystore load box key for %s", kid)
+func (k *KeyStore) X25519Key(kid ID) (*X25519Key, error) {
+	logger.Infof("KeyStore load box key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
 		return nil, err
@@ -83,13 +81,13 @@ func (k *Keystore) X25519Key(kid ID) (*X25519Key, error) {
 	return AsX25519Key(item)
 }
 
-// SaveEdX25519Key saves a EdX25519Key to the Keystore.
-func (k *Keystore) SaveEdX25519Key(signKey *EdX25519Key) error {
+// SaveEdX25519Key saves a EdX25519Key to the KeyStore.
+func (k *KeyStore) SaveEdX25519Key(signKey *EdX25519Key) error {
 	return k.set(NewEdX25519KeyItem(signKey))
 }
 
-// SaveEdX25519PublicKey saves EdX25519PublicKey to the Keystore.
-func (k *Keystore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
+// SaveEdX25519PublicKey saves EdX25519PublicKey to the KeyStore.
+func (k *KeyStore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 	// Check we don't clobber an existing sign key
 	item, err := k.get(spk.ID().String())
 	if err != nil {
@@ -102,7 +100,7 @@ func (k *Keystore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 }
 
 // SavePublicKey saves a public key from a key identifier.
-func (k *Keystore) SavePublicKey(kid ID) error {
+func (k *KeyStore) SavePublicKey(kid ID) error {
 	key, err := kid.Key()
 	if err != nil {
 		return err
@@ -110,13 +108,13 @@ func (k *Keystore) SavePublicKey(kid ID) error {
 	return k.SaveKey(key)
 }
 
-// SaveX25519Key saves a X25519Key to the Keystore.
-func (k *Keystore) SaveX25519Key(bk *X25519Key) error {
+// SaveX25519Key saves a X25519Key to the KeyStore.
+func (k *KeyStore) SaveX25519Key(bk *X25519Key) error {
 	return k.set(NewX25519KeyItem(bk))
 }
 
-// SaveX25519PublicKey saves a X25519PublicKey to the Keystore.
-func (k *Keystore) SaveX25519PublicKey(bpk *X25519PublicKey) error {
+// SaveX25519PublicKey saves a X25519PublicKey to the KeyStore.
+func (k *KeyStore) SaveX25519PublicKey(bpk *X25519PublicKey) error {
 	// Check we don't clobber an existing box key
 	item, err := k.get(bpk.ID().String())
 	if err != nil {
@@ -129,16 +127,16 @@ func (k *Keystore) SaveX25519PublicKey(bpk *X25519PublicKey) error {
 }
 
 // Delete removes an item from the keystore.
-func (k *Keystore) Delete(kid ID) (bool, error) {
+func (k *KeyStore) Delete(kid ID) (bool, error) {
 	if kid == "" {
 		return false, errors.Errorf("failed to delete in keystore: empty id specified")
 	}
-	logger.Infof("Keystore deleting: %s", kid)
+	logger.Infof("KeyStore deleting: %s", kid)
 	return k.kr.Delete(kid.String())
 }
 
 // Key for id.
-func (k *Keystore) Key(id ID) (Key, error) {
+func (k *KeyStore) Key(id ID) (Key, error) {
 	item, err := k.get(id.String())
 	if err != nil {
 		return nil, err
@@ -172,7 +170,7 @@ type Opts struct {
 
 // Keys lists keys in the keyring.
 // It ignores keyring items that aren't keys or of the specified types.
-func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
+func (k *KeyStore) Keys(opts *Opts) ([]Key, error) {
 	if opts == nil {
 		opts = &Opts{}
 	}
@@ -201,9 +199,9 @@ func (k *Keystore) Keys(opts *Opts) ([]Key, error) {
 	return keys, nil
 }
 
-// X25519Keys from the Keystore.
+// X25519Keys from the KeyStore.
 // Also includes edx25519 keys converted to x25519 keys.
-func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
+func (k *KeyStore) X25519Keys() ([]*X25519Key, error) {
 	logger.Debugf("Listing x25519 keys...")
 	items, err := k.kr.List(&keyring.ListOpts{
 		Types: []string{string(X25519), string(EdX25519)},
@@ -223,8 +221,8 @@ func (k *Keystore) X25519Keys() ([]*X25519Key, error) {
 	return keys, nil
 }
 
-// EdX25519Keys from the Keystore.
-func (k Keystore) EdX25519Keys() ([]*EdX25519Key, error) {
+// EdX25519Keys from the KeyStore.
+func (k KeyStore) EdX25519Keys() ([]*EdX25519Key, error) {
 	items, err := k.kr.List(&keyring.ListOpts{
 		Types: []string{string(EdX25519)},
 	})
@@ -242,9 +240,9 @@ func (k Keystore) EdX25519Keys() ([]*EdX25519Key, error) {
 	return keys, nil
 }
 
-// EdX25519PublicKeys from the Keystore.
+// EdX25519PublicKeys from the KeyStore.
 // Includes public keys of EdX25519Key's.
-func (k Keystore) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
+func (k KeyStore) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 	items, err := k.kr.List(&keyring.ListOpts{
 		Types: []string{
 			string(EdX25519),
@@ -274,11 +272,11 @@ func (k Keystore) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 	return keys, nil
 }
 
-// X25519PublicKey returns box public key from the Keystore.
+// X25519PublicKey returns box public key from the KeyStore.
 // Since the public key itself is in the ID, you can convert the ID without
 // getting it from the keystore via X25519PublicKeyForID.
-func (k *Keystore) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
-	logger.Infof("Keystore load box public key for %s", kid)
+func (k *KeyStore) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
+	logger.Infof("KeyStore load box public key for %s", kid)
 	item, err := k.get(kid.String())
 	if err != nil {
 		return nil, err
@@ -291,7 +289,7 @@ func (k *Keystore) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
 
 // FindEdX25519PublicKey searches all our EdX25519 public keys for a match to a converted
 // X25519 public key.
-func (k *Keystore) FindEdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
+func (k *KeyStore) FindEdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	logger.Debugf("Finding edx25519 key from an x25519 key %s", kid)
 	spks, err := k.EdX25519PublicKeys()
 	if err != nil {
@@ -312,7 +310,7 @@ func (k *Keystore) FindEdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 }
 
 // SaveKey saves Key based on its type.
-func (k *Keystore) SaveKey(key Key) error {
+func (k *KeyStore) SaveKey(key Key) error {
 	switch v := key.(type) {
 	case *EdX25519Key:
 		return k.SaveEdX25519Key(v)
@@ -328,7 +326,7 @@ func (k *Keystore) SaveKey(key Key) error {
 }
 
 // ImportSaltpack imports key into the keystore from a saltpack message.
-func (k *Keystore) ImportSaltpack(msg string, password string, isHTML bool) (Key, error) {
+func (k *KeyStore) ImportSaltpack(msg string, password string, isHTML bool) (Key, error) {
 	key, err := DecodeKeyFromSaltpack(msg, password, isHTML)
 	if err != nil {
 		return nil, err
@@ -340,7 +338,7 @@ func (k *Keystore) ImportSaltpack(msg string, password string, isHTML bool) (Key
 }
 
 // ExportSaltpack exports key from the keystore to a saltpack message.
-func (k *Keystore) ExportSaltpack(id ID, password string) (string, error) {
+func (k *KeyStore) ExportSaltpack(id ID, password string) (string, error) {
 	key, err := k.Key(id)
 	if err != nil {
 		return "", err

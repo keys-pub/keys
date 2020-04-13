@@ -11,7 +11,7 @@ import (
 )
 
 func TestSaveLoadEdX25519Key(t *testing.T) {
-	ks := keys.NewMemKeystore()
+	ks := keys.NewMemKeyStore()
 	signKey := keys.GenerateEdX25519Key()
 	err := ks.SaveEdX25519Key(signKey)
 	require.NoError(t, err)

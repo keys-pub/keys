@@ -12,14 +12,14 @@ import (
 
 func TestSigncrypt(t *testing.T) {
 	// Alice
-	ksa := keys.NewMemKeystore()
+	ksa := keys.NewMemKeyStore()
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveEdX25519Key(alice)
 	require.NoError(t, err)
 
 	// Bob
-	ksb := keys.NewMemKeystore()
+	ksb := keys.NewMemKeyStore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
 	err = ksb.SaveEdX25519Key(bob)
@@ -58,14 +58,14 @@ func TestSigncrypt(t *testing.T) {
 
 func TestSigncryptStream(t *testing.T) {
 	// Alice
-	ksa := keys.NewMemKeystore()
+	ksa := keys.NewMemKeyStore()
 	spa := saltpack.NewSaltpack(ksa)
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveEdX25519Key(alice)
 	require.NoError(t, err)
 
 	// Bob
-	ksb := keys.NewMemKeystore()
+	ksb := keys.NewMemKeyStore()
 	spb := saltpack.NewSaltpack(ksb)
 	bob := keys.GenerateEdX25519Key()
 	err = ksb.SaveEdX25519Key(bob)
@@ -106,7 +106,7 @@ func TestSigncryptStream(t *testing.T) {
 }
 
 func TestSigncryptOpenError(t *testing.T) {
-	ksa := keys.NewMemKeystore()
+	ksa := keys.NewMemKeyStore()
 	alice := keys.GenerateEdX25519Key()
 	err := ksa.SaveEdX25519Key(alice)
 	require.NoError(t, err)
@@ -118,7 +118,7 @@ func TestSigncryptOpenError(t *testing.T) {
 	encrypted, err := spa.Signcrypt([]byte("alice's message"), alice, bob.ID())
 	require.NoError(t, err)
 
-	ksb := keys.NewMemKeystore()
+	ksb := keys.NewMemKeyStore()
 	spb := saltpack.NewSaltpack(ksb)
 
 	_, _, err = spb.SigncryptOpen(encrypted)

@@ -11,18 +11,18 @@ import (
 
 // Saltpack provider.
 type Saltpack struct {
-	keys Keystore
+	keys KeyStore
 }
 
-// Keystore ...
-type Keystore interface {
-	// X25519Keys return all X25519 box keys in the Keystore to try to decrypt.
+// KeyStore ...
+type KeyStore interface {
+	// X25519Keys return all X25519 box keys in the KeyStore to try to decrypt.
 	X25519Keys() ([]*keys.X25519Key, error)
 }
 
 // NewSaltpack creates a Saltpack provider.
 // Uses signcryption, see .
-func NewSaltpack(keys Keystore) *Saltpack {
+func NewSaltpack(keys KeyStore) *Saltpack {
 	return &Saltpack{
 		keys: keys,
 	}
