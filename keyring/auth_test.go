@@ -3,6 +3,7 @@ package keyring_test
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
@@ -30,15 +31,15 @@ func testAuth(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 	require.True(t, authed2)
 
-	item := keyring.NewItem("key1", keyring.NewStringSecret("secret"), "")
-	err = kr.Set(item)
+	item := keyring.NewItem("key1", []byte("secret"), "", time.Now())
+	err = kr.Create(item)
 	require.NoError(t, err)
 
 	item, err = kr.Get("key1")
 	require.NoError(t, err)
 	require.NotNil(t, item)
 	require.Equal(t, "key1", item.ID)
-	require.Equal(t, []byte("secret"), item.Secret().Data)
+	require.Equal(t, []byte("secret"), item.Data)
 
 	// Test get reserved
 	_, err = kr.Get("#auth")
@@ -86,5 +87,5 @@ func TestSystemStore(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = kr.Get(".raw")
-	require.EqualError(t, err, "not an encoded keyring item")
+	require.EqualError(t, err, "invalid keyring auth")
 }

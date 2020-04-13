@@ -30,6 +30,7 @@ type Secret struct {
 	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 }
 
+// Contact ...
 type Contact struct {
 	FirstName string    `json:"firstName,omitempty"`
 	LastName  string    `json:"lastName,omitempty"`
@@ -39,6 +40,7 @@ type Contact struct {
 	Addresses []Address `json:"addresses,omitempty"`
 }
 
+// Address ...
 type Address struct {
 	Address1   string `json:"address1,omitempty"`
 	Address2   string `json:"address2,omitempty"`
@@ -49,6 +51,7 @@ type Address struct {
 	Country    string `json:"country,omitempty"`
 }
 
+// Card ...
 type Card struct {
 	FullName   string `json:"fullName,omitempty"`
 	Number     string `json:"number,omitempty"`
@@ -56,14 +59,20 @@ type Card struct {
 	Code       string `json:"code,omitempty"`
 }
 
+// Type for secret.
 type Type string
 
 const (
-	UnknownType  Type = ""
+	// UnknownType ...
+	UnknownType Type = ""
+	// PasswordType ...
 	PasswordType Type = "password"
-	ContactType  Type = "contact"
-	CardType     Type = "card"
-	NoteType     Type = "note"
+	// ContactType ...
+	ContactType Type = "contact"
+	// CardType ...
+	CardType Type = "card"
+	// NoteType ...
+	NoteType Type = "note"
 )
 
 // RandID creates a random secret ID.
@@ -105,14 +114,19 @@ const secretItemType string = "secret"
 
 // newItem creates keyring item for a secret.
 func newItem(secret *Secret) (*keyring.Item, error) {
-	b, err := json.Marshal(secret)
-	if err != nil {
-		return nil, err
-	}
 	if secret.ID == "" {
 		return nil, errors.Errorf("no secret id")
 	}
-	return keyring.NewItem(secret.ID, keyring.NewSecret(b), secretItemType), nil
+	b := marshalSecret(secret)
+	return keyring.NewItem(secret.ID, b, secretItemType, time.Now()), nil
+}
+
+func marshalSecret(secret *Secret) []byte {
+	b, err := json.Marshal(secret)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 // asSecret returns Secret for keyring Item.
@@ -121,7 +135,7 @@ func asSecret(item *keyring.Item) (*Secret, error) {
 		return nil, errors.Errorf("item type %s != %s", item.Type, secretItemType)
 	}
 	var secret Secret
-	if err := json.Unmarshal(item.SecretData(), &secret); err != nil {
+	if err := json.Unmarshal(item.Data, &secret); err != nil {
 		logger.Errorf("invalid secret item")
 	}
 	return &secret, nil

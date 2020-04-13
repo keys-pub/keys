@@ -14,7 +14,6 @@ func TestEdX25519Key(t *testing.T) {
 
 	ks := keys.NewMemKeyStore()
 	sk := keys.GenerateEdX25519Key()
-	sk.Metadata().Notes = "test notes"
 
 	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
@@ -22,7 +21,6 @@ func TestEdX25519Key(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, sk.PrivateKey()[:], skOut.PrivateKey()[:])
 	require.Equal(t, sk.PublicKey().Bytes()[:], skOut.PublicKey().Bytes()[:])
-	require.Equal(t, "test notes", skOut.Metadata().Notes)
 
 	sks, err := ks.EdX25519Keys()
 	require.NoError(t, err)
@@ -32,18 +30,6 @@ func TestEdX25519Key(t *testing.T) {
 	spkOut, err := ks.EdX25519PublicKey(sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Bytes()[:], spkOut.Bytes()[:])
-
-	// Update metadata and save
-	skOut.Metadata().Notes = "test notes #2"
-	// updatedAt := skOut.Metadata().UpdatedAt.Add(time.Second)
-	// skOut.Metadata().UpdatedAt = updatedAt
-	err = ks.SaveEdX25519Key(skOut)
-	require.NoError(t, err)
-	skOut2, err := ks.EdX25519Key(sk.ID())
-	require.NoError(t, err)
-	require.Equal(t, "test notes #2", skOut2.Metadata().Notes)
-	require.Equal(t, skOut.Metadata().CreatedAt, skOut2.Metadata().CreatedAt)
-	// require.Equal(t, updatedAt, skOut2.Metadata().UpdatedAt)
 
 	err = ks.SaveEdX25519PublicKey(sk.PublicKey())
 	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")

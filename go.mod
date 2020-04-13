@@ -13,6 +13,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.4.0
 	github.com/tyler-smith/go-bip39 v1.0.2
+	github.com/vmihailenco/msgpack/v4 v4.3.11
 	github.com/zalando/go-keyring v0.0.0-20200121091418-667557018717
 	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect

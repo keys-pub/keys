@@ -14,7 +14,7 @@ type Store struct {
 	nowFn func() time.Time
 }
 
-// NewKeyStore constructs a KeyStore.
+// NewStore constructs a secret.Store.
 func NewStore(kr keyring.Keyring) *Store {
 	return &Store{
 		kr:    kr,
@@ -47,19 +47,24 @@ func (s *Store) Set(secret *Secret) (*Secret, bool, error) {
 	if existing != nil {
 		secret.CreatedAt = existing.CreatedAt
 		secret.UpdatedAt = s.nowFn()
+		b := marshalSecret(secret)
+		if err := s.kr.Update(secret.ID, b); err != nil {
+			return nil, false, err
+		}
 		updated = true
+
 	} else {
 		now := s.nowFn()
 		secret.CreatedAt = now
 		secret.UpdatedAt = now
-	}
 
-	item, err := newItem(secret)
-	if err != nil {
-		return nil, false, err
-	}
-	if err := s.kr.Set(item); err != nil {
-		return nil, false, err
+		item, err := newItem(secret)
+		if err != nil {
+			return nil, false, err
+		}
+		if err := s.kr.Create(item); err != nil {
+			return nil, false, err
+		}
 	}
 
 	return secret, updated, nil
@@ -82,10 +87,11 @@ func (s *Store) Get(id string) (*Secret, error) {
 	return asSecret(item)
 }
 
-type SecretsOpts struct{}
+// ListOpts are options for listing secrets.
+type ListOpts struct{}
 
 // List secrets.
-func (s *Store) List(opts *SecretsOpts) ([]*Secret, error) {
+func (s *Store) List(opts *ListOpts) ([]*Secret, error) {
 	// if opts == nil {
 	// 	opts = &SecretsOpts{}
 	// }

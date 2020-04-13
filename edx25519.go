@@ -12,7 +12,7 @@ import (
 type EdX25519PublicKey struct {
 	id        ID
 	publicKey *[ed25519.PublicKeySize]byte
-	metadata  *Metadata
+	createdAt time.Time
 }
 
 // EdX25519 key.
@@ -74,9 +74,9 @@ func (k EdX25519Key) Bytes() []byte {
 	return k.privateKey[:]
 }
 
-// Metadata for key.
-func (k EdX25519Key) Metadata() *Metadata {
-	return k.publicKey.metadata
+// CreatedAt ...
+func (k EdX25519Key) CreatedAt() time.Time {
+	return k.publicKey.createdAt
 }
 
 // Bytes64 for key.
@@ -90,7 +90,6 @@ func NewEdX25519PublicKey(b *[ed25519.PublicKeySize]byte) *EdX25519PublicKey {
 	return &EdX25519PublicKey{
 		id:        MustID(edx25519KeyHRP, b[:]),
 		publicKey: b,
-		metadata:  &Metadata{},
 	}
 }
 
@@ -171,9 +170,9 @@ func (s EdX25519PublicKey) Bytes32() *[32]byte {
 	return s.publicKey
 }
 
-// Metadata for key.
-func (s EdX25519PublicKey) Metadata() *Metadata {
-	return s.metadata
+// CreatedAt ...
+func (s EdX25519PublicKey) CreatedAt() time.Time {
+	return s.createdAt
 }
 
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.
@@ -266,7 +265,6 @@ func GenerateEdX25519Key() *EdX25519Key {
 	logger.Infof("Generating EdX25519 key...")
 	seed := Rand32()
 	key := NewEdX25519KeyFromSeed(seed)
-	key.Metadata().CreatedAt = time.Now()
-	// key.Metadata().UpdatedAt = time.Now()
+	key.publicKey.createdAt = time.Now()
 	return key
 }
