@@ -151,7 +151,7 @@ func setItem(st Store, service string, item *Item, key SecretKey) error {
 	if key == nil {
 		return ErrLocked
 	}
-	if len(item.ID) > 256 {
+	if len(item.ID) > 255 {
 		return ErrItemValueTooLarge
 	}
 	if len(item.Type) > 32 {

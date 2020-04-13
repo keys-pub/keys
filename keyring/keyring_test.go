@@ -233,8 +233,8 @@ func TestLargeItems(t *testing.T) {
 	err = kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
-	id := string(bytes.Repeat([]byte("a"), 256))
-	largeID := string(bytes.Repeat([]byte("a"), 257))
+	id := string(bytes.Repeat([]byte("a"), 255))
+	largeID := string(bytes.Repeat([]byte("a"), 256))
 	typ := string(bytes.Repeat([]byte("t"), 32))
 	largeType := string(bytes.Repeat([]byte("a"), 33))
 
