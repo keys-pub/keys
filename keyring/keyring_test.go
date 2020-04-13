@@ -84,18 +84,6 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.Equal(t, 1, len(items2))
 	require.Equal(t, items2[0].ID, "xyz")
 
-	// IDs
-	ids, err := kr.IDs("")
-	require.NoError(t, err)
-	require.Equal(t, 2, len(ids))
-	require.Equal(t, ids[0], "abc")
-	require.Equal(t, ids[1], "xyz")
-
-	ids2, err := kr.IDs("a")
-	require.NoError(t, err)
-	require.Equal(t, 1, len(ids2))
-	require.Equal(t, ids2[0], "abc")
-
 	// Delete
 	ok, err := kr.Delete("abc")
 	require.NoError(t, err)
@@ -191,10 +179,6 @@ func testUnlock(t *testing.T, kr keyring.Keyring) {
 
 	_, err = kr.List(nil)
 	require.EqualError(t, err, "keyring is locked")
-
-	ids, err := kr.IDs("")
-	require.NoError(t, err)
-	require.Equal(t, []string{"key1"}, ids)
 
 	ok, err := kr.Exists("key1")
 	require.NoError(t, err)

@@ -46,11 +46,6 @@ type Keyring interface {
 	// Items with ids that start with "." are not returned by List.
 	List(opts *ListOpts) ([]*Item, error)
 
-	// IDs.
-	// Doesn't require Unlock().
-	// Items with ids that start with "." are not returned by IDs.
-	IDs(prefix string) ([]string, error)
-
 	// Exists returns true it has the id.
 	// Doesn't require Unlock().
 	Exists(id string) (bool, error)
