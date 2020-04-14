@@ -11,6 +11,7 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ type clock struct {
 }
 
 func newClock() *clock {
-	t := keys.TimeFromMillis(1234567890000)
+	t := util.TimeFromMillis(1234567890000)
 	return &clock{
 		t: t,
 	}
@@ -44,7 +45,7 @@ func testdataBytes(t *testing.T, path string) []byte {
 
 func TestSigchainUsers(t *testing.T) {
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)

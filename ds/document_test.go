@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +34,7 @@ func TestDocument(t *testing.T) {
 	require.Equal(t, 4, len(out))
 	require.Equal(t, "/test/0", out[0].Path)
 	require.Equal(t, []byte("value0"), out[0].Data)
-	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(out[0].CreatedAt))
+	require.Equal(t, int64(1234567890001), util.TimeToMillis(out[0].CreatedAt))
 
 	pathsOut := ds.DocumentPaths(out)
 	require.Equal(t, paths, pathsOut)

@@ -9,11 +9,12 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
-func testStore(t *testing.T, dst ds.DocumentStore, scs keys.SigchainStore, req *keys.MockRequestor, clock *clock) *user.Store {
+func testStore(t *testing.T, dst ds.DocumentStore, scs keys.SigchainStore, req *util.MockRequestor, clock *clock) *user.Store {
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
 	return ust
@@ -22,7 +23,7 @@ func testStore(t *testing.T, dst ds.DocumentStore, scs keys.SigchainStore, req *
 func TestNewUserForTwitterSigning(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -50,7 +51,7 @@ END MESSAGE.`
 func TestNewUserMarshal(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -82,7 +83,7 @@ func TestResultGithub(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -116,8 +117,8 @@ func TestResultGithub(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
-	require.Equal(t, keys.TimeMs(1234567890004), result.VerifiedAt)
-	require.Equal(t, keys.TimeMs(1234567890003), result.Timestamp)
+	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), result.Timestamp)
 
 	result, err = ust.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -134,7 +135,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -168,7 +169,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -200,7 +201,7 @@ func TestResultTwitter(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -233,8 +234,8 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "twitter", result.User.Service)
 	require.Equal(t, "bob", result.User.Name)
-	require.Equal(t, keys.TimeMs(1234567890004), result.VerifiedAt)
-	require.Equal(t, keys.TimeMs(1234567890003), result.Timestamp)
+	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), result.Timestamp)
 }
 
 func TestResultReddit(t *testing.T) {
@@ -244,7 +245,7 @@ func TestResultReddit(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -277,15 +278,15 @@ func TestResultReddit(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "reddit", result.User.Service)
 	require.Equal(t, "charlie", result.User.Name)
-	require.Equal(t, keys.TimeMs(1234567890004), result.VerifiedAt)
-	require.Equal(t, keys.TimeMs(1234567890003), result.Timestamp)
+	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), result.Timestamp)
 }
 
 func TestUserUnverified(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
 	clock := newClock()
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -311,7 +312,7 @@ func TestCheckNoUsers(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	sc := keys.NewSigchain(sk.ID())
 
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -330,7 +331,7 @@ func TestCheckNoUsers(t *testing.T) {
 func TestVerify(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -359,7 +360,7 @@ func TestNewUser(t *testing.T) {
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
-	req := keys.NewMockRequestor()
+	req := util.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
 	u, uerr := user.NewUser(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)

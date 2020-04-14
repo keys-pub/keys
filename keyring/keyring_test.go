@@ -8,6 +8,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
+	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +17,7 @@ type clock struct {
 }
 
 func newClock() *clock {
-	t := keys.TimeFromMillis(1234567890000)
+	t := util.TimeFromMillis(1234567890000)
 	return &clock{
 		t: t,
 	}
@@ -67,7 +68,7 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.NotNil(t, item)
 	require.Equal(t, "abc", item.ID)
 	require.Equal(t, []byte("password"), item.Data)
-	require.Equal(t, keys.TimeToMillis(now), keys.TimeToMillis(item.CreatedAt))
+	require.Equal(t, util.TimeToMillis(now), util.TimeToMillis(item.CreatedAt))
 
 	has, err := kr.Exists("abc")
 	require.NoError(t, err)
@@ -90,7 +91,7 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.NotNil(t, item)
 	require.Equal(t, "abc", item.ID)
 	require.Equal(t, []byte("newpassword"), item.Data)
-	require.Equal(t, keys.TimeToMillis(now), keys.TimeToMillis(item.CreatedAt))
+	require.Equal(t, util.TimeToMillis(now), util.TimeToMillis(item.CreatedAt))
 
 	// Create (hidden)
 	err = kr.Create(keyring.NewItem(".ck", []byte("password"), "", time.Now()))

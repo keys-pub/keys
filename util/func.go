@@ -1,4 +1,4 @@
-package keys
+package util
 
 // RetryE will retry the fn (error) if the error is temporary (such as a temporary net.Error)
 func RetryE(fn func() error) error {

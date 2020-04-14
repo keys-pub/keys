@@ -11,16 +11,17 @@ import (
 	"github.com/keys-pub/keys/ds"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/util"
 	"github.com/pkg/errors"
 )
 
 // Result is result of a user result.
 type Result struct {
-	Err        string      `json:"err,omitempty"`
-	Status     Status      `json:"status"`
-	Timestamp  keys.TimeMs `json:"ts"`
-	User       *User       `json:"user"`
-	VerifiedAt keys.TimeMs `json:"vts"`
+	Err        string `json:"err,omitempty"`
+	Status     Status `json:"status"`
+	Timestamp  int64  `json:"ts"`
+	User       *User  `json:"user"`
+	VerifiedAt int64  `json:"vts"`
 }
 
 func (r Result) String() string {
@@ -32,7 +33,7 @@ func (r Result) String() string {
 
 // Expired returns true if result is older than dt.
 func (r Result) Expired(now time.Time, dt time.Duration) bool {
-	ts := keys.TimeFromMillis(r.Timestamp)
+	ts := util.TimeFromMillis(r.Timestamp)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
@@ -45,12 +46,12 @@ type keyDocument struct {
 type Store struct {
 	dst   ds.DocumentStore
 	scs   keys.SigchainStore
-	req   keys.Requestor
+	req   util.Requestor
 	nowFn func() time.Time
 }
 
 // NewStore creates Store.
-func NewStore(dst ds.DocumentStore, scs keys.SigchainStore, req keys.Requestor, nowFn func() time.Time) (*Store, error) {
+func NewStore(dst ds.DocumentStore, scs keys.SigchainStore, req util.Requestor, nowFn func() time.Time) (*Store, error) {
 	return &Store{
 		dst:   dst,
 		scs:   scs,
@@ -65,7 +66,7 @@ func (u *Store) Now() time.Time {
 }
 
 // Requestor ...
-func (u *Store) Requestor() keys.Requestor {
+func (u *Store) Requestor() util.Requestor {
 	return u.req
 }
 
@@ -159,12 +160,12 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 		return
 	}
 
-	result.Timestamp = keys.TimeToMillis(u.Now())
+	result.Timestamp = util.TimeToMillis(u.Now())
 
 	logger.Infof("Requesting %s", ur)
 	body, err := u.req.RequestURL(ctx, ur)
 	if err != nil {
-		if errHTTP, ok := errors.Cause(err).(keys.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+		if errHTTP, ok := errors.Cause(err).(util.ErrHTTP); ok && errHTTP.StatusCode == 404 {
 			result.Err = err.Error()
 			result.Status = StatusResourceNotFound
 			return
@@ -192,7 +193,7 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 	logger.Infof("Verified %s", result.User.KID)
 	result.Err = ""
 	result.Status = StatusOK
-	result.VerifiedAt = keys.TimeToMillis(u.Now())
+	result.VerifiedAt = util.TimeToMillis(u.Now())
 }
 
 // VerifyContent checks content.
@@ -411,7 +412,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 			return nil, err
 		}
 		if keyDoc.Result != nil {
-			ts := keys.TimeFromMillis(keyDoc.Result.Timestamp)
+			ts := util.TimeFromMillis(keyDoc.Result.Timestamp)
 
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)

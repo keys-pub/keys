@@ -7,34 +7,29 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Address is a list of IDs.
+// Address is a canonical list of IDs.
 type Address struct {
-	recipients []ID
-	idmap      map[ID]bool
+	ids   []ID
+	idmap map[ID]bool
 }
 
-// NewAddress returns address from recipient ids.
-func NewAddress(recipients ...ID) (*Address, error) {
-	if len(recipients) == 0 {
-		return nil, errors.Errorf("no recipients")
+// NewAddress returns an Address from a list of IDs.
+func NewAddress(ids ...ID) (*Address, error) {
+	if len(ids) == 0 {
+		return nil, errors.Errorf("no ids")
 	}
-	sort.Slice(recipients, func(i, j int) bool { return recipients[i].String() < recipients[j].String() })
-	idmap := make(map[ID]bool, len(recipients))
-	for _, r := range recipients {
+	sort.Slice(ids, func(i, j int) bool { return ids[i].String() < ids[j].String() })
+	idmap := make(map[ID]bool, len(ids))
+	for _, r := range ids {
 		if ok := idmap[r]; ok {
 			return nil, errors.Errorf("duplicate address %s", r)
 		}
 		idmap[r] = true
 	}
 	return &Address{
-		recipients: recipients,
-		idmap:      idmap,
+		ids:   ids,
+		idmap: idmap,
 	}, nil
-}
-
-// Recipients returns Ikeys.
-func (a Address) Recipients() []ID {
-	return a.recipients
 }
 
 // ParseAddress returns address from a string.
@@ -58,7 +53,7 @@ func ParseAddress(saddrs ...string) (*Address, error) {
 
 // Contains returns true if address contains the specified id.
 func (a *Address) Contains(id ID) bool {
-	for _, r := range a.recipients {
+	for _, r := range a.ids {
 		if r == id {
 			return true
 		}
@@ -66,10 +61,10 @@ func (a *Address) Contains(id ID) bool {
 	return false
 }
 
-// RecipientStrings returns recipient IDs as strings.
-func (a *Address) RecipientStrings() []string {
-	s := make([]string, 0, len(a.recipients))
-	for _, r := range a.recipients {
+// Strings returns IDs as strings.
+func (a *Address) Strings() []string {
+	s := make([]string, 0, len(a.ids))
+	for _, r := range a.ids {
 		s = append(s, r.String())
 	}
 	return s
@@ -81,17 +76,5 @@ func (a *Address) RecipientStrings() []string {
 //     NewAddress("bob", "alice").String() => "alice:bob"
 //
 func (a *Address) String() string {
-	return strings.Join(a.RecipientStrings(), ":")
+	return strings.Join(a.Strings(), ":")
 }
-
-// Add recipient to address
-// func (a *Address) Add(recipient ID) error {
-// 	if a.Contains(recipient) {
-// 		return errors.Errorf("address already has recipient %s", recipient)
-// 	}
-// 	recipients := a.recipients
-// 	recipients = append(recipients, recipient)
-// 	sort.Slice(recipients, func(i, j int) bool { return recipients[i].String() < recipients[j].String() })
-// 	a.recipients = recipients
-// 	return nil
-// }

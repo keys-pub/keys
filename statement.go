@@ -8,6 +8,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/json"
+	"github.com/keys-pub/keys/util"
 	"github.com/pkg/errors"
 )
 
@@ -134,7 +135,7 @@ type statementFormat struct {
 	Prev      []byte `json:"prev"`
 	Revoke    int    `json:"revoke"`
 	Seq       int    `json:"seq"`
-	Timestamp int    `json:"ts"`
+	Timestamp int64  `json:"ts"`
 	Type      string `json:"type"`
 }
 
@@ -156,7 +157,7 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts := TimeFromMillis(TimeMs(stf.Timestamp))
+	ts := util.TimeFromMillis(int64(stf.Timestamp))
 
 	st, err := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
 	if err != nil {
@@ -247,7 +248,7 @@ func statementBytes(st *Statement, sig []byte) ([]byte, error) {
 		mes = append(mes, json.NewInt("seq", st.Seq))
 	}
 	if !st.Timestamp.IsZero() {
-		mes = append(mes, json.NewInt("ts", int(TimeToMillis(st.Timestamp))))
+		mes = append(mes, json.NewInt("ts", int(util.TimeToMillis(st.Timestamp))))
 	}
 	if st.Type != "" {
 		mes = append(mes, json.NewString("type", st.Type))

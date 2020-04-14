@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/secret"
+	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +16,7 @@ type clock struct {
 }
 
 func newClock() *clock {
-	t := keys.TimeFromMillis(1234567890000)
+	t := util.TimeFromMillis(1234567890000)
 	return &clock{
 		t: t,
 	}

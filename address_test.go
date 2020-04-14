@@ -27,11 +27,11 @@ func TestAddress(t *testing.T) {
 
 	addr2, err := keys.ParseAddress(fmt.Sprintf("%s:%s:%s", alice, bob, charlie))
 	require.NoError(t, err)
-	require.Equal(t, 3, len(addr2.Recipients()))
+	require.Equal(t, 3, len(addr2.Strings()))
 	require.Equal(t, fmt.Sprintf("%s:%s:%s", alice, charlie, bob), addr2.String())
 
 	empty, err := keys.NewAddress()
-	require.EqualError(t, err, "no recipients")
+	require.EqualError(t, err, "no ids")
 	require.Nil(t, empty)
 
 	dupe, err := keys.NewAddress(alice, alice)

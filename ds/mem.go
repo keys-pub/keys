@@ -227,6 +227,7 @@ func (m *Mem) Delete(ctx context.Context, path string) (bool, error) {
 	return true, nil
 }
 
+// DeleteAll ...
 func (m *Mem) DeleteAll(ctx context.Context, paths []string) error {
 	for _, p := range paths {
 		_, err := m.Delete(ctx, p)

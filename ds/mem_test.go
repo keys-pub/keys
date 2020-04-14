@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +17,7 @@ type clock struct {
 }
 
 func newClock() *clock {
-	t := keys.TimeFromMillis(1234567890000)
+	t := util.TimeFromMillis(1234567890000)
 	return &clock{
 		t: t,
 	}
@@ -31,10 +31,10 @@ func (c *clock) Now() time.Time {
 func TestClock(t *testing.T) {
 	clock := newClock()
 	t1 := clock.Now()
-	tf1 := t1.Format(keys.RFC3339Milli)
+	tf1 := t1.Format(util.RFC3339Milli)
 	require.Equal(t, "2009-02-13T23:31:30.001Z", tf1)
 	t2 := clock.Now()
-	tf2 := t2.Format(keys.RFC3339Milli)
+	tf2 := t2.Format(util.RFC3339Milli)
 	require.Equal(t, "2009-02-13T23:31:30.002Z", tf2)
 }
 
@@ -271,7 +271,7 @@ func testMetadata(t *testing.T, dst ds.DocumentStore) {
 	doc, err := dst.Get(ctx, "/test/key1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(doc.CreatedAt))
+	require.Equal(t, int64(1234567890001), util.TimeToMillis(doc.CreatedAt))
 
 	err = dst.Set(ctx, "/test/key1", []byte("value1b"))
 	require.NoError(t, err)
@@ -279,8 +279,8 @@ func testMetadata(t *testing.T, dst ds.DocumentStore) {
 	doc, err = dst.Get(ctx, "/test/key1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, keys.TimeMs(1234567890001), keys.TimeToMillis(doc.CreatedAt))
-	require.Equal(t, keys.TimeMs(1234567890002), keys.TimeToMillis(doc.UpdatedAt))
+	require.Equal(t, int64(1234567890001), util.TimeToMillis(doc.CreatedAt))
+	require.Equal(t, int64(1234567890002), util.TimeToMillis(doc.UpdatedAt))
 }
 
 func TestDeleteAll(t *testing.T) {

@@ -1,9 +1,9 @@
-package keys_test
+package util_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -26,19 +26,19 @@ func (t *testRetry) fn() error {
 
 func TestRetryEDefault(t *testing.T) {
 	tr := &testRetry{}
-	err := keys.RetryE(tr.fn)
+	err := util.RetryE(tr.fn)
 	require.NoError(t, err)
 }
 
 func TestRetryError(t *testing.T) {
-	err := keys.RetryE(func() error {
+	err := util.RetryE(func() error {
 		return errors.Errorf("error")
 	})
 	require.Error(t, err)
 }
 
 func TestRetrySError(t *testing.T) {
-	_, err := keys.RetrySE(func() (string, error) {
+	_, err := util.RetrySE(func() (string, error) {
 		return "", errors.Errorf("error")
 	})
 	require.Error(t, err)
@@ -46,6 +46,6 @@ func TestRetrySError(t *testing.T) {
 
 func TestRetryEWrap(t *testing.T) {
 	tr := &testRetry{wrap: true}
-	err := keys.RetryE(tr.fn)
+	err := util.RetryE(tr.fn)
 	require.NoError(t, err)
 }

@@ -17,7 +17,9 @@ type Change struct {
 type Direction string
 
 const (
-	Ascending  Direction = "asc"
+	// Ascending direction.
+	Ascending Direction = "asc"
+	// Descending direction.
 	Descending Direction = "desc"
 )
 
