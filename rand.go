@@ -41,38 +41,6 @@ func RandWords(numWords int) string {
 	return strings.Join(words[:numWords], " ")
 }
 
-const alphaNumeric = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-// RandPassword returns a random password.
-// It uses a-zA-Z0-9 and will not repeat the same character in a row.
-func RandPassword(length int) string {
-	b := make([]byte, length)
-	var prev byte
-	for i := 0; i < length; {
-		r := randomChar(alphaNumeric)
-		if r == prev {
-			continue
-		}
-		prev = r
-		b[i] = r
-		i++
-	}
-	return string(b)
-}
-
-func randInt64(max int64) int64 {
-	n, err := rand.Int(rand.Reader, big.NewInt(max))
-	if err != nil {
-		panic(err)
-	}
-	return n.Int64()
-}
-
-func randomChar(charSet string) byte {
-	n := randInt64(int64(len(charSet)))
-	return charSet[n]
-}
-
 // Rand16 generates random 16 bytes.
 func Rand16() *[16]byte {
 	b := RandBytes(16)

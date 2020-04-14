@@ -40,19 +40,6 @@ func TestRandWords(t *testing.T) {
 	}
 }
 
-func TestRandPassword(t *testing.T) {
-	p1 := keys.RandPassword(16)
-	require.Equal(t, 16, len(p1))
-
-	for i := 0; i < 1000; i++ {
-		p2 := keys.RandPassword(8)
-		require.NotEqual(t, p1, p2)
-	}
-
-	p3 := keys.RandPassword(128)
-	require.Equal(t, 128, len(p3))
-}
-
 func TestRand32P4(t *testing.T) {
 	rs := make([]string, 0, 100)
 	for i := uint32(1); i < 100; i++ {
