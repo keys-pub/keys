@@ -1,3 +1,5 @@
+// +build !linux
+
 package saltpack_test
 
 import (
