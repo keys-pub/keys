@@ -23,7 +23,6 @@ func TestRandPassword(t *testing.T) {
 		require.Equal(t, 8, len(check))
 		require.False(t, set.Contains(check))
 		set.Add(check)
-
 	}
 
 	pass = keys.RandPassword(128)
@@ -31,6 +30,4 @@ func TestRandPassword(t *testing.T) {
 
 	pass = keys.RandPassword(4096)
 	require.Equal(t, 4096, len(pass))
-	t.Logf(pass)
-	t.Fatal("testing")
 }
