@@ -12,7 +12,7 @@ type Item struct {
 	ID        string    `msgpack:"id"`
 	Type      string    `msgpack:"typ"`
 	Data      []byte    `msgpack:"dat"`
-	CreatedAt time.Time `msgpack:"ts"`
+	CreatedAt time.Time `msgpack:"cts"`
 }
 
 // NewItem creates an Item.
