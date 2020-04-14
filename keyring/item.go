@@ -15,14 +15,13 @@ type Item struct {
 	CreatedAt time.Time
 }
 
-// NewItem creates an Item with a secret.
+// NewItem creates an Item.
 func NewItem(id string, b []byte, typ string, createdAt time.Time) *Item {
 	item := &Item{ID: id, Data: b, Type: typ, CreatedAt: createdAt}
 	return item
 }
 
-// Marshal to bytes.
-// If secretKey is specified we store the data encrypted.
+// Marshal to bytes, encrypted with a secret key.
 func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	if secretKey == nil {
 		return nil, errors.Errorf("no secret key specified")
@@ -36,8 +35,6 @@ func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 }
 
 // DecodeItem returns Item from bytes.
-// If encrypted and secret key is specified, it will have the decrypted data
-// and will return (*Item, true, nil).
 func DecodeItem(b []byte, secretKey SecretKey) (*Item, error) {
 	return unmarshal(b, secretKey)
 }

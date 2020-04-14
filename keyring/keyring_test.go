@@ -36,8 +36,13 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 	require.Nil(t, item)
 
-	// Create
 	now := time.Now()
+
+	// Update missing ErrItemNotFound
+	err = kr.Update("abc", []byte("password"))
+	require.Equal(t, err, keyring.ErrItemNotFound)
+
+	// Create
 	err = kr.Create(keyring.NewItem("abc", []byte("password"), "type1", now))
 	require.NoError(t, err)
 
@@ -55,6 +60,10 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	has2, err := kr.Exists("xyz")
 	require.NoError(t, err)
 	require.False(t, has2)
+
+	// Create exising ErrItemAlreadyExists
+	err = kr.Create(keyring.NewItem("abc", []byte("password"), "type1", now))
+	require.Equal(t, err, keyring.ErrItemAlreadyExists)
 
 	// Update
 	err = kr.Update("abc", []byte("newpassword"))
