@@ -11,6 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type clock struct {
+	t time.Time
+}
+
+func newClock() *clock {
+	t := keys.TimeFromMillis(1234567890000)
+	return &clock{
+		t: t,
+	}
+}
+
+func (c *clock) Now() time.Time {
+	c.t = c.t.Add(time.Millisecond)
+	return c.t
+}
+
 func TestKeyring(t *testing.T) {
 	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
