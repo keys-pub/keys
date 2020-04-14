@@ -7,27 +7,22 @@ import (
 	"github.com/keys-pub/keys/keyring"
 )
 
-// KeyringV1 upgrade.
-func KeyringV1(serviceFrom string, serviceTo string, key *[32]byte) error {
+func keyringV1(st keyring.Store, serviceFrom string, keyFrom *[32]byte, serviceTo string, keyTo *[32]byte) {
 	creds, err := wincred.List()
 	if err != nil {
-		return nil, err
+		logger.Errorf("Failed to query for upgrade: %s", err)
+		return
 	}
 
 	sys := keyring.System()
 
 	for _, cred := range creds {
-		if strings.HasPrefix(cred.TargetName, service+"/") {
-			id := cred.TargetName[len(service+"/"):]
-			if strings.HasPrefix(id, hiddenPrefix) || strings.HasPrefix(id, reservedPrefix) {
-				continue
-			}
-			if err := upgrade(sys, serviceFrom, serviceTo, id, key); err != nil {
-				logger.Errorf("Failed to upgrade %s: %s", r.Account, err)
+		if strings.HasPrefix(cred.TargetName, serviceFrom+"/") {
+			id := cred.TargetName[len(serviceFrom+"/"):]
+			if err := upgrade(sys, serviceFrom, keyFrom, id, serviceTo, keyTo); err != nil {
+				logger.Errorf("Failed to upgrade %s: %s", id, err)
 				continue
 			}
 		}
 	}
-
-	return nil
 }

@@ -5,8 +5,7 @@ import (
 	"github.com/keys-pub/keys/keyring"
 )
 
-// KeyringV1 upgrade.
-func KeyringV1(serviceFrom string, serviceTo string, key *[32]byte) error {
+func keyringV1(st keyring.Store, serviceFrom string, keyFrom *[32]byte, serviceTo string, keyTo *[32]byte) {
 	listQuery := keychain.NewItem()
 	listQuery.SetSecClass(keychain.SecClassGenericPassword)
 	listQuery.SetService(serviceFrom)
@@ -15,19 +14,18 @@ func KeyringV1(serviceFrom string, serviceTo string, key *[32]byte) error {
 	listQuery.SetReturnAttributes(true)
 	results, err := keychain.QueryItem(listQuery)
 	if err != nil {
-		return err
+		logger.Errorf("Failed to query for upgrade: %s", err)
+		return
 	} else if len(results) == 0 {
-		return nil
+		return
 	}
 
-	sys := keyring.System()
-
+	logger.Infof("Found %d (for upgrade)", len(results))
 	for _, r := range results {
-		if err := upgrade(sys, serviceFrom, serviceTo, r.Account, key); err != nil {
+		logger.Infof("Upgrade: %s", r.Account)
+		if err := upgrade(st, serviceFrom, keyFrom, r.Account, serviceTo, keyTo); err != nil {
 			logger.Errorf("Failed to upgrade %s: %s", r.Account, err)
 			continue
 		}
 	}
-
-	return nil
 }
