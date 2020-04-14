@@ -40,18 +40,16 @@ func TestRandWords(t *testing.T) {
 	}
 }
 
-func TestRandPassphrase(t *testing.T) {
-	p1 := keys.RandPassphrase(16)
+func TestRandPassword(t *testing.T) {
+	p1 := keys.RandPassword(16)
 	require.Equal(t, 16, len(p1))
 
-	require.Panics(t, func() { keys.RandPassphrase(11) })
-
 	for i := 0; i < 1000; i++ {
-		p2 := keys.RandPassphrase(16)
+		p2 := keys.RandPassword(8)
 		require.NotEqual(t, p1, p2)
 	}
 
-	p3 := keys.RandPassphrase(128)
+	p3 := keys.RandPassword(128)
 	require.Equal(t, 128, len(p3))
 }
 
