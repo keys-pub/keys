@@ -52,7 +52,6 @@ func ExampleSaltpack_Decrypt() {
 		log.Fatal(err)
 	}
 	ks := keys.NewKeyStore(kr)
-	sp := saltpack.NewSaltpack(ks)
 
 	kmsg := `BEGIN EDX25519 KEY MESSAGE.
 	E9zL57KzBY1CIdJ d5tlpnyCIX8R5DB oLswy2g17kbfK4s CwryRUoII3ZNk3l
@@ -71,6 +70,7 @@ func ExampleSaltpack_Decrypt() {
 	}
 
 	// Bob decrypt's
+	sp := saltpack.NewSaltpack(ks)
 	out, sender, err := sp.DecryptArmored(encrypted)
 	if err != nil {
 		log.Fatal(err)
