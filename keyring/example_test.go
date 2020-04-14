@@ -20,20 +20,20 @@ func ExampleNewKeyring() {
 		log.Fatal(err)
 	}
 
-	// Save secret
+	// Save item
 	item := keyring.NewItem("id1", []byte("mysecret"), "", time.Now())
 	if err := kr.Create(item); err != nil {
 		log.Fatal(err)
 	}
 
-	// Get secret
+	// Get item
 	out, err := kr.Get("id1")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("secret: %s\n", string(out.Data))
 
-	// List secrets
+	// List items
 	items, err := kr.List(nil)
 	if err != nil {
 		log.Fatal(err)

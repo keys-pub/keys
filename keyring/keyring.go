@@ -31,7 +31,7 @@ type Keyring interface {
 
 	// Create item.
 	// Requires Unlock().
-	Create(i *Item) error
+	Create(item *Item) error
 
 	// Update item.
 	// Requires Unlock().

@@ -20,22 +20,20 @@ if err := keyring.UnlockWithPassword(kr, "mypassword"); err != nil {
     log.Fatal(err)
 }
 
-// Save secret
-secret := keyring.NewSecret([]byte("mysecret"))
-item := keyring.NewItem("id1", secret, "")
-
-if err := kr.Set(item); err != nil {
+// Save item
+item := keyring.NewItem("id1", secret, "", time.Now())
+if err := kr.Create(item); err != nil {
     log.Fatal(err)
 }
 
-// Get secret
+// Get item
 out, err := kr.Get("id1")
 if err != nil {
     log.Fatal(err)
 }
 fmt.Printf("secret: %s\n", string(out.SecretData()))
 
-// List secrets
+// List items
 items, err := kr.List(nil)
 if err != nil {
     log.Fatal(err)
