@@ -36,7 +36,7 @@ func NewSigchain(kid ID) *Sigchain {
 	}
 }
 
-// KID is the sign public key ID.
+// KID ...
 func (s *Sigchain) KID() ID {
 	return s.kid
 }
@@ -160,7 +160,7 @@ func NewSigchainStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, t
 		return nil, errors.Errorf("no sigchain specified")
 	}
 	if sc.KID() != sk.ID() {
-		return nil, errors.Errorf("invalid sigchain sign public key")
+		return nil, errors.Errorf("invalid sigchain public key")
 	}
 
 	seq := sc.LastSeq() + 1
@@ -206,7 +206,7 @@ func NewRevokeStatement(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, 
 		return nil, errors.Errorf("no sigchain specified")
 	}
 	if sc.KID() != sk.ID() {
-		return nil, errors.Errorf("invalid sigchain sign public key")
+		return nil, errors.Errorf("invalid sigchain public key")
 	}
 	if revoke < 1 {
 		return nil, errors.Errorf("invalid revoke seq %d", revoke)

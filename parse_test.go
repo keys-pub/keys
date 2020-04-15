@@ -13,22 +13,25 @@ func TestParseKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, keys.ID("kex1nc345hg9nt3eef8rfz3r2uu2psma8umf54tx8z8meyvmnzeglk8s50xu7y"), key.ID())
 
-	ed := `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ4jWl0FmuOcpONIojVzigw30/NppVZjiPvJGbmLKP2P gabe@ok.local`
-	key, err = keys.ParseKey([]byte(ed), "")
+	// SSH public ed25519
+	edPub := `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ4jWl0FmuOcpONIojVzigw30/NppVZjiPvJGbmLKP2P gabe@ok.local`
+	key, err = keys.ParseKey([]byte(edPub), "")
 	require.NoError(t, err)
 	require.Equal(t, keys.ID("kex1nc345hg9nt3eef8rfz3r2uu2psma8umf54tx8z8meyvmnzeglk8s50xu7y"), key.ID())
 
-	edpriv := `-----BEGIN OPENSSH PRIVATE KEY-----
+	// SSH private ed25519
+	edPriv := `-----BEGIN OPENSSH PRIVATE KEY-----
 	b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
 	QyNTUxOQAAACCeI1pdBZrjnKTjSKI1c4oMN9PzaaVWY4j7yRm5iyj9jwAAAJDRmZP80ZmT
 	/AAAAAtzc2gtZWQyNTUxOQAAACCeI1pdBZrjnKTjSKI1c4oMN9PzaaVWY4j7yRm5iyj9jw
 	AAAED2F09VUc5ig2cF/HpYJQM6Jzin26cDxFGELnR5HRIF3Z4jWl0FmuOcpONIojVzigw3
 	0/NppVZjiPvJGbmLKP2PAAAADWdhYmVAb2subG9jYWw=
 	-----END OPENSSH PRIVATE KEY-----`
-	key, err = keys.ParseKey([]byte(edpriv), "")
+	key, err = keys.ParseKey([]byte(edPriv), "")
 	require.NoError(t, err)
 	require.Equal(t, keys.ID("kex1nc345hg9nt3eef8rfz3r2uu2psma8umf54tx8z8meyvmnzeglk8s50xu7y"), key.ID())
 
+	// Saltpack
 	sp := `BEGIN EDX25519 KEY MESSAGE.
 	GSXg1PCawOlgXTp IoXa8FHPFV82MkC xrXzl7k2Scj2CK0 R9ezilK7VqWsLWv
 	TF3WxURVAhzQmNY uJoEJXKYiWJIY4K gMQTVtndovcxjho KBu5yu4Wm7nM6Bh

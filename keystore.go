@@ -43,11 +43,11 @@ func (k *KeyStore) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	return AsEdX25519Key(item)
 }
 
-// EdX25519PublicKey returns sign public key from the KeyStore.
+// EdX25519PublicKey returns EdX25519 public key from the KeyStore.
 // Since the public key itself is in the ID, you can convert the ID without
 // getting it from the keystore via NewEdX25519PublicKeyFromID.
 func (k *KeyStore) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
-	logger.Infof("KeyStore load sign public key for %s", kid)
+	logger.Infof("KeyStore load EdX25519 public key for %s", kid)
 	item, err := k.kr.Get(kid.String())
 	if err != nil {
 		return nil, err
@@ -72,11 +72,13 @@ func (k *KeyStore) X25519Key(kid ID) (*X25519Key, error) {
 }
 
 // SaveEdX25519Key saves a EdX25519Key to the KeyStore.
+// Returns keyring.ErrItemAlreadyExists if key exists already.
 func (k *KeyStore) SaveEdX25519Key(key *EdX25519Key) error {
 	return k.kr.Create(NewEdX25519KeyItem(key))
 }
 
 // SaveEdX25519PublicKey saves EdX25519PublicKey to the KeyStore.
+// Returns keyring.ErrItemAlreadyExists if key exists already.
 func (k *KeyStore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 	// Check we don't clobber an existing private key.
 	item, err := k.kr.Get(spk.ID().String())
@@ -84,12 +86,13 @@ func (k *KeyStore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
 		return err
 	}
 	if item != nil && item.Type != string(EdX25519Public) {
-		return errors.Errorf("failed to save sign public key: existing keyring item exists of alternate type")
+		return errors.Errorf("failed to save key: existing keyring item exists of alternate type")
 	}
 	return k.kr.Create(NewEdX25519PublicKeyItem(spk))
 }
 
 // SavePublicKey saves a public key from a key identifier.
+// Returns keyring.ErrItemAlreadyExists if key exists already.
 func (k *KeyStore) SavePublicKey(kid ID) error {
 	key, err := kid.Key()
 	if err != nil {
@@ -99,11 +102,13 @@ func (k *KeyStore) SavePublicKey(kid ID) error {
 }
 
 // SaveX25519Key saves a X25519Key to the KeyStore.
+// Returns keyring.ErrItemAlreadyExists if key exists already.
 func (k *KeyStore) SaveX25519Key(bk *X25519Key) error {
 	return k.kr.Create(NewX25519KeyItem(bk))
 }
 
 // SaveX25519PublicKey saves a X25519PublicKey to the KeyStore.
+// Returns keyring.ErrItemAlreadyExists if key exists already.
 func (k *KeyStore) SaveX25519PublicKey(bpk *X25519PublicKey) error {
 	// Check we don't clobber an existing box key
 	item, err := k.kr.Get(bpk.ID().String())
@@ -300,6 +305,7 @@ func (k *KeyStore) FindEdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 }
 
 // SaveKey saves Key based on its type.
+// Returns keyring.ErrItemAlreadyExists if key exists already.
 func (k *KeyStore) SaveKey(key Key) error {
 	switch v := key.(type) {
 	case *EdX25519Key:

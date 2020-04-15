@@ -78,7 +78,7 @@ func AsEdX25519PublicKey(item *keyring.Item) (*EdX25519PublicKey, error) {
 		}
 		return sk.PublicKey(), nil
 	default:
-		return nil, errors.Errorf("invalid item type for sign public key: %s", item.Type)
+		return nil, errors.Errorf("invalid item type for edx25519 public key: %s", item.Type)
 	}
 }
 

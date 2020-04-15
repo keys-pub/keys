@@ -138,7 +138,7 @@ func NewX25519PublicKeyFromEdX25519ID(id ID) (*X25519PublicKey, error) {
 	return spk.X25519PublicKey(), nil
 }
 
-// ID for sign public key.
+// ID for EdX25519Key.
 func (s EdX25519PublicKey) ID() ID {
 	return s.id
 }

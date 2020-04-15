@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,7 +33,7 @@ func TestEdX25519Key(t *testing.T) {
 	require.Equal(t, sk.PublicKey().Bytes()[:], spkOut.Bytes()[:])
 
 	err = ks.SaveEdX25519PublicKey(sk.PublicKey())
-	require.EqualError(t, err, "failed to save sign public key: existing keyring item exists of alternate type")
+	require.EqualError(t, err, "failed to save key: existing keyring item exists of alternate type")
 
 	spk := keys.GenerateEdX25519Key().PublicKey()
 	err = ks.SaveEdX25519PublicKey(spk)
@@ -40,6 +41,10 @@ func TestEdX25519Key(t *testing.T) {
 	skOut, err = ks.EdX25519Key(spk.ID())
 	require.NoError(t, err)
 	require.Nil(t, skOut)
+
+	// Save again
+	err = ks.SaveEdX25519PublicKey(spk)
+	require.Equal(t, err, keyring.ErrItemAlreadyExists)
 }
 
 func TestEdX25519PublicKey(t *testing.T) {

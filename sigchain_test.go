@@ -93,7 +93,7 @@ func TestSigchain(t *testing.T) {
 	require.EqualError(t, err, "no data")
 
 	_, err = keys.NewSigchainStatement(sc, []byte{}, keys.GenerateEdX25519Key(), "", clock.Now())
-	require.EqualError(t, err, "invalid sigchain sign public key")
+	require.EqualError(t, err, "invalid sigchain public key")
 
 	// Revoke invalid seq
 	_, err = sc.Revoke(0, alice)

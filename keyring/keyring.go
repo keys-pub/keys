@@ -33,7 +33,7 @@ type Keyring interface {
 	// Requires Unlock().
 	Create(item *Item) error
 
-	// Update item.
+	// Update item data.
 	// Requires Unlock().
 	Update(id string, b []byte) error
 
