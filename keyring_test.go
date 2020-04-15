@@ -13,8 +13,7 @@ func TestX25519KeyItem(t *testing.T) {
 
 	out, err := keys.AsX25519Key(item)
 	require.NoError(t, err)
-	require.False(t, out.CreatedAt().IsZero())
-	// require.False(t, out.Metadata().UpdatedAt.IsZero())
+	require.Equal(t, key.ID(), out.ID())
 }
 
 func TestEdX25519KeyItem(t *testing.T) {
@@ -23,6 +22,5 @@ func TestEdX25519KeyItem(t *testing.T) {
 
 	out, err := keys.AsEdX25519Key(item)
 	require.NoError(t, err)
-	require.False(t, out.CreatedAt().IsZero())
-	// require.False(t, out.Metadata().UpdatedAt.IsZero())
+	require.Equal(t, key.ID(), out.ID())
 }

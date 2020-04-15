@@ -1,7 +1,5 @@
 package keys
 
-import "time"
-
 // Key with identifier, bytes and type string.
 type Key interface {
 	// ID for the key.
@@ -12,9 +10,6 @@ type Key interface {
 
 	// Bytes are key data.
 	Bytes() []byte
-
-	// CreatedAt.
-	CreatedAt() time.Time
 }
 
 // KeyType ...

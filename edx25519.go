@@ -1,8 +1,6 @@
 package keys
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/nacl/sign"
@@ -12,7 +10,6 @@ import (
 type EdX25519PublicKey struct {
 	id        ID
 	publicKey *[ed25519.PublicKeySize]byte
-	createdAt time.Time
 }
 
 // EdX25519 key.
@@ -72,11 +69,6 @@ func (k EdX25519Key) Type() KeyType {
 // Bytes for key.
 func (k EdX25519Key) Bytes() []byte {
 	return k.privateKey[:]
-}
-
-// CreatedAt ...
-func (k EdX25519Key) CreatedAt() time.Time {
-	return k.publicKey.createdAt
 }
 
 // Bytes64 for key.
@@ -170,11 +162,6 @@ func (s EdX25519PublicKey) Bytes32() *[32]byte {
 	return s.publicKey
 }
 
-// CreatedAt ...
-func (s EdX25519PublicKey) CreatedAt() time.Time {
-	return s.createdAt
-}
-
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.
 func (s EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 	edpk := ed25519.PublicKey(s.publicKey[:])
@@ -265,6 +252,5 @@ func GenerateEdX25519Key() *EdX25519Key {
 	logger.Infof("Generating EdX25519 key...")
 	seed := Rand32()
 	key := NewEdX25519KeyFromSeed(seed)
-	key.publicKey.createdAt = time.Now()
 	return key
 }

@@ -14,7 +14,7 @@ const (
 
 // NewX25519KeyItem creates keyring item for X25519Key.
 func NewX25519KeyItem(key *X25519Key) *keyring.Item {
-	item := keyring.NewItem(key.ID().String(), key.PrivateKey()[:], string(X25519), key.CreatedAt())
+	item := keyring.NewItem(key.ID().String(), key.PrivateKey()[:], string(X25519), time.Now())
 	return item
 }
 
@@ -24,7 +24,6 @@ func AsX25519Key(item *keyring.Item) (*X25519Key, error) {
 	switch item.Type {
 	case string(X25519):
 		bk := NewX25519KeyFromPrivateKey(Bytes32(item.Data))
-		bk.publicKey.createdAt = item.CreatedAt
 		return bk, nil
 	case string(EdX25519):
 		sk, err := AsEdX25519Key(item)
@@ -39,7 +38,7 @@ func AsX25519Key(item *keyring.Item) (*X25519Key, error) {
 
 // NewEdX25519KeyItem creates keyring item for EdX25519Key.
 func NewEdX25519KeyItem(key *EdX25519Key) *keyring.Item {
-	item := keyring.NewItem(key.ID().String(), key.PrivateKey()[:], string(EdX25519), key.CreatedAt())
+	item := keyring.NewItem(key.ID().String(), key.PrivateKey()[:], string(EdX25519), time.Now())
 	return item
 }
 
@@ -53,13 +52,12 @@ func AsEdX25519Key(item *keyring.Item) (*EdX25519Key, error) {
 		return nil, errors.Errorf("invalid number of bytes for ed25519 private key")
 	}
 	key := NewEdX25519KeyFromPrivateKey(Bytes64(b))
-	key.publicKey.createdAt = item.CreatedAt
 	return key, nil
 }
 
 // NewEdX25519PublicKeyItem creates keyring item for EdX25519PublicKey.
 func NewEdX25519PublicKeyItem(publicKey *EdX25519PublicKey) *keyring.Item {
-	item := keyring.NewItem(publicKey.ID().String(), publicKey.Bytes()[:], string(EdX25519Public), publicKey.CreatedAt())
+	item := keyring.NewItem(publicKey.ID().String(), publicKey.Bytes()[:], string(EdX25519Public), time.Now())
 	return item
 }
 
@@ -72,7 +70,6 @@ func AsEdX25519PublicKey(item *keyring.Item) (*EdX25519PublicKey, error) {
 			return nil, errors.Errorf("invalid number of bytes for ed25519 public key")
 		}
 		key := NewEdX25519PublicKey(Bytes32(b))
-		key.createdAt = item.CreatedAt
 		return key, nil
 	case string(EdX25519):
 		sk, err := AsEdX25519Key(item)
@@ -87,7 +84,7 @@ func AsEdX25519PublicKey(item *keyring.Item) (*EdX25519PublicKey, error) {
 
 // NewX25519PublicKeyItem creates keyring item for X25519PublicKey.
 func NewX25519PublicKeyItem(publicKey *X25519PublicKey) *keyring.Item {
-	item := keyring.NewItem(publicKey.ID().String(), publicKey.Bytes()[:], string(X25519Public), publicKey.CreatedAt())
+	item := keyring.NewItem(publicKey.ID().String(), publicKey.Bytes()[:], string(X25519Public), time.Now())
 	return item
 }
 
@@ -100,7 +97,6 @@ func AsX25519PublicKey(item *keyring.Item) (*X25519PublicKey, error) {
 			return nil, errors.Errorf("invalid number of bytes for x25519 public key")
 		}
 		key := NewX25519PublicKey(Bytes32(b))
-		key.createdAt = item.CreatedAt
 		return key, nil
 	case string(X25519):
 		bk, err := AsX25519Key(item)

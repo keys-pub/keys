@@ -72,13 +72,13 @@ func (k *KeyStore) X25519Key(kid ID) (*X25519Key, error) {
 }
 
 // SaveEdX25519Key saves a EdX25519Key to the KeyStore.
-func (k *KeyStore) SaveEdX25519Key(signKey *EdX25519Key) error {
-	return k.kr.Create(NewEdX25519KeyItem(signKey))
+func (k *KeyStore) SaveEdX25519Key(key *EdX25519Key) error {
+	return k.kr.Create(NewEdX25519KeyItem(key))
 }
 
 // SaveEdX25519PublicKey saves EdX25519PublicKey to the KeyStore.
 func (k *KeyStore) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
-	// Check we don't clobber an existing sign key
+	// Check we don't clobber an existing private key.
 	item, err := k.kr.Get(spk.ID().String())
 	if err != nil {
 		return err

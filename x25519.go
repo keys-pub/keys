@@ -2,7 +2,6 @@ package keys
 
 import (
 	"bytes"
-	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/curve25519"
@@ -13,7 +12,6 @@ import (
 type X25519PublicKey struct {
 	id        ID
 	publicKey *[32]byte
-	createdAt time.Time
 }
 
 // X25519 key type.
@@ -60,16 +58,10 @@ func (k X25519Key) PublicKey() *X25519PublicKey {
 	return k.publicKey
 }
 
-// CreatedAt ...
-func (k X25519Key) CreatedAt() time.Time {
-	return k.publicKey.createdAt
-}
-
 // GenerateX25519Key creates a new X25519Key.
 func GenerateX25519Key() *X25519Key {
 	logger.Infof("Generating X25519 key...")
 	key := NewX25519KeyFromSeed(Rand32())
-	key.publicKey.createdAt = time.Now()
 	return key
 }
 
@@ -164,9 +156,4 @@ func (k X25519PublicKey) Bytes() []byte {
 // Bytes32 for key.
 func (k X25519PublicKey) Bytes32() *[32]byte {
 	return k.publicKey
-}
-
-// CreatedAt ...
-func (k X25519PublicKey) CreatedAt() time.Time {
-	return k.createdAt
 }
