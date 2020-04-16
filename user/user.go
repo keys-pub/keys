@@ -33,6 +33,11 @@ func (u User) String() string {
 	return s
 }
 
+// ID is an identifier for a user, e.g. gabriel@github.
+func (u User) ID() string {
+	return u.Name + "@" + u.Service
+}
+
 // MarshalJSON marshals user to JSON.
 func (u User) MarshalJSON() ([]byte, error) {
 	return u.Bytes()
@@ -69,8 +74,14 @@ const (
 	StatusStatementInvalid Status = "statement-invalid"
 	// StatusContentInvalid if statement was valid, but other data was invalid.
 	StatusContentInvalid Status = "content-invalid"
-	// StatusConnFailure if there was a network connection failure.
+
+	// StatusConnFailure if there was a (possibly) temporary connection failure.
+	// This could be:
+	// - A connection error if not connected to the internet or unable to reach the service.
+	// - A 5xx error on the server.
+	// - A 4xx error except 404 (for example, 429 if rate limited).
 	StatusConnFailure Status = "connection-fail"
+
 	// StatusFailure is any other failure.
 	StatusFailure Status = "fail"
 	// StatusUnknown is unknown.

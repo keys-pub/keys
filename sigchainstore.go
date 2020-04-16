@@ -23,7 +23,7 @@ type SigchainStore interface {
 	// DeleteSigchain deletes sigchain from the store.
 	DeleteSigchain(kid ID) (bool, error)
 
-	// SigchainExists if true, has sigchain
+	// SigchainExists if true, has sigchain.
 	SigchainExists(kid ID) (bool, error)
 
 	// Now is current time.

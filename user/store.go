@@ -15,13 +15,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Result is result of a user result.
+// Result describes the status of a User.
 type Result struct {
-	Err        string `json:"err,omitempty"`
-	Status     Status `json:"status"`
-	Timestamp  int64  `json:"ts"`
-	User       *User  `json:"user"`
-	VerifiedAt int64  `json:"vts"`
+	Err    string `json:"err,omitempty"`
+	Status Status `json:"status"`
+	// Timestamp is the when the status was last updated.
+	Timestamp int64 `json:"ts"`
+	User      *User `json:"user"`
+	// VerifiedAt is when the status was last OK.
+	VerifiedAt int64 `json:"vts"`
 }
 
 func (r Result) String() string {
@@ -31,9 +33,15 @@ func (r Result) String() string {
 	return fmt.Sprintf("%s:%s;err=%s", r.Status, r.User, r.Err)
 }
 
-// Expired returns true if result is older than dt.
-func (r Result) Expired(now time.Time, dt time.Duration) bool {
+// IsTimestampExpired returns true if result Timestamp is older than dt.
+func (r Result) IsTimestampExpired(now time.Time, dt time.Duration) bool {
 	ts := util.TimeFromMillis(r.Timestamp)
+	return (ts.IsZero() || now.Sub(ts) > dt)
+}
+
+// IsVerifyExpired returns true if result VerifiedAt is older than dt.
+func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
+	ts := util.TimeFromMillis(r.VerifiedAt)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
@@ -165,6 +173,7 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 	logger.Infof("Requesting %s", ur)
 	body, err := u.req.RequestURL(ctx, ur)
 	if err != nil {
+		logger.Warningf("Request failed: %v", err)
 		if errHTTP, ok := errors.Cause(err).(util.ErrHTTP); ok && errHTTP.StatusCode == 404 {
 			result.Err = err.Error()
 			result.Status = StatusResourceNotFound
@@ -185,6 +194,7 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 
 	st, err := VerifyContent(b, result, kid)
 	if err != nil {
+		logger.Warningf("Failed to verify content: %s", err)
 		result.Err = err.Error()
 		result.Status = st
 		return
