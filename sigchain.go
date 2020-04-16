@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: How to revoke everything (key, sigchain), revoke root?
 // TODO: Implement merkle tree to verify global sigchain state?
 
 // Sigchain is a chain of signed statements by a sign key.

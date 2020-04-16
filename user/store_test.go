@@ -129,6 +129,11 @@ func TestResultGithub(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
+
+	kids, err := ust.KIDs(context.TODO())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(kids))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
 }
 
 func TestResultGithubWrongName(t *testing.T) {

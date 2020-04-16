@@ -108,7 +108,7 @@ func (u *Store) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	return result, nil
 }
 
-// CheckSigchain looks for user in a Sigchain.
+// CheckSigchain looks for user in a Sigchain and updates the current result.
 func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
 	usr, err := ResolveSigchain(sc)
 	if err != nil {
@@ -297,9 +297,8 @@ func (u *Store) result(ctx context.Context, kid keys.ID) (*Result, error) {
 }
 
 func (u *Store) removeUser(ctx context.Context, user *User) error {
-	name := fmt.Sprintf("%s@%s", user.Name, user.Service)
-	namePath := ds.Path(indexUser, name)
-	logger.Infof("Removing user %s: %s", user.KID, name)
+	namePath := ds.Path(indexUser, indexName(user))
+	logger.Infof("Removing user %s: %s", user.KID, namePath)
 	if _, err := u.dst.Delete(ctx, namePath); err != nil {
 		return err
 	}
@@ -350,8 +349,7 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 		}
 
 		if index {
-			name := indexName(keyDoc.Result.User)
-			namePath := ds.Path(indexUser, name)
+			namePath := ds.Path(indexUser, indexName(keyDoc.Result.User))
 			logger.Infof("Indexing user result %s %s", namePath, keyDoc.Result.User.KID)
 			if err := u.dst.Set(ctx, namePath, data); err != nil {
 				return err
@@ -393,7 +391,6 @@ func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 		if keyDoc.Result != nil {
 			if keyDoc.Result.Status == st {
 				kids = append(kids, keyDoc.Result.User.KID)
-				break
 			}
 		}
 	}
@@ -426,8 +423,63 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)
-				break
 			}
+		}
+	}
+	iter.Release()
+
+	return kids, nil
+}
+
+// CheckForExisting returns key ID of exsiting user in sigchain different from this
+// sigchain key.
+func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
+	usr, err := ResolveSigchain(sc)
+	if err != nil {
+		return "", err
+	}
+	if usr != nil {
+		logger.Debugf("Checking for existing user %s...", usr.ID())
+		q := usr.ID()
+		results, err := u.Search(ctx, &SearchRequest{Query: q})
+		if err != nil {
+			return "", err
+		}
+		if len(results) > 0 {
+			for _, res := range results {
+				logger.Debugf("Found user %s with %s", usr.ID(), res.KID)
+				if res.KID != sc.KID() {
+					return res.KID, nil
+				}
+			}
+		}
+	}
+	return "", nil
+}
+
+// KIDs returns all key ids in the user store.
+func (u *Store) KIDs(ctx context.Context) ([]keys.ID, error) {
+	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
+	if err != nil {
+		return nil, err
+	}
+	kids := make([]keys.ID, 0, 100)
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			return nil, err
+		}
+		if doc == nil {
+			break
+		}
+
+		// We could parse the path for the kid instead of unmarshalling.
+		var keyDoc keyDocument
+		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+			return nil, err
+		}
+		if keyDoc.Result != nil {
+			kids = append(kids, keyDoc.Result.User.KID)
 		}
 	}
 	iter.Release()
