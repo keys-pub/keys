@@ -112,7 +112,7 @@ func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bo
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, service+"/") {
 			id := cred.TargetName[len(service+"/"):]
-			if !showHidden && strings.HasPrefix(id, reservedPrefix) {
+			if !showReserved && strings.HasPrefix(id, reservedPrefix) {
 				continue
 			}
 			if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
