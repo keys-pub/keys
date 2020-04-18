@@ -36,7 +36,7 @@ func testAuth(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 	err = kr.Setup(invalid)
 	require.EqualError(t, err, "no auth name")
-	invalid, err = keyring.NewPasswordAuth("test", "", salt)
+	_, err = keyring.NewPasswordAuth("test", "", salt)
 	require.EqualError(t, err, "no password")
 
 	// Setup
@@ -60,7 +60,8 @@ func testAuth(t *testing.T, kr keyring.Keyring) {
 	require.Equal(t, "key1", item.ID)
 	require.Equal(t, []byte("secret"), item.Data)
 
-	kr.Lock()
+	err = kr.Lock()
+	require.NoError(t, err)
 
 	// Provision
 	auth2, err := keyring.NewPasswordAuth("test2", "diffpassword", salt)
@@ -78,10 +79,12 @@ func testAuth(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 
 	// Test both succeed
-	kr.Lock()
+	err = kr.Lock()
+	require.NoError(t, err)
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
-	kr.Lock()
+	err = kr.Lock()
+	require.NoError(t, err)
 	err = kr.Unlock(auth2)
 	require.NoError(t, err)
 
