@@ -1,20 +1,18 @@
 package keyring
 
 import (
-	"crypto/subtle"
 	"os/exec"
 	"runtime"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 )
 
 // ErrItemValueTooLarge is item value is too large.
-// ID is max of 254 bytes.
-// Type is max of 32 bytes.
-// Data is max of 2048 bytes.
+// Item.ID is max of 254 bytes.
+// Item.Type is max of 32 bytes.
+// Item.Data is max of 2048 bytes.
 var ErrItemValueTooLarge = errors.New("keyring item value is too large")
 
 // ErrItemNotFound if item not found when trying to update.
@@ -43,16 +41,26 @@ type Keyring interface {
 
 	// List items.
 	// Requires Unlock().
-	// Items with ids that start with "." are not returned by List.
+	// Items with IDs that start with "." or "#" are not returned by List.
 	List(opts *ListOpts) ([]*Item, error)
 
 	// Exists returns true it has the id.
 	// Doesn't require Unlock().
 	Exists(id string) (bool, error)
 
+	// Setup auth, if no auth exists.
+	// Fails if already setup.
+	// Doesn't require Unlock().
+	Setup(auth Auth) error
+	// Provision new auth.
+	// Requires Unlock().
+	Provision(auth Auth) error
+	// Deprovision auth.
+	// Requires Unlock().
+	Deprovision(auth Auth) (bool, error)
+
 	// Unlock with auth.
 	Unlock(auth Auth) error
-
 	// Lock.
 	Lock() error
 
@@ -62,13 +70,9 @@ type Keyring interface {
 	// Doesn't require Unlock().
 	Salt() ([]byte, error)
 
-	// Authed returns true if Keyring has ever been unlocked.
+	// IsSetup returns true if Keyring has been setup.
 	// Doesn't require Unlock().
-	Authed() (bool, error)
-
-	// // ResetAuth resets auth (leaving any keyring items).
-	// // Doesn't require Unlock().
-	// ResetAuth() error
+	IsSetup() (bool, error)
 
 	// Reset keyring.
 	// Doesn't require Unlock().
@@ -117,13 +121,29 @@ func SystemOrFS() Store {
 	return system()
 }
 
-// UnlockWithPassword unlocks a Keyring with a password.
-func UnlockWithPassword(kr Keyring, password string) error {
+// SetupWithPassword sets up Keyring with a password.
+func SetupWithPassword(kr Keyring, name string, password string) error {
 	salt, err := kr.Salt()
 	if err != nil {
 		return err
 	}
-	auth, err := NewPasswordAuth(password, salt)
+	auth, err := NewPasswordAuth(name, password, salt)
+	if err != nil {
+		return err
+	}
+	if err = kr.Setup(auth); err != nil {
+		return err
+	}
+	return nil
+}
+
+// UnlockWithPassword unlocks a Keyring with a password.
+func UnlockWithPassword(kr Keyring, name string, password string) error {
+	salt, err := kr.Salt()
+	if err != nil {
+		return err
+	}
+	auth, err := NewPasswordAuth(name, password, salt)
 	if err != nil {
 		return err
 	}
@@ -144,12 +164,19 @@ func getItem(st Store, service string, id string, key SecretKey) (*Item, error) 
 	if b == nil {
 		return nil, nil
 	}
-	return decodeItem(b, key)
+	item, err := DecodeItem(b, key)
+	if err != nil {
+		return nil, err
+	}
+	return item, nil
 }
 
 const maxID = 254
 const maxType = 32
 const maxData = 2048
+
+// TestSetItem (for testing)
+var TestSetItem = setItem
 
 func setItem(st Store, service string, item *Item, key SecretKey) error {
 	if key == nil {
@@ -174,56 +201,6 @@ func setItem(st Store, service string, item *Item, key SecretKey) error {
 		return ErrItemValueTooLarge
 	}
 	return st.Set(service, item.ID, []byte(data), item.Type)
-}
-
-func decodeItem(b []byte, key SecretKey) (*Item, error) {
-	if b == nil {
-		return nil, nil
-	}
-	item, err := DecodeItem(b, key)
-	if err != nil {
-		return nil, err
-	}
-	return item, nil
-}
-
-func unlock(st Store, service string, auth Auth) (SecretKey, error) {
-	if auth == nil {
-		return nil, errors.Errorf("no auth specified")
-	}
-
-	key := auth.Key()
-
-	item, err := getItem(st, service, reserved("auth"), key)
-	if err != nil {
-		return nil, err
-	}
-	if item == nil {
-		err := setItem(st, service, NewItem(reserved("auth"), key[:], "", time.Now()), key)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if subtle.ConstantTimeCompare(item.Data, key[:]) != 1 {
-			return nil, errors.Errorf("invalid auth")
-		}
-	}
-
-	return key, nil
-}
-
-func salt(st Store, service string) ([]byte, error) {
-	salt, err := st.Get(service, reserved("salt"))
-	if err != nil {
-		return nil, err
-	}
-	if salt == nil {
-		salt = rand32()[:]
-		if err := st.Set(service, reserved("salt"), salt, ""); err != nil {
-			return nil, err
-		}
-	}
-	return salt, nil
 }
 
 // NewKeyring creates a new Keyring with backing Store.
@@ -359,8 +336,34 @@ func (k *keyring) Exists(id string) (bool, error) {
 	return k.st.Exists(k.service, id)
 }
 
+func (k *keyring) Setup(auth Auth) error {
+	key, err := authSetup(k.st, k.service, auth)
+	if err != nil {
+		return err
+	}
+	k.key = key
+	return nil
+}
+
+func (k *keyring) Provision(auth Auth) error {
+	if k.key == nil {
+		return ErrLocked
+	}
+	if err := authProvision(k.st, k.service, auth, k.key); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (k *keyring) Deprovision(auth Auth) (bool, error) {
+	if k.key == nil {
+		return false, ErrLocked
+	}
+	return authDeprovision(k.st, k.service, auth)
+}
+
 func (k *keyring) Unlock(auth Auth) error {
-	key, err := unlock(k.st, k.service, auth)
+	key, err := authUnlock(k.st, k.service, auth)
 	if err != nil {
 		return err
 	}
@@ -377,19 +380,13 @@ func (k *keyring) Salt() ([]byte, error) {
 	return salt(k.st, k.service)
 }
 
-func (k *keyring) Authed() (bool, error) {
-	return k.st.Exists(k.service, reserved("auth"))
+func (k *keyring) IsSetup() (bool, error) {
+	auths, err := k.st.IDs(k.service, reserved("auth"), false, true)
+	if err != nil {
+		return false, err
+	}
+	return len(auths) > 0, nil
 }
-
-// func (k *keyring) ResetAuth() error {
-// 	if _, err := k.st.remove(k.service, reserved("salt")); err != nil {
-// 		return err
-// 	}
-// 	if _, err := k.st.remove(k.service, reserved("auth")); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 func (k *keyring) Reset() error {
 	if err := k.st.Reset(k.service); err != nil {

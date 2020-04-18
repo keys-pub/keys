@@ -15,8 +15,8 @@ func ExampleNewKeyring() {
 	}
 	// Remove this Reset() if you want to keep the Keyring
 	defer func() { _ = kr.Reset() }()
-	// Unlock keyring (on first unlock, sets the password)
-	if err := keyring.UnlockWithPassword(kr, "mypassword"); err != nil {
+	// Setup password
+	if err := keyring.SetupWithPassword(kr, "test", "mypassword"); err != nil {
 		log.Fatal(err)
 	}
 

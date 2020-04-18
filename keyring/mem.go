@@ -14,8 +14,8 @@ func NewMem() Keyring {
 	if err != nil {
 		panic(err)
 	}
-	// Unlock with random key.
-	if err := kr.Unlock(NewKeyAuth(rand32())); err != nil {
+	// Setup with random key.
+	if err := kr.Setup(NewKeyAuth("mem", rand32())); err != nil {
 		panic(err)
 	}
 	return kr

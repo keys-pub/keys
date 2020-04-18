@@ -15,8 +15,8 @@ if err != nil {
     log.Fatal(err)
 }
 
-// Unlock keyring (on first unlock, sets the password)
-if err := keyring.UnlockWithPassword(kr, "mypassword"); err != nil {
+// Setup password
+if err := keyring.SetupWithPassword(kr, "keys.pub", "mypassword"); err != nil {
     log.Fatal(err)
 }
 
