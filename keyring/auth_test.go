@@ -145,6 +145,9 @@ func TestAuthUpgrade(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
-	err = kr.Unlock(keyring.NewKeyAuth("#auth-app", key))
+	err = kr.Unlock(keyring.NewKeyAuth("app", key))
+	require.NoError(t, err)
+
+	err = kr.Unlock(keyring.NewKeyAuth("app", key))
 	require.NoError(t, err)
 }

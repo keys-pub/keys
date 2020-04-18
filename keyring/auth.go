@@ -121,8 +121,8 @@ func authUnlock(st Store, service string, auth Auth) (SecretKey, error) {
 	}
 	if item == nil {
 		// Check for original auth key "#auth".
-		// Remove this in the future (04/17/2020).
-		item, err = getItem(st, service, "#auth", auth.Key())
+		// In first version of keyring auth we supported a single derived key.
+		item, err = checkUpgradeAuth(st, service, auth)
 		if err != nil {
 			return nil, err
 		}
@@ -148,4 +148,32 @@ func salt(st Store, service string) ([]byte, error) {
 		}
 	}
 	return salt, nil
+}
+
+// checkUpgradeAuth upgrades original auth key "#auth".
+// In first version of keyring auth we supported a single derived key.
+// We should remove this in the future (04/17/2020).
+func checkUpgradeAuth(st Store, service string, auth Auth) (*Item, error) {
+	item, err := getItem(st, service, "#auth", auth.Key())
+	if err != nil {
+		return nil, err
+	}
+	if item == nil {
+		return nil, nil
+	}
+	if len(item.Data) != 32 {
+		return nil, errors.Errorf("invalid auth value")
+	}
+
+	// Re-provision old auth
+	mk := bytes32(item.Data)
+	if err := authProvision(st, service, auth, mk); err != nil {
+		return nil, err
+	}
+
+	if _, err := st.Delete(service, "#auth"); err != nil {
+		return nil, err
+	}
+
+	return item, nil
 }
