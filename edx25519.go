@@ -6,18 +6,18 @@ import (
 	"golang.org/x/crypto/nacl/sign"
 )
 
-// EdX25519PublicKey is the public part of EdX25519 key pair.
-type EdX25519PublicKey struct {
-	id        ID
-	publicKey *[ed25519.PublicKeySize]byte
-}
-
 // EdX25519 key.
 const EdX25519 KeyType = "edx25519"
 const edx25519KeyHRP string = "kex"
 
 // EdX25519Public public key.
 const EdX25519Public KeyType = "ed25519-public"
+
+// EdX25519PublicKey is the public part of EdX25519 key pair.
+type EdX25519PublicKey struct {
+	id        ID
+	publicKey *[ed25519.PublicKeySize]byte
+}
 
 // EdX25519Key is a EdX25519 key capable of signing and encryption (converted to a X25519 key).
 type EdX25519Key struct {
@@ -229,22 +229,12 @@ func (k EdX25519Key) PrivateKey() *[ed25519.PrivateKeySize]byte {
 
 // Sign bytes with the (sign) private key.
 func (k *EdX25519Key) Sign(b []byte) []byte {
-	return Sign(b, k)
+	return sign.Sign(nil, b, k.privateKey)
 }
 
 // SignDetached sign bytes detached.
 func (k *EdX25519Key) SignDetached(b []byte) []byte {
-	return SignDetached(b, k)
-}
-
-// Sign bytes.
-func Sign(b []byte, sk *EdX25519Key) []byte {
-	return sign.Sign(nil, b, sk.privateKey)
-}
-
-// SignDetached sign bytes detached.
-func SignDetached(b []byte, sk *EdX25519Key) []byte {
-	return Sign(b, sk)[:sign.Overhead]
+	return k.Sign(b)[:sign.Overhead]
 }
 
 // GenerateEdX25519Key generates a EdX25519Key (EdX25519).

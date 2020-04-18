@@ -32,7 +32,7 @@ func TestEdX25519KeySignVerify(t *testing.T) {
 	signKey := keys.GenerateEdX25519Key()
 
 	b := []byte("test message")
-	sig := keys.Sign(b, signKey)
+	sig := signKey.Sign(b)
 
 	bout, err := signKey.PublicKey().Verify(sig)
 	require.NoError(t, err)
@@ -68,10 +68,10 @@ func ExampleGenerateEdX25519Key() {
 	fmt.Printf("Alice: %s\n", alice.ID())
 }
 
-func ExampleSign() {
+func ExampleEdX25519Key_Sign() {
 	alice := keys.GenerateEdX25519Key()
 	msg := "I'm alice 🤓"
-	sig := keys.Sign([]byte(msg), alice)
+	sig := alice.Sign([]byte(msg))
 	out, err := alice.PublicKey().Verify(sig)
 	if err != nil {
 		log.Fatal(err)
