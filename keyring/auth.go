@@ -15,6 +15,9 @@ var ErrInvalidAuth = errors.New("invalid keyring auth")
 // ErrLocked if no keyring key is set.
 var ErrLocked = errors.New("keyring is locked")
 
+// ErrAlreadySetup if already setup.
+var ErrAlreadySetup = errors.New("keyring is already setup")
+
 // Auth ...
 type Auth interface {
 	Name() string

@@ -49,7 +49,7 @@ type Keyring interface {
 	Exists(id string) (bool, error)
 
 	// Setup auth, if no auth exists.
-	// Fails if already setup.
+	// Returns ErrAlreadySetup if already setup.
 	// Doesn't require Unlock().
 	Setup(auth Auth) error
 	// Provision new auth.
@@ -337,6 +337,13 @@ func (k *keyring) Exists(id string) (bool, error) {
 }
 
 func (k *keyring) Setup(auth Auth) error {
+	setup, err := k.IsSetup()
+	if err != nil {
+		return err
+	}
+	if setup {
+		return ErrAlreadySetup
+	}
 	key, err := authSetup(k.st, k.service, auth)
 	if err != nil {
 		return err

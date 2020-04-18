@@ -47,6 +47,10 @@ func testAuth(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 	require.True(t, isSetup)
 
+	// Setup (again)
+	err = kr.Setup(auth)
+	require.EqualError(t, err, "keyring is already setup")
+
 	err = kr.Unlock(auth)
 	require.NoError(t, err)
 
