@@ -172,6 +172,10 @@ func StatementFromBytes(b []byte) (*Statement, error) {
 		return nil, errors.Errorf("statement bytes don't match specific serialization")
 	}
 
+	if err := st.Verify(); err != nil {
+		return nil, err
+	}
+
 	return st, nil
 }
 

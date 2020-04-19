@@ -21,6 +21,7 @@ type Sigchain struct {
 }
 
 // StatementPublicKeyFromID converts ID to StatementPublicKey.
+// TODO: Support other key types.
 func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
 	return NewEdX25519PublicKeyFromID(id)
 }
