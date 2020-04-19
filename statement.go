@@ -242,8 +242,15 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 		return nil, errors.Errorf("not enough bytes for statement")
 	}
 
+	sig := b[9:97]
+	bytesToSign := bytesJoin(b[0:9], b[97:])
+	sigBytes, err := encoding.Decode(string(sig), encoding.Base64)
+	if err != nil {
+		return nil, err
+	}
+
 	var stf statementFormat
-	if err := json.Unmarshal(b, &stf); err != nil {
+	if err := json.Unmarshal(bytesToSign, &stf); err != nil {
 		return nil, errors.Errorf("statement not valid JSON")
 	}
 	kid, err := ParseID(stf.KID)
@@ -252,16 +259,17 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 	}
 	ts := util.TimeFromMillis(int64(stf.Timestamp))
 
-	st, err := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
+	st, err := NewUnverifiedStatement(sigBytes, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
 	if err != nil {
 		return nil, err
 	}
 
 	// It is important to verify the original bytes match the specific
 	// serialization.
+	// We want to verify the bytes we get before unmarshalling match the same
+	// bytes used to sign/verify after marshalling.
 	// https://latacora.micro.blog/2019/07/24/how-not-to.html
-	expected := bytesJoin(b[0:9], b[97:])
-	if !bytes.Equal(expected, st.serialized) {
+	if !bytes.Equal(bytesToSign, st.serialized) {
 		return nil, errors.Errorf("statement bytes don't match specific serialization")
 	}
 
