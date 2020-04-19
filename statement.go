@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/json"
 	"github.com/keys-pub/keys/util"
@@ -139,55 +138,31 @@ type statementFormat struct {
 	Type      string `json:"type"`
 }
 
-// StatementFromBytes returns Statement from JSON bytes.
-func StatementFromBytes(b []byte) (*Statement, error) {
-	if len(b) < 100 {
-		return nil, errors.Errorf("not enough bytes for statement")
-	}
-	if !bytes.Equal([]byte(`{".sig":"`), b[0:9]) {
-		logger.Errorf("Statement bytes don't include signature: %s", spew.Sdump(b))
-		return nil, errors.Errorf("statement bytes don't include sig")
-	}
-
-	var stf statementFormat
-	if err := json.Unmarshal(b, &stf); err != nil {
-		return nil, err
-	}
-	kid, err := ParseID(stf.KID)
-	if err != nil {
-		return nil, err
-	}
-	ts := util.TimeFromMillis(int64(stf.Timestamp))
-
-	st, err := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
-	if err != nil {
-		return nil, err
-	}
-
-	// It is important to verify the original bytes match the specific
-	// serialization.
-	// https://latacora.micro.blog/2019/07/24/how-not-to.html
-	expected := bytesJoin(b[0:9], b[97:])
-	if !bytes.Equal(expected, st.serialized) {
-		return nil, errors.Errorf("statement bytes don't match specific serialization")
-	}
-
-	if err := st.Verify(); err != nil {
-		return nil, err
-	}
-
-	return st, nil
-}
+// // VerifyStatementBytes verifies statement bytes for a key.
+// func VerifyStatementBytes(b []byte, spk StatementPublicKey) error {
+// 	if len(b) < 97 {
+// 		return errors.Errorf("not enough bytes for statement")
+// 	}
+// 	// It is important to verify the bytes match the specific serialization.
+// 	// https://latacora.micro.blog/2019/07/24/how-not-to.html
+// 	sig, err := encoding.Decode(string(b[9:97]), encoding.Base64)
+// 	if err != nil {
+// 		return errors.Errorf("sig value is invalid")
+// 	}
+// 	serialized := bytesJoin(b[0:9], b[97:])
+// 	if err := spk.VerifyDetached(sig, serialized); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 // Verify statement.
 func (s *Statement) Verify() error {
-	b := bytesJoin(s.Sig, s.serialized)
-
 	spk, err := StatementPublicKeyFromID(s.KID)
 	if err != nil {
 		return err
 	}
-	if _, err := spk.Verify(b); err != nil {
+	if err := spk.VerifyDetached(s.Sig, s.serialized); err != nil {
 		return err
 	}
 	return nil
@@ -200,7 +175,7 @@ func (s Statement) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a statement from JSON.
 func (s *Statement) UnmarshalJSON(b []byte) error {
-	st, err := StatementFromBytes(b)
+	st, err := unmarshalJSON(b)
 	if err != nil {
 		return err
 	}
@@ -259,4 +234,40 @@ func statementBytes(st *Statement, sig []byte) ([]byte, error) {
 	}
 
 	return json.Marshal(mes)
+}
+
+// unmarshalJSON returns a Statement from JSON bytes.
+func unmarshalJSON(b []byte) (*Statement, error) {
+	if len(b) < 97 {
+		return nil, errors.Errorf("not enough bytes for statement")
+	}
+
+	var stf statementFormat
+	if err := json.Unmarshal(b, &stf); err != nil {
+		return nil, errors.Errorf("statement not valid JSON")
+	}
+	kid, err := ParseID(stf.KID)
+	if err != nil {
+		return nil, err
+	}
+	ts := util.TimeFromMillis(int64(stf.Timestamp))
+
+	st, err := NewUnverifiedStatement(stf.Sig, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
+	if err != nil {
+		return nil, err
+	}
+
+	// It is important to verify the original bytes match the specific
+	// serialization.
+	// https://latacora.micro.blog/2019/07/24/how-not-to.html
+	expected := bytesJoin(b[0:9], b[97:])
+	if !bytes.Equal(expected, st.serialized) {
+		return nil, errors.Errorf("statement bytes don't match specific serialization")
+	}
+
+	if err := st.Verify(); err != nil {
+		return nil, err
+	}
+
+	return st, nil
 }

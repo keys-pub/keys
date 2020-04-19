@@ -122,7 +122,11 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedOut, string(b))
 
-	stOut, err := keys.StatementFromBytes(dataOut)
+	// err = keys.VerifyStatementBytes(dataOut, sk.PublicKey())
+	// require.NoError(t, err)
+
+	var stOut keys.Statement
+	err = json.Unmarshal(b, &stOut)
 	require.NoError(t, err)
 	require.Equal(t, st.Data, stOut.Data)
 	require.Equal(t, st.KID, stOut.KID)
@@ -131,12 +135,6 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.Equal(t, st.Revoke, stOut.Revoke)
 	require.Equal(t, st.Type, stOut.Type)
 	require.Equal(t, st.SpecificSerialization(), stOut.SpecificSerialization())
-
-	_, err = keys.StatementFromBytes([]byte("{}"))
-	require.EqualError(t, err, "not enough bytes for statement")
-
-	_, err = keys.StatementFromBytes(data)
-	require.EqualError(t, err, "statement bytes don't match specific serialization")
 
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -158,8 +156,12 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedOut2, string(rb))
 
-	stOut2, stOutErr2 := keys.StatementFromBytes(dataOut2)
-	require.NoError(t, stOutErr2)
+	// err = keys.VerifyStatementBytes(dataOut2, sk.PublicKey())
+	// require.NoError(t, err)
+
+	var stOut2 keys.Statement
+	err = json.Unmarshal(dataOut2, &stOut2)
+	require.NoError(t, err)
 	require.Equal(t, revoke.Data, stOut2.Data)
 	require.Equal(t, revoke.KID, stOut2.KID)
 	require.Equal(t, revoke.Seq, stOut2.Seq)
@@ -167,6 +169,16 @@ func TestStatementSpecificSerialization(t *testing.T) {
 	require.Equal(t, revoke.Revoke, stOut2.Revoke)
 	require.Equal(t, revoke.Type, stOut2.Type)
 	require.Equal(t, revoke.SpecificSerialization(), stOut2.SpecificSerialization())
+}
+func TestBadStatements(t *testing.T) {
+	var st keys.Statement
+	var err error
+	err = json.Unmarshal([]byte("{}"), &st)
+	require.EqualError(t, err, "not enough bytes for statement")
+
+	str := `{".sig":"+H4VoHKAzH8e7Fn0LTtabx1MSpmnEY7xejxzMLr13Cfu1uvj4LKDKJ8AWLP38OU+HDSqO9JYkR+MtM/o7JvzAw==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"}`
+	err = json.Unmarshal([]byte(str), &st)
+	require.EqualError(t, err, "verify failed")
 }
 
 func TestStatementKeyURL(t *testing.T) {

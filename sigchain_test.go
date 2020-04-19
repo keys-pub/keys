@@ -137,7 +137,11 @@ func TestSigchainJSON(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedStatement, string(b))
 
-	stb, err := keys.StatementFromBytes(b)
+	// err = keys.VerifyStatementBytes(b, sk.PublicKey())
+	// require.NoError(t, err)
+
+	var stb keys.Statement
+	err = json.Unmarshal(b, &stb)
 	require.NoError(t, err)
 	b, err = stb.Bytes()
 	require.NoError(t, err)
