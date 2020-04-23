@@ -95,14 +95,15 @@ func RandUsername(length int) string {
 	return string(r)
 }
 
-// RandTempPath returns a unique random path.
-func RandTempPath(ext string) string {
+// RandTempPath returns a unique random path with optional suffix.
+// RandTempPath(".txt") => "/tmp/CTGMMOLLZCXMGP7VR4BHKAI7PE.txt"
+func RandTempPath(suffix string) string {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
 		panic(err)
 	}
 	s := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(buf)
-	return filepath.Join(os.TempDir(), s+"."+ext)
+	return filepath.Join(os.TempDir(), s+suffix)
 }
 
 // Bytes64 converts byte slice to *[64]byte.
