@@ -57,7 +57,7 @@ func TestSignVerifyStream(t *testing.T) {
 	message := []byte("I'm alice")
 
 	var buf bytes.Buffer
-	signed, err := sp.NewSignStream(&buf, alice, false)
+	signed, err := sp.NewSignStream(&buf, alice)
 	require.NoError(t, err)
 	n, err := signed.Write(message)
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestSignVerifyStream(t *testing.T) {
 	require.Equal(t, message, out)
 
 	var buf2 bytes.Buffer
-	signed2, err := sp.NewSignArmoredStream(&buf2, alice, false)
+	signed2, err := sp.NewSignArmoredStream(&buf2, alice)
 	require.NoError(t, err)
 	n, err = signed2.Write(message)
 	require.NoError(t, err)
@@ -87,6 +87,32 @@ func TestSignVerifyStream(t *testing.T) {
 	out, err = ioutil.ReadAll(stream)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
+
+	// Sign detached
+	var buf3 bytes.Buffer
+	signed3, err := sp.NewSignDetachedStream(&buf3, alice)
+	require.NoError(t, err)
+	_, err = signed3.Write(message)
+	require.NoError(t, err)
+	require.Equal(t, len(message), n)
+	signed3.Close()
+
+	signer, err = sp.VerifyDetachedReader(bytes.NewReader(message), buf3.Bytes())
+	require.NoError(t, err)
+	require.Equal(t, alice.PublicKey().ID(), signer)
+
+	// Sign armored/detached
+	var buf4 bytes.Buffer
+	signed4, err := sp.NewSignArmoredDetachedStream(&buf4, alice)
+	require.NoError(t, err)
+	_, err = signed4.Write(message)
+	require.NoError(t, err)
+	require.Equal(t, len(message), n)
+	signed4.Close()
+
+	signer, err = sp.VerifyArmoredDetachedReader(bytes.NewBuffer(message), string(buf4.Bytes()))
+	require.NoError(t, err)
+	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
 func TestStripBefore(t *testing.T) {

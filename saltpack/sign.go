@@ -11,22 +11,22 @@ import (
 
 // Sign ...
 func (s *Saltpack) Sign(b []byte, key *keys.EdX25519Key) ([]byte, error) {
-	return ksaltpack.Sign(ksaltpack.Version1(), b, newSignKey(key))
+	return ksaltpack.Sign(ksaltpack.Version2(), b, newSignKey(key))
 }
 
 // SignArmored ...
 func (s *Saltpack) SignArmored(b []byte, key *keys.EdX25519Key) (string, error) {
-	return ksaltpack.SignArmor62(ksaltpack.Version1(), b, newSignKey(key), "")
+	return ksaltpack.SignArmor62(ksaltpack.Version2(), b, newSignKey(key), "")
 }
 
 // SignDetached ...
 func (s *Saltpack) SignDetached(b []byte, key *keys.EdX25519Key) ([]byte, error) {
-	return ksaltpack.SignDetached(ksaltpack.Version1(), b, newSignKey(key))
+	return ksaltpack.SignDetached(ksaltpack.Version2(), b, newSignKey(key))
 }
 
 // SignArmoredDetached ...
 func (s *Saltpack) SignArmoredDetached(b []byte, key *keys.EdX25519Key) (string, error) {
-	return ksaltpack.SignDetachedArmor62(ksaltpack.Version1(), b, newSignKey(key), "")
+	return ksaltpack.SignDetachedArmor62(ksaltpack.Version2(), b, newSignKey(key), "")
 }
 
 // Verify ...
@@ -82,22 +82,22 @@ func (s *Saltpack) VerifyArmoredDetached(sig string, b []byte) (keys.ID, error) 
 }
 
 // NewSignStream ...
-func (s *Saltpack) NewSignStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+func (s *Saltpack) NewSignStream(w io.Writer, key *keys.EdX25519Key) (io.WriteCloser, error) {
 	return ksaltpack.NewSignStream(ksaltpack.Version1(), w, newSignKey(key))
 }
 
 // NewSignArmoredDetachedStream ...
-func (s *Saltpack) NewSignArmoredDetachedStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+func (s *Saltpack) NewSignArmoredDetachedStream(w io.Writer, key *keys.EdX25519Key) (io.WriteCloser, error) {
 	return ksaltpack.NewSignDetachedArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), "")
 }
 
 // NewSignArmoredStream ...
-func (s *Saltpack) NewSignArmoredStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+func (s *Saltpack) NewSignArmoredStream(w io.Writer, key *keys.EdX25519Key) (io.WriteCloser, error) {
 	return ksaltpack.NewSignArmor62Stream(ksaltpack.Version1(), w, newSignKey(key), "")
 }
 
 // NewSignDetachedStream ...
-func (s *Saltpack) NewSignDetachedStream(w io.Writer, key *keys.EdX25519Key, detached bool) (io.WriteCloser, error) {
+func (s *Saltpack) NewSignDetachedStream(w io.Writer, key *keys.EdX25519Key) (io.WriteCloser, error) {
 	return ksaltpack.NewSignDetachedStream(ksaltpack.Version1(), w, newSignKey(key))
 }
 
@@ -125,6 +125,32 @@ func (s *Saltpack) NewVerifyArmoredStream(r io.Reader) (io.Reader, keys.ID, erro
 		return nil, "", errors.Wrapf(err, "failed to verify")
 	}
 	return reader, signer, nil
+}
+
+// VerifyDetachedReader ...
+func (s *Saltpack) VerifyDetachedReader(r io.Reader, sig []byte) (keys.ID, error) {
+	spk, err := ksaltpack.VerifyDetachedReader(signVersionValidator, r, sig, s)
+	if err != nil {
+		return "", convertSignKeyErr(err)
+	}
+	signer, err := edX25519KeyID(spk.ToKID())
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to verify")
+	}
+	return signer, nil
+}
+
+// VerifyArmoredDetachedReader ...
+func (s *Saltpack) VerifyArmoredDetachedReader(r io.Reader, sig string) (keys.ID, error) {
+	spk, _, err := ksaltpack.Dearmor62VerifyDetachedReader(signVersionValidator, r, sig, s)
+	if err != nil {
+		return "", convertSignKeyErr(err)
+	}
+	signer, err := edX25519KeyID(spk.ToKID())
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to verify")
+	}
+	return signer, nil
 }
 
 // StripBefore removes text before BEGIN.
