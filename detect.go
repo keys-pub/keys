@@ -26,34 +26,28 @@ const (
 )
 
 // DetectDataType tries to find out what data type the bytes are.
-func DetectDataType(b []byte) DataType {
-	s := ""
-	if utf8.Valid(b) {
-		s = strings.TrimSpace(string(b))
+// Returns bytes which may be different from input (for example, if whitespace is stripped).
+func DetectDataType(b []byte) ([]byte, DataType) {
+	if !utf8.Valid(b) {
+		return b, UnknownType
 	}
 
-	if s != "" {
-		if _, err := ParseID(s); err == nil {
-			return IDType
-		} else if len(s) < 100 && (strings.HasPrefix(s, "kex1") || strings.HasPrefix(s, "kbx1")) {
-			return IDType
-		}
+	s := strings.TrimSpace(string(b))
 
-		if strings.Contains(s, "BEGIN ") && strings.Contains(s, " MESSAGE") {
-			return SaltpackArmoredType
-		}
+	typ := UnknownType
 
-		if strings.HasPrefix(s, "-----BEGIN ") {
-			return SSHType
-		}
-
-		if strings.HasPrefix(s, "ssh-") {
-			return SSHPublicType
-		}
+	if _, err := ParseID(s); err == nil {
+		typ = IDType
+	} else if len(s) < 100 && (strings.HasPrefix(s, "kex1") || strings.HasPrefix(s, "kbx1")) {
+		typ = IDType
+	} else if strings.Contains(s, "BEGIN ") && strings.Contains(s, " MESSAGE") {
+		typ = SaltpackArmoredType
+	} else if strings.HasPrefix(s, "-----BEGIN ") {
+		typ = SSHType
+	} else if strings.HasPrefix(s, "ssh-") {
+		typ = SSHPublicType
 	}
 
-	// TODO: SaltpackType
-
-	return UnknownType
+	return []byte(s), typ
 
 }
