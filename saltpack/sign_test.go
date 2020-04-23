@@ -97,7 +97,7 @@ func TestSignVerifyStream(t *testing.T) {
 	require.Equal(t, len(message), n)
 	signed3.Close()
 
-	signer, err = sp.VerifyDetachedReader(bytes.NewReader(message), buf3.Bytes())
+	signer, err = sp.VerifyDetachedReader(buf3.Bytes(), bytes.NewReader(message))
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 
@@ -110,7 +110,7 @@ func TestSignVerifyStream(t *testing.T) {
 	require.Equal(t, len(message), n)
 	signed4.Close()
 
-	signer, err = sp.VerifyArmoredDetachedReader(bytes.NewBuffer(message), string(buf4.Bytes()))
+	signer, err = sp.VerifyArmoredDetachedReader(string(buf4.Bytes()), bytes.NewBuffer(message))
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }

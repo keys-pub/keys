@@ -128,7 +128,7 @@ func (s *Saltpack) NewVerifyArmoredStream(r io.Reader) (io.Reader, keys.ID, erro
 }
 
 // VerifyDetachedReader ...
-func (s *Saltpack) VerifyDetachedReader(r io.Reader, sig []byte) (keys.ID, error) {
+func (s *Saltpack) VerifyDetachedReader(sig []byte, r io.Reader) (keys.ID, error) {
 	spk, err := ksaltpack.VerifyDetachedReader(signVersionValidator, r, sig, s)
 	if err != nil {
 		return "", convertSignKeyErr(err)
@@ -141,7 +141,7 @@ func (s *Saltpack) VerifyDetachedReader(r io.Reader, sig []byte) (keys.ID, error
 }
 
 // VerifyArmoredDetachedReader ...
-func (s *Saltpack) VerifyArmoredDetachedReader(r io.Reader, sig string) (keys.ID, error) {
+func (s *Saltpack) VerifyArmoredDetachedReader(sig string, r io.Reader) (keys.ID, error) {
 	spk, _, err := ksaltpack.Dearmor62VerifyDetachedReader(signVersionValidator, r, sig, s)
 	if err != nil {
 		return "", convertSignKeyErr(err)
