@@ -9,7 +9,7 @@ import (
 )
 
 // SecretBoxSeal encrypts using a key.
-// It prepends the nonce the the encrypted bytes.
+// It prepends a 24 byte nonce to the the encrypted bytes.
 func SecretBoxSeal(b []byte, secretKey *[32]byte) []byte {
 	nonce := Rand24()
 	return sealSecretBox(b, nonce, secretKey)
@@ -44,6 +44,7 @@ func openSecretBox(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
 
 // EncryptWithPassword encrypts bytes with a password.
 // Uses argon2.IDKey(password, salt, 1, 64*1024, 4, 32) with 16 byte salt.
+// The salt bytes are prepended to the encrypted bytes.
 func EncryptWithPassword(b []byte, password string) []byte {
 	salt := Rand16()
 	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
@@ -52,6 +53,7 @@ func EncryptWithPassword(b []byte, password string) []byte {
 }
 
 // DecryptWithPassword decrypts bytes using a password.
+// It assumes a 16 byte salt before the encrypted bytes.
 func DecryptWithPassword(encrypted []byte, password string) ([]byte, error) {
 	if len(encrypted) < 16 {
 		return nil, errors.Errorf("failed to decrypt with a password: not enough bytes")

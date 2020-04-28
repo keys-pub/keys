@@ -41,7 +41,7 @@ func ExampleSaltpack_Verify() {
 	sp := saltpack.NewSaltpack(nil)
 
 	aliceID := keys.ID("kex1w2jep8dkr2s0g9kx5g6xe3387jslnlj08yactvn8xdtrx4cnypjq9rpnux")
-	sig := `BEGIN SALTPACK SIGNED MESSAGE. 
+	signed := `BEGIN SALTPACK SIGNED MESSAGE. 
 	kXR7VktZdyH7rvq v5wcIkHbs7mPCSd NhKLR9E0K47y29T QkuYinHym6EfZwL 
 	1TwgxI3RQ52fHg5 1FzmLOMghcYLcV7 i0l0ovabGhxGrEl z7WuI4O3xMU5saq 
 	U28RqUnKNroATPO 5rn2YyQcut2SeMn lXJBlDqRv9WyxjG M0PcKvsAsvmid1m 
@@ -49,7 +49,7 @@ func ExampleSaltpack_Verify() {
 	wdNd6ISacrT0I82 qZ71sc7sTxiMxoI P43uCGaAZZ3Ab62 vR8N6WQPE8. 
 	END SALTPACK SIGNED MESSAGE.`
 
-	out, signer, err := sp.VerifyArmored(sig)
+	out, signer, err := sp.VerifyArmored(signed)
 	if err != nil {
 		log.Fatal(err)
 	}
