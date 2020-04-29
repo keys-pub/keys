@@ -51,6 +51,10 @@ func (s *reddit) ValidateUsername(name string) error {
 	if !isASCII {
 		return errors.Errorf("user name has non-ASCII characters")
 	}
+	hu := encoding.HasUpper(name)
+	if hu {
+		return errors.Errorf("user name should be lowercase")
+	}
 	if len(name) > 20 {
 		return errors.Errorf("reddit name too long")
 	}
