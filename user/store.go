@@ -110,7 +110,7 @@ func (u *Store) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 
 // CheckSigchain looks for user in a Sigchain and updates the current result.
 func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
-	usr, err := ResolveSigchain(sc)
+	usr, err := FindUserInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -223,8 +223,8 @@ func VerifyContent(b []byte, result *Result, kid keys.ID) (Status, error) {
 	return StatusOK, nil
 }
 
-// ValidateStatement returns error if statement is not a valid user statement.
-func (u *Store) ValidateStatement(st *keys.Statement) error {
+// ValidateUserStatement returns error if statement is not a valid user statement.
+func ValidateUserStatement(st *keys.Statement) error {
 	if st.Type != "user" {
 		return errors.Errorf("invalid user statement: %s != %s", st.Type, "user")
 	}
@@ -232,7 +232,7 @@ func (u *Store) ValidateStatement(st *keys.Statement) error {
 	if err := json.Unmarshal(st.Data, &user); err != nil {
 		return err
 	}
-	if err := u.validate(&user); err != nil {
+	if err := ValidateUser(&user); err != nil {
 		return err
 	}
 	return nil
@@ -434,7 +434,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 // CheckForExisting returns key ID of exsiting user in sigchain different from this
 // sigchain key.
 func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
-	usr, err := ResolveSigchain(sc)
+	usr, err := FindUserInSigchain(sc)
 	if err != nil {
 		return "", err
 	}

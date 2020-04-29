@@ -148,7 +148,7 @@ func newUser(ust *Store, kid keys.ID, service link.Service, name string, rawurl 
 		Name:    name,
 		URL:     url,
 	}
-	if err := ust.validate(usr); err != nil {
+	if err := ValidateUser(usr); err != nil {
 		return nil, err
 	}
 	return usr, nil
@@ -161,7 +161,7 @@ func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*U
 		return nil, err
 	}
 	name = svc.NormalizeUsername(name)
-	if err := ust.validateServiceAndName(svc, name); err != nil {
+	if err := validateServiceAndName(svc, name); err != nil {
 		return nil, err
 	}
 	return &User{
@@ -179,20 +179,21 @@ func normalizeURL(s string) (string, error) {
 	return u.String(), nil
 }
 
-func (u *Store) validateServiceAndName(service link.Service, name string) error {
+func validateServiceAndName(service link.Service, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
 	return service.ValidateUsername(name)
 }
 
-func (u *Store) validate(user *User) error {
+// ValidateUser service and name.
+func ValidateUser(user *User) error {
 	service, err := link.NewService(user.Service)
 	if err != nil {
 		return err
 	}
 
-	if err := u.validateServiceAndName(service, user.Name); err != nil {
+	if err := validateServiceAndName(service, user.Name); err != nil {
 		return err
 	}
 	ur, err := url.Parse(user.URL)
@@ -215,8 +216,13 @@ func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Ke
 	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}
+
+	if err := ValidateUser(user); err != nil {
+		return nil, err
+	}
+
 	// Check if we have an existing user set.
-	existing, err := ResolveSigchain(sc)
+	existing, err := FindUserInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -301,8 +307,9 @@ func Verify(msg string, kid keys.ID, user *User) (*User, error) {
 	return &dec, nil
 }
 
-// ResolveSigchain returns User from a Sigchain.
-func ResolveSigchain(sc *keys.Sigchain) (*User, error) {
+// FindUserInSigchain returns User from a Sigchain.
+// If user is invalid returns nil.
+func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
 	st := sc.FindLast("user")
 	if st == nil {
 		return nil, nil
@@ -311,5 +318,10 @@ func ResolveSigchain(sc *keys.Sigchain) (*User, error) {
 	if err := json.Unmarshal(st.Data, &user); err != nil {
 		return nil, err
 	}
+
+	if err := ValidateUser(&user); err != nil {
+		return nil, nil
+	}
+
 	return &user, nil
 }
