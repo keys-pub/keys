@@ -227,13 +227,13 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 
 	sc := keys.NewSigchain(key.ID())
 
-	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
+	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.EqualError(t, err, "user name should be lowercase")
 
 	// Go around validate check and add
 	b, err := usr.MarshalJSON()
 	require.NoError(t, err)
-	st, err = keys.NewSigchainStatement(sc, b, key, "user", clock.Now())
+	st, err := keys.NewSigchainStatement(sc, b, key, "user", clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
