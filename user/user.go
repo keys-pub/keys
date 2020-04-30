@@ -137,7 +137,7 @@ func NewUser(ust *Store, kid keys.ID, service string, name string, rawurl string
 }
 
 func newUser(ust *Store, kid keys.ID, service link.Service, name string, rawurl string) (*User, error) {
-	name = service.NormalizeUsername(name)
+	name = service.NormalizeName(name)
 	url, err := normalizeURL(rawurl)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*U
 	if err != nil {
 		return nil, err
 	}
-	name = svc.NormalizeUsername(name)
+	name = svc.NormalizeName(name)
 	if err := validateServiceAndName(svc, name); err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func validateServiceAndName(service link.Service, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
-	return service.ValidateUsername(name)
+	return service.ValidateName(name)
 }
 
 // ValidateUser service and name.

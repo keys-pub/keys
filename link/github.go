@@ -17,7 +17,7 @@ func (s *github) Name() string {
 	return "github"
 }
 
-func (s *github) NormalizeUsername(name string) string {
+func (s *github) NormalizeName(name string) string {
 	return name
 }
 
@@ -40,18 +40,18 @@ func (s *github) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 	return u, nil
 }
 
-func (s *github) ValidateUsername(name string) error {
+func (s *github) ValidateName(name string) error {
 	isASCII := encoding.IsASCII([]byte(name))
 	if !isASCII {
-		return errors.Errorf("user name has non-ASCII characters")
+		return errors.Errorf("name has non-ASCII characters")
 	}
 	hu := encoding.HasUpper(name)
 	if hu {
-		return errors.Errorf("user name should be lowercase")
+		return errors.Errorf("name should be lowercase")
 	}
 
 	if len(name) > 39 {
-		return errors.Errorf("github name too long")
+		return errors.Errorf("github name is too long, it must be less than 40 characters")
 	}
 
 	return nil

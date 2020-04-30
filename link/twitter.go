@@ -17,7 +17,7 @@ func (s *twitter) Name() string {
 	return "twitter"
 }
 
-func (s *twitter) NormalizeUsername(name string) string {
+func (s *twitter) NormalizeName(name string) string {
 	if len(name) > 0 && name[0] == '@' {
 		return name[1:]
 	}
@@ -43,18 +43,18 @@ func (s *twitter) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 	return u, nil
 }
 
-func (s *twitter) ValidateUsername(name string) error {
+func (s *twitter) ValidateName(name string) error {
 	isASCII := encoding.IsASCII([]byte(name))
 	if !isASCII {
-		return errors.Errorf("user name has non-ASCII characters")
+		return errors.Errorf("name has non-ASCII characters")
 	}
 	hu := encoding.HasUpper(name)
 	if hu {
-		return errors.Errorf("user name should be lowercase")
+		return errors.Errorf("name should be lowercase")
 	}
 
 	if len(name) > 15 {
-		return errors.Errorf("twitter name too long")
+		return errors.Errorf("twitter name is too long, it must be less than 16 characters")
 	}
 
 	return nil
