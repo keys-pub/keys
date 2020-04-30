@@ -40,6 +40,10 @@ func (s *https) ValidateName(name string) error {
 		return errors.Errorf("not a valid domain name")
 	}
 
+	if regexIP.MatchString(name) {
+		return errors.Errorf("not a valid domain name")
+	}
+
 	return nil
 }
 
@@ -53,6 +57,8 @@ func (s *https) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 func (s *https) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
 }
+
+var regexIP = regexp.MustCompile(`^[0-9].*\.[0-9].*\.[0-9].*\.[0-9].*$`)
 
 // From github.com/keybase/client/libkb/util.go
 // Found regex here: http://stackoverflow.com/questions/106179/regular-expression-to-match-dns-hostname-or-ip-address

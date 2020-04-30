@@ -40,12 +40,17 @@ func TestHTTPSValidateName(t *testing.T) {
 	err = link.HTTPS.ValidateName("-foo.com")
 	require.EqualError(t, err, "not a valid domain name")
 
-	// TODO: IP Addresses?
-	// err = link.HTTPS.ValidateName("127.0.0.1")
-	// require.EqualError(t, err, "not a valid domain name")
+	err = link.HTTPS.ValidateName("127.0.0.1")
+	require.EqualError(t, err, "not a valid domain name")
 
-	// err = link.HTTPS.ValidateName("127.127.127.127")
-	// require.EqualError(t, err, "not a valid domain name")
+	err = link.HTTPS.ValidateName("127.127.127.127")
+	require.EqualError(t, err, "not a valid domain name")
+
+	err = link.HTTPS.ValidateName("1:2:3:4:5:6:7:8")
+	require.EqualError(t, err, "not a valid domain name")
+
+	err = link.HTTPS.ValidateName("::255.255.255.255")
+	require.EqualError(t, err, "not a valid domain name")
 }
 
 func TestHTTPSValidateURL(t *testing.T) {
