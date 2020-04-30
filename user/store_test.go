@@ -406,11 +406,11 @@ func TestNewUser(t *testing.T) {
 	require.Equal(t, "gbrltest", u9.Name)
 
 	u10, uerr0 := user.NewUser(ust, sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
-	require.EqualError(t, uerr0, "user name should be lowercase")
+	require.EqualError(t, uerr0, "name should be lowercase")
 	require.Nil(t, u10)
 
 	u11, uerr1 := user.NewUser(ust, sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
-	require.EqualError(t, uerr1, "user name has non-ASCII characters")
+	require.EqualError(t, uerr1, "name has non-ASCII characters")
 	require.Nil(t, u11)
 
 	u12, uerr := user.NewUser(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)

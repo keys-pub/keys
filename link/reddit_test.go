@@ -1,29 +1,21 @@
 package link_test
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/keys-pub/keys/link"
 	"github.com/stretchr/testify/require"
 )
 
-func testValidateURL(t *testing.T, service link.Service, name string, urs string, expected string) {
-	ur, err := url.Parse(urs)
-	require.NoError(t, err)
-	urout, err := service.ValidateURL(name, ur)
-	require.NoError(t, err)
-	require.Equal(t, expected, urout.String())
+func TestRedditValidateName(t *testing.T) {
+	err := link.Github.ValidateName("Gabriel")
+	require.EqualError(t, err, "name should be lowercase")
+
+	err = link.Reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
+	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
 }
 
-func testValidateURLErr(t *testing.T, service link.Service, name string, urs string, expected string) {
-	ur, err := url.Parse(urs)
-	require.NoError(t, err)
-	_, err = service.ValidateURL(name, ur)
-	require.EqualError(t, err, expected)
-}
-
-func TestValidateURL(t *testing.T) {
+func TestRedditValidateURL(t *testing.T) {
 	testValidateURL(t, link.Reddit,
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",

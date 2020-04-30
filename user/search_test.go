@@ -185,19 +185,19 @@ func TestUserValidateName(t *testing.T) {
 
 	// Test MixedCase
 	_, err := saveUser(ust, scs, key, "MixedCase", "github", clock, req)
-	require.EqualError(t, err, "user name should be lowercase")
+	require.EqualError(t, err, "name should be lowercase")
 	_, err = saveUser(ust, scs, key, "MixedCase", "twitter", clock, req)
-	require.EqualError(t, err, "user name should be lowercase")
+	require.EqualError(t, err, "name should be lowercase")
 	_, err = saveUser(ust, scs, key, "MixedCase", "reddit", clock, req)
-	require.EqualError(t, err, "user name should be lowercase")
+	require.EqualError(t, err, "name should be lowercase")
 
 	// Long length
 	_, err = saveUser(ust, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, req)
-	require.EqualError(t, err, "github name too long")
+	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")
 	_, err = saveUser(ust, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, req)
-	require.EqualError(t, err, "twitter name too long")
+	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")
 	_, err = saveUser(ust, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, req)
-	require.EqualError(t, err, "reddit name too long")
+	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
 }
 
 func TestUserValidateUpdateInvalid(t *testing.T) {
@@ -228,7 +228,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	sc := keys.NewSigchain(key.ID())
 
 	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
-	require.EqualError(t, err, "user name should be lowercase")
+	require.EqualError(t, err, "name should be lowercase")
 
 	// Go around validate check and add
 	b, err := usr.MarshalJSON()

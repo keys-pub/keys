@@ -18,7 +18,7 @@ func (s *reddit) Name() string {
 	return "reddit"
 }
 
-func (s *reddit) NormalizeUsername(name string) string {
+func (s *reddit) NormalizeName(name string) string {
 	return name
 }
 
@@ -46,17 +46,17 @@ func (s *reddit) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 	return nil, errors.Errorf("invalid path %s", u.Path)
 }
 
-func (s *reddit) ValidateUsername(name string) error {
+func (s *reddit) ValidateName(name string) error {
 	isASCII := encoding.IsASCII([]byte(name))
 	if !isASCII {
-		return errors.Errorf("user name has non-ASCII characters")
+		return errors.Errorf("name has non-ASCII characters")
 	}
 	hu := encoding.HasUpper(name)
 	if hu {
-		return errors.Errorf("user name should be lowercase")
+		return errors.Errorf("name should be lowercase")
 	}
 	if len(name) > 20 {
-		return errors.Errorf("reddit name too long")
+		return errors.Errorf("reddit name is too long, it must be less than 21 characters")
 	}
 	return nil
 }

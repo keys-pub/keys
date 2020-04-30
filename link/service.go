@@ -11,16 +11,16 @@ type Service interface {
 	// Name of the service, e.g. "github", "twitter".
 	Name() string
 
-	// NormalizeUsername normalizes a user name. For example, on Twitter,
+	// NormalizeName normalizes a service name. For example, on Twitter,
 	// "@username" becomes "username".
-	NormalizeUsername(string) string
+	NormalizeName(string) string
 
 	// ValidateURL validates the URL and returns an URL of where to find the
 	// signed statement.
 	ValidateURL(name string, u *url.URL) (*url.URL, error)
 
 	// ValidateName validates the service user name.
-	ValidateUsername(name string) error
+	ValidateName(name string) error
 
 	// CheckContent returns data with statement.
 	// For Twitter, Github there is no check since the user owns the URL location.
@@ -37,6 +37,8 @@ func NewService(service string) (Service, error) {
 		return Github, nil
 	case Reddit.Name():
 		return Reddit, nil
+	case HTTPS.Name():
+		return HTTPS, nil
 	default:
 		return nil, errors.Errorf("invalid service %s", service)
 	}
