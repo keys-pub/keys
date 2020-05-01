@@ -41,7 +41,7 @@ func ExampleSaltpack_Decrypt() {
 	avDlwRXMDbjKFvE wQtaBDKXVSBaM9k 0Xu0CfdGUkEICbN vZNV67cGqEz2IiH kr8. 
 	END SALTPACK ENCRYPTED MESSAGE.`
 
-	// Bob creates a Keyring and KeyStore
+	// Bob creates a Keyring and Store
 	kr, err := keyring.NewKeyring("BobKeyring", keyring.System())
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +51,7 @@ func ExampleSaltpack_Decrypt() {
 	if err := keyring.UnlockWithPassword(kr, "bobpassword"); err != nil {
 		log.Fatal(err)
 	}
-	ks := keys.NewKeyStore(kr)
+	ks := keys.NewStore(kr)
 
 	kmsg := `BEGIN EDX25519 KEY MESSAGE.
 	E9zL57KzBY1CIdJ d5tlpnyCIX8R5DB oLswy2g17kbfK4s CwryRUoII3ZNk3l
