@@ -102,7 +102,7 @@ func decodeItem(b []byte, key SecretKey) (*Item, error) {
 	if b == nil {
 		return nil, nil
 	}
-	item, err := DecodeItem(b, key)
+	item, err := NewItemFromBytes(b, key)
 	if err != nil {
 		return nil, err
 	}

@@ -95,7 +95,7 @@ func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error
 			if strings.HasPrefix(id, hiddenPrefix) || strings.HasPrefix(id, reservedPrefix) {
 				continue
 			}
-			item, err := DecodeItem(cred.CredentialBlob, key)
+			item, err := NewItemFromBytes(cred.CredentialBlob, key)
 			if err != nil {
 				return nil, err
 			}

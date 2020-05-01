@@ -21,7 +21,7 @@ func NewItem(id string, b []byte, typ string, createdAt time.Time) *Item {
 	return item
 }
 
-// Marshal to bytes, encrypted with a secret key.
+// Marshal Item to bytes, encrypted with a secret key.
 func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	if secretKey == nil {
 		return nil, errors.Errorf("no secret key specified")
@@ -34,22 +34,25 @@ func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-// DecodeItem returns Item from bytes.
-func DecodeItem(b []byte, secretKey SecretKey) (*Item, error) {
-	return unmarshal(b, secretKey)
-}
-
-func unmarshal(b []byte, secretKey SecretKey) (*Item, error) {
-	decrypted, ok := secretBoxOpen(b, secretKey)
-	if !ok {
-		return nil, ErrInvalidAuth
+// NewItemFromBytes creates Item from marshalled bytes.
+func NewItemFromBytes(b []byte, secretKey SecretKey) (*Item, error) {
+	var itemBytes []byte
+	if secretKey != nil {
+		decrypted, ok := secretBoxOpen(b, secretKey)
+		if !ok {
+			return nil, ErrInvalidAuth
+		}
+		itemBytes = decrypted
+	} else {
+		itemBytes = b
 	}
 
-	if decrypted == nil {
+	if itemBytes == nil {
 		return nil, errors.Errorf("no data")
 	}
+
 	var item Item
-	if err := msgpack.Unmarshal(decrypted, &item); err != nil {
+	if err := msgpack.Unmarshal(itemBytes, &item); err != nil {
 		return nil, errors.Wrapf(err, "keyring item data is invalid")
 	}
 

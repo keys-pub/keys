@@ -52,7 +52,7 @@ func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opt
 		if secret == nil {
 			continue
 		}
-		item, err := DecodeItem(secret.Value, key)
+		item, err := NewItemFromBytes(secret.Value, key)
 		if err != nil {
 			// return nil, err
 			continue

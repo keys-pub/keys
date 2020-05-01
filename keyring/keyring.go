@@ -232,7 +232,7 @@ func listDefault(st Store, service string, key SecretKey, opts *ListOpts) ([]*It
 		if err != nil {
 			return nil, err
 		}
-		item, err := DecodeItem(b, key)
+		item, err := NewItemFromBytes(b, key)
 		if err != nil {
 			return nil, err
 		}
