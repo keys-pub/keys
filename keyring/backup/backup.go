@@ -118,7 +118,7 @@ func NewExportFromBytes(b []byte, password string) (*Export, error) {
 // TODO: Dry run.
 // TODO: Continue on error.
 func ImportFromFile(kr keyring.Keyring, path string, password string) error {
-	b, err := ioutil.ReadFile(path)
+	b, err := ioutil.ReadFile(path) // #nosec
 	if err != nil {
 		return err
 	}
