@@ -42,7 +42,7 @@ fmt.Printf("Encrypted: %s\n", string(encrypted))
 The following example decrypts the message from the Encrypt example:
 
 - Initialize and setup/unlock a Keyring
-- Create a KeyStore
+- Create a Store
 - Import a EdX25519 key
 - Decrypt and verify a Saltpack message
 
@@ -64,7 +64,7 @@ ix9Mw1FVXQGBwBV yil8lLyD1q0VFGv KmgJYyARppqQEIF HgAsZq0BJL6Dosz WGrFalmG90QA6PO
 avDlwRXMDbjKFvE wQtaBDKXVSBaM9k 0Xu0CfdGUkEICbN vZNV67cGqEz2IiH kr8.
 END SALTPACK ENCRYPTED MESSAGE.`
 
-// Bob creates a Keyring and KeyStore
+// Bob creates a Keyring and Store
 kr, err := keyring.NewKeyring("BobKeyring")
 if err != nil {
     log.Fatal(err)
@@ -72,9 +72,9 @@ if err != nil {
 if err := keyring.UnlockWithPassword(kr, "bobpassword"); err != nil {
     log.Fatal(err)
 }
-ks := keys.NewKeyStore(kr)
+ks := keys.NewStore(kr)
 
-// Import edx25519 key to bob's KeyStore
+// Import edx25519 key to bob's Store
 kmsg := `BEGIN EDX25519 KEY MESSAGE.
 E9zL57KzBY1CIdJ d5tlpnyCIX8R5DB oLswy2g17kbfK4s CwryRUoII3ZNk3l
 scLQrPmgNuKi9OK 7ugGoVWBY2n5xbK 7w500Vp2iXo6LAe XZiB06UjUdCoYJv

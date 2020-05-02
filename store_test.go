@@ -13,7 +13,7 @@ import (
 func TestEdX25519Key(t *testing.T) {
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 	sk := keys.GenerateEdX25519Key()
 
 	err := ks.SaveEdX25519Key(sk)
@@ -48,7 +48,7 @@ func TestEdX25519Key(t *testing.T) {
 }
 
 func TestEdX25519PublicKey(t *testing.T) {
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 	spk := keys.GenerateEdX25519Key().PublicKey()
 	err := ks.SaveEdX25519PublicKey(spk)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestEdX25519PublicKey(t *testing.T) {
 }
 
 func TestFindEdX25519PublicKey(t *testing.T) {
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 	sk := keys.GenerateEdX25519Key()
 	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 }
 
 func TestX25519Key(t *testing.T) {
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 	bk := keys.GenerateX25519Key()
 	err := ks.SaveX25519Key(bk)
 	require.NoError(t, err)
@@ -102,9 +102,9 @@ func TestX25519Key(t *testing.T) {
 	require.Nil(t, bkOut)
 }
 
-func TestKeyStoreList(t *testing.T) {
+func TestStoreList(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 	err := ks.SaveEdX25519Key(sk)
@@ -142,8 +142,8 @@ func TestKeyStoreList(t *testing.T) {
 	require.Equal(t, bk.ID(), out[0].ID())
 }
 
-func TestKeyStoreConcurrent(t *testing.T) {
-	ks := keys.NewMemKeyStore()
+func TestStoreConcurrent(t *testing.T) {
+	ks := keys.NewMemStore()
 	sk := keys.GenerateEdX25519Key()
 	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
@@ -172,7 +172,7 @@ func TestKeyStoreConcurrent(t *testing.T) {
 
 func TestExportImportKey(t *testing.T) {
 	sk := keys.GenerateEdX25519Key()
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 	err := ks.SaveKey(sk)
 	require.NoError(t, err)
 
@@ -180,14 +180,14 @@ func TestExportImportKey(t *testing.T) {
 	msg, err := ks.ExportSaltpack(sk.ID(), password)
 	require.NoError(t, err)
 
-	ks2 := keys.NewMemKeyStore()
+	ks2 := keys.NewMemStore()
 	key, err := ks2.ImportSaltpack(msg, "testpassword", false)
 	require.NoError(t, err)
 	require.Equal(t, sk.ID(), key.ID())
 }
 
 func TestUnknownKey(t *testing.T) {
-	ks := keys.NewMemKeyStore()
+	ks := keys.NewMemStore()
 	key, err := ks.Key(keys.RandID("kex"))
 	require.NoError(t, err)
 	require.Nil(t, key)
