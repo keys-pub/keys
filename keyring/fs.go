@@ -41,6 +41,10 @@ type fs struct {
 	dir string
 }
 
+func (k fs) Name() string {
+	return "fs"
+}
+
 func defaultFSDir() (string, error) {
 	usr, err := user.Current()
 	if err != nil {

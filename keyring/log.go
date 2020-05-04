@@ -2,56 +2,67 @@ package keyring
 
 import (
 	pkglog "log"
-	"os"
 )
 
-// Logger interface used in this package
+var logger = NewLogger(ErrLevel)
+
+//var logger = NewContextLogger(InfoLevel)
+
+// SetLogger sets logger for the package.
+func SetLogger(l Logger) {
+	logger = l
+}
+
+// // SetContextLogger sets logger for the package.
+// func SetContextLogger(l ContextLogger) {
+// 	logger = l
+// }
+
+// Logger interface used in this package.
 type Logger interface {
 	Debugf(format string, args ...interface{})
 	Infof(format string, args ...interface{})
 	Warningf(format string, args ...interface{})
 	Errorf(format string, args ...interface{})
+	Fatalf(format string, args ...interface{})
 }
 
-type logLevel int
+// LogLevel ...
+type LogLevel int
 
 const (
-	debugLevel logLevel = 3
-	infoLevel  logLevel = 2
-	warnLevel  logLevel = 1
-	errLevel   logLevel = 0
+	// DebugLevel ...
+	DebugLevel LogLevel = 3
+	// InfoLevel ...
+	InfoLevel LogLevel = 2
+	// WarnLevel ...
+	WarnLevel LogLevel = 1
+	// ErrLevel ...
+	ErrLevel LogLevel = 0
 )
 
-var logger = newLogFromEnv()
-
-func newLog(lev logLevel) Logger {
+// NewLogger ...
+func NewLogger(lev LogLevel) Logger {
 	return &defaultLog{Level: lev}
 }
 
-func newLogFromEnv() Logger {
-	return newLog(parseLogLevel(os.Getenv("LOG_LEVEL")))
-}
-
-func parseLogLevel(s string) logLevel {
-	switch s {
-	case "debug":
-		return debugLevel
-	case "info":
-		return infoLevel
-	case "warn":
-		return warnLevel
+func (l LogLevel) String() string {
+	switch l {
+	case DebugLevel:
+		return "debug"
+	case InfoLevel:
+		return "info"
+	case WarnLevel:
+		return "warn"
+	case ErrLevel:
+		return "err"
 	default:
-		return errLevel
+		return ""
 	}
 }
 
-// SetLogger sets package log
-func SetLogger(l Logger) {
-	logger = l
-}
-
 type defaultLog struct {
-	Level logLevel
+	Level LogLevel
 }
 
 func (l defaultLog) Debugf(format string, args ...interface{}) {
@@ -73,5 +84,11 @@ func (l defaultLog) Warningf(format string, args ...interface{}) {
 }
 
 func (l defaultLog) Errorf(format string, args ...interface{}) {
-	pkglog.Printf("[ERR]  "+format+"\n", args...)
+	if l.Level >= 0 {
+		pkglog.Printf("[ERR]  "+format+"\n", args...)
+	}
+}
+
+func (l defaultLog) Fatalf(format string, args ...interface{}) {
+	pkglog.Fatalf(format, args...)
 }

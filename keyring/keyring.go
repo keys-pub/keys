@@ -2,7 +2,6 @@ package keyring
 
 import (
 	"crypto/subtle"
-	"os/exec"
 	"runtime"
 	"sort"
 	"strings"
@@ -82,8 +81,14 @@ type ListOpts struct {
 
 // Store is the cross platform keyring interface that a Keyring uses.
 type Store interface {
+	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs).
+	Name() string
+
+	// Get bytes.
 	Get(service string, id string) ([]byte, error)
+	// Set bytes.
 	Set(service string, id string, data []byte, typ string) error
+	// Delete bytes.
 	Delete(service string, id string) (bool, error)
 
 	IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error)
@@ -97,21 +102,25 @@ func System() Store {
 	return system()
 }
 
+func defaultFS() Store {
+	dir, err := defaultFSDir()
+	if err != nil {
+		panic(err)
+	}
+	fs, err := FS(dir)
+	if err != nil {
+		panic(err)
+	}
+	return fs
+}
+
 // SystemOrFS returns system keyring store or FS if unavailable.
 // On linux, if dbus is not available, uses the filesystem at ~/.keyring.
 func SystemOrFS() Store {
 	if runtime.GOOS == "linux" {
-		path, err := exec.LookPath("dbus-launch")
-		if err != nil || path == "" {
-			dir, err := defaultFSDir()
-			if err != nil {
-				panic(err)
-			}
-			fs, err := FS(dir)
-			if err != nil {
-				panic(err)
-			}
-			return fs
+		if err := checkSystem(); err != nil {
+			logger.Infof("Keyring (system) unavailable: %v", err)
+			return defaultFS()
 		}
 	}
 	return system()
@@ -237,7 +246,7 @@ func NewKeyring(service string, st Store) (Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
-	logger.Debugf("Keyring (%s)", service)
+	logger.Debugf("Keyring (%s, %s)", service, st.Name())
 	kr, err := newKeyring(st, service)
 	if err != nil {
 		return nil, err

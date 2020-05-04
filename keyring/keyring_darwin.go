@@ -15,6 +15,14 @@ func system() Store {
 	return sys{}
 }
 
+func checkSystem() error {
+	return nil
+}
+
+func (k sys) Name() string {
+	return "keychain"
+}
+
 func (k sys) Get(service string, id string) ([]byte, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
