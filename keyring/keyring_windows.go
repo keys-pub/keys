@@ -12,7 +12,15 @@ func system() Store {
 	return sys{}
 }
 
+func checkSystem() error {
+	return nil
+}
+
 type sys struct{}
+
+func (k sys) Name() string {
+	return "wincred"
+}
 
 func (k sys) Get(service string, id string) ([]byte, error) {
 	targetName := service + "/" + id

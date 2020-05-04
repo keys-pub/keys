@@ -29,6 +29,7 @@ func (c *clock) Now() time.Time {
 }
 
 func TestKeyring(t *testing.T) {
+	// keyring.SetLogger(keyring.NewLogger(keyring.DebugLevel))
 	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()

@@ -30,6 +30,10 @@ type mem struct {
 	items map[string][]byte
 }
 
+func (k mem) Name() string {
+	return "mem"
+}
+
 func (k mem) Get(service string, id string) ([]byte, error) {
 	if b, ok := k.items[id]; ok {
 		return b, nil

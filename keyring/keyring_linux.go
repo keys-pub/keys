@@ -1,10 +1,12 @@
 package keyring
 
 import (
+	"os/exec"
 	"sort"
 	"strings"
 
 	"github.com/godbus/dbus"
+	"github.com/pkg/errors"
 	gokeyring "github.com/zalando/go-keyring"
 	ss "github.com/zalando/go-keyring/secret_service"
 )
@@ -69,14 +71,32 @@ func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opt
 	return items, nil
 }
 
-// System returns keyring store for linux.
 func system() Store {
 	return sys{}
 }
 
 type sys struct{}
 
-// Get item from keyring.
+func (k sys) Name() string {
+	return "SecretService"
+}
+
+func checkSystem() error {
+	path, err := exec.LookPath("dbus-launch")
+	if err != nil || path == "" {
+		return errors.Errorf("no dbus")
+	}
+
+	if _, err := gokeyring.Get("keys.pub", "test-key"); err != nil {
+		if err == gokeyring.ErrNotFound {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+// Get item in keyring.
 func (k sys) Get(service string, id string) ([]byte, error) {
 	s, err := gokeyring.Get(service, id)
 	if err != nil {
