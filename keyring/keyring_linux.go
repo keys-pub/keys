@@ -78,7 +78,7 @@ func system() Store {
 type sys struct{}
 
 func (k sys) Name() string {
-	return "SecretService"
+	return "secret-service"
 }
 
 func checkSystem() error {

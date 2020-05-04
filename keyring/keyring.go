@@ -81,7 +81,7 @@ type ListOpts struct {
 
 // Store is the cross platform keyring interface that a Keyring uses.
 type Store interface {
-	// Name of the Store implementation (keychain, wincred, SecretService, mem, fs).
+	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs).
 	Name() string
 
 	// Get bytes.
