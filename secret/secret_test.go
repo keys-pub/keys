@@ -28,7 +28,7 @@ func (c *clock) Now() time.Time {
 }
 
 func TestSecretMarshal(t *testing.T) {
-	kr := keyring.NewMem()
+	kr := keyring.NewMem(true)
 	ss := secret.NewStore(kr)
 
 	clock := newClock()
@@ -59,7 +59,7 @@ func TestSecretMarshal(t *testing.T) {
 }
 
 func TestSecretStoreSaveDefault(t *testing.T) {
-	kr := keyring.NewMem()
+	kr := keyring.NewMem(true)
 	ss := secret.NewStore(kr)
 
 	secret := &secret.Secret{

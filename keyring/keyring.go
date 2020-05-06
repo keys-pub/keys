@@ -24,22 +24,20 @@ var ErrItemAlreadyExists = errors.New("keyring item already exists")
 // Use keyring.System() for the default system Store.
 // On macOS this is the Keychain, on Windows wincred and linux SecretService.
 //
-// On other environments, you can use a filesystem backed Store by specifying
-// keyring.FS(dir).
+// Use keyring.SystemOrFS() for the default system Store or fallback to FS.
+// Use keyring.Mem() for testing or ephemeral keys.
+// Use keyring.FS(dir) for filesystem based keyring at dir.
 func New(service string, st Store) (*Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
 	logger.Debugf("Keyring (%s, %s)", service, st.Name())
-	kr, err := newKeyring(st, service)
-	if err != nil {
-		return nil, err
-	}
+	kr := newKeyring(service, st)
 	return kr, nil
 }
 
-func newKeyring(st Store, service string) (*Keyring, error) {
-	return &Keyring{st: st, service: service}, nil
+func newKeyring(service string, st Store) *Keyring {
+	return &Keyring{service: service, st: st}
 }
 
 // Keyring stores encrypted keyring items.

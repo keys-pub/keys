@@ -9,20 +9,20 @@ import (
 
 // NewMem returns an in memory Keyring useful for testing or ephemeral keys.
 // The Keyring is unlocked (setup with a random key).
-func NewMem() *Keyring {
-	kr, err := newKeyring(NewMemStore(), "")
-	if err != nil {
-		panic(err)
-	}
-	// Unlock with random key.
-	if err := kr.Unlock(NewKeyAuth(rand32())); err != nil {
-		panic(err)
+// If unlock is true, the mem Keyring will be unlocked with a random key.
+func NewMem(unlock bool) *Keyring {
+	kr := newKeyring("", Mem())
+	if unlock {
+		err := kr.Unlock(NewKeyAuth(rand32()))
+		if err != nil {
+			panic(err)
+		}
 	}
 	return kr
 }
 
-// NewMemStore returns in memory keyring.Store.
-func NewMemStore() Store {
+// Mem returns in memory keyring.Store.
+func Mem() Store {
 	return &mem{map[string][]byte{}}
 }
 
