@@ -37,7 +37,7 @@ func TestKeyring(t *testing.T) {
 	testKeyring(t, kr)
 }
 
-func testKeyring(t *testing.T, kr keyring.Keyring) {
+func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestReset(t *testing.T) {
 	testReset(t, kr)
 }
 
-func testReset(t *testing.T, kr keyring.Keyring) {
+func testReset(t *testing.T, kr *keyring.Keyring) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
@@ -187,7 +187,7 @@ func TestUnlock(t *testing.T) {
 	testUnlock(t, kr)
 }
 
-func testUnlock(t *testing.T, kr keyring.Keyring) {
+func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	err := kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
@@ -238,7 +238,7 @@ func TestReserved(t *testing.T) {
 	testReserved(t, kr)
 }
 
-func testReserved(t *testing.T, kr keyring.Keyring) {
+func testReserved(t *testing.T, kr *keyring.Keyring) {
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
 	err := kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)

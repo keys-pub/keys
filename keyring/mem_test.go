@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testMem(t *testing.T) keyring.Keyring {
+func testMem(t *testing.T) *keyring.Keyring {
 	kr := keyring.NewMem()
 	// Reset since NewMem returns unlocked keyring.
 	reerr := kr.Reset()

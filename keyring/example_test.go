@@ -8,7 +8,7 @@ import (
 	"github.com/keys-pub/keys/keyring"
 )
 
-func ExampleNewKeyring() {
+func ExampleNew() {
 	kr, err := keyring.New("AppName", keyring.SystemOrFS())
 	if err != nil {
 		log.Fatal(err)
@@ -16,7 +16,7 @@ func ExampleNewKeyring() {
 	// Remove this Reset() if you want to keep the Keyring
 	defer func() { _ = kr.Reset() }()
 	// Unlock keyring (on first unlock, sets the password)
-	if err := keyring.UnlockWithPassword(kr, "mypassword"); err != nil {
+	if err := kr.UnlockWithPassword("mypassword"); err != nil {
 		log.Fatal(err)
 	}
 

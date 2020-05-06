@@ -9,11 +9,11 @@ import (
 
 // Store saves keys to the keyring.
 type Store struct {
-	kr keyring.Keyring
+	kr *keyring.Keyring
 }
 
 // NewStore constructs a Store.
-func NewStore(kr keyring.Keyring) *Store {
+func NewStore(kr *keyring.Keyring) *Store {
 	return &Store{
 		kr: kr,
 	}
@@ -26,7 +26,7 @@ func NewMemStore() *Store {
 }
 
 // Keyring used by Store.
-func (k *Store) Keyring() keyring.Keyring {
+func (k *Store) Keyring() *keyring.Keyring {
 	return k.kr
 }
 

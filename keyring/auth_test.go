@@ -16,7 +16,7 @@ func TestAuth(t *testing.T) {
 	testAuth(t, kr)
 }
 
-func testAuth(t *testing.T, kr keyring.Keyring) {
+func testAuth(t *testing.T, kr *keyring.Keyring) {
 	authed, err := kr.Authed()
 	require.NoError(t, err)
 	require.False(t, authed)

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testFS(t *testing.T) keyring.Keyring {
+func testFS(t *testing.T) *keyring.Keyring {
 	dir, err := ioutil.TempDir("", "KeysTest.keyring")
 	require.NoError(t, err)
 	kr, err := keyring.NewFS("KeysTest", dir)

@@ -9,7 +9,7 @@ import (
 
 // NewMem returns an in memory Keyring useful for testing or ephemeral keys.
 // The Keyring is unlocked (setup with a random key).
-func NewMem() Keyring {
+func NewMem() *Keyring {
 	kr, err := newKeyring(NewMemStore(), "")
 	if err != nil {
 		panic(err)

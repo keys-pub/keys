@@ -14,7 +14,7 @@ import (
 
 // NewFS creates a Keyring using the local filesystem. This is an alternate
 // Keyring implementation that is platform agnostic.
-func NewFS(service string, dir string) (Keyring, error) {
+func NewFS(service string, dir string) (*Keyring, error) {
 	if service == "" {
 		return nil, errors.Errorf("no service specified")
 	}
