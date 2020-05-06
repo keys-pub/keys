@@ -65,7 +65,7 @@ avDlwRXMDbjKFvE wQtaBDKXVSBaM9k 0Xu0CfdGUkEICbN vZNV67cGqEz2IiH kr8.
 END SALTPACK ENCRYPTED MESSAGE.`
 
 // Bob creates a Keyring and Store
-kr, err := keyring.NewKeyring("BobKeyring")
+kr, err := keyring.New("BobKeyring")
 if err != nil {
     log.Fatal(err)
 }

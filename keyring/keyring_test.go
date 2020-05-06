@@ -30,14 +30,14 @@ func (c *clock) Now() time.Time {
 
 func TestKeyring(t *testing.T) {
 	// keyring.SetLogger(keyring.NewLogger(keyring.DebugLevel))
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
 	testKeyring(t, kr)
 }
 
-func testKeyring(t *testing.T, kr keyring.Keyring) {
+func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
@@ -133,14 +133,14 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestReset(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
 	testReset(t, kr)
 }
 
-func testReset(t *testing.T, kr keyring.Keyring) {
+func testReset(t *testing.T, kr *keyring.Keyring) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
@@ -181,13 +181,13 @@ func testReset(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestUnlock(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testUnlock(t, kr)
 }
 
-func testUnlock(t *testing.T, kr keyring.Keyring) {
+func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	err := kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
@@ -220,7 +220,7 @@ func testUnlock(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestSetErrors(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
@@ -232,13 +232,13 @@ func TestSetErrors(t *testing.T) {
 }
 
 func TestReserved(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testReserved(t, kr)
 }
 
-func testReserved(t *testing.T, kr keyring.Keyring) {
+func testReserved(t *testing.T, kr *keyring.Keyring) {
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
 	err := kr.Unlock(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
@@ -259,7 +259,7 @@ func TestLargeItems(t *testing.T) {
 	const maxType = 32
 	const maxData = 2048
 
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 

@@ -42,13 +42,13 @@ func ExampleSaltpack_Decrypt() {
 	END SALTPACK ENCRYPTED MESSAGE.`
 
 	// Bob creates a Keyring and Store
-	kr, err := keyring.NewKeyring("BobKeyring", keyring.System())
+	kr, err := keyring.New("BobKeyring", keyring.System())
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Remove this Reset() if you want to keep the Keyring
 	defer func() { _ = kr.Reset() }()
-	if err := keyring.UnlockWithPassword(kr, "bobpassword"); err != nil {
+	if err := kr.UnlockWithPassword("bobpassword"); err != nil {
 		log.Fatal(err)
 	}
 	ks := keys.NewStore(kr)

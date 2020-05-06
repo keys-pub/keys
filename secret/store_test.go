@@ -10,7 +10,7 @@ import (
 )
 
 func TestSecretStore(t *testing.T) {
-	kr := keyring.NewMem()
+	kr := keyring.NewMem(true)
 	ss := secret.NewStore(kr)
 
 	clock := newClock()

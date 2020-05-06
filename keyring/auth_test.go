@@ -10,13 +10,13 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
 }
 
-func testAuth(t *testing.T, kr keyring.Keyring) {
+func testAuth(t *testing.T, kr *keyring.Keyring) {
 	authed, err := kr.Authed()
 	require.NoError(t, err)
 	require.False(t, authed)
@@ -68,7 +68,7 @@ func testAuth(t *testing.T, kr keyring.Keyring) {
 }
 
 func TestSystemStore(t *testing.T) {
-	kr, err := keyring.NewKeyring("KeysTest", keyring.SystemOrFS())
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	salt := bytes.Repeat([]byte{0x01}, 32)

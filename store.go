@@ -9,11 +9,11 @@ import (
 
 // Store saves keys to the keyring.
 type Store struct {
-	kr keyring.Keyring
+	kr *keyring.Keyring
 }
 
 // NewStore constructs a Store.
-func NewStore(kr keyring.Keyring) *Store {
+func NewStore(kr *keyring.Keyring) *Store {
 	return &Store{
 		kr: kr,
 	}
@@ -21,12 +21,14 @@ func NewStore(kr keyring.Keyring) *Store {
 
 // NewMemStore returns Store backed by an in memory keyring.
 // This is useful for testing or ephemeral key stores.
-func NewMemStore() *Store {
-	return NewStore(keyring.NewMem())
+// If unlock is true, the mem keyring will be unlocked with a random key.
+func NewMemStore(unlock bool) *Store {
+	mem := keyring.NewMem(unlock)
+	return NewStore(mem)
 }
 
 // Keyring used by Store.
-func (k *Store) Keyring() keyring.Keyring {
+func (k *Store) Keyring() *keyring.Keyring {
 	return k.kr
 }
 

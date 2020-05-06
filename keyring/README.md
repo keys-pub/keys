@@ -10,7 +10,7 @@ For more details visit **[keys.pub](https://keys.pub)**.
 ## Example
 
 ```go
-kr, err := keyring.NewKeyring("AppName", keyring.System())
+kr, err := keyring.New("AppName", keyring.System())
 if err != nil {
     log.Fatal(err)
 }

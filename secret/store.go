@@ -10,12 +10,12 @@ import (
 
 // Store can saves to the keyring.
 type Store struct {
-	kr    keyring.Keyring
+	kr    *keyring.Keyring
 	nowFn func() time.Time
 }
 
 // NewStore constructs a secret.Store.
-func NewStore(kr keyring.Keyring) *Store {
+func NewStore(kr *keyring.Keyring) *Store {
 	return &Store{
 		kr:    kr,
 		nowFn: time.Now,
