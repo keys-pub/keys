@@ -22,7 +22,7 @@ func NewFS(service string, dir string) (Keyring, error) {
 	if err != nil {
 		return nil, err
 	}
-	kr, err := NewKeyring(service, fs)
+	kr, err := New(service, fs)
 	if err != nil {
 		return nil, err
 	}
