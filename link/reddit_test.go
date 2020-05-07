@@ -14,7 +14,7 @@ func TestRedditNormalizeName(t *testing.T) {
 
 func TestRedditValidateName(t *testing.T) {
 	err := link.Reddit.ValidateName("Gabriel")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = link.Reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")

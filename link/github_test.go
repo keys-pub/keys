@@ -14,7 +14,7 @@ func TestGithubNormalizeName(t *testing.T) {
 
 func TestGithubValidateName(t *testing.T) {
 	err := link.Github.ValidateName("Gabriel")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = link.Github.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")

@@ -16,7 +16,7 @@ func TestTwitterNormalizeName(t *testing.T) {
 
 func TestTwitterValidateName(t *testing.T) {
 	err := link.Twitter.ValidateName("Gabriel")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = link.Twitter.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")
