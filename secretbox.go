@@ -45,6 +45,9 @@ func openSecretBox(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
 // EncryptWithPassword encrypts bytes with a password.
 // Uses argon2.IDKey(password, salt, 1, 64*1024, 4, 32) with 16 byte salt.
 // The salt bytes are prepended to the encrypted bytes.
+// This uses nacl.secretbox, so the bytes/message should be small.
+// If you need to encrypt large amounts of data, use Saltpack instead
+// (TODO: More details here).
 func EncryptWithPassword(b []byte, password string) []byte {
 	salt := Rand16()
 	key := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
