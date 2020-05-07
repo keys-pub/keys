@@ -12,12 +12,11 @@ For more details visit **[keys.pub](https://keys.pub)**.
 ```go
 // Initialize Keyring.
 // You can use keyring.System(), keyring.SystemOrFS(), keyring.FS(dir), or keyring.Mem().
-kr, err := keyring.New("AppName", keyring.SystemOrFS())
+kr, err := keyring.New("AppName", keyring.System())
 if err != nil {
     log.Fatal(err)
 }
-// Remove this Reset() if you want to keep the Keyring.
-defer func() { _ = kr.Reset() }()
+
 // Unlock keyring (on first unlock, sets the password)
 if err := kr.UnlockWithPassword("mypassword"); err != nil {
     log.Fatal(err)
