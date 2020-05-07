@@ -1,7 +1,6 @@
 package user
 
 import (
-	"net/url"
 	"strconv"
 	"time"
 
@@ -119,13 +118,13 @@ func (u *User) UnmarshalJSON(b []byte) error {
 }
 
 // NewUser returns User used in a signing statement.
-func NewUser(ust *Store, kid keys.ID, service string, name string, rawurl string, seq int) (*User, error) {
+func NewUser(ust *Store, kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
 
-	usr, err := newUser(ust, kid, svc, name, rawurl)
+	usr, err := newUser(ust, kid, svc, name, urs)
 	if err != nil {
 		return nil, err
 	}
@@ -136,17 +135,12 @@ func NewUser(ust *Store, kid keys.ID, service string, name string, rawurl string
 	return usr, nil
 }
 
-func newUser(ust *Store, kid keys.ID, service link.Service, name string, rawurl string) (*User, error) {
-	name = service.NormalizeName(name)
-	url, err := normalizeURL(rawurl)
-	if err != nil {
-		return nil, err
-	}
+func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs string) (*User, error) {
 	usr := &User{
 		KID:     kid,
-		Service: service.Name(),
+		Service: service.ID(),
 		Name:    name,
-		URL:     url,
+		URL:     urs,
 	}
 	if err := ValidateUser(usr); err != nil {
 		return nil, err
@@ -155,6 +149,7 @@ func newUser(ust *Store, kid keys.ID, service link.Service, name string, rawurl 
 }
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
+// The name is normalized, for example for twitter "@Username" => "username".
 func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
@@ -166,17 +161,9 @@ func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*U
 	}
 	return &User{
 		KID:     kid,
-		Service: svc.Name(),
+		Service: svc.ID(),
 		Name:    name,
 	}, nil
-}
-
-func normalizeURL(s string) (string, error) {
-	u, err := url.Parse(s)
-	if err != nil {
-		return "", err
-	}
-	return u.String(), nil
 }
 
 func validateServiceAndName(service link.Service, name string) error {
@@ -196,12 +183,8 @@ func ValidateUser(user *User) error {
 	if err := validateServiceAndName(service, user.Name); err != nil {
 		return err
 	}
-	ur, err := url.Parse(user.URL)
-	if err != nil {
-		return err
-	}
 
-	if _, err := service.ValidateURL(user.Name, ur); err != nil {
+	if _, err := service.ValidateURLString(user.Name, user.URL); err != nil {
 		return err
 	}
 	return nil

@@ -115,7 +115,7 @@ func (e ErrTemporary) Temporary() bool {
 
 // Requestor defines how to get bytes from a URL.
 type Requestor interface {
-	RequestURL(ctx context.Context, u *url.URL) ([]byte, error)
+	RequestURLString(ctx context.Context, urs string) ([]byte, error)
 }
 
 type requestor struct{}
@@ -125,10 +125,9 @@ func NewHTTPRequestor() Requestor {
 	return requestor{}
 }
 
-// RequestURL requests a URL.
-func (r requestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
-	logger.Infof("Requesting URL %s", u)
-	_, body, err := doRequest(client(), "GET", u.String(), nil)
+// RequestURLString requests an URL string.
+func (r requestor) RequestURLString(ctx context.Context, urs string) ([]byte, error) {
+	_, body, err := doRequest(client(), "GET", urs, nil)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}
@@ -171,7 +170,7 @@ func (r *MockRequestor) SetError(url string, err error) {
 	r.resp[url] = &mockResponse{err: err}
 }
 
-// RequestURL ...
-func (r *MockRequestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
-	return r.Response(u.String())
+// RequestURLString ...
+func (r *MockRequestor) RequestURLString(ctx context.Context, urs string) ([]byte, error) {
+	return r.Response(urs)
 }

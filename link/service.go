@@ -1,26 +1,33 @@
 package link
 
 import (
+	"fmt"
 	"net/url"
+	"regexp"
 
 	"github.com/pkg/errors"
 )
 
 // Service describes a user service.
 type Service interface {
-	// Name of the service, e.g. "github", "twitter".
-	Name() string
+	// Identifier of the service, e.g. "github", "twitter".
+	ID() string
 
-	// NormalizeName normalizes a service name. For example, on Twitter,
-	// "@username" becomes "username".
-	NormalizeName(string) string
-
-	// ValidateURL validates the URL and returns an URL of where to find the
-	// signed statement.
-	ValidateURL(name string, u *url.URL) (*url.URL, error)
+	// Normalize the service user name.
+	// For example, on Twitter, "@username" becomes "username" or "Gabriel"
+	// becomes "gabriel".
+	NormalizeName(name string) string
 
 	// ValidateName validates the service user name.
 	ValidateName(name string) error
+
+	// NormalizeURLString normalizes an url string.
+	NormalizeURLString(name string, urs string) (string, error)
+
+	// ValidateURLString validates the URL string and returns where to find the
+	// signed statement.
+	// For example, on reddit ".json" is appended.
+	ValidateURLString(name string, urs string) (string, error)
 
 	// CheckContent returns data with statement.
 	// For Twitter, Github there is no check since the user owns the URL location.
@@ -31,15 +38,29 @@ type Service interface {
 // NewService returns a service by name.
 func NewService(service string) (Service, error) {
 	switch service {
-	case Twitter.Name():
+	case Twitter.ID():
 		return Twitter, nil
-	case Github.Name():
+	case Github.ID():
 		return Github, nil
-	case Reddit.Name():
+	case Reddit.ID():
 		return Reddit, nil
-	case HTTPS.Name():
+	case HTTPS.ID():
 		return HTTPS, nil
 	default:
 		return nil, errors.Errorf("invalid service %s", service)
 	}
+}
+
+var regAlphaNumeric = regexp.MustCompile(`^[a-z0-9]+$`)
+
+func isAlphaNumeric(s string) bool {
+	return regAlphaNumeric.MatchString(s)
+}
+
+func basicURLString(urs string) (string, error) {
+	ur, err := url.Parse(urs)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s://%s%s", ur.Scheme, ur.Host, ur.Path), nil
 }
