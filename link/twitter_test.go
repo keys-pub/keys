@@ -7,9 +7,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTwitterNormalizeName(t *testing.T) {
+	testNormalizeName(t, link.Twitter, "gabriel", "gabriel")
+	testNormalizeName(t, link.Twitter, "@gabriel", "gabriel")
+	testNormalizeName(t, link.Twitter, "Gabriel", "gabriel")
+	testNormalizeName(t, link.Twitter, "@Gabriel", "gabriel")
+}
+
 func TestTwitterValidateName(t *testing.T) {
 	err := link.Twitter.ValidateName("Gabriel")
-	require.EqualError(t, err, "name should be lowercase")
+	require.Nil(t, err)
 
 	err = link.Twitter.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")
@@ -20,6 +27,11 @@ func TestTwitterValidateURL(t *testing.T) {
 		"boboloblaw",
 		"https://twitter.com/boboloblaw/status/1250914920146669568",
 		"https://twitter.com/boboloblaw/status/1250914920146669568")
+
+	testValidateURL(t, link.Twitter,
+		"Boboloblaw",
+		"https://twitter.com/Boboloblaw/status/1250914920146669568",
+		"https://twitter.com/Boboloblaw/status/1250914920146669568")
 
 	testValidateURLErr(t, link.Twitter,
 		"boboloblaw",

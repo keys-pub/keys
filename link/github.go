@@ -18,7 +18,7 @@ func (s *github) Name() string {
 }
 
 func (s *github) NormalizeName(name string) string {
-	return name
+	return strings.ToLower(name)
 }
 
 func (s *github) ValidateURL(name string, u *url.URL) (*url.URL, error) {
@@ -34,7 +34,7 @@ func (s *github) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 	if len(paths) != 2 {
 		return nil, errors.Errorf("path invalid %s for url %s", paths, u)
 	}
-	if paths[0] != name {
+	if strings.ToLower(paths[0]) != name {
 		return nil, errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
 	}
 	return u, nil
@@ -44,10 +44,6 @@ func (s *github) ValidateName(name string) error {
 	isASCII := encoding.IsASCII([]byte(name))
 	if !isASCII {
 		return errors.Errorf("name has non-ASCII characters")
-	}
-	hu := encoding.HasUpper(name)
-	if hu {
-		return errors.Errorf("name should be lowercase")
 	}
 
 	if len(name) > 39 {

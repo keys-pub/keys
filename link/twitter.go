@@ -19,9 +19,9 @@ func (s *twitter) Name() string {
 
 func (s *twitter) NormalizeName(name string) string {
 	if len(name) > 0 && name[0] == '@' {
-		return name[1:]
+		return strings.ToLower(name[1:])
 	}
-	return name
+	return strings.ToLower(name)
 }
 
 func (s *twitter) ValidateURL(name string, u *url.URL) (*url.URL, error) {
@@ -37,7 +37,7 @@ func (s *twitter) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 	if len(paths) != 3 {
 		return nil, errors.Errorf("path invalid %s for url %s", paths, u)
 	}
-	if paths[0] != name {
+	if strings.ToLower(paths[0]) != name {
 		return nil, errors.Errorf("path invalid (name mismatch) for url %s", u)
 	}
 	return u, nil
@@ -47,10 +47,6 @@ func (s *twitter) ValidateName(name string) error {
 	isASCII := encoding.IsASCII([]byte(name))
 	if !isASCII {
 		return errors.Errorf("name has non-ASCII characters")
-	}
-	hu := encoding.HasUpper(name)
-	if hu {
-		return errors.Errorf("name should be lowercase")
 	}
 
 	if len(name) > 15 {

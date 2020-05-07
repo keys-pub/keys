@@ -7,9 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRedditNormalizeName(t *testing.T) {
+	require.Equal(t, link.Reddit.NormalizeName("gabriel"), "gabriel")
+	require.Equal(t, link.Reddit.NormalizeName("Gabriel"), "gabriel")
+}
+
 func TestRedditValidateName(t *testing.T) {
-	err := link.Github.ValidateName("Gabriel")
-	require.EqualError(t, err, "name should be lowercase")
+	err := link.Reddit.ValidateName("Gabriel")
+	require.Nil(t, err)
 
 	err = link.Reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
@@ -20,6 +25,11 @@ func TestRedditValidateURL(t *testing.T) {
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+
+	testValidateURL(t, link.Reddit,
+		"Gabrlh",
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/Gabrlh/",
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/Gabrlh.json")
 
 	testValidateURL(t, link.Reddit,
 		"gabrlh",

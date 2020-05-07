@@ -19,7 +19,7 @@ func (s *reddit) Name() string {
 }
 
 func (s *reddit) NormalizeName(name string) string {
-	return name
+	return strings.ToLower(name)
 }
 
 func (s *reddit) ValidateURL(name string, u *url.URL) (*url.URL, error) {
@@ -38,7 +38,7 @@ func (s *reddit) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 
 	// https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/
 
-	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == name {
+	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && strings.ToLower(paths[4]) == name {
 		// Request json
 		return url.Parse("https://reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
 	}
@@ -51,13 +51,11 @@ func (s *reddit) ValidateName(name string) error {
 	if !isASCII {
 		return errors.Errorf("name has non-ASCII characters")
 	}
-	hu := encoding.HasUpper(name)
-	if hu {
-		return errors.Errorf("name should be lowercase")
-	}
+
 	if len(name) > 20 {
 		return errors.Errorf("reddit name is too long, it must be less than 21 characters")
 	}
+
 	return nil
 }
 

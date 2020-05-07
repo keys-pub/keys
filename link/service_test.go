@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func testNormalizeName(t *testing.T, service link.Service, name string, expected string) {
+	require.Equal(t, service.NormalizeName(name), expected)
+}
+
 func testValidateURL(t *testing.T, service link.Service, name string, urs string, expected string) {
 	ur, err := url.Parse(urs)
 	require.NoError(t, err)
