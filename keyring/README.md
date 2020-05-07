@@ -10,36 +10,40 @@ For more details visit **[keys.pub](https://keys.pub)**.
 ## Example
 
 ```go
-kr, err := keyring.New("AppName", keyring.System())
+// Initialize Keyring.
+// You can use keyring.System(), keyring.SystemOrFS(), keyring.FS(dir), or keyring.Mem().
+kr, err := keyring.New("AppName", keyring.SystemOrFS())
 if err != nil {
     log.Fatal(err)
 }
-
+// Remove this Reset() if you want to keep the Keyring.
+defer func() { _ = kr.Reset() }()
 // Unlock keyring (on first unlock, sets the password)
-if err := keyring.UnlockWithPassword(kr, "mypassword"); err != nil {
+if err := kr.UnlockWithPassword("mypassword"); err != nil {
     log.Fatal(err)
 }
 
-// Save item
-item := keyring.NewItem("id1", secret, "", time.Now())
+// Create item.
+// Item IDs are NOT encrypted.
+item := keyring.NewItem("id1", []byte("mysecret"), "", time.Now())
 if err := kr.Create(item); err != nil {
     log.Fatal(err)
 }
 
-// Get item
+// Get item.
 out, err := kr.Get("id1")
 if err != nil {
     log.Fatal(err)
 }
-fmt.Printf("secret: %s\n", string(out.SecretData()))
+fmt.Printf("secret: %s\n", string(out.Data))
 
-// List items
+// List items.
 items, err := kr.List(nil)
 if err != nil {
     log.Fatal(err)
 }
 for _, item := range items {
-    fmt.Printf("%s: %v\n", item.ID, string(item.SecretData()))
+    fmt.Printf("%s: %v\n", item.ID, string(item.Data))
 }
 ```
 
@@ -53,9 +57,16 @@ The Windows Credential Manager API via the [github.com/danieljoos/wincred](https
 
 ## Linux
 
-The Secret Service dbus interface via the [github.com/zalando/go-keyring](github.com/zalando/go-keyring)
-package. The Secret Service dbus interface, which is provided by GNOME Keyring.
+The SecretService dbus interface via the [github.com/zalando/go-keyring](github.com/zalando/go-keyring)
+package. The SecretService dbus interface, which is provided by GNOME Keyring.
+
+We are still exploring whether to use kwallet or libsecret directly for linux environments that support that instead.
+In the meantime, you can fall back to the FS based keyring.
 
 ## FS
 
-There is a filesystem based keyring for other OS types that have no system keyring.
+There is a filesystem based keyring for OS' that have no system keyring.
+
+## Mem
+
+The is an in memory keyring for ephemeral keys or for testing.

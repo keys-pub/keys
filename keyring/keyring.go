@@ -58,6 +58,7 @@ func (k *Keyring) Get(id string) (*Item, error) {
 
 // Create item.
 // Requires Unlock().
+// Item IDs are not encrypted.
 func (k *Keyring) Create(item *Item) error {
 	if item.ID == "" {
 		return errors.Errorf("no id")
@@ -112,6 +113,7 @@ type ListOpts struct {
 // List items.
 // Requires Unlock().
 // Items with ids that start with "." are not returned by List.
+// If you need to list IDs only, see Keyring.IDs.
 func (k *Keyring) List(opts *ListOpts) ([]*Item, error) {
 	return k.st.List(k.service, k.key, opts)
 }
