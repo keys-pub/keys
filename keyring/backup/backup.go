@@ -16,9 +16,7 @@ import (
 
 // Export is the backup format.
 type Export struct {
-	ID        string          `msgpack:"id"`
-	Items     []*keyring.Item `msgpack:"items"`
-	Timestamp time.Time       `msgpack:"ts"`
+	Items []*keyring.Item `msgpack:"items"`
 }
 
 // ExportOpts are options for Export.
@@ -29,7 +27,7 @@ type ExportOpts struct {
 const timeFormat = "20060102T150405"
 
 // ExportToDirectory saves backup to a directory, encrypted with password.
-func ExportToDirectory(kr keyring.Keyring, dir string, password string, opts *ExportOpts) (string, error) {
+func ExportToDirectory(kr *keyring.Keyring, dir string, password string, opts *ExportOpts) (string, error) {
 	if opts == nil {
 		opts = &ExportOpts{}
 	}
@@ -48,7 +46,8 @@ func ExportToDirectory(kr keyring.Keyring, dir string, password string, opts *Ex
 		return "", err
 	}
 
-	fileName := fmt.Sprintf("%s-%s.kpb", now.Format(timeFormat), exp.ID)
+	id := keys.Rand3262()
+	fileName := fmt.Sprintf("%s-%s.kpb", now.Format(timeFormat), id)
 
 	path := filepath.Join(dir, fileName)
 	tmpPath := path + ".tmp"
@@ -72,18 +71,13 @@ func ExportToDirectory(kr keyring.Keyring, dir string, password string, opts *Ex
 	return path, nil
 }
 
-func newExport(kr keyring.Keyring, ts time.Time) (*Export, error) {
-	id := keys.Rand3262()
-
+func newExport(kr *keyring.Keyring, ts time.Time) (*Export, error) {
 	items, err := kr.List(nil)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Export{
-		ID:        id,
-		Items:     items,
-		Timestamp: ts,
+		Items: items,
 	}, nil
 }
 
@@ -117,7 +111,7 @@ func NewExportFromBytes(b []byte, password string) (*Export, error) {
 // ImportFromFile imports backup from file into the Keyring.
 // TODO: Dry run.
 // TODO: Continue on error.
-func ImportFromFile(kr keyring.Keyring, path string, password string) error {
+func ImportFromFile(kr *keyring.Keyring, path string, password string) error {
 	b, err := ioutil.ReadFile(path) // #nosec
 	if err != nil {
 		return err

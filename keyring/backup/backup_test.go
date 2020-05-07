@@ -33,7 +33,7 @@ func (c *clock) Now() time.Time {
 func TestBackup(t *testing.T) {
 	clock := newClock()
 
-	kr := keyring.NewMem()
+	kr := keyring.NewMem(true)
 	for i := 0; i < 10; i++ {
 		err := kr.Create(keyring.NewItem(fmt.Sprintf("item%d", i), []byte("value"), "type", clock.Now()))
 		require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestBackup(t *testing.T) {
 	require.True(t, strings.HasPrefix(filepath.Base(path), "20090213T233130-"))
 	require.True(t, strings.HasSuffix(filepath.Base(path), ".kpb"))
 
-	kr2 := keyring.NewMem()
+	kr2 := keyring.NewMem(true)
 	err = backup.ImportFromFile(kr2, path, "wrongpassword")
 	require.EqualError(t, err, "failed to decrypt with a password: secretbox open failed")
 
@@ -68,7 +68,7 @@ func TestBackup(t *testing.T) {
 	require.EqualError(t, err, "item already exists with different data")
 }
 
-func testEqualKeyrings(t *testing.T, kr1 keyring.Keyring, kr2 keyring.Keyring) {
+func testEqualKeyrings(t *testing.T, kr1 *keyring.Keyring, kr2 *keyring.Keyring) {
 	items1, err := kr1.List(nil)
 	require.NoError(t, err)
 	items2, err := kr2.List(nil)
