@@ -185,11 +185,11 @@ func TestUserValidateName(t *testing.T) {
 
 	// Test MixedCase
 	_, err := saveUser(ust, scs, key, "MixedCase", "github", clock, req)
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
 	_, err = saveUser(ust, scs, key, "MixedCase", "twitter", clock, req)
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
 	_, err = saveUser(ust, scs, key, "MixedCase", "reddit", clock, req)
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
 
 	// Long length
 	_, err = saveUser(ust, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, req)
@@ -228,7 +228,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	sc := keys.NewSigchain(key.ID())
 
 	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
 
 	// Go around validate check and add
 	b, err := usr.MarshalJSON()

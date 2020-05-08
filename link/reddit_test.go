@@ -7,12 +7,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRedditNormalizeName(t *testing.T) {
+	name := link.Reddit.NormalizeName("Gabriel")
+	require.Equal(t, "gabriel", name)
+}
+
 func TestRedditValidateName(t *testing.T) {
-	err := link.Github.ValidateName("Gabriel")
-	require.EqualError(t, err, "name should be lowercase")
+	err := link.Reddit.ValidateName("gabriel01")
+	require.NoError(t, err)
+
+	err = link.Reddit.ValidateName("Gabriel")
+	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+
+	err = link.Reddit.ValidateName("Gabriel++")
+	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
 
 	err = link.Reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
+}
+
+func TestRedditNormalizeURL(t *testing.T) {
+	testNormalizeURL(t, link.Reddit,
+		"gabrlh",
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
+
+	testNormalizeURL(t, link.Reddit,
+		"gabrlh",
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/Gabrlh/",
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
 }
 
 func TestRedditValidateURL(t *testing.T) {

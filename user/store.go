@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/keys-pub/keys"
@@ -148,20 +147,14 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 	}
 	logger.Infof("Update user %s", result.User.String())
 
-	ur, err := url.Parse(result.User.URL)
-	if err != nil {
-		result.Err = err.Error()
-		result.Status = StatusFailure
-		return
-	}
-
 	service, err := link.NewService(result.User.Service)
 	if err != nil {
 		result.Err = err.Error()
 		result.Status = StatusFailure
 		return
 	}
-	ur, err = service.ValidateURL(result.User.Name, ur)
+
+	urs, err := service.ValidateURLString(result.User.Name, result.User.URL)
 	if err != nil {
 		result.Err = err.Error()
 		result.Status = StatusFailure
@@ -170,8 +163,8 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 
 	result.Timestamp = util.TimeToMillis(u.Now())
 
-	logger.Infof("Requesting %s", ur)
-	body, err := u.req.RequestURL(ctx, ur)
+	logger.Infof("Requesting %s", urs)
+	body, err := u.req.RequestURLString(ctx, urs)
 	if err != nil {
 		logger.Warningf("Request failed: %v", err)
 		if errHTTP, ok := errors.Cause(err).(util.ErrHTTP); ok && errHTTP.StatusCode == 404 {

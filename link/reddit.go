@@ -5,32 +5,37 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
+
+// TODO Normalize spaces, check a-zA-Z0-9 instead of ASCII
 
 type reddit struct{}
 
 // Reddit service.
 var Reddit = &reddit{}
 
-func (s *reddit) Name() string {
+func (s *reddit) ID() string {
 	return "reddit"
 }
 
-func (s *reddit) NormalizeName(name string) string {
-	return name
+func (s *reddit) NormalizeURLString(name string, urs string) (string, error) {
+	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *reddit) ValidateURL(name string, u *url.URL) (*url.URL, error) {
+func (s *reddit) ValidateURLString(name string, urs string) (string, error) {
+	u, err := url.Parse(urs)
+	if err != nil {
+		return "", err
+	}
 	if u.Scheme != "https" {
-		return nil, errors.Errorf("invalid scheme for url %s", u)
+		return "", errors.Errorf("invalid scheme for url %s", u)
 	}
 	switch u.Host {
 	case "reddit.com", "old.reddit.com", "www.reddit.com":
 		// OK
 	default:
-		return nil, errors.Errorf("invalid host for url %s", u)
+		return "", errors.Errorf("invalid host for url %s", u)
 	}
 	path := u.Path
 	path = strings.TrimPrefix(path, "/")
@@ -40,20 +45,25 @@ func (s *reddit) ValidateURL(name string, u *url.URL) (*url.URL, error) {
 
 	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == name {
 		// Request json
-		return url.Parse("https://reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
+		ursj, err := url.Parse("https://reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
+		if err != nil {
+			return "", err
+		}
+		return ursj.String(), nil
 	}
 
-	return nil, errors.Errorf("invalid path %s", u.Path)
+	return "", errors.Errorf("invalid path %s", u.Path)
+}
+
+func (s *reddit) NormalizeName(name string) string {
+	name = strings.ToLower(name)
+	return name
 }
 
 func (s *reddit) ValidateName(name string) error {
-	isASCII := encoding.IsASCII([]byte(name))
-	if !isASCII {
-		return errors.Errorf("name has non-ASCII characters")
-	}
-	hu := encoding.HasUpper(name)
-	if hu {
-		return errors.Errorf("name should be lowercase")
+	isAlphaNumeric := isAlphaNumeric(name)
+	if !isAlphaNumeric {
+		return errors.Errorf("name is not lowercase alphanumeric (a-z0-9)")
 	}
 	if len(name) > 20 {
 		return errors.Errorf("reddit name is too long, it must be less than 21 characters")
