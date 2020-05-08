@@ -117,8 +117,9 @@ func (u *User) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// NewUser returns User used in a signing statement.
-func NewUser(ust *Store, kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
+// New creates a User.
+// Name and URL string are NOT normalized.
+func New(ust *Store, kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
