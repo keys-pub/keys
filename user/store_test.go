@@ -56,7 +56,7 @@ func TestNewUserMarshal(t *testing.T) {
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
-	usr, err := user.NewUser(ust, sk.ID(), "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
+	usr, err := user.New(ust, sk.ID(), "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(usr)
 	require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestResultGithub(t *testing.T) {
 	require.NoError(t, err)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	stu, err := user.New(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -154,7 +154,7 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	sc := keys.NewSigchain(sk.ID())
 	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdataBytes(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
-	user2, err := user.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	user2, err := user.New(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	b2, err := json.Marshal(user2)
 	require.NoError(t, err)
@@ -186,7 +186,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	t.Logf(msg)
 
 	req.SetResponse("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", testdataBytes(t, "testdata/github/bd679134acba688cbcc0a65fa0890d76"))
-	usr, err := user.NewUser(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
+	usr, err := user.New(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(usr)
 	require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestResultTwitter(t *testing.T) {
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.NewUser(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
+	stu, err := user.New(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -262,7 +262,7 @@ func TestResultReddit(t *testing.T) {
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.NewUser(ust, sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
+	stu, err := user.New(ust, sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -297,7 +297,7 @@ func TestUserUnverified(t *testing.T) {
 	ust := testStore(t, dst, scs, req, clock)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.NewUser(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
+	stu, err := user.New(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -368,47 +368,47 @@ func TestNewUser(t *testing.T) {
 	req := util.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
-	u, uerr := user.NewUser(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	u, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.NoError(t, uerr)
 	require.NotNil(t, u)
 
-	u2, uerr := user.NewUser(ust, sk.ID(), "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
+	u2, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid host for url https://gist.githb.com/gabriel/deadbeef")
 	require.Nil(t, u2)
 
-	u3, uerr := user.NewUser(ust, sk.ID(), "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
+	u3, uerr := user.New(ust, sk.ID(), "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid scheme for url http://gist.github.com/gabriel/deadbeef")
 	require.Nil(t, u3)
 
-	u4, uerr := user.NewUser(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
+	u4, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
 	require.EqualError(t, uerr, "path invalid (name mismatch) gabril != gabriel")
 	require.Nil(t, u4)
 
-	u5, uerr := user.NewUser(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel", 1)
+	u5, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel", 1)
 	require.EqualError(t, uerr, "path invalid [gabriel] for url https://gist.github.com/gabriel")
 	require.Nil(t, u5)
 
-	u6, uerr := user.NewUser(ust, sk.ID(), "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
+	u6, uerr := user.New(ust, sk.ID(), "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "path invalid (name mismatch) gabriel != gab")
 	require.Nil(t, u6)
 
-	u7, uerr := user.NewUser(ust, sk.ID(), "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	u7, uerr := user.New(ust, sk.ID(), "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid service git")
 	require.Nil(t, u7)
 
-	u8, uerr := user.NewUser(ust, sk.ID(), "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
+	u8, uerr := user.New(ust, sk.ID(), "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "name is empty")
 	require.Nil(t, u8)
 
-	u10, uerr := user.NewUser(ust, sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	u10, uerr := user.New(ust, sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "name is not lowercase alphanumeric (a-z0-9)")
 	require.Nil(t, u10)
 
-	u11, uerr := user.NewUser(ust, sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
+	u11, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "name is not lowercase alphanumeric (a-z0-9)")
 	require.Nil(t, u11)
 
-	u12, uerr := user.NewUser(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
+	u12, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "invalid scheme for url twitter.com/gbrltest/status/1234")
 	require.Nil(t, u12)
 }
