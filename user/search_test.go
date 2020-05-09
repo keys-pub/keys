@@ -227,7 +227,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 
 	sc := keys.NewSigchain(key.ID())
 
-	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
+	_, err = user.NewSigchainStatement(sc, usr, key, clock.Now())
 	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
 
 	// Go around validate check and add
@@ -270,7 +270,7 @@ func TestReddit(t *testing.T) {
 		Seq:     1,
 	}
 	sc := keys.NewSigchain(key.ID())
-	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
+	st, err := user.NewSigchainStatement(sc, usr, key, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -469,7 +469,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 		return nil, err
 	}
 
-	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
+	st, err := user.NewSigchainStatement(sc, usr, key, clock.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -501,13 +501,13 @@ func TestNewSigchainUserStatement(t *testing.T) {
 	sc := keys.NewSigchain(key.ID())
 	usr, err := user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
-	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
+	st, err := user.NewSigchainStatement(sc, usr, key, clock.Now())
 	require.NoError(t, err)
 	require.Equal(t, st.Seq, usr.Seq)
 
 	usr, err = user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
 	require.NoError(t, err)
-	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
+	_, err = user.NewSigchainStatement(sc, usr, key, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 }
 
