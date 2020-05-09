@@ -353,7 +353,7 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	if keyDoc.Result != nil {
 		index := false
 		if keyDoc.Result.VerifiedAt == 0 {
-			logger.Errorf("Never verified user result in indexing: %v", keyDoc.Result)
+			logger.Warningf("Never verified user result in indexing: %v", keyDoc.Result)
 		} else {
 			switch keyDoc.Result.Status {
 			// Index result if status ok, or a transient error

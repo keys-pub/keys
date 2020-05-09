@@ -182,7 +182,7 @@ func (k *Store) Keys(opts *Opts) ([]Key, error) {
 	}
 	keys := make([]Key, 0, len(items))
 	for _, item := range items {
-		logger.Debugf("Key for item type: %s", item.Type)
+		// logger.Debugf("Key for item type: %s", item.Type)
 		key, err := keyForItem(item)
 		if err != nil {
 			return nil, err
