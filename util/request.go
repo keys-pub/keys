@@ -38,6 +38,11 @@ func client() *http.Client {
 	client := &http.Client{
 		Timeout:   time.Second * 10,
 		Transport: transport,
+		// Important not to follow redirects.
+		// Twitter may redirect invalid urls with a valid status.
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 	return client
 }
