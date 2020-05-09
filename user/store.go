@@ -1,6 +1,7 @@
 package user
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 )
 
 // Result describes the status of a User.
+// TODO: Make Err/Status more explicit, it can be confusing.
 type Result struct {
 	Err    string `json:"err,omitempty"`
 	Status Status `json:"status"`
@@ -126,26 +128,44 @@ func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 		}
 	}
 
-	u.updateResult(ctx, result, sc.KID())
+	u.updateResult(ctx, usr, result, sc.KID())
 
 	return result, nil
 }
 
 // Check a user. Doesn't index result.
-func (u *Store) Check(ctx context.Context, user *User, kid keys.ID) (*Result, error) {
+func (u *Store) Check(ctx context.Context, usr *User, kid keys.ID) (*Result, error) {
 	res := &Result{
-		User: user,
+		User: usr,
 	}
-	u.updateResult(ctx, res, kid)
+	u.updateResult(ctx, usr, res, kid)
 	return res, nil
 }
 
+func userEqual(usr1 *User, usr2 *User) bool {
+	b1, err := json.Marshal(usr1)
+	if err != nil {
+		panic(err)
+	}
+	b2, err := json.Marshal(usr2)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Equal(b1, b2)
+}
+
 // updateResult updates the specified result.
-func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
+func (u *Store) updateResult(ctx context.Context, usr *User, result *Result, kid keys.ID) {
 	if result == nil {
 		panic("no user result specified")
 	}
 	logger.Infof("Update user %s", result.User.String())
+
+	if !userEqual(usr, result.User) {
+		result.Err = "results user is invalid"
+		result.Status = StatusFailure
+		return
+	}
 
 	service, err := link.NewService(result.User.Service)
 	if err != nil {
@@ -154,6 +174,7 @@ func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
 		return
 	}
 
+	logger.Debugf("Validate user name: %s, url: %s", result.User.Name, result.User.URL)
 	urs, err := service.ValidateURLString(result.User.Name, result.User.URL)
 	if err != nil {
 		result.Err = err.Error()

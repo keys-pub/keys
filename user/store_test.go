@@ -333,6 +333,30 @@ func TestCheckNoUsers(t *testing.T) {
 	require.Nil(t, result)
 }
 
+func TestCheckFailure(t *testing.T) {
+	req := util.NewMockRequestor()
+	clock := newClock()
+	dst := ds.NewMem()
+	scs := keys.NewSigchainStore(dst)
+	ust := testStore(t, dst, scs, req, clock)
+
+	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
+	req.SetResponse("https://twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
+
+	usr := &user.User{
+		Name:    "gabriel",
+		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
+		Seq:     1,
+		Service: "twitter",
+		URL:     "https://twitter.com/boboloblaw/status/1259188857846632448",
+	}
+	result, err := ust.Check(context.TODO(), usr, keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"))
+	require.NoError(t, err)
+	require.Equal(t, usr.Name, result.User.Name)
+	require.Equal(t, result.Status, user.StatusFailure)
+	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")
+}
+
 func TestVerify(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
 
@@ -411,4 +435,37 @@ func TestNewUser(t *testing.T) {
 	u12, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "invalid scheme for url twitter.com/gbrltest/status/1234")
 	require.Nil(t, u12)
+}
+
+func TestSigchainUserStoreUpdate(t *testing.T) {
+	// user.SetLogger(user.NewLogger(user.DebugLevel))
+	// link.SetLogger(link.NewLogger(link.DebugLevel))
+
+	b := []byte(`{".sig":"5NUJkMad0hNC6Xy3bJGmTHkaDjRIH6IWWpLdwf2qrrZI2NNEHb8+Hf4YxDgTcEA/Q5FsUJxkslrksVCRBYTEAw==","data":"eyJrIjoia2V4MWQ2OWc3bXpqam44Y2ZtM3NzZHI5dTh6OG1oMmQzNWN2anpzcndybmR0NGQwMDZ1aGg2OXF5eDJrNXgiLCJuIjoiZ2FicmllbCIsInNxIjoxLCJzciI6InR3aXR0ZXIiLCJ1IjoiaHR0cHM6Ly90d2l0dGVyLmNvbS9nYWJyaWVsL3N0YXR1cy8xMjU5MTg4ODU3ODQ2NjMyNDQ4In0=","kid":"kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x","seq":1,"ts":1589049007370,"type":"user"}`)
+
+	kid := keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x")
+	sc := keys.NewSigchain(kid)
+
+	var st keys.Statement
+	err := json.Unmarshal(b, &st)
+	require.NoError(t, err)
+
+	err = sc.Add(&st)
+	require.NoError(t, err)
+
+	clock := newClock()
+	dst := ds.NewMem()
+	scs := keys.NewSigchainStore(dst)
+	req := util.NewMockRequestor()
+	ust := testStore(t, dst, scs, req, clock)
+
+	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
+	req.SetResponse("https://twitter.com/gabriel/status/1259188857846632448", []byte(msg))
+
+	err = scs.SaveSigchain(sc)
+	require.NoError(t, err)
+
+	result, err := ust.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, user.StatusOK, result.Status)
 }
