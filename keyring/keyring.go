@@ -105,7 +105,7 @@ func (k *Keyring) Delete(id string) (bool, error) {
 	return k.st.Delete(k.service, id)
 }
 
-// ListOpts ...
+// ListOpts options for List().
 type ListOpts struct {
 	Types []string
 }
@@ -134,10 +134,17 @@ func (k *Keyring) UnlockWithPassword(password string) error {
 	return nil
 }
 
+// IDsOpts options for IDs().
+type IDsOpts struct {
+	Prefix       string
+	ShowHidden   bool
+	ShowReserved bool
+}
+
 // IDs returns item IDs.
 // Doesn't require Unlock().
-func (k *Keyring) IDs(prefix string) ([]string, error) {
-	return k.st.IDs(k.service, prefix, false, false)
+func (k *Keyring) IDs(opts *IDsOpts) ([]string, error) {
+	return k.st.IDs(k.service, opts)
 }
 
 // Exists returns true it has the id.
@@ -196,7 +203,7 @@ func (k *Keyring) Reset() error {
 }
 
 func resetDefault(st Store, service string) error {
-	ids, err := st.IDs(service, "", true, true)
+	ids, err := st.IDs(service, &IDsOpts{ShowHidden: true, ShowReserved: true})
 	if err != nil {
 		return err
 	}
@@ -224,7 +231,7 @@ func listDefault(st Store, service string, key SecretKey, opts *ListOpts) ([]*It
 		return nil, ErrLocked
 	}
 
-	ids, err := st.IDs(service, "", false, false)
+	ids, err := st.IDs(service, nil)
 	if err != nil {
 		return nil, err
 	}

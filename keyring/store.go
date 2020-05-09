@@ -20,7 +20,7 @@ type Store interface {
 	// Delete bytes.
 	Delete(service string, id string) (bool, error)
 
-	IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error)
+	IDs(service string, opts *IDsOpts) ([]string, error)
 	List(service string, key SecretKey, opts *ListOpts) ([]*Item, error)
 	Exists(service string, id string) (bool, error)
 	Reset(service string) error

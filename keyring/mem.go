@@ -57,7 +57,12 @@ func (k mem) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k mem) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
+	if opts == nil {
+		opts = &IDsOpts{}
+	}
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {
 		if !showReserved && strings.HasPrefix(id, reservedPrefix) {

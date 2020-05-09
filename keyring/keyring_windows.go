@@ -111,7 +111,12 @@ func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error
 	return items, nil
 }
 
-func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
+	if opts == nil {
+		opts = &IDsOpts{}
+	}
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+
 	creds, err := wincred.List()
 	if err != nil {
 		return nil, err

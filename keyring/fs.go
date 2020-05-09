@@ -83,7 +83,12 @@ func (k fs) Set(service string, id string, data []byte, typ string) error {
 	return nil
 }
 
-func (k fs) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
+	if opts == nil {
+		opts = &IDsOpts{}
+	}
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+
 	path := filepath.Join(k.dir, service)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
