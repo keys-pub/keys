@@ -158,7 +158,7 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	if opts == nil {
 		opts = &IDsOpts{}
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 
 	svc, err := ss.NewSecretService()
 	if err != nil {

@@ -61,7 +61,7 @@ func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
 	if opts == nil {
 		opts = &IDsOpts{}
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {

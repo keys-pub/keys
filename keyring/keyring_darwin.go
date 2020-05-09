@@ -147,7 +147,7 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	if opts == nil {
 		opts = &IDsOpts{}
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)

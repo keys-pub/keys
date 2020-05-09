@@ -115,7 +115,7 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	if opts == nil {
 		opts = &IDsOpts{}
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowHidden
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 
 	creds, err := wincred.List()
 	if err != nil {
@@ -125,7 +125,7 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, service+"/") {
 			id := cred.TargetName[len(service+"/"):]
-			if !showHidden && strings.HasPrefix(id, reservedPrefix) {
+			if !showReserved && strings.HasPrefix(id, reservedPrefix) {
 				continue
 			}
 			if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
