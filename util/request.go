@@ -40,6 +40,7 @@ func client() *http.Client {
 		Transport: transport,
 		// Important not to follow redirects.
 		// Twitter may redirect invalid urls with a valid status.
+		// TODO: Write an explicit test for this.
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
