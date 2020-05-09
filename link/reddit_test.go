@@ -42,27 +42,27 @@ func TestRedditValidateURL(t *testing.T) {
 	testValidateURL(t, link.Reddit,
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
 	testValidateURL(t, link.Reddit,
 		"gabrlh",
 		"https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
 	testValidateURL(t, link.Reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
 	testValidateURL(t, link.Reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh?",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
 	testValidateURL(t, link.Reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
 	testValidateURLErr(t, link.Reddit,
 		"gabrlh",

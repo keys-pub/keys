@@ -282,7 +282,7 @@ func TestReddit(t *testing.T) {
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
 	msg := mockRedditMessage("alice", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL(redditURL), []byte(msg))
+	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 
 	result, err := ust.Update(ctx, key.ID())
 	require.NoError(t, err)
@@ -290,14 +290,14 @@ func TestReddit(t *testing.T) {
 
 	// Different name
 	msg = mockRedditMessage("alice2", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL(redditURL), []byte(msg))
+	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 	result, err = ust.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
 	msg = mockRedditMessage("alice", smsg, "keyspubmsgs2")
-	req.SetResponse(mockRedditURL(redditURL), []byte(msg))
+	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 	result, err = ust.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
@@ -567,6 +567,6 @@ func mockRedditMessage(author string, msg string, subreddit string) string {
     }]`
 }
 
-func mockRedditURL(url string) string {
-	return url + ".json"
+func mockRedditURL(name string) string {
+	return "https://www.reddit.com/r/keyspubmsgs/comments/123/" + name + ".json"
 }

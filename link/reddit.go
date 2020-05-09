@@ -41,11 +41,12 @@ func (s *reddit) ValidateURLString(name string, urs string) (string, error) {
 	path = strings.TrimPrefix(path, "/")
 	paths := strings.Split(path, "/")
 
-	// https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/
+	// URL from https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/ to
+	//          https://www.reddit.com/r/keyspubmsgs/comments/{id}/{username}.json
 
 	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == name {
 		// Request json
-		ursj, err := url.Parse("https://reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
+		ursj, err := url.Parse("https://www.reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
 		if err != nil {
 			return "", err
 		}

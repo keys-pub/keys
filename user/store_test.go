@@ -274,7 +274,7 @@ func TestResultReddit(t *testing.T) {
 	_, err = user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	req.SetResponse("https://reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdataBytes(t, "testdata/reddit/charlie.json"))
+	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdataBytes(t, "testdata/reddit/charlie.json"))
 
 	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
