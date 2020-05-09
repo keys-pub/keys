@@ -28,11 +28,12 @@ func (e ErrHTTP) Error() string {
 }
 
 func client() *http.Client {
+	// TODO: Longer timeout?
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
-			Timeout: 5 * time.Second,
+			Timeout: 10 * time.Second,
 		}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
+		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
 	client := &http.Client{
@@ -48,8 +49,9 @@ func client() *http.Client {
 	return client
 }
 
-func doRequest(client *http.Client, method string, u string, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
-	req, err := http.NewRequest(method, u, bytes.NewReader(body))
+func doRequest(client *http.Client, method string, urs string, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
+	logger.Debugf("Requesting %s %s", method, urs)
+	req, err := http.NewRequest(method, urs, bytes.NewReader(body))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,6 +99,8 @@ func doRequest(client *http.Client, method string, u string, body []byte, option
 	if err != nil {
 		return nil, nil, err
 	}
+	logger.Debugf("Response body: %s", string(respBody))
+
 	return resp.Header, respBody, nil
 }
 
