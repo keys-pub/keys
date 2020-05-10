@@ -49,7 +49,7 @@ func (s Sigchain) Statements() []*Statement {
 }
 
 // Spew shows formatted sigchain output.
-func (s *Sigchain) Spew() (*bytes.Buffer, error) {
+func (s *Sigchain) Spew() *bytes.Buffer {
 	var out bytes.Buffer
 	w := new(tabwriter.Writer)
 	w.Init(&out, 0, 8, 1, ' ', 0)
@@ -57,7 +57,7 @@ func (s *Sigchain) Spew() (*bytes.Buffer, error) {
 		key := ds.Path("sigchain", st.URL())
 		b, err := st.Bytes()
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
 		value := string(b)
 		out.Write([]byte(key))
@@ -66,9 +66,9 @@ func (s *Sigchain) Spew() (*bytes.Buffer, error) {
 		out.Write([]byte("\n"))
 	}
 	if err := w.Flush(); err != nil {
-		return nil, err
+		panic(err)
 	}
-	return &out, nil
+	return &out
 }
 
 // LastSeq returns last signed statment seq (or 0 if no signed statements

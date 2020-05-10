@@ -111,8 +111,7 @@ func TestSigchain(t *testing.T) {
 	_, err = sc.Revoke(5, alice)
 	require.EqualError(t, err, "invalid revoke seq 5")
 
-	spew, err := sc.Spew()
-	require.NoError(t, err)
+	spew := sc.Spew()
 	require.Equal(t, testdataString(t, "testdata/sc2.spew"), spew.String())
 }
 
@@ -196,9 +195,6 @@ func ExampleNewSigchain() {
 	}
 
 	// Spew
-	spew, err := sc.Spew()
-	if err != nil {
-		log.Fatal(err)
-	}
+	spew := sc.Spew()
 	fmt.Println(spew.String())
 }

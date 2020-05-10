@@ -143,7 +143,7 @@ func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs str
 		Name:    name,
 		URL:     urs,
 	}
-	if err := ValidateUser(usr); err != nil {
+	if err := Validate(usr); err != nil {
 		return nil, err
 	}
 	return usr, nil
@@ -174,8 +174,9 @@ func validateServiceAndName(service link.Service, name string) error {
 	return service.ValidateName(name)
 }
 
-// ValidateUser service and name.
-func ValidateUser(user *User) error {
+// Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
+func Validate(user *User) error {
 	service, err := link.NewService(user.Service)
 	if err != nil {
 		return err
@@ -191,6 +192,24 @@ func ValidateUser(user *User) error {
 	return nil
 }
 
+// Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
+func (u *User) Validate() error {
+	service, err := link.NewService(u.Service)
+	if err != nil {
+		return err
+	}
+
+	if err := validateServiceAndName(service, u.Name); err != nil {
+		return err
+	}
+
+	if _, err := service.ValidateURLString(u.Name, u.URL); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ErrUserAlreadySet is user already set in sigchain.
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
@@ -201,12 +220,12 @@ func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Ke
 		return nil, errors.Errorf("no user specified")
 	}
 
-	if err := ValidateUser(user); err != nil {
+	if err := Validate(user); err != nil {
 		return nil, err
 	}
 
 	// Check if we have an existing user set.
-	existing, err := FindUserInSigchain(sc)
+	existing, err := FindInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -291,9 +310,9 @@ func Verify(msg string, kid keys.ID, user *User) (*User, error) {
 	return &dec, nil
 }
 
-// FindUserInSigchain returns User from a Sigchain.
+// FindInSigchain returns User from a Sigchain.
 // If user is invalid returns nil.
-func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
+func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 	st := sc.FindLast("user")
 	if st == nil {
 		return nil, nil
@@ -303,7 +322,7 @@ func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
 		return nil, err
 	}
 
-	if err := ValidateUser(&user); err != nil {
+	if err := Validate(&user); err != nil {
 		return nil, nil
 	}
 

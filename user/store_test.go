@@ -117,7 +117,7 @@ func TestResultGithub(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
-	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
 
 	result, err = ust.Get(context.TODO(), sk.ID())
@@ -239,7 +239,7 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "twitter", result.User.Service)
 	require.Equal(t, "bob", result.User.Name)
-	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
 }
 
@@ -283,7 +283,7 @@ func TestResultReddit(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "reddit", result.User.Service)
 	require.Equal(t, "charlie", result.User.Name)
-	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
 }
 
@@ -350,8 +350,7 @@ func TestCheckFailure(t *testing.T) {
 		Service: "twitter",
 		URL:     "https://twitter.com/boboloblaw/status/1259188857846632448",
 	}
-	result, err := ust.Check(context.TODO(), usr, keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"))
-	require.NoError(t, err)
+	result := ust.RequestVerify(context.TODO(), usr)
 	require.Equal(t, usr.Name, result.User.Name)
 	require.Equal(t, result.Status, user.StatusFailure)
 	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")

@@ -58,8 +58,8 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "github", results[0].Result.User.Service)
 	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
-	require.Equal(t, int64(1234567890034), results[0].Result.VerifiedAt)
-	require.Equal(t, int64(1234567890033), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890028), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890028), results[0].Result.Timestamp)
 
 	// Revoke alice, update
 	sc, err := scs.Sigchain(alice.ID())
@@ -332,7 +332,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, alice.ID(), results[0].KID)
 	require.Equal(t, int64(1234567890003), results[0].Result.Timestamp)
-	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
 
 	data, err := req.Response("https://gist.github.com/alice/1")
 	require.NoError(t, err)
@@ -348,8 +348,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), results[0].Result.User.KID)
 	require.Equal(t, user.StatusConnFailure, results[0].Result.Status)
-	require.Equal(t, int64(1234567890007), results[0].Result.Timestamp)
-	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890006), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
 
 	// List by status
 	fail, err := ust.Status(ctx, user.StatusConnFailure)
@@ -425,7 +425,7 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, "github", results[0].Result.User.Service)
 	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
-	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890002), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), results[0].Result.Timestamp)
 
 	ids, err = ust.Expired(ctx, time.Hour)

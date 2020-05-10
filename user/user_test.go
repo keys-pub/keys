@@ -77,7 +77,7 @@ func TestSigchainUsers(t *testing.T) {
 	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())
 
-	usr, err := user.FindUserInSigchain(sc)
+	usr, err := user.FindInSigchain(sc)
 	require.NoError(t, err)
 	require.Nil(t, usr)
 
@@ -88,7 +88,7 @@ func TestSigchainUsers(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	usr, err = user.FindUserInSigchain(sc)
+	usr, err = user.FindInSigchain(sc)
 	require.NoError(t, err)
 	require.NotNil(t, usr)
 	require.Equal(t, "alice", usr.Name)
@@ -98,7 +98,7 @@ func TestSigchainUsers(t *testing.T) {
 
 	_, err = sc.Revoke(1, alice)
 	require.NoError(t, err)
-	usr, err = user.FindUserInSigchain(sc)
+	usr, err = user.FindInSigchain(sc)
 	require.NoError(t, err)
 	require.Nil(t, usr)
 
@@ -114,7 +114,7 @@ func TestSigchainUsers(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	usr, err = user.FindUserInSigchain(sc)
+	usr, err = user.FindInSigchain(sc)
 	require.NoError(t, err)
 	require.NotNil(t, usr)
 	require.Equal(t, "alice", usr.Name)
