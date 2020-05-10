@@ -130,7 +130,6 @@ func TestSigchainStoreSpew(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(sc.Statements()))
 
-	spew, err := sc.Spew()
-	require.NoError(t, err)
+	spew := sc.Spew()
 	require.Equal(t, testdataString(t, "testdata/sc1.spew"), spew.String())
 }
