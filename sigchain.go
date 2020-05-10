@@ -44,7 +44,7 @@ func (s *Sigchain) KID() ID {
 }
 
 // Statements are all the signed statements.
-func (s Sigchain) Statements() []*Statement {
+func (s *Sigchain) Statements() []*Statement {
 	return s.statements
 }
 
@@ -73,7 +73,7 @@ func (s *Sigchain) Spew() *bytes.Buffer {
 
 // LastSeq returns last signed statment seq (or 0 if no signed statements
 // exist).
-func (s Sigchain) LastSeq() int {
+func (s *Sigchain) LastSeq() int {
 	if len(s.statements) == 0 {
 		return 0
 	}
@@ -81,12 +81,12 @@ func (s Sigchain) LastSeq() int {
 }
 
 // Length of Sigchain.
-func (s Sigchain) Length() int {
+func (s *Sigchain) Length() int {
 	return len(s.statements)
 }
 
 // Last returns last statement or nil if none.
-func (s Sigchain) Last() *Statement {
+func (s *Sigchain) Last() *Statement {
 	if len(s.statements) == 0 {
 		return nil
 	}
@@ -94,7 +94,7 @@ func (s Sigchain) Last() *Statement {
 }
 
 // IsRevoked returns true if statement was revoked.
-func (s Sigchain) IsRevoked(seq int) bool {
+func (s *Sigchain) IsRevoked(seq int) bool {
 	_, ok := s.revokes[seq]
 	return ok
 }
@@ -259,7 +259,7 @@ func (s *Sigchain) Revoke(revoke int, sk *EdX25519Key) (*Statement, error) {
 
 // VerifyStatement verifies a signed statement against a previous statement (in a
 // Sigchain).
-func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
+func (s *Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 	if st.KID != s.kid {
 		return errors.Errorf("invalid statement kid")
 	}
@@ -309,7 +309,7 @@ func (s Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 // FindLast search from the last statement to the first, returning after
 // If type is specified, we will search for that statement type.
 // If we found a statement and it was revoked, we return nil.
-func (s Sigchain) FindLast(typ string) *Statement {
+func (s *Sigchain) FindLast(typ string) *Statement {
 	for i := len(s.statements) - 1; i >= 0; i-- {
 		st := s.statements[i]
 		if typ == "" {
@@ -326,7 +326,7 @@ func (s Sigchain) FindLast(typ string) *Statement {
 }
 
 // FindAll returns statements of type.
-func (s Sigchain) FindAll(typ string) []*Statement {
+func (s *Sigchain) FindAll(typ string) []*Statement {
 	sts := make([]*Statement, 0, 10)
 	for _, st := range s.statements {
 		if typ != "" && st.Type == typ {
