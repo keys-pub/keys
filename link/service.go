@@ -1,3 +1,4 @@
+// Package link defines services capable of linking keys to users.
 package link
 
 import (

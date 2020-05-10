@@ -1,3 +1,4 @@
+// Package noise integrates keys with the Noise protocol.
 package noise
 
 import (

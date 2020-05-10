@@ -57,22 +57,22 @@ func (k *EdX25519Key) X25519Key() *X25519Key {
 }
 
 // ID ...
-func (k EdX25519Key) ID() ID {
+func (k *EdX25519Key) ID() ID {
 	return k.publicKey.ID()
 }
 
 // Type ...
-func (k EdX25519Key) Type() KeyType {
+func (k *EdX25519Key) Type() KeyType {
 	return EdX25519
 }
 
 // Bytes for key.
-func (k EdX25519Key) Bytes() []byte {
+func (k *EdX25519Key) Bytes() []byte {
 	return k.privateKey[:]
 }
 
 // Bytes64 for key.
-func (k EdX25519Key) Bytes64() *[64]byte {
+func (k *EdX25519Key) Bytes64() *[64]byte {
 	return k.privateKey
 }
 
@@ -139,11 +139,11 @@ func NewX25519PublicKeyFromEdX25519ID(id ID) (*X25519PublicKey, error) {
 }
 
 // ID for EdX25519Key.
-func (s EdX25519PublicKey) ID() ID {
+func (s *EdX25519PublicKey) ID() ID {
 	return s.id
 }
 
-func (s EdX25519PublicKey) String() string {
+func (s *EdX25519PublicKey) String() string {
 	return s.id.String()
 }
 
@@ -153,17 +153,17 @@ func (s *EdX25519PublicKey) Type() KeyType {
 }
 
 // Bytes for key.
-func (s EdX25519PublicKey) Bytes() []byte {
+func (s *EdX25519PublicKey) Bytes() []byte {
 	return s.publicKey[:]
 }
 
 // Bytes32 for key.
-func (s EdX25519PublicKey) Bytes32() *[32]byte {
+func (s *EdX25519PublicKey) Bytes32() *[32]byte {
 	return s.publicKey
 }
 
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.
-func (s EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
+func (s *EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 	edpk := ed25519.PublicKey(s.publicKey[:])
 	bpk := ed25519PublicKeyToCurve25519(edpk)
 	if len(bpk) != 32 {
@@ -176,7 +176,7 @@ func (s EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 }
 
 // Verify verifies a message and signature with public key.
-func (s EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
+func (s *EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
 	if l := len(b); l < sign.Overhead {
 		return nil, errors.Errorf("not enough data for signature")
 	}
@@ -188,7 +188,7 @@ func (s EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
 }
 
 // VerifyDetached verifies a detached message.
-func (s EdX25519PublicKey) VerifyDetached(sig []byte, b []byte) error {
+func (s *EdX25519PublicKey) VerifyDetached(sig []byte, b []byte) error {
 	if len(sig) != sign.Overhead {
 		return errors.Errorf("invalid sig bytes length")
 	}
@@ -208,22 +208,22 @@ func NewEdX25519KeyFromSeed(seed *[ed25519.SeedSize]byte) *EdX25519Key {
 }
 
 // Seed returns information on how to generate this key from ed25519 package seed.
-func (k EdX25519Key) Seed() *[ed25519.SeedSize]byte {
+func (k *EdX25519Key) Seed() *[ed25519.SeedSize]byte {
 	pk := ed25519.PrivateKey(k.privateKey[:])
 	return Bytes32(pk.Seed())
 }
 
-func (k EdX25519Key) String() string {
+func (k *EdX25519Key) String() string {
 	return k.publicKey.String()
 }
 
 // PublicKey returns public part.
-func (k EdX25519Key) PublicKey() *EdX25519PublicKey {
+func (k *EdX25519Key) PublicKey() *EdX25519PublicKey {
 	return k.publicKey
 }
 
 // PrivateKey returns private key part.
-func (k EdX25519Key) PrivateKey() *[ed25519.PrivateKeySize]byte {
+func (k *EdX25519Key) PrivateKey() *[ed25519.PrivateKeySize]byte {
 	return k.privateKey
 }
 

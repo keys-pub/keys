@@ -1,3 +1,4 @@
+// Package keyring provides a cross-platform secure keyring.
 package keyring
 
 import (

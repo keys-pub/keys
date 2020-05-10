@@ -1,3 +1,4 @@
+// Package user defines user statements, store and search.
 package user
 
 import (

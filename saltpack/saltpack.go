@@ -1,3 +1,4 @@
+// Package saltpack integrates keys with Saltpack (saltpack.org).
 package saltpack
 
 import (
