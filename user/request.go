@@ -14,7 +14,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RequestVerify a user URL.
+// RequestVerify requests a user URL and verifies it.
+// The result.Status gives the type of failure (unless user.StatusOK), and the
+// result.Err has more specific details about the failure.
 func RequestVerify(ctx context.Context, req util.Requestor, usr *User, now time.Time) *Result {
 	res := &Result{
 		User: usr,
