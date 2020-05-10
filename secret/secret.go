@@ -1,3 +1,4 @@
+// Package secret defines secret types for storing in a keyring.
 package secret
 
 import (

@@ -1,3 +1,4 @@
+// Package json provides a simpler JSON marshaller.
 package json
 
 import (

@@ -1,3 +1,4 @@
+// Package encoding provides encoding and decoding of different formats like Base62, Saltpack, BIP39.
 package encoding
 
 import (
