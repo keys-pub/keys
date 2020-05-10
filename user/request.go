@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RequestAndVerify a user URL.
-func RequestAndVerify(ctx context.Context, req util.Requestor, usr *User, now time.Time) *Result {
+// RequestVerify a user URL.
+func RequestVerify(ctx context.Context, req util.Requestor, usr *User, now time.Time) *Result {
 	res := &Result{
 		User: usr,
 	}

@@ -175,6 +175,7 @@ func validateServiceAndName(service link.Service, name string) error {
 }
 
 // Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
 func Validate(user *User) error {
 	service, err := link.NewService(user.Service)
 	if err != nil {
@@ -192,6 +193,7 @@ func Validate(user *User) error {
 }
 
 // Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
 func (u *User) Validate() error {
 	service, err := link.NewService(u.Service)
 	if err != nil {

@@ -134,9 +134,9 @@ func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 	return result, nil
 }
 
-// RequestAndVerify a user. Doesn't index result.
-func (u *Store) RequestAndVerify(ctx context.Context, usr *User) *Result {
-	return RequestAndVerify(ctx, u.req, usr, u.Now())
+// RequestVerify a user. Doesn't index result.
+func (u *Store) RequestVerify(ctx context.Context, usr *User) *Result {
+	return RequestVerify(ctx, u.req, usr, u.Now())
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.
