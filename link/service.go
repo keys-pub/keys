@@ -52,14 +52,9 @@ func NewService(service string) (Service, error) {
 	}
 }
 
-var regAlphaNumeric = regexp.MustCompile(`^[a-z0-9]+$`)
 var regAlphaNumericWithDash = regexp.MustCompile(`^[a-z0-9-]+$`)
 var regAlphaNumericWithUnderscore = regexp.MustCompile(`^[a-z0-9_]+$`)
 var regAlphaNumericWithDashUnderscore = regexp.MustCompile(`^[a-z0-9-_]+$`)
-
-func isAlphaNumeric(s string) bool {
-	return regAlphaNumeric.MatchString(s)
-}
 
 func isAlphaNumericWithDash(s string) bool {
 	return regAlphaNumericWithDash.MatchString(s)
