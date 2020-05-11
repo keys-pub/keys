@@ -16,11 +16,17 @@ func TestGithubValidateName(t *testing.T) {
 	err := link.Github.ValidateName("gabriel01")
 	require.NoError(t, err)
 
+	err = link.Github.ValidateName("gabriel-01")
+	require.NoError(t, err)
+
+	err = link.Github.ValidateName("gabriel_01")
+	require.EqualError(t, err, "name has an invalid character")
+
 	err = link.Github.ValidateName("Gabriel")
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 
 	err = link.Github.ValidateName("Gabriel++")
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 
 	err = link.Github.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")

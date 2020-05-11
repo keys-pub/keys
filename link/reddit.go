@@ -44,7 +44,9 @@ func (s *reddit) ValidateURLString(name string, urs string) (string, error) {
 	// URL from https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/ to
 	//          https://www.reddit.com/r/keyspubmsgs/comments/{id}/{username}.json
 
-	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == name {
+	prunedName := strings.ReplaceAll(name, "-", "")
+
+	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == prunedName {
 		// Request json
 		ursj, err := url.Parse("https://www.reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
 		if err != nil {
@@ -62,9 +64,9 @@ func (s *reddit) NormalizeName(name string) string {
 }
 
 func (s *reddit) ValidateName(name string) error {
-	isAlphaNumeric := isAlphaNumeric(name)
-	if !isAlphaNumeric {
-		return errors.Errorf("name is not lowercase alphanumeric (a-z0-9)")
+	ok := isAlphaNumericWithDashUnderscore(name)
+	if !ok {
+		return errors.Errorf("name has an invalid character")
 	}
 	if len(name) > 20 {
 		return errors.Errorf("reddit name is too long, it must be less than 21 characters")
@@ -104,7 +106,7 @@ func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
 		return nil, errors.Errorf("no listing children")
 	}
 	author := listings[0].Data.Children[0].Data.Author
-	if name != author {
+	if name != strings.ToLower(author) {
 		return nil, errors.Errorf("invalid author %s", author)
 	}
 	subreddit := listings[0].Data.Children[0].Data.Subreddit

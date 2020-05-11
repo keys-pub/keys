@@ -16,11 +16,17 @@ func TestTwitterValidateName(t *testing.T) {
 	err := link.Twitter.ValidateName("gabriel01")
 	require.NoError(t, err)
 
+	err = link.Twitter.ValidateName("gabriel_01")
+	require.NoError(t, err)
+
+	err = link.Twitter.ValidateName("gabriel-01")
+	require.EqualError(t, err, "name has an invalid character")
+
 	err = link.Twitter.ValidateName("Gabriel")
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 
 	err = link.Twitter.ValidateName("Gabriel++")
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 
 	err = link.Twitter.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")

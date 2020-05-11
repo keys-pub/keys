@@ -424,11 +424,11 @@ func TestNewUser(t *testing.T) {
 	require.Nil(t, u8)
 
 	u10, uerr := user.New(ust, sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
-	require.EqualError(t, uerr, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, uerr, "name has an invalid character")
 	require.Nil(t, u10)
 
 	u11, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
-	require.EqualError(t, uerr, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, uerr, "name has an invalid character")
 	require.Nil(t, u11)
 
 	u12, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)

@@ -16,11 +16,14 @@ func TestRedditValidateName(t *testing.T) {
 	err := link.Reddit.ValidateName("gabriel01")
 	require.NoError(t, err)
 
+	err = link.Reddit.ValidateName("gabriel_01-")
+	require.NoError(t, err)
+
 	err = link.Reddit.ValidateName("Gabriel")
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 
 	err = link.Reddit.ValidateName("Gabriel++")
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 
 	err = link.Reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
@@ -43,6 +46,11 @@ func TestRedditValidateURL(t *testing.T) {
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+
+	testValidateURL(t, link.Reddit,
+		"keys-pub",
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub/",
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub.json")
 
 	testValidateURL(t, link.Reddit,
 		"gabrlh",

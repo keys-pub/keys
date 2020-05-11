@@ -62,7 +62,7 @@ func TestNewValidate(t *testing.T) {
 	require.EqualError(t, err, "invalid scheme for url http://gist.github.com/alice/70281cc427850c272a8574af4d8564d9")
 
 	_, err = user.New(ust, alice.ID(), "github", "Alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
-	require.EqualError(t, err, "name is not lowercase alphanumeric (a-z0-9)")
+	require.EqualError(t, err, "name has an invalid character")
 }
 
 func TestSigchainUsers(t *testing.T) {

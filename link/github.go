@@ -49,9 +49,9 @@ func (s *github) NormalizeName(name string) string {
 }
 
 func (s *github) ValidateName(name string) error {
-	isAlphaNumeric := isAlphaNumeric(name)
-	if !isAlphaNumeric {
-		return errors.Errorf("name is not lowercase alphanumeric (a-z0-9)")
+	ok := isAlphaNumericWithDash(name)
+	if !ok {
+		return errors.Errorf("name has an invalid character")
 	}
 
 	if len(name) > 39 {

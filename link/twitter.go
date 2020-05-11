@@ -52,9 +52,9 @@ func (s *twitter) NormalizeName(name string) string {
 }
 
 func (s *twitter) ValidateName(name string) error {
-	isAlphaNumeric := isAlphaNumeric(name)
-	if !isAlphaNumeric {
-		return errors.Errorf("name is not lowercase alphanumeric (a-z0-9)")
+	ok := isAlphaNumericWithUnderscore(name)
+	if !ok {
+		return errors.Errorf("name has an invalid character")
 	}
 
 	if len(name) > 15 {
