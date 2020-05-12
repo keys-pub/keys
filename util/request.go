@@ -1,3 +1,4 @@
+// Package util provides utility methods used by other packages.
 package util
 
 import (
@@ -28,22 +29,30 @@ func (e ErrHTTP) Error() string {
 }
 
 func client() *http.Client {
+	// TODO: Longer timeout?
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
-			Timeout: 5 * time.Second,
+			Timeout: 10 * time.Second,
 		}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
+		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
 	client := &http.Client{
 		Timeout:   time.Second * 10,
 		Transport: transport,
+		// Important not to follow redirects.
+		// Twitter may redirect invalid urls with a valid status.
+		// TODO: Write an explicit test for this.
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 	return client
 }
 
-func doRequest(client *http.Client, method string, u string, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
-	req, err := http.NewRequest(method, u, bytes.NewReader(body))
+func doRequest(client *http.Client, method string, urs string, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
+	logger.Debugf("Requesting %s %s", method, urs)
+	req, err := http.NewRequest(method, urs, bytes.NewReader(body))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -91,6 +100,8 @@ func doRequest(client *http.Client, method string, u string, body []byte, option
 	if err != nil {
 		return nil, nil, err
 	}
+	logger.Debugf("Response body: %s", string(respBody))
+
 	return resp.Header, respBody, nil
 }
 
@@ -115,7 +126,7 @@ func (e ErrTemporary) Temporary() bool {
 
 // Requestor defines how to get bytes from a URL.
 type Requestor interface {
-	RequestURL(ctx context.Context, u *url.URL) ([]byte, error)
+	RequestURLString(ctx context.Context, urs string) ([]byte, error)
 }
 
 type requestor struct{}
@@ -125,10 +136,9 @@ func NewHTTPRequestor() Requestor {
 	return requestor{}
 }
 
-// RequestURL requests a URL.
-func (r requestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
-	logger.Infof("Requesting URL %s", u)
-	_, body, err := doRequest(client(), "GET", u.String(), nil)
+// RequestURLString requests an URL string.
+func (r requestor) RequestURLString(ctx context.Context, urs string) ([]byte, error) {
+	_, body, err := doRequest(client(), "GET", urs, nil)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}
@@ -171,7 +181,7 @@ func (r *MockRequestor) SetError(url string, err error) {
 	r.resp[url] = &mockResponse{err: err}
 }
 
-// RequestURL ...
-func (r *MockRequestor) RequestURL(ctx context.Context, u *url.URL) ([]byte, error) {
-	return r.Response(u.String())
+// RequestURLString ...
+func (r *MockRequestor) RequestURLString(ctx context.Context, urs string) ([]byte, error) {
+	return r.Response(urs)
 }

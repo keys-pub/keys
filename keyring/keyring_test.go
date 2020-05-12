@@ -291,6 +291,39 @@ func TestLargeItems(t *testing.T) {
 	require.Equal(t, b, item.Data)
 }
 
+func TestIDs(t *testing.T) {
+	store := keyring.SystemOrFS()
+	kr, err := keyring.New("KeysTest", store)
+	require.NoError(t, err)
+	defer func() { _ = kr.Reset() }()
+	now := time.Now()
+
+	err = store.Set("KeysTest", "#test", []byte{0x01}, "")
+	require.NoError(t, err)
+
+	ids, err := kr.IDs(&keyring.IDsOpts{ShowReserved: true})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(ids))
+	require.Equal(t, "#test", ids[0])
+
+	salt := bytes.Repeat([]byte{0x01}, 32)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
+	require.NoError(t, err)
+
+	err = kr.Unlock(auth)
+	require.NoError(t, err)
+
+	// Create .hidden
+	err = kr.Create(keyring.NewItem(".hidden", []byte("test"), "", now))
+	require.NoError(t, err)
+
+	ids, err = kr.IDs(&keyring.IDsOpts{ShowHidden: true})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(ids))
+	require.Equal(t, ".hidden", ids[0])
+
+}
+
 func randBytes(length int) []byte {
 	buf := make([]byte, length)
 	if _, err := rand.Read(buf); err != nil {

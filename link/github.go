@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
@@ -13,41 +12,46 @@ type github struct{}
 // Github service.
 var Github = &github{}
 
-func (s *github) Name() string {
+func (s *github) ID() string {
 	return "github"
 }
 
-func (s *github) NormalizeName(name string) string {
-	return name
+func (s *github) NormalizeURLString(name string, urs string) (string, error) {
+	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *github) ValidateURL(name string, u *url.URL) (*url.URL, error) {
+func (s *github) ValidateURLString(name string, urs string) (string, error) {
+	u, err := url.Parse(urs)
+	if err != nil {
+		return "", err
+	}
 	if u.Scheme != "https" {
-		return nil, errors.Errorf("invalid scheme for url %s", u)
+		return "", errors.Errorf("invalid scheme for url %s", u)
 	}
 	if u.Host != "gist.github.com" {
-		return nil, errors.Errorf("invalid host for url %s", u)
+		return "", errors.Errorf("invalid host for url %s", u)
 	}
 	path := u.Path
 	path = strings.TrimPrefix(path, "/")
 	paths := strings.Split(path, "/")
 	if len(paths) != 2 {
-		return nil, errors.Errorf("path invalid %s for url %s", paths, u)
+		return "", errors.Errorf("path invalid %s for url %s", paths, u)
 	}
 	if paths[0] != name {
-		return nil, errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
+		return "", errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
 	}
-	return u, nil
+	return u.String(), nil
+}
+
+func (s *github) NormalizeName(name string) string {
+	name = strings.ToLower(name)
+	return name
 }
 
 func (s *github) ValidateName(name string) error {
-	isASCII := encoding.IsASCII([]byte(name))
-	if !isASCII {
-		return errors.Errorf("name has non-ASCII characters")
-	}
-	hu := encoding.HasUpper(name)
-	if hu {
-		return errors.Errorf("name should be lowercase")
+	ok := isAlphaNumericWithDash(name)
+	if !ok {
+		return errors.Errorf("name has an invalid character")
 	}
 
 	if len(name) > 39 {

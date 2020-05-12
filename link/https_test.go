@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestHTTPSNormalizeName(t *testing.T) {
+	name := link.HTTPS.NormalizeName("Keys.pub")
+	require.Equal(t, "keys.pub", name)
+}
+
 func TestHTTPSValidateName(t *testing.T) {
 	err := link.HTTPS.ValidateName("keys.pub")
 	require.NoError(t, err)

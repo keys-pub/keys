@@ -97,7 +97,7 @@ func NewSignedStatement(b []byte, sk *EdX25519Key, typ string, ts time.Time) *St
 // Key for a Statement.
 // If Seq is not set, then there is no key.
 // Key looks like "kpe1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
-func (s Statement) Key() string {
+func (s *Statement) Key() string {
 	return StatementKey(s.KID, s.Seq)
 }
 
@@ -114,7 +114,7 @@ func StatementKey(kid ID, seq int) string {
 // URL returns path string for a Statement in the HTTP API.
 // If Seq is not set, then there is no path.
 // Path looks like "/ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn/1".
-func (s Statement) URL() string {
+func (s *Statement) URL() string {
 	if s.Seq == 0 {
 		return ""
 	}
@@ -123,7 +123,7 @@ func (s Statement) URL() string {
 
 // SpecificSerialization is the specific serialization or the bytes to sign.
 // It is the statement serialized without the sig value.
-func (s Statement) SpecificSerialization() []byte {
+func (s *Statement) SpecificSerialization() []byte {
 	return s.serialized
 }
 
@@ -169,7 +169,7 @@ func (s *Statement) Verify() error {
 }
 
 // MarshalJSON marshals statement to JSON.
-func (s Statement) MarshalJSON() ([]byte, error) {
+func (s *Statement) MarshalJSON() ([]byte, error) {
 	return s.Bytes()
 }
 

@@ -9,31 +9,34 @@ import (
 )
 
 func ExampleNew() {
+	// Initialize Keyring.
+	// You can use keyring.System(), keyring.SystemOrFS(), keyring.FS(dir), or keyring.Mem().
 	kr, err := keyring.New("AppName", keyring.SystemOrFS())
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Remove this Reset() if you want to keep the Keyring
+	// Remove this Reset() if you want to keep the Keyring.
 	defer func() { _ = kr.Reset() }()
 	// Unlock keyring (on first unlock, sets the password)
 	if err := kr.UnlockWithPassword("mypassword"); err != nil {
 		log.Fatal(err)
 	}
 
-	// Save item
+	// Create item.
+	// Item IDs are NOT encrypted.
 	item := keyring.NewItem("id1", []byte("mysecret"), "", time.Now())
 	if err := kr.Create(item); err != nil {
 		log.Fatal(err)
 	}
 
-	// Get item
+	// Get item.
 	out, err := kr.Get("id1")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("secret: %s\n", string(out.Data))
 
-	// List items
+	// List items.
 	items, err := kr.List(nil)
 	if err != nil {
 		log.Fatal(err)

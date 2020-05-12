@@ -2,7 +2,6 @@ package link
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -15,11 +14,12 @@ type https struct{}
 // HTTPS service.
 var HTTPS = &https{}
 
-func (s *https) Name() string {
+func (s *https) ID() string {
 	return "https"
 }
 
 func (s *https) NormalizeName(name string) string {
+	name = strings.ToLower(name)
 	return name
 }
 
@@ -47,11 +47,15 @@ func (s *https) ValidateName(name string) error {
 	return nil
 }
 
-func (s *https) ValidateURL(name string, u *url.URL) (*url.URL, error) {
-	if u.String() != fmt.Sprintf("https://%s/keyspub.txt", name) {
-		return nil, errors.Errorf("invalid url: %s", u.String())
+func (s *https) NormalizeURLString(name string, urs string) (string, error) {
+	return basicURLString(strings.ToLower(urs))
+}
+
+func (s *https) ValidateURLString(name string, urs string) (string, error) {
+	if urs != fmt.Sprintf("https://%s/keyspub.txt", name) {
+		return "", errors.Errorf("invalid url: %s", urs)
 	}
-	return url.Parse(fmt.Sprintf("https://%s/keyspub.txt", name))
+	return urs, nil
 }
 
 func (s *https) CheckContent(name string, b []byte) ([]byte, error) {

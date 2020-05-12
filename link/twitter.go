@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
@@ -13,44 +12,49 @@ type twitter struct{}
 // Twitter service.
 var Twitter = &twitter{}
 
-func (s *twitter) Name() string {
+func (s *twitter) ID() string {
 	return "twitter"
 }
 
-func (s *twitter) NormalizeName(name string) string {
-	if len(name) > 0 && name[0] == '@' {
-		return name[1:]
-	}
-	return name
+func (s *twitter) NormalizeURLString(name string, urs string) (string, error) {
+	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *twitter) ValidateURL(name string, u *url.URL) (*url.URL, error) {
+func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
+	u, err := url.Parse(urs)
+	if err != nil {
+		return "", err
+	}
 	if u.Scheme != "https" {
-		return nil, errors.Errorf("invalid scheme for url %s", u)
+		return "", errors.Errorf("invalid scheme for url %s", u)
 	}
 	if u.Host != "twitter.com" {
-		return nil, errors.Errorf("invalid host for url %s", u)
+		return "", errors.Errorf("invalid host for url %s", u)
 	}
 	path := u.Path
 	path = strings.TrimPrefix(path, "/")
 	paths := strings.Split(path, "/")
 	if len(paths) != 3 {
-		return nil, errors.Errorf("path invalid %s for url %s", paths, u)
+		return "", errors.Errorf("path invalid %s for url %s", paths, u)
 	}
 	if paths[0] != name {
-		return nil, errors.Errorf("path invalid (name mismatch) for url %s", u)
+		return "", errors.Errorf("path invalid (name mismatch) for url %s", u)
 	}
-	return u, nil
+	return u.String(), nil
+}
+
+func (s *twitter) NormalizeName(name string) string {
+	name = strings.ToLower(name)
+	if len(name) > 0 && name[0] == '@' {
+		name = name[1:]
+	}
+	return name
 }
 
 func (s *twitter) ValidateName(name string) error {
-	isASCII := encoding.IsASCII([]byte(name))
-	if !isASCII {
-		return errors.Errorf("name has non-ASCII characters")
-	}
-	hu := encoding.HasUpper(name)
-	if hu {
-		return errors.Errorf("name should be lowercase")
+	ok := isAlphaNumericWithUnderscore(name)
+	if !ok {
+		return errors.Errorf("name has an invalid character")
 	}
 
 	if len(name) > 15 {

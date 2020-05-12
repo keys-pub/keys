@@ -4,18 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
-	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/link"
 	"github.com/keys-pub/keys/util"
 	"github.com/pkg/errors"
 )
 
 // Result describes the status of a User.
+// TODO: Make Err/Status more explicit, it can be confusing.
 type Result struct {
 	Err    string `json:"err,omitempty"`
 	Status Status `json:"status"`
@@ -108,9 +106,9 @@ func (u *Store) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	return result, nil
 }
 
-// CheckSigchain looks for user in a Sigchain and updates the current result.
+// CheckSigchain looks for user in a Sigchain and updates the current result in the Store.
 func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
-	usr, err := FindUserInSigchain(sc)
+	usr, err := FindInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -127,104 +125,22 @@ func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 		}
 	}
 
-	u.updateResult(ctx, result, sc.KID())
+	if usr.KID != sc.KID() {
+		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
+	}
+
+	updateResult(ctx, u.req, usr, result, u.Now())
 
 	return result, nil
 }
 
-// Check a user. Doesn't index result.
-func (u *Store) Check(ctx context.Context, user *User, kid keys.ID) (*Result, error) {
-	res := &Result{
-		User: user,
-	}
-	u.updateResult(ctx, res, kid)
-	return res, nil
+// RequestVerify a user. Doesn't index result.
+func (u *Store) RequestVerify(ctx context.Context, usr *User) *Result {
+	return RequestVerify(ctx, u.req, usr, u.Now())
 }
 
-// updateResult updates the specified result.
-func (u *Store) updateResult(ctx context.Context, result *Result, kid keys.ID) {
-	if result == nil {
-		panic("no user result specified")
-	}
-	logger.Infof("Update user %s", result.User.String())
-
-	ur, err := url.Parse(result.User.URL)
-	if err != nil {
-		result.Err = err.Error()
-		result.Status = StatusFailure
-		return
-	}
-
-	service, err := link.NewService(result.User.Service)
-	if err != nil {
-		result.Err = err.Error()
-		result.Status = StatusFailure
-		return
-	}
-	ur, err = service.ValidateURL(result.User.Name, ur)
-	if err != nil {
-		result.Err = err.Error()
-		result.Status = StatusFailure
-		return
-	}
-
-	result.Timestamp = util.TimeToMillis(u.Now())
-
-	logger.Infof("Requesting %s", ur)
-	body, err := u.req.RequestURL(ctx, ur)
-	if err != nil {
-		logger.Warningf("Request failed: %v", err)
-		if errHTTP, ok := errors.Cause(err).(util.ErrHTTP); ok && errHTTP.StatusCode == 404 {
-			result.Err = err.Error()
-			result.Status = StatusResourceNotFound
-			return
-		}
-		result.Err = err.Error()
-		result.Status = StatusConnFailure
-		return
-	}
-
-	b, err := service.CheckContent(result.User.Name, body)
-	if err != nil {
-		logger.Warningf("Failed to check content: %s", err)
-		result.Err = err.Error()
-		result.Status = StatusContentInvalid
-		return
-	}
-
-	st, err := VerifyContent(b, result, kid)
-	if err != nil {
-		logger.Warningf("Failed to verify content: %s", err)
-		result.Err = err.Error()
-		result.Status = st
-		return
-	}
-
-	logger.Infof("Verified %s", result.User.KID)
-	result.Err = ""
-	result.Status = StatusOK
-	result.VerifiedAt = util.TimeToMillis(u.Now())
-}
-
-// VerifyContent checks content.
-func VerifyContent(b []byte, result *Result, kid keys.ID) (Status, error) {
-	msg, _ := encoding.FindSaltpack(string(b), true)
-	if msg == "" {
-		logger.Warningf("User statement content not found")
-		return StatusContentNotFound, errors.Errorf("user signed message content not found")
-	}
-
-	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
-	if _, err := Verify(verifyMsg, kid, result.User); err != nil {
-		logger.Warningf("Failed to verify statement: %s", err)
-		return StatusStatementInvalid, err
-	}
-
-	return StatusOK, nil
-}
-
-// ValidateUserStatement returns error if statement is not a valid user statement.
-func ValidateUserStatement(st *keys.Statement) error {
+// ValidateStatement returns error if statement is not a valid user statement.
+func ValidateStatement(st *keys.Statement) error {
 	if st.Type != "user" {
 		return errors.Errorf("invalid user statement: %s != %s", st.Type, "user")
 	}
@@ -232,7 +148,7 @@ func ValidateUserStatement(st *keys.Statement) error {
 	if err := json.Unmarshal(st.Data, &user); err != nil {
 		return err
 	}
-	if err := ValidateUser(&user); err != nil {
+	if err := Validate(&user); err != nil {
 		return err
 	}
 	return nil
@@ -339,7 +255,7 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	if keyDoc.Result != nil {
 		index := false
 		if keyDoc.Result.VerifiedAt == 0 {
-			logger.Errorf("Never verified user result in indexing: %v", keyDoc.Result)
+			logger.Warningf("Never verified user result in indexing: %v", keyDoc.Result)
 		} else {
 			switch keyDoc.Result.Status {
 			// Index result if status ok, or a transient error
@@ -434,7 +350,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 // CheckForExisting returns key ID of exsiting user in sigchain different from this
 // sigchain key.
 func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
-	usr, err := FindUserInSigchain(sc)
+	usr, err := FindInSigchain(sc)
 	if err != nil {
 		return "", err
 	}

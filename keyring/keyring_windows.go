@@ -4,7 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/danieljoos/wincred"
+	"github.com/keys-pub/wincred"
+	"github.com/pkg/errors"
 )
 
 // System returns keyring store for windows.
@@ -26,10 +27,10 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
-		if err.Error() == "Element not found." {
+		if errors.Cause(err) == wincred.ErrNotFound {
 			return nil, nil
 		}
-		return nil, err
+		return nil, errors.Wrapf(err, "wincred GetGenericCredential failed")
 	}
 	if cred == nil {
 		return nil, nil
@@ -41,23 +42,26 @@ func (k sys) Set(service string, id string, data []byte, typ string) error {
 	targetName := service + "/" + id
 	cred := wincred.NewGenericCredential(targetName)
 	cred.CredentialBlob = data
-	return cred.Write()
+	if err := cred.Write(); err != nil {
+		return errors.Wrapf(err, "wincred Write failed")
+	}
+	return nil
 }
 
 func (k sys) Delete(service string, id string) (bool, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
-		if err.Error() == "Element not found." {
+		if errors.Cause(err) == wincred.ErrNotFound {
 			return false, nil
 		}
-		return false, err
+		return false, errors.Wrapf(err, "wincred GetGenericCredential failed")
 	}
 	if cred == nil {
 		return false, nil
 	}
 	if err := cred.Delete(); err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "wincred Delete failed")
 	}
 	return true, nil
 }
@@ -66,10 +70,10 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
-		if err.Error() == "Element not found." {
+		if errors.Cause(err) == wincred.ErrNotFound {
 			return false, nil
 		}
-		return false, err
+		return false, errors.Wrapf(err, "wincred GetGenericCredential failed")
 	}
 	if cred == nil {
 		return false, nil
@@ -111,7 +115,12 @@ func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error
 	return items, nil
 }
 
-func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bool) ([]string, error) {
+func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
+	if opts == nil {
+		opts = &IDsOpts{}
+	}
+	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+
 	creds, err := wincred.List()
 	if err != nil {
 		return nil, err
@@ -120,7 +129,7 @@ func (k sys) IDs(service string, prefix string, showHidden bool, showReserved bo
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, service+"/") {
 			id := cred.TargetName[len(service+"/"):]
-			if !showHidden && strings.HasPrefix(id, reservedPrefix) {
+			if !showReserved && strings.HasPrefix(id, reservedPrefix) {
 				continue
 			}
 			if !showHidden && strings.HasPrefix(id, hiddenPrefix) {

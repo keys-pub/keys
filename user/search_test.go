@@ -58,8 +58,8 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "github", results[0].Result.User.Service)
 	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
-	require.Equal(t, int64(1234567890034), results[0].Result.VerifiedAt)
-	require.Equal(t, int64(1234567890033), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890028), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890028), results[0].Result.Timestamp)
 
 	// Revoke alice, update
 	sc, err := scs.Sigchain(alice.ID())
@@ -185,11 +185,11 @@ func TestUserValidateName(t *testing.T) {
 
 	// Test MixedCase
 	_, err := saveUser(ust, scs, key, "MixedCase", "github", clock, req)
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name has an invalid character")
 	_, err = saveUser(ust, scs, key, "MixedCase", "twitter", clock, req)
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name has an invalid character")
 	_, err = saveUser(ust, scs, key, "MixedCase", "reddit", clock, req)
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name has an invalid character")
 
 	// Long length
 	_, err = saveUser(ust, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, req)
@@ -228,7 +228,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	sc := keys.NewSigchain(key.ID())
 
 	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
-	require.EqualError(t, err, "name should be lowercase")
+	require.EqualError(t, err, "name has an invalid character")
 
 	// Go around validate check and add
 	b, err := usr.MarshalJSON()
@@ -282,7 +282,7 @@ func TestReddit(t *testing.T) {
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
 	msg := mockRedditMessage("alice", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL(redditURL), []byte(msg))
+	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 
 	result, err := ust.Update(ctx, key.ID())
 	require.NoError(t, err)
@@ -290,14 +290,14 @@ func TestReddit(t *testing.T) {
 
 	// Different name
 	msg = mockRedditMessage("alice2", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL(redditURL), []byte(msg))
+	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 	result, err = ust.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
 	msg = mockRedditMessage("alice", smsg, "keyspubmsgs2")
-	req.SetResponse(mockRedditURL(redditURL), []byte(msg))
+	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 	result, err = ust.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
@@ -332,7 +332,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, alice.ID(), results[0].KID)
 	require.Equal(t, int64(1234567890003), results[0].Result.Timestamp)
-	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
 
 	data, err := req.Response("https://gist.github.com/alice/1")
 	require.NoError(t, err)
@@ -348,8 +348,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), results[0].Result.User.KID)
 	require.Equal(t, user.StatusConnFailure, results[0].Result.Status)
-	require.Equal(t, int64(1234567890007), results[0].Result.Timestamp)
-	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890006), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
 
 	// List by status
 	fail, err := ust.Status(ctx, user.StatusConnFailure)
@@ -425,7 +425,7 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, "github", results[0].Result.User.Service)
 	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
-	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890002), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), results[0].Result.Timestamp)
 
 	ids, err = ust.Expired(ctx, time.Hour)
@@ -464,7 +464,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 		sc = keys.NewSigchain(key.ID())
 	}
 
-	usr, err := user.NewUser(ust, key.ID(), service, name, url, sc.LastSeq()+1)
+	usr, err := user.New(ust, key.ID(), service, name, url, sc.LastSeq()+1)
 	if err != nil {
 		return nil, err
 	}
@@ -499,13 +499,13 @@ func TestNewSigchainUserStatement(t *testing.T) {
 	req := util.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 	sc := keys.NewSigchain(key.ID())
-	usr, err := user.NewUser(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
+	usr, err := user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.NoError(t, err)
 	require.Equal(t, st.Seq, usr.Seq)
 
-	usr, err = user.NewUser(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
+	usr, err = user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
 	require.NoError(t, err)
 	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
@@ -567,6 +567,6 @@ func mockRedditMessage(author string, msg string, subreddit string) string {
     }]`
 }
 
-func mockRedditURL(url string) string {
-	return url + ".json"
+func mockRedditURL(name string) string {
+	return "https://www.reddit.com/r/keyspubmsgs/comments/123/" + name + ".json"
 }

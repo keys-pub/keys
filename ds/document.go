@@ -1,3 +1,4 @@
+// Package ds provides a Document store.
 package ds
 
 import (

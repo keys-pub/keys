@@ -1,7 +1,7 @@
+// Package user defines user statements, store and search.
 package user
 
 import (
-	"net/url"
 	"strconv"
 	"time"
 
@@ -118,14 +118,15 @@ func (u *User) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// NewUser returns User used in a signing statement.
-func NewUser(ust *Store, kid keys.ID, service string, name string, rawurl string, seq int) (*User, error) {
+// New creates a User.
+// Name and URL string are NOT normalized.
+func New(ust *Store, kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
 
-	usr, err := newUser(ust, kid, svc, name, rawurl)
+	usr, err := newUser(ust, kid, svc, name, urs)
 	if err != nil {
 		return nil, err
 	}
@@ -136,25 +137,21 @@ func NewUser(ust *Store, kid keys.ID, service string, name string, rawurl string
 	return usr, nil
 }
 
-func newUser(ust *Store, kid keys.ID, service link.Service, name string, rawurl string) (*User, error) {
-	name = service.NormalizeName(name)
-	url, err := normalizeURL(rawurl)
-	if err != nil {
-		return nil, err
-	}
+func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs string) (*User, error) {
 	usr := &User{
 		KID:     kid,
-		Service: service.Name(),
+		Service: service.ID(),
 		Name:    name,
-		URL:     url,
+		URL:     urs,
 	}
-	if err := ValidateUser(usr); err != nil {
+	if err := Validate(usr); err != nil {
 		return nil, err
 	}
 	return usr, nil
 }
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
+// The name is normalized, for example for twitter "@Username" => "username".
 func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
@@ -166,17 +163,9 @@ func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*U
 	}
 	return &User{
 		KID:     kid,
-		Service: svc.Name(),
+		Service: svc.ID(),
 		Name:    name,
 	}, nil
-}
-
-func normalizeURL(s string) (string, error) {
-	u, err := url.Parse(s)
-	if err != nil {
-		return "", err
-	}
-	return u.String(), nil
 }
 
 func validateServiceAndName(service link.Service, name string) error {
@@ -186,8 +175,9 @@ func validateServiceAndName(service link.Service, name string) error {
 	return service.ValidateName(name)
 }
 
-// ValidateUser service and name.
-func ValidateUser(user *User) error {
+// Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
+func Validate(user *User) error {
 	service, err := link.NewService(user.Service)
 	if err != nil {
 		return err
@@ -196,12 +186,26 @@ func ValidateUser(user *User) error {
 	if err := validateServiceAndName(service, user.Name); err != nil {
 		return err
 	}
-	ur, err := url.Parse(user.URL)
+
+	if _, err := service.ValidateURLString(user.Name, user.URL); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
+func (u *User) Validate() error {
+	service, err := link.NewService(u.Service)
 	if err != nil {
 		return err
 	}
 
-	if _, err := service.ValidateURL(user.Name, ur); err != nil {
+	if err := validateServiceAndName(service, u.Name); err != nil {
+		return err
+	}
+
+	if _, err := service.ValidateURLString(u.Name, u.URL); err != nil {
 		return err
 	}
 	return nil
@@ -217,12 +221,12 @@ func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Ke
 		return nil, errors.Errorf("no user specified")
 	}
 
-	if err := ValidateUser(user); err != nil {
+	if err := Validate(user); err != nil {
 		return nil, err
 	}
 
 	// Check if we have an existing user set.
-	existing, err := FindUserInSigchain(sc)
+	existing, err := FindInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -307,9 +311,9 @@ func Verify(msg string, kid keys.ID, user *User) (*User, error) {
 	return &dec, nil
 }
 
-// FindUserInSigchain returns User from a Sigchain.
+// FindInSigchain returns User from a Sigchain.
 // If user is invalid returns nil.
-func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
+func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 	st := sc.FindLast("user")
 	if st == nil {
 		return nil, nil
@@ -319,7 +323,7 @@ func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
 		return nil, err
 	}
 
-	if err := ValidateUser(&user); err != nil {
+	if err := Validate(&user); err != nil {
 		return nil, nil
 	}
 
