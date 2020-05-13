@@ -3,11 +3,10 @@ package backup_test
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/keyring/backup"
 	"github.com/keys-pub/keys/util"
@@ -39,32 +38,31 @@ func TestBackup(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	tmpDir := os.TempDir()
-	opts := &backup.ExportOpts{Now: clock.Now}
+	key := keys.Rand32()
+	tmpFile := keys.RandTempPath("")
+	store := backup.NewTGZStore(tmpFile, clock.Now)
+	defer func() { _ = os.Remove(tmpFile) }()
 
-	path, err := backup.ExportToDirectory(kr, tmpDir, "testpassword", opts)
+	err := backup.Export(kr, store, key)
 	require.NoError(t, err)
-	defer func() { _ = os.Remove(path) }()
-	require.True(t, strings.HasPrefix(filepath.Base(path), "20090213T233130-"))
-	require.True(t, strings.HasSuffix(filepath.Base(path), ".kpb"))
 
 	kr2 := keyring.NewMem(true)
-	err = backup.ImportFromFile(kr2, path, "wrongpassword")
-	require.EqualError(t, err, "failed to decrypt with a password: secretbox open failed")
+	err = backup.Import(kr2, store, keys.Rand32())
+	require.EqualError(t, err, "invalid keyring auth")
 
-	err = backup.ImportFromFile(kr2, path, "testpassword")
+	err = backup.Import(kr2, store, key)
 	require.NoError(t, err)
 	testEqualKeyrings(t, kr, kr2)
 
 	// Import again
-	err = backup.ImportFromFile(kr2, path, "testpassword")
+	err = backup.Import(kr2, store, key)
 	require.NoError(t, err)
 	testEqualKeyrings(t, kr, kr2)
 
 	// Change local and import again, should error
 	err = kr2.Update("item1", []byte("newvalue"))
 	require.NoError(t, err)
-	err = backup.ImportFromFile(kr2, path, "testpassword")
+	err = backup.Import(kr2, store, key)
 	require.EqualError(t, err, "item already exists with different data")
 }
 
