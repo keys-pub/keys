@@ -132,7 +132,9 @@ func (k *EdX25519PublicKey) EncodeToSSHAuthorized() []byte {
 	if _, err := e.Write(mb); err != nil {
 		panic(err)
 	}
-	e.Close()
+	if err := e.Close(); err != nil {
+		panic(err)
+	}
 	// b.WriteByte('\n')
 	return b.Bytes()
 }
