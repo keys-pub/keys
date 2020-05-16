@@ -129,7 +129,9 @@ func (k *EdX25519PublicKey) EncodeToSSHAuthorized() []byte {
 	}
 	mb := ssh.Marshal(&w)
 
-	e.Write(mb)
+	if _, err := e.Write(mb); err != nil {
+		panic(err)
+	}
 	e.Close()
 	// b.WriteByte('\n')
 	return b.Bytes()

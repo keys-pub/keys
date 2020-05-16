@@ -108,7 +108,7 @@ func TestSSHEncode(t *testing.T) {
 
 	ssh, err = alice.EncodeToSSH([]byte("testpassword"))
 	require.NoError(t, err)
-	out, err = keys.ParseSSHKey(ssh, nil, false)
+	_, err = keys.ParseSSHKey(ssh, nil, false)
 	require.EqualError(t, err, "failed to parse ssh key: ssh: this private key is passphrase protected")
 	out, err = keys.ParseSSHKey(ssh, []byte("testpassword"), false)
 	require.NoError(t, err)
