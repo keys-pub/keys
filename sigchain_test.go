@@ -39,7 +39,7 @@ func testdataString(t *testing.T, path string) string {
 
 func TestSigchain(t *testing.T) {
 	clock := newClock()
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())
@@ -117,7 +117,7 @@ func TestSigchain(t *testing.T) {
 
 func TestSigchainJSON(t *testing.T) {
 	clock := newClock()
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())
 

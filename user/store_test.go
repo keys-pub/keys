@@ -1,7 +1,6 @@
 package user_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"testing"
@@ -21,7 +20,7 @@ func testStore(t *testing.T, dst ds.DocumentStore, scs keys.SigchainStore, req *
 }
 
 func TestNewUserForTwitterSigning(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	req := util.NewMockRequestor()
 	clock := newClock()
@@ -49,7 +48,7 @@ END MESSAGE.`
 }
 
 func TestNewUserMarshal(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	req := util.NewMockRequestor()
 	clock := newClock()
@@ -80,7 +79,7 @@ func TestNewUserMarshal(t *testing.T) {
 
 func TestResultGithub(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := newClock()
 	req := util.NewMockRequestor()
@@ -137,7 +136,7 @@ func TestResultGithub(t *testing.T) {
 }
 
 func TestResultGithubWrongName(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := newClock()
 	req := util.NewMockRequestor()
@@ -171,7 +170,7 @@ func TestResultGithubWrongName(t *testing.T) {
 }
 
 func TestResultGithubWrongService(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := newClock()
 	req := util.NewMockRequestor()
@@ -203,7 +202,7 @@ func TestResultGithubWrongService(t *testing.T) {
 }
 
 func TestResultTwitter(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := newClock()
 	req := util.NewMockRequestor()
@@ -247,7 +246,7 @@ func TestResultReddit(t *testing.T) {
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 	// services.SetLogger(keys.NewLogger(keys.DebugLevel))
 
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := newClock()
 	req := util.NewMockRequestor()
@@ -288,7 +287,7 @@ func TestResultReddit(t *testing.T) {
 }
 
 func TestUserUnverified(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := newClock()
 	req := util.NewMockRequestor()
@@ -314,7 +313,7 @@ func TestUserUnverified(t *testing.T) {
 }
 
 func TestCheckNoUsers(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(sk.ID())
 
 	req := util.NewMockRequestor()
@@ -357,7 +356,7 @@ func TestCheckFailure(t *testing.T) {
 }
 
 func TestVerify(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	req := util.NewMockRequestor()
 	clock := newClock()
@@ -384,7 +383,7 @@ func TestVerify(t *testing.T) {
 }
 
 func TestNewUser(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)

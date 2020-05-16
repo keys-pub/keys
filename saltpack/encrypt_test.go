@@ -14,7 +14,7 @@ func TestEncrypt(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemStore(true)
 	spa := saltpack.NewSaltpack(ksa)
-	alice := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewX25519KeyFromSeed(testSeed(0x01))
 	err := ksa.SaveX25519Key(alice)
 	require.NoError(t, err)
 
@@ -188,7 +188,7 @@ func TestEncryptWithEdX25519Key(t *testing.T) {
 	// Alice
 	ksa := keys.NewMemStore(true)
 	spa := saltpack.NewSaltpack(ksa)
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	err := ksa.SaveEdX25519Key(alice)
 	require.NoError(t, err)
 

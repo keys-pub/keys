@@ -15,6 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func testSeed(b byte) *[32]byte {
+	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
+}
+
 type clock struct {
 	t time.Time
 }
@@ -50,7 +54,7 @@ func TestNewValidate(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	_, err = user.New(ust, alice.ID(), "github", "alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "invalid scheme for url file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9")
@@ -72,7 +76,7 @@ func TestSigchainUsers(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())

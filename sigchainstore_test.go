@@ -21,7 +21,7 @@ func TestSigchainStore(t *testing.T) {
 	clock := newClock()
 	scs := testSigchainStore(t, clock)
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	ok, err := scs.SigchainExists(alice.ID())
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestSigchainStoreSpew(t *testing.T) {
 	clock := newClock()
 	scs := testSigchainStore(t, clock)
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(alice.ID())
 
 	st, err := keys.NewSigchainStatement(sc, []byte("test1"), alice, "", clock.Now())

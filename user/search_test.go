@@ -33,7 +33,7 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	require.NoError(t, err)
 
 	// Add alice@github
@@ -158,7 +158,7 @@ func TestUserStoreEmpty(t *testing.T) {
 	req := util.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
-	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	// Test empty
 	ctx := context.TODO()
@@ -260,7 +260,7 @@ func TestReddit(t *testing.T) {
 	req := util.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
-	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
 	usr := &user.User{
 		KID:     key.ID(),
@@ -320,7 +320,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	// Add alice@github
 	testSaveUser(t, ust, scs, alice, "alice", "github", clock, req)
 
@@ -403,7 +403,7 @@ func TestExpired(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -494,7 +494,7 @@ func TestNewSigchainUserStatement(t *testing.T) {
 	clock := newClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
-	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	req := util.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)

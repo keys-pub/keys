@@ -106,7 +106,7 @@ func TestStoreList(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	ks := keys.NewMemStore(true)
 
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	err := ks.SaveEdX25519Key(sk)
 	require.NoError(t, err)
 
@@ -114,7 +114,7 @@ func TestStoreList(t *testing.T) {
 	err = ks.SaveEdX25519PublicKey(sk2.PublicKey())
 	require.NoError(t, err)
 
-	bk := keys.NewX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	bk := keys.NewX25519KeyFromSeed(testSeed(0x01))
 	err = ks.SaveX25519Key(bk)
 	require.NoError(t, err)
 
