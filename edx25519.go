@@ -1,8 +1,9 @@
 package keys
 
 import (
+	"crypto/ed25519"
+
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/nacl/sign"
 )
 

@@ -41,7 +41,7 @@ func TestSSHKey(t *testing.T) {
 	+K2j/PXc0mNxIN5A==
 	-----END OPENSSH PRIVATE KEY-----`
 	_, err = keys.ParseSSHKey([]byte(edpriv2), nil, true)
-	require.EqualError(t, err, "ssh: this private key is passphrase protected")
+	require.EqualError(t, err, "failed to parse ssh key: ssh: this private key is passphrase protected")
 	priv, err = keys.ParseSSHKey([]byte(edpriv2), []byte("12345"), true)
 	require.NoError(t, err)
 	require.NotNil(t, priv)
@@ -87,4 +87,39 @@ func TestSSHKey(t *testing.T) {
 	-----END OPENSSH PRIVATE KEY-----`
 	_, err = keys.ParseSSHKey([]byte(rsa), nil, true)
 	require.EqualError(t, err, "SSH RSA key not currently supported")
+}
+
+func TestSSHEncode(t *testing.T) {
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+
+	ssh, err := alice.EncodeToSSH(nil)
+	require.NoError(t, err)
+	out, err := keys.ParseSSHKey(ssh, nil, false)
+	require.NoError(t, err)
+	require.NotNil(t, out)
+	require.Equal(t, out.Bytes(), alice.Bytes())
+
+	ssh, err = alice.EncodeToSSH([]byte{})
+	require.NoError(t, err)
+	out, err = keys.ParseSSHKey(ssh, nil, false)
+	require.NoError(t, err)
+	require.NotNil(t, out)
+	require.Equal(t, out.Bytes(), alice.Bytes())
+
+	ssh, err = alice.EncodeToSSH([]byte("testpassword"))
+	require.NoError(t, err)
+	out, err = keys.ParseSSHKey(ssh, nil, false)
+	require.EqualError(t, err, "failed to parse ssh key: ssh: this private key is passphrase protected")
+	out, err = keys.ParseSSHKey(ssh, []byte("testpassword"), false)
+	require.NoError(t, err)
+	require.NotNil(t, out)
+	require.Equal(t, out.Bytes(), alice.Bytes())
+}
+
+func TestSSHEncodePublic(t *testing.T) {
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	b := alice.PublicKey().EncodeToSSHAuthorized()
+	out, err := keys.ParseSSHPublicKey(string(b))
+	require.NoError(t, err)
+	require.Equal(t, out.Bytes(), alice.PublicKey().Bytes())
 }
