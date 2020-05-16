@@ -12,7 +12,7 @@ import (
 
 func TestSignVerify(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 
 	alice := keys.GenerateEdX25519Key()
 
@@ -36,7 +36,7 @@ func TestSignVerify(t *testing.T) {
 }
 
 func TestSignVerifyArmored(t *testing.T) {
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi")
@@ -51,7 +51,7 @@ func TestSignVerifyArmored(t *testing.T) {
 }
 
 func TestSignVerifyStream(t *testing.T) {
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("I'm alice")

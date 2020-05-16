@@ -12,7 +12,7 @@ import (
 )
 
 func ExampleSaltpack_Encrypt() {
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 
 	// Alice
 	alice := keys.GenerateEdX25519Key()
@@ -70,7 +70,7 @@ func ExampleSaltpack_Decrypt() {
 	}
 
 	// Bob decrypt's
-	sp := saltpack.NewSaltpack(ks)
+	sp := saltpack.New(ks)
 	out, sender, err := sp.DecryptArmored(encrypted)
 	if err != nil {
 		log.Fatal(err)

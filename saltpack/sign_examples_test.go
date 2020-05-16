@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleSaltpack_Sign() {
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 
 	alice := keys.GenerateEdX25519Key()
 
@@ -24,7 +24,7 @@ func ExampleSaltpack_Sign() {
 }
 
 func ExampleSaltpack_SignDetached() {
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 
 	alice := keys.GenerateEdX25519Key()
 
@@ -38,7 +38,7 @@ func ExampleSaltpack_SignDetached() {
 }
 
 func ExampleSaltpack_Verify() {
-	sp := saltpack.NewSaltpack(nil)
+	sp := saltpack.New(nil)
 
 	aliceID := keys.ID("kex1w2jep8dkr2s0g9kx5g6xe3387jslnlj08yactvn8xdtrx4cnypjq9rpnux")
 	signed := `BEGIN SALTPACK SIGNED MESSAGE. 

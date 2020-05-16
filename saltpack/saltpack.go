@@ -21,9 +21,9 @@ type Store interface {
 	X25519Keys() ([]*keys.X25519Key, error)
 }
 
-// NewSaltpack creates a Saltpack provider.
+// New creates a Saltpack provider.
 // Uses signcryption, see .
-func NewSaltpack(keys Store) *Saltpack {
+func New(keys Store) *Saltpack {
 	return &Saltpack{
 		keys: keys,
 	}
