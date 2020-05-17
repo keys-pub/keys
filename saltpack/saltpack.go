@@ -12,14 +12,14 @@ import (
 
 // KeyStore for Saltpack keys.
 type KeyStore interface {
-	X25519Keys() []*keys.X25519Key
+	X25519Keys() ([]*keys.X25519Key, error)
 }
 
 type saltpack struct {
 	ks KeyStore
 }
 
-func (s *saltpack) X25519Keys() []*keys.X25519Key {
+func (s *saltpack) X25519Keys() ([]*keys.X25519Key, error) {
 	return s.ks.X25519Keys()
 }
 
@@ -31,8 +31,8 @@ type store struct {
 	keys []*keys.X25519Key
 }
 
-func (s *store) X25519Keys() []*keys.X25519Key {
-	return s.keys
+func (s *store) X25519Keys() ([]*keys.X25519Key, error) {
+	return s.keys, nil
 }
 
 // NewKeyStore creates store for keys.
@@ -76,7 +76,11 @@ func (s *saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
 // to one of the given Key IDs. Returns the index and the key on success,
 // or -1 and nil on failure.
 func (s *saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKey) {
-	keys := s.ks.X25519Keys()
+	keys, err := s.ks.X25519Keys()
+	if err != nil {
+		logger.Warningf("Failed to get x25519 keys: %v", err)
+		return -1, nil
+	}
 	for i := 0; i < len(keys); i++ {
 		for j := 0; j < len(kids); j++ {
 			if subtle.ConstantTimeCompare(keys[i].PublicKey().Bytes()[:], kids[j]) == 1 {
@@ -101,7 +105,11 @@ func (s *saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 // receivers via trial and error.
 func (s *saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
 	logger.Infof("List x25519 keys...")
-	keys := s.ks.X25519Keys()
+	keys, err := s.ks.X25519Keys()
+	if err != nil {
+		logger.Warningf("Failed to get x25519 keys: %v", err)
+		return []ksaltpack.BoxSecretKey{}
+	}
 	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(keys))
 	for _, k := range keys {
 		boxSecretKeys = append(boxSecretKeys, newBoxKey(k))
