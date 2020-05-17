@@ -1,7 +1,6 @@
 package keys_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -60,7 +59,7 @@ func TestSigchainStore(t *testing.T) {
 	require.NotNil(t, sc)
 	require.Equal(t, alice.ID(), sc.KID())
 
-	bob := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	bob := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 	scb := keys.NewSigchain(bob.ID())
 	st, err = keys.NewSigchainStatement(scb, []byte("bob"), bob, "", clock.Now())
 	require.NoError(t, err)
