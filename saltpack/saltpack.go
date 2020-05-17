@@ -10,14 +10,34 @@ import (
 	"github.com/pkg/errors"
 )
 
+// KeyStore for Saltpack keys.
+type KeyStore interface {
+	X25519Keys() []*keys.X25519Key
+}
+
 type saltpack struct {
+	ks KeyStore
+}
+
+func (s *saltpack) X25519Keys() []*keys.X25519Key {
+	return s.ks.X25519Keys()
+}
+
+func newSaltpack(ks KeyStore) *saltpack {
+	return &saltpack{ks: ks}
+}
+
+type store struct {
 	keys []*keys.X25519Key
 }
 
-func newSaltpack(keys []*keys.X25519Key) *saltpack {
-	return &saltpack{
-		keys: keys,
-	}
+func (s *store) X25519Keys() []*keys.X25519Key {
+	return s.keys
+}
+
+// NewKeyStore creates store for keys.
+func NewKeyStore(keys ...keys.Key) KeyStore {
+	return &store{keys: x25519Keys(keys)}
 }
 
 func signVersionValidator(version ksaltpack.Version) error {
@@ -56,10 +76,11 @@ func (s *saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
 // to one of the given Key IDs. Returns the index and the key on success,
 // or -1 and nil on failure.
 func (s *saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKey) {
-	for i := 0; i < len(s.keys); i++ {
+	keys := s.ks.X25519Keys()
+	for i := 0; i < len(keys); i++ {
 		for j := 0; j < len(kids); j++ {
-			if subtle.ConstantTimeCompare(s.keys[i].PublicKey().Bytes()[:], kids[j]) == 1 {
-				return j, newBoxKey(s.keys[i])
+			if subtle.ConstantTimeCompare(keys[i].PublicKey().Bytes()[:], kids[j]) == 1 {
+				return j, newBoxKey(keys[i])
 			}
 		}
 	}
@@ -79,9 +100,10 @@ func (s *saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 // GetAllBoxSecretKeys returns all keys, needed if we want to support "hidden"
 // receivers via trial and error.
 func (s *saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
-	logger.Infof("List box keys...")
-	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(s.keys))
-	for _, k := range s.keys {
+	logger.Infof("List x25519 keys...")
+	keys := s.ks.X25519Keys()
+	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(keys))
+	for _, k := range keys {
 		boxSecretKeys = append(boxSecretKeys, newBoxKey(k))
 	}
 	return boxSecretKeys

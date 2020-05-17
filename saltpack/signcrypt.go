@@ -49,8 +49,8 @@ func edx25519SenderKey(senderPub ksaltpack.SigningPublicKey) (*keys.EdX25519Publ
 }
 
 // SigncryptOpen ...
-func SigncryptOpen(b []byte, keys ...keys.Key) ([]byte, *keys.EdX25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func SigncryptOpen(b []byte, ks KeyStore) ([]byte, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	spk, out, err := ksaltpack.SigncryptOpen(b, s, nil)
 	if err != nil {
 		return nil, nil, convertSignKeyErr(err)
@@ -63,8 +63,8 @@ func SigncryptOpen(b []byte, keys ...keys.Key) ([]byte, *keys.EdX25519PublicKey,
 }
 
 // SigncryptArmoredOpen ...
-func SigncryptArmoredOpen(str string, keys ...keys.Key) ([]byte, *keys.EdX25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func SigncryptArmoredOpen(str string, ks KeyStore) ([]byte, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	// TODO: Casting to string could be a performance issue
 	spk, out, _, err := ksaltpack.Dearmor62SigncryptOpen(str, s, nil)
 	if err != nil {
@@ -96,8 +96,8 @@ func NewSigncryptArmoredStream(w io.Writer, sender *keys.EdX25519Key, recipients
 }
 
 // NewSigncryptOpenStream creates a signcrypt open stream.
-func NewSigncryptOpenStream(r io.Reader, keys ...keys.Key) (io.Reader, *keys.EdX25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func NewSigncryptOpenStream(r io.Reader, ks KeyStore) (io.Reader, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	spk, stream, err := ksaltpack.NewSigncryptOpenStream(r, s, nil)
 	if err != nil {
 		return nil, nil, convertSignKeyErr(err)
@@ -110,8 +110,8 @@ func NewSigncryptOpenStream(r io.Reader, keys ...keys.Key) (io.Reader, *keys.EdX
 }
 
 // NewSigncryptArmoredOpenStream ...
-func NewSigncryptArmoredOpenStream(r io.Reader, keys ...keys.Key) (io.Reader, *keys.EdX25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func NewSigncryptArmoredOpenStream(r io.Reader, ks KeyStore) (io.Reader, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	// TODO: Specifying nil for resolver will panic if box keys not found
 	spk, stream, _, err := ksaltpack.NewDearmor62SigncryptOpenStream(r, s, nil)
 	if err != nil {

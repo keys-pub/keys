@@ -45,7 +45,7 @@ func ExampleDecryptArmored() {
 	bob := keys.NewX25519KeyFromPrivateKey(keys.Bytes32(b))
 
 	// Bob decrypts
-	out, sender, err := saltpack.DecryptArmored(encrypted, bob)
+	out, sender, err := saltpack.DecryptArmored(encrypted, saltpack.NewKeyStore(bob))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -51,10 +51,10 @@ func x25519SenderKey(info *ksaltpack.MessageKeyInfo) (*keys.X25519PublicKey, err
 	return sender, nil
 }
 
-// Decrypt bytes (from decryption keys).
+// Decrypt bytes (using the specified keys).
 // If there was a sender, will return a X25519 key ID.
-func Decrypt(b []byte, keys ...keys.Key) ([]byte, *keys.X25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func Decrypt(b []byte, ks KeyStore) ([]byte, *keys.X25519PublicKey, error) {
+	s := newSaltpack(ks)
 	info, out, err := ksaltpack.Open(encryptVersionValidator, b, s)
 	if err != nil {
 		return nil, nil, convertBoxKeyErr(err)
@@ -66,10 +66,10 @@ func Decrypt(b []byte, keys ...keys.Key) ([]byte, *keys.X25519PublicKey, error) 
 	return out, sender, nil
 }
 
-// DecryptArmored text.
+// DecryptArmored text (using the specified keys).
 // If there was a sender, will return a X25519 key ID.
-func DecryptArmored(str string, keys ...keys.Key) ([]byte, *keys.X25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func DecryptArmored(str string, ks KeyStore) ([]byte, *keys.X25519PublicKey, error) {
+	s := newSaltpack(ks)
 	// TODO: Casting to string could be a performance issue
 	info, out, _, err := ksaltpack.Dearmor62DecryptOpen(encryptVersionValidator, str, s)
 	if err != nil {
@@ -110,10 +110,10 @@ func NewEncryptArmoredStream(w io.Writer, sender *keys.X25519Key, recipients ...
 	return ksaltpack.NewEncryptArmor62Stream(ksaltpack.Version2(), w, sbk, recs, "")
 }
 
-// NewDecryptStream create decryption stream.
+// NewDecryptStream creates a decryption stream (using the specified keys).
 // If there was a sender, will return a X25519 key ID.
-func NewDecryptStream(r io.Reader, keys ...keys.Key) (io.Reader, *keys.X25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func NewDecryptStream(r io.Reader, ks KeyStore) (io.Reader, *keys.X25519PublicKey, error) {
+	s := newSaltpack(ks)
 	info, stream, err := ksaltpack.NewDecryptStream(encryptVersionValidator, r, s)
 	if err != nil {
 		return nil, nil, convertBoxKeyErr(err)
@@ -125,10 +125,10 @@ func NewDecryptStream(r io.Reader, keys ...keys.Key) (io.Reader, *keys.X25519Pub
 	return stream, sender, nil
 }
 
-// NewDecryptArmoredStream creates decryption stream.
+// NewDecryptArmoredStream creates a decryption stream (using the specified keys).
 // If there was a sender, will return a X25519 key ID.
-func NewDecryptArmoredStream(r io.Reader, keys ...keys.Key) (io.Reader, *keys.X25519PublicKey, error) {
-	s := newSaltpack(x25519Keys(keys))
+func NewDecryptArmoredStream(r io.Reader, ks KeyStore) (io.Reader, *keys.X25519PublicKey, error) {
+	s := newSaltpack(ks)
 	// TODO: Specifying nil for resolver will panic if box keys not found
 	info, stream, _, err := ksaltpack.NewDearmor62DecryptStream(encryptVersionValidator, r, s)
 	if err != nil {

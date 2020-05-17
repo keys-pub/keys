@@ -19,7 +19,7 @@ func TestEncrypt(t *testing.T) {
 	encrypted, err := saltpack.Encrypt(message, alice, bob.ID())
 	require.NoError(t, err)
 
-	out, sender, err := saltpack.Decrypt(encrypted, bob)
+	out, sender, err := saltpack.Decrypt(encrypted, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.NotNil(t, sender)
@@ -28,7 +28,7 @@ func TestEncrypt(t *testing.T) {
 	encrypted2, err := saltpack.EncryptArmored(message, alice, bob.ID())
 	require.NoError(t, err)
 
-	out, sender, err = saltpack.DecryptArmored(encrypted2, bob)
+	out, sender, err = saltpack.DecryptArmored(encrypted2, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.NotNil(t, sender)
@@ -57,7 +57,7 @@ func TestEncryptAnon(t *testing.T) {
 	// Anon sender
 	encrypted, err := saltpack.Encrypt(message, nil, bob.ID())
 	require.NoError(t, err)
-	out, sender, err := saltpack.Decrypt(encrypted, bob)
+	out, sender, err := saltpack.Decrypt(encrypted, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.Nil(t, sender)
@@ -76,7 +76,7 @@ func TestEncryptStream(t *testing.T) {
 	require.Equal(t, len(message), n)
 	encrypted.Close()
 
-	stream, sender, err := saltpack.NewDecryptStream(&buf, bob)
+	stream, sender, err := saltpack.NewDecryptStream(&buf, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.NotNil(t, sender)
 	require.Equal(t, alice.PublicKey().ID(), sender.ID())
@@ -92,7 +92,7 @@ func TestEncryptStream(t *testing.T) {
 	require.Equal(t, len(message), n)
 	encrypted2.Close()
 
-	stream, sender, err = saltpack.NewDecryptArmoredStream(&buf2, bob)
+	stream, sender, err = saltpack.NewDecryptArmoredStream(&buf2, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.NotNil(t, sender)
 	require.Equal(t, alice.PublicKey().ID(), sender.ID())
@@ -114,7 +114,7 @@ func TestEncryptStreamAnon(t *testing.T) {
 	require.Equal(t, len(message), n)
 	encrypted.Close()
 
-	stream, sender, err := saltpack.NewDecryptStream(&buf, bob)
+	stream, sender, err := saltpack.NewDecryptStream(&buf, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Nil(t, sender)
 	out, err := ioutil.ReadAll(stream)
@@ -129,7 +129,7 @@ func TestEncryptOpenError(t *testing.T) {
 	encrypted, err := saltpack.Encrypt([]byte("alice's message"), alice, bob.ID())
 	require.NoError(t, err)
 
-	_, _, err = saltpack.Decrypt(encrypted)
+	_, _, err = saltpack.Decrypt(encrypted, saltpack.NewKeyStore())
 	require.EqualError(t, err, "no decryption key found for message")
 }
 
@@ -142,7 +142,7 @@ func TestEncryptWithEdX25519Key(t *testing.T) {
 	encrypted, err := saltpack.Encrypt(message, alice.X25519Key(), bob.ID())
 	require.NoError(t, err)
 
-	out, sender, err := saltpack.Decrypt(encrypted, bob)
+	out, sender, err := saltpack.Decrypt(encrypted, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.NotNil(t, sender)

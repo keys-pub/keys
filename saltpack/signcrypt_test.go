@@ -11,10 +11,7 @@ import (
 )
 
 func TestSigncrypt(t *testing.T) {
-	// Alice
 	alice := keys.GenerateEdX25519Key()
-
-	// Bob
 	bob := keys.GenerateEdX25519Key()
 
 	message := []byte("hi bob")
@@ -22,7 +19,7 @@ func TestSigncrypt(t *testing.T) {
 	encrypted, err := saltpack.Signcrypt(message, alice, bob.ID())
 	require.NoError(t, err)
 
-	out, sender, err := saltpack.SigncryptOpen(encrypted, bob)
+	out, sender, err := saltpack.SigncryptOpen(encrypted, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.NotNil(t, sender)
@@ -31,7 +28,7 @@ func TestSigncrypt(t *testing.T) {
 	encrypted2, err := saltpack.SigncryptArmored(message, alice, bob.ID())
 	require.NoError(t, err)
 
-	out, sender, err = saltpack.SigncryptArmoredOpen(encrypted2, bob)
+	out, sender, err = saltpack.SigncryptArmoredOpen(encrypted2, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.NotNil(t, sender)
@@ -62,7 +59,7 @@ func TestSigncryptStream(t *testing.T) {
 	require.Equal(t, len(message), n)
 	encrypted.Close()
 
-	stream, sender, err := saltpack.NewSigncryptOpenStream(&buf, bob)
+	stream, sender, err := saltpack.NewSigncryptOpenStream(&buf, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.NotNil(t, sender)
 	require.Equal(t, alice.PublicKey().ID(), sender.ID())
@@ -78,7 +75,7 @@ func TestSigncryptStream(t *testing.T) {
 	require.Equal(t, len(message), n)
 	encrypted2.Close()
 
-	stream, sender, err = saltpack.NewSigncryptArmoredOpenStream(&buf2, bob)
+	stream, sender, err = saltpack.NewSigncryptArmoredOpenStream(&buf2, saltpack.NewKeyStore(bob))
 	require.NoError(t, err)
 	require.NotNil(t, sender)
 	require.Equal(t, alice.PublicKey().ID(), sender.ID())
@@ -94,6 +91,6 @@ func TestSigncryptOpenError(t *testing.T) {
 	encrypted, err := saltpack.Signcrypt([]byte("alice's message"), alice, bob.ID())
 	require.NoError(t, err)
 
-	_, _, err = saltpack.SigncryptOpen(encrypted)
+	_, _, err = saltpack.SigncryptOpen(encrypted, saltpack.NewKeyStore())
 	require.EqualError(t, err, "no decryption key found for message")
 }
