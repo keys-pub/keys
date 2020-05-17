@@ -131,21 +131,34 @@ func (i ID) PublicKeyType() KeyType {
 	return ""
 }
 
-// Key is the public key from an ID.
-func (i ID) Key() (Key, error) {
-	hrp, b, err := i.Decode()
+// ID for Keys interface.
+func (i ID) ID() ID {
+	return i
+}
+
+// Type of key.
+func (i ID) Type() KeyType {
+	hrp, _, err := i.Decode()
 	if err != nil {
-		return nil, err
+		return ""
 	}
 	switch hrp {
 	case edx25519KeyHRP:
-		return NewEdX25519PublicKey(Bytes32(b)), nil
+		return EdX25519Public
 	case x25519KeyHRP:
-		return NewX25519PublicKey(Bytes32(b)), nil
+		return X25519Public
 	default:
-		return nil, errors.Errorf("unsupported id key type")
+		return ""
 	}
+}
 
+// Bytes are key data.
+func (i ID) Bytes() []byte {
+	_, b, err := i.Decode()
+	if err != nil {
+		return nil
+	}
+	return b
 }
 
 // IDSet is a set of strings.

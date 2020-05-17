@@ -11,7 +11,7 @@ import (
 
 // Signcrypt to recipients.
 // https://saltpack.org/signcryption-format
-func (s *Saltpack) Signcrypt(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) ([]byte, error) {
+func Signcrypt(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) ([]byte, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (s *Saltpack) Signcrypt(b []byte, sender *keys.EdX25519Key, recipients ...k
 }
 
 // SigncryptArmored to recipients.
-func (s *Saltpack) SigncryptArmored(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) (string, error) {
+func SigncryptArmored(b []byte, sender *keys.EdX25519Key, recipients ...keys.ID) (string, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return "", err
@@ -49,7 +49,8 @@ func edx25519SenderKey(senderPub ksaltpack.SigningPublicKey) (*keys.EdX25519Publ
 }
 
 // SigncryptOpen ...
-func (s *Saltpack) SigncryptOpen(b []byte) ([]byte, *keys.EdX25519PublicKey, error) {
+func SigncryptOpen(b []byte, ks KeyStore) ([]byte, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	spk, out, err := ksaltpack.SigncryptOpen(b, s, nil)
 	if err != nil {
 		return nil, nil, convertSignKeyErr(err)
@@ -62,7 +63,8 @@ func (s *Saltpack) SigncryptOpen(b []byte) ([]byte, *keys.EdX25519PublicKey, err
 }
 
 // SigncryptArmoredOpen ...
-func (s *Saltpack) SigncryptArmoredOpen(str string) ([]byte, *keys.EdX25519PublicKey, error) {
+func SigncryptArmoredOpen(str string, ks KeyStore) ([]byte, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	// TODO: Casting to string could be a performance issue
 	spk, out, _, err := ksaltpack.Dearmor62SigncryptOpen(str, s, nil)
 	if err != nil {
@@ -76,7 +78,7 @@ func (s *Saltpack) SigncryptArmoredOpen(str string) ([]byte, *keys.EdX25519Publi
 }
 
 // NewSigncryptStream creates a signcrypt stream.
-func (s *Saltpack) NewSigncryptStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
+func NewSigncryptStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -85,7 +87,7 @@ func (s *Saltpack) NewSigncryptStream(w io.Writer, sender *keys.EdX25519Key, rec
 }
 
 // NewSigncryptArmoredStream creates a signcrypt stream.
-func (s *Saltpack) NewSigncryptArmoredStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
+func NewSigncryptArmoredStream(w io.Writer, sender *keys.EdX25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -94,7 +96,8 @@ func (s *Saltpack) NewSigncryptArmoredStream(w io.Writer, sender *keys.EdX25519K
 }
 
 // NewSigncryptOpenStream creates a signcrypt open stream.
-func (s *Saltpack) NewSigncryptOpenStream(r io.Reader) (io.Reader, *keys.EdX25519PublicKey, error) {
+func NewSigncryptOpenStream(r io.Reader, ks KeyStore) (io.Reader, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	spk, stream, err := ksaltpack.NewSigncryptOpenStream(r, s, nil)
 	if err != nil {
 		return nil, nil, convertSignKeyErr(err)
@@ -107,7 +110,8 @@ func (s *Saltpack) NewSigncryptOpenStream(r io.Reader) (io.Reader, *keys.EdX2551
 }
 
 // NewSigncryptArmoredOpenStream ...
-func (s *Saltpack) NewSigncryptArmoredOpenStream(r io.Reader) (io.Reader, *keys.EdX25519PublicKey, error) {
+func NewSigncryptArmoredOpenStream(r io.Reader, ks KeyStore) (io.Reader, *keys.EdX25519PublicKey, error) {
+	s := newSaltpack(ks)
 	// TODO: Specifying nil for resolver will panic if box keys not found
 	spk, stream, _, err := ksaltpack.NewDearmor62SigncryptOpenStream(r, s, nil)
 	if err != nil {

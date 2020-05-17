@@ -11,7 +11,7 @@ import (
 
 func TestAddress(t *testing.T) {
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01)).ID()
-	bob := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32))).ID()
+	bob := keys.NewEdX25519KeyFromSeed(testSeed(0x02)).ID()
 	charlie := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32))).ID()
 
 	aliceBob, err := keys.NewAddress(alice, bob)

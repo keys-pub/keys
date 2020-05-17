@@ -10,23 +10,34 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Saltpack provider.
-type Saltpack struct {
-	keys Store
-}
-
-// Store ...
-type Store interface {
-	// X25519Keys return all X25519 box keys in the Store to try to decrypt.
+// KeyStore for Saltpack keys.
+type KeyStore interface {
 	X25519Keys() ([]*keys.X25519Key, error)
 }
 
-// New creates a Saltpack provider.
-// Uses signcryption, see .
-func New(keys Store) *Saltpack {
-	return &Saltpack{
-		keys: keys,
-	}
+type saltpack struct {
+	ks KeyStore
+}
+
+func (s *saltpack) X25519Keys() ([]*keys.X25519Key, error) {
+	return s.ks.X25519Keys()
+}
+
+func newSaltpack(ks KeyStore) *saltpack {
+	return &saltpack{ks: ks}
+}
+
+type store struct {
+	keys []*keys.X25519Key
+}
+
+func (s *store) X25519Keys() ([]*keys.X25519Key, error) {
+	return s.keys, nil
+}
+
+// NewKeyStore creates store for keys.
+func NewKeyStore(keys ...keys.Key) KeyStore {
+	return &store{keys: x25519Keys(keys)}
 }
 
 func signVersionValidator(version ksaltpack.Version) error {
@@ -56,8 +67,7 @@ func encryptVersionValidator(version ksaltpack.Version) error {
 	}
 }
 
-// CreateEphemeralKey creates a random ephemeral key.
-func (s *Saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
+func (s *saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
 	bk := generateBoxKey()
 	return bk, nil
 }
@@ -65,20 +75,16 @@ func (s *Saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
 // LookupBoxSecretKey looks in the Keyring for the secret key corresponding
 // to one of the given Key IDs. Returns the index and the key on success,
 // or -1 and nil on failure.
-func (s *Saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKey) {
-	if s.keys == nil {
-		logger.Errorf("Failed to list all box keys: no keystore")
-		return -1, nil
-	}
-	bks, err := s.keys.X25519Keys()
+func (s *saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKey) {
+	keys, err := s.ks.X25519Keys()
 	if err != nil {
-		logger.Errorf("Failed to list all box keys: %v", err)
+		logger.Warningf("Failed to get x25519 keys: %v", err)
 		return -1, nil
 	}
-	for i := 0; i < len(bks); i++ {
+	for i := 0; i < len(keys); i++ {
 		for j := 0; j < len(kids); j++ {
-			if subtle.ConstantTimeCompare(bks[i].PublicKey().Bytes()[:], kids[j]) == 1 {
-				return j, newBoxKey(bks[i])
+			if subtle.ConstantTimeCompare(keys[i].PublicKey().Bytes()[:], kids[j]) == 1 {
+				return j, newBoxKey(keys[i])
 			}
 		}
 	}
@@ -87,7 +93,7 @@ func (s *Saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKe
 
 // LookupBoxPublicKey returns a public key given the specified key ID.
 // For most cases, the key ID will be the key itself.
-func (s *Saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
+func (s *saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 	if len(kid) != 32 {
 		logger.Errorf("LookupBoxPublicKey len(kid) != 32")
 		return nil
@@ -97,19 +103,15 @@ func (s *Saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 
 // GetAllBoxSecretKeys returns all keys, needed if we want to support "hidden"
 // receivers via trial and error.
-func (s *Saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
-	logger.Infof("List box keys...")
-	if s.keys == nil {
-		logger.Errorf("Failed to list all box keys: no keystore")
-		return nil
-	}
-	bks, err := s.keys.X25519Keys()
+func (s *saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
+	logger.Infof("List x25519 keys...")
+	keys, err := s.ks.X25519Keys()
 	if err != nil {
-		logger.Errorf("Failed to list all box keys: %v", err)
-		return nil
+		logger.Warningf("Failed to get x25519 keys: %v", err)
+		return []ksaltpack.BoxSecretKey{}
 	}
-	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(bks))
-	for _, k := range bks {
+	boxSecretKeys := make([]ksaltpack.BoxSecretKey, 0, len(keys))
+	for _, k := range keys {
 		boxSecretKeys = append(boxSecretKeys, newBoxKey(k))
 	}
 	return boxSecretKeys
@@ -117,12 +119,12 @@ func (s *Saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
 
 // ImportBoxEphemeralKey imports the ephemeral key into BoxPublicKey format.
 // This key has never been seen before, so will be ephemeral.
-func (s *Saltpack) ImportBoxEphemeralKey(kid []byte) ksaltpack.BoxPublicKey {
+func (s *saltpack) ImportBoxEphemeralKey(kid []byte) ksaltpack.BoxPublicKey {
 	return boxPublicKeyFromKID(kid)
 }
 
 // LookupSigningPublicKey (for ksaltpack.SigKeyring)
-func (s *Saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
+func (s *saltpack) LookupSigningPublicKey(b []byte) ksaltpack.SigningPublicKey {
 	if len(b) != 32 {
 		logger.Errorf("Invalid signing public key bytes")
 		return nil
@@ -172,4 +174,26 @@ func edX25519KeyID(senderKey []byte) (keys.ID, error) {
 	}
 	bpk := keys.NewEdX25519PublicKey(keys.Bytes32(senderKey))
 	return bpk.ID(), nil
+}
+
+func x25519Keys(ks []keys.Key) []*keys.X25519Key {
+	out := make([]*keys.X25519Key, 0, len(ks))
+	for _, k := range ks {
+		dec := x25519Key(k)
+		if dec != nil {
+			out = append(out, dec)
+		}
+	}
+	return out
+}
+
+func x25519Key(k keys.Key) *keys.X25519Key {
+	switch k.Type() {
+	case keys.EdX25519:
+		return k.(*keys.EdX25519Key).X25519Key()
+	case keys.X25519:
+		return k.(*keys.X25519Key)
+	default:
+		return nil
+	}
 }
