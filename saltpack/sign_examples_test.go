@@ -8,14 +8,12 @@ import (
 	"github.com/keys-pub/keys/saltpack"
 )
 
-func ExampleSaltpack_Sign() {
-	sp := saltpack.New(nil)
-
+func ExampleSign() {
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.SignArmored(message, alice)
+	sig, err := saltpack.SignArmored(message, alice)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,23 +21,19 @@ func ExampleSaltpack_Sign() {
 	fmt.Printf("%s\n", sig)
 }
 
-func ExampleSaltpack_SignDetached() {
-	sp := saltpack.New(nil)
-
+func ExampleSignDetached() {
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi from alice")
 
-	sig, err := sp.SignArmoredDetached(message, alice)
+	sig, err := saltpack.SignArmoredDetached(message, alice)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("%s", sig)
 }
 
-func ExampleSaltpack_Verify() {
-	sp := saltpack.New(nil)
-
+func ExampleVerify() {
 	aliceID := keys.ID("kex1w2jep8dkr2s0g9kx5g6xe3387jslnlj08yactvn8xdtrx4cnypjq9rpnux")
 	signed := `BEGIN SALTPACK SIGNED MESSAGE. 
 	kXR7VktZdyH7rvq v5wcIkHbs7mPCSd NhKLR9E0K47y29T QkuYinHym6EfZwL 
@@ -49,7 +43,7 @@ func ExampleSaltpack_Verify() {
 	wdNd6ISacrT0I82 qZ71sc7sTxiMxoI P43uCGaAZZ3Ab62 vR8N6WQPE8. 
 	END SALTPACK SIGNED MESSAGE.`
 
-	out, signer, err := sp.VerifyArmored(signed)
+	out, signer, err := saltpack.VerifyArmored(signed)
 	if err != nil {
 		log.Fatal(err)
 	}

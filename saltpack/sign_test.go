@@ -11,53 +11,48 @@ import (
 )
 
 func TestSignVerify(t *testing.T) {
-	// SetLogger(NewLogger(DebugLevel))
-	sp := saltpack.New(nil)
-
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi")
 
-	sig, err := sp.Sign(message, alice)
+	sig, err := saltpack.Sign(message, alice)
 	require.NoError(t, err)
 
-	out, signer, err := sp.Verify(sig)
+	out, signer, err := saltpack.Verify(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 
-	sig, err = sp.SignDetached(message, alice)
+	sig, err = saltpack.SignDetached(message, alice)
 	require.NoError(t, err)
 
-	signer, err = sp.VerifyDetached(sig, message)
+	signer, err = saltpack.VerifyDetached(sig, message)
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
 func TestSignVerifyArmored(t *testing.T) {
-	sp := saltpack.New(nil)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("hi")
 
-	sig, err := sp.SignArmored(message, alice)
+	sig, err := saltpack.SignArmored(message, alice)
 	require.NoError(t, err)
 
-	messageOut, signer, err := sp.VerifyArmored(sig)
+	messageOut, signer, err := saltpack.VerifyArmored(sig)
 	require.NoError(t, err)
 	require.Equal(t, message, messageOut)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
 func TestSignVerifyStream(t *testing.T) {
-	sp := saltpack.New(nil)
 	alice := keys.GenerateEdX25519Key()
 
 	message := []byte("I'm alice")
 
 	var buf bytes.Buffer
-	signed, err := sp.NewSignStream(&buf, alice)
+	signed, err := saltpack.NewSignStream(&buf, alice)
 	require.NoError(t, err)
 	n, err := signed.Write(message)
 	require.NoError(t, err)
@@ -65,7 +60,7 @@ func TestSignVerifyStream(t *testing.T) {
 	signed.Close()
 
 	reader := bytes.NewReader(buf.Bytes())
-	stream, signer, err := sp.NewVerifyStream(reader)
+	stream, signer, err := saltpack.NewVerifyStream(reader)
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 	out, err := ioutil.ReadAll(stream)
@@ -73,7 +68,7 @@ func TestSignVerifyStream(t *testing.T) {
 	require.Equal(t, message, out)
 
 	var buf2 bytes.Buffer
-	signed2, err := sp.NewSignArmoredStream(&buf2, alice)
+	signed2, err := saltpack.NewSignArmoredStream(&buf2, alice)
 	require.NoError(t, err)
 	n, err = signed2.Write(message)
 	require.NoError(t, err)
@@ -81,7 +76,7 @@ func TestSignVerifyStream(t *testing.T) {
 	signed2.Close()
 
 	reader = bytes.NewReader(buf2.Bytes())
-	stream, signer, err = sp.NewVerifyArmoredStream(reader)
+	stream, signer, err = saltpack.NewVerifyArmoredStream(reader)
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 	out, err = ioutil.ReadAll(stream)
@@ -90,27 +85,27 @@ func TestSignVerifyStream(t *testing.T) {
 
 	// Sign detached
 	var buf3 bytes.Buffer
-	signed3, err := sp.NewSignDetachedStream(&buf3, alice)
+	signed3, err := saltpack.NewSignDetachedStream(&buf3, alice)
 	require.NoError(t, err)
 	_, err = signed3.Write(message)
 	require.NoError(t, err)
 	require.Equal(t, len(message), n)
 	signed3.Close()
 
-	signer, err = sp.VerifyDetachedReader(buf3.Bytes(), bytes.NewReader(message))
+	signer, err = saltpack.VerifyDetachedReader(buf3.Bytes(), bytes.NewReader(message))
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 
 	// Sign armored/detached
 	var buf4 bytes.Buffer
-	signed4, err := sp.NewSignArmoredDetachedStream(&buf4, alice)
+	signed4, err := saltpack.NewSignArmoredDetachedStream(&buf4, alice)
 	require.NoError(t, err)
 	_, err = signed4.Write(message)
 	require.NoError(t, err)
 	require.Equal(t, len(message), n)
 	signed4.Close()
 
-	signer, err = sp.VerifyArmoredDetachedReader(buf4.String(), bytes.NewBuffer(message))
+	signer, err = saltpack.VerifyArmoredDetachedReader(buf4.String(), bytes.NewBuffer(message))
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
