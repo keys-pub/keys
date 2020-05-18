@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/keys-pub/wincred"
+	"github.com/danieljoos/wincred"
 	"github.com/pkg/errors"
 )
 
