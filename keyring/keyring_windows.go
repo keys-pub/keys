@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/keys-pub/wincred"
+	"github.com/danieljoos/wincred"
 	"github.com/pkg/errors"
 )
 
@@ -27,7 +27,7 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
-		if errors.Cause(err) == wincred.ErrNotFound {
+		if errors.Cause(err) == wincred.ErrElementNotFound {
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "wincred GetGenericCredential failed")
@@ -52,7 +52,7 @@ func (k sys) Delete(service string, id string) (bool, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
-		if errors.Cause(err) == wincred.ErrNotFound {
+		if errors.Cause(err) == wincred.ErrElementNotFound {
 			return false, nil
 		}
 		return false, errors.Wrapf(err, "wincred GetGenericCredential failed")
@@ -70,7 +70,7 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	targetName := service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
-		if errors.Cause(err) == wincred.ErrNotFound {
+		if errors.Cause(err) == wincred.ErrElementNotFound {
 			return false, nil
 		}
 		return false, errors.Wrapf(err, "wincred GetGenericCredential failed")
