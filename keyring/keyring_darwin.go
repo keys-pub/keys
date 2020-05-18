@@ -116,7 +116,7 @@ func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error
 
 	items := make([]*Item, 0, len(results))
 	for _, r := range results {
-		if strings.HasPrefix(r.Account, hiddenPrefix) || strings.HasPrefix(r.Account, reservedPrefix) {
+		if strings.HasPrefix(r.Account, HiddenPrefix) || strings.HasPrefix(r.Account, ReservedPrefix) {
 			continue
 		}
 		item, err := getItem(k, service, r.Account, key)
@@ -169,10 +169,10 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	ids := make([]string, 0, len(results))
 	for _, r := range results {
 		id := r.Account
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

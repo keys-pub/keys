@@ -93,10 +93,10 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 	ids := make([]string, 0, len(files))
 	for _, f := range files {
 		id := f.Name()
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
@@ -108,7 +108,7 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 }
 
 func (k fs) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return listDefault(k, service, key, opts)
+	return List(k, service, key, opts)
 }
 
 func (k fs) Reset(service string) error {

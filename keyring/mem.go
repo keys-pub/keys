@@ -50,7 +50,7 @@ func (k mem) Set(service string, id string, data []byte, typ string) error {
 }
 
 func (k mem) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return listDefault(k, service, key, opts)
+	return List(k, service, key, opts)
 }
 
 func (k mem) Reset(service string) error {
@@ -65,10 +65,10 @@ func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
 
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

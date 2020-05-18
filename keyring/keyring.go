@@ -51,7 +51,7 @@ type Keyring struct {
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
-	if strings.HasPrefix(id, reservedPrefix) {
+	if strings.HasPrefix(id, ReservedPrefix) {
 		return nil, errors.Errorf("keyring id prefix reserved %s", id)
 	}
 	return getItem(k.st, k.service, id, k.key)
@@ -64,7 +64,7 @@ func (k *Keyring) Create(item *Item) error {
 	if item.ID == "" {
 		return errors.Errorf("no id")
 	}
-	if strings.HasPrefix(item.ID, reservedPrefix) {
+	if strings.HasPrefix(item.ID, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", item.ID)
 	}
 	existing, err := getItem(k.st, k.service, item.ID, k.key)
@@ -84,7 +84,7 @@ func (k *Keyring) Update(id string, b []byte) error {
 	if id == "" {
 		return errors.Errorf("no id")
 	}
-	if strings.HasPrefix(id, reservedPrefix) {
+	if strings.HasPrefix(id, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", id)
 	}
 
@@ -216,15 +216,18 @@ func resetDefault(st Store, service string) error {
 	return nil
 }
 
-const reservedPrefix = "#"
+// ReservedPrefix are reserved items.
+const ReservedPrefix = "#"
 
 func reserved(s string) string {
-	return reservedPrefix + s
+	return ReservedPrefix + s
 }
 
-const hiddenPrefix = "."
+// HiddenPrefix are hidden items.
+const HiddenPrefix = "."
 
-func listDefault(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+// List items from Store.
+func List(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
 	if opts == nil {
 		opts = &ListOpts{}
 	}

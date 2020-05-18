@@ -24,7 +24,7 @@ func (k keyAuth) Key() SecretKey {
 	return k.key
 }
 
-// NewPasswordAuth generates key from password, salt and secret key.
+// NewPasswordAuth generates a key from a password and salt.
 func NewPasswordAuth(password string, salt []byte) (Auth, error) {
 	if len(salt) < 16 {
 		return nil, errors.Errorf("not enough salt")
