@@ -175,26 +175,6 @@ func (k *Keyring) Lock() error {
 	return nil
 }
 
-type item struct {
-	Data []byte
-}
-
-func (k *Keyring) reserved() ([]*item, error) {
-	ids, err := k.st.IDs(k.service, &IDsOpts{ShowReserved: true})
-	if err != nil {
-		return nil, err
-	}
-	items := make([]*item, 0, len(ids))
-	for _, id := range ids {
-		b, err := k.st.Get(k.service, id)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, &item{Data: b})
-	}
-	return items, nil
-}
-
 // Salt is default salt value, generated on first access and persisted
 // until ResetAuth() or Reset().
 // This salt value is not encrypted in the keyring.

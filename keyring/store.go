@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Store is the interface that a Keyring uses as a Store.
+// Store is the interface that a Keyring uses to save data.
 type Store interface {
 	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs).
 	Name() string
