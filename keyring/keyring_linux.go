@@ -49,7 +49,7 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 }
 
 // Set item in keyring.
-func (k sys) Set(service string, id string, data []byte, typ string) error {
+func (k sys) Set(service string, id string, data []byte) error {
 	return gokeyring.Set(service, id, string(data))
 }
 
