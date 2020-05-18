@@ -127,7 +127,7 @@ func unlock(st Store, service string, auth Auth) (SecretKey, error) {
 		}
 	} else {
 		if subtle.ConstantTimeCompare(item.Data, key[:]) != 1 {
-			return nil, errors.Errorf("invalid auth")
+			return nil, ErrInvalidAuth
 		}
 	}
 

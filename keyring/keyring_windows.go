@@ -96,7 +96,7 @@ func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, service+"/") {
 			id := cred.TargetName[len(service+"/"):]
-			if strings.HasPrefix(id, hiddenPrefix) || strings.HasPrefix(id, reservedPrefix) {
+			if strings.HasPrefix(id, HiddenPrefix) || strings.HasPrefix(id, ReservedPrefix) {
 				continue
 			}
 			item, err := DecodeItem(cred.CredentialBlob, key)
@@ -129,10 +129,10 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, service+"/") {
 			id := cred.TargetName[len(service+"/"):]
-			if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+			if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 				continue
 			}
-			if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+			if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 				continue
 			}
 			if prefix != "" && !strings.HasPrefix(id, prefix) {

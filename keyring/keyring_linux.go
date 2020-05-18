@@ -57,7 +57,7 @@ func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opt
 			// return nil, err
 			continue
 		}
-		if strings.HasPrefix(item.ID, hiddenPrefix) || strings.HasPrefix(item.ID, reservedPrefix) {
+		if strings.HasPrefix(item.ID, HiddenPrefix) || strings.HasPrefix(item.ID, ReservedPrefix) {
 			continue
 		}
 		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
@@ -170,10 +170,10 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	}
 	ids := make([]string, 0, len(items))
 	for _, item := range items {
-		if !showReserved && strings.HasPrefix(item.ID, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(item.ID, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(item.ID, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(item.ID, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(item.ID, prefix) {
