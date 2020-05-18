@@ -43,14 +43,6 @@ func (k fs) Name() string {
 	return "fs"
 }
 
-func defaultFSDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, ".keyring"), nil
-}
-
 func (k fs) Get(service string, id string) ([]byte, error) {
 	if id == "" {
 		return nil, errors.Errorf("failed to get keyring item: no id specified")
@@ -147,4 +139,12 @@ func (k fs) Delete(service string, id string) (bool, error) {
 		return true, err
 	}
 	return true, nil
+}
+
+func defaultLinuxFSDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, ".keyring"), nil
 }

@@ -31,8 +31,8 @@ func System() Store {
 	return system()
 }
 
-func defaultFS() Store {
-	dir, err := defaultFSDir()
+func defaultLinuxFS() Store {
+	dir, err := defaultLinuxFSDir()
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ func SystemOrFS() Store {
 	if runtime.GOOS == "linux" {
 		if err := checkSystem(); err != nil {
 			logger.Infof("Keyring (system) unavailable: %v", err)
-			return defaultFS()
+			return defaultLinuxFS()
 		}
 	}
 	return system()
