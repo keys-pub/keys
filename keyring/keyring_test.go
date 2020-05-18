@@ -302,7 +302,7 @@ func TestIDs(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 	now := time.Now()
 
-	err = store.Set("KeysTest", "#test", []byte{0x01}, "")
+	err = store.Set("KeysTest", "#test", []byte{0x01})
 	require.NoError(t, err)
 
 	ids, err := kr.IDs(&keyring.IDsOpts{ShowReserved: true})

@@ -81,40 +81,6 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	if key == nil {
-		return nil, ErrLocked
-	}
-	creds, err := wincred.List()
-	if err != nil {
-		return nil, err
-	}
-	items := []*Item{}
-	for _, cred := range creds {
-		if strings.HasPrefix(cred.TargetName, service+"/") {
-			id := cred.TargetName[len(service+"/"):]
-			if strings.HasPrefix(id, HiddenPrefix) || strings.HasPrefix(id, ReservedPrefix) {
-				continue
-			}
-			item, err := DecodeItem(cred.CredentialBlob, key)
-			if err != nil {
-				return nil, err
-			}
-			if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
-				continue
-			}
-			items = append(items, item)
-		}
-	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].ID < items[j].ID
-	})
-	return items, nil
-}
-
 func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	if opts == nil {
 		opts = &IDsOpts{}

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Store is the cross platform keyring interface that a Keyring uses.
+// Store is the interface that a Keyring uses as a Store.
 type Store interface {
 	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs).
 	Name() string
@@ -16,13 +16,17 @@ type Store interface {
 	// Get bytes.
 	Get(service string, id string) ([]byte, error)
 	// Set bytes.
-	Set(service string, id string, data []byte, typ string) error
+	Set(service string, id string, data []byte) error
 	// Delete bytes.
 	Delete(service string, id string) (bool, error)
 
+	// List IDs.
 	IDs(service string, opts *IDsOpts) ([]string, error)
-	List(service string, key SecretKey, opts *ListOpts) ([]*Item, error)
+
+	// Exists returns true if exists.
 	Exists(service string, id string) (bool, error)
+
+	// Reset keyring.
 	Reset(service string) error
 }
 
@@ -66,7 +70,7 @@ func getItem(st Store, service string, id string, key SecretKey) (*Item, error) 
 	if b == nil {
 		return nil, nil
 	}
-	return decodeItem(b, key)
+	return decryptItem(b, key)
 }
 
 const maxID = 254
@@ -95,14 +99,14 @@ func setItem(st Store, service string, item *Item, key SecretKey) error {
 	if len(data) > (5 * 512) {
 		return ErrItemValueTooLarge
 	}
-	return st.Set(service, item.ID, []byte(data), item.Type)
+	return st.Set(service, item.ID, []byte(data))
 }
 
-func decodeItem(b []byte, key SecretKey) (*Item, error) {
+func decryptItem(b []byte, key SecretKey) (*Item, error) {
 	if b == nil {
 		return nil, nil
 	}
-	item, err := DecodeItem(b, key)
+	item, err := DecryptItem(b, key)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +145,7 @@ func salt(st Store, service string) ([]byte, error) {
 	}
 	if salt == nil {
 		salt = rand32()[:]
-		if err := st.Set(service, reserved("salt"), salt, ""); err != nil {
+		if err := st.Set(service, reserved("salt"), salt); err != nil {
 			return nil, err
 		}
 	}

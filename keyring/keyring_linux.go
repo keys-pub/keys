@@ -11,66 +11,6 @@ import (
 	ss "github.com/zalando/go-keyring/secret_service"
 )
 
-func objectPaths(svc *ss.SecretService, service string) ([]dbus.ObjectPath, error) {
-	collection := svc.GetLoginCollection()
-	search := map[string]string{
-		"service": service,
-	}
-
-	logger.Debugf("Unlock %s", collection.Path())
-	err := svc.Unlock(collection.Path())
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Debugf("Search %s", service)
-	return svc.SearchItems(collection, search)
-}
-
-func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	paths, err := objectPaths(svc, service)
-	if err != nil {
-		return nil, err
-	}
-
-	session, err := svc.OpenSession()
-	if err != nil {
-		return nil, err
-	}
-	defer svc.Close(session)
-
-	items := make([]*Item, 0, len(paths))
-	for _, p := range paths {
-		logger.Debugf("GetSecret %s", session.Path())
-		secret, err := svc.GetSecret(p, session.Path())
-		if err != nil {
-			return nil, err
-		}
-		if secret == nil {
-			continue
-		}
-		item, err := DecodeItem(secret.Value, key)
-		if err != nil {
-			// return nil, err
-			continue
-		}
-		if strings.HasPrefix(item.ID, HiddenPrefix) || strings.HasPrefix(item.ID, ReservedPrefix) {
-			continue
-		}
-		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
-			continue
-		}
-		items = append(items, item)
-	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].ID < items[j].ID
-	})
-	return items, nil
-}
-
 func system() Store {
 	return sys{}
 }
@@ -121,20 +61,6 @@ func (k sys) Delete(service string, id string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	if key == nil {
-		return nil, ErrLocked
-	}
-	svc, err := ss.NewSecretService()
-	if err != nil {
-		return nil, err
-	}
-	return secretServiceList(svc, service, key, opts)
 }
 
 func (k sys) Reset(service string) error {
@@ -193,4 +119,64 @@ func (k sys) Exists(service string, id string) (bool, error) {
 		return false, err
 	}
 	return s != "", nil
+}
+
+func objectPaths(svc *ss.SecretService, service string) ([]dbus.ObjectPath, error) {
+	collection := svc.GetLoginCollection()
+	search := map[string]string{
+		"service": service,
+	}
+
+	logger.Debugf("Unlock %s", collection.Path())
+	err := svc.Unlock(collection.Path())
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Debugf("Search %s", service)
+	return svc.SearchItems(collection, search)
+}
+
+func secretServiceList(svc *ss.SecretService, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+	if opts == nil {
+		opts = &ListOpts{}
+	}
+	paths, err := objectPaths(svc, service)
+	if err != nil {
+		return nil, err
+	}
+
+	session, err := svc.OpenSession()
+	if err != nil {
+		return nil, err
+	}
+	defer svc.Close(session)
+
+	items := make([]*Item, 0, len(paths))
+	for _, p := range paths {
+		logger.Debugf("GetSecret %s", session.Path())
+		secret, err := svc.GetSecret(p, session.Path())
+		if err != nil {
+			return nil, err
+		}
+		if secret == nil {
+			continue
+		}
+		item, err := DecodeItem(secret.Value, key)
+		if err != nil {
+			// return nil, err
+			continue
+		}
+		if strings.HasPrefix(item.ID, HiddenPrefix) || strings.HasPrefix(item.ID, ReservedPrefix) {
+			continue
+		}
+		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
+			continue
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
 }

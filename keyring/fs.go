@@ -58,7 +58,7 @@ func (k fs) Get(service string, id string) ([]byte, error) {
 	return ioutil.ReadFile(path) // #nosec
 }
 
-func (k fs) Set(service string, id string, data []byte, typ string) error {
+func (k fs) Set(service string, id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id specified")
 	}
@@ -105,10 +105,6 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 		ids = append(ids, id)
 	}
 	return ids, nil
-}
-
-func (k fs) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return List(k, service, key, opts)
 }
 
 func (k fs) Reset(service string) error {

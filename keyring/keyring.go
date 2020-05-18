@@ -48,6 +48,11 @@ type Keyring struct {
 	key     SecretKey
 }
 
+// Store used by Keyring.
+func (k *Keyring) Store() Store {
+	return k.st
+}
+
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
@@ -116,7 +121,7 @@ type ListOpts struct {
 // Items with ids that start with "." are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
 func (k *Keyring) List(opts *ListOpts) ([]*Item, error) {
-	return k.st.List(k.service, k.key, opts)
+	return List(k.st, k.service, k.key, opts)
 }
 
 // UnlockWithPassword unlocks a Keyring with a password.
@@ -168,6 +173,26 @@ func (k *Keyring) Unlock(auth Auth) error {
 func (k *Keyring) Lock() error {
 	k.key = nil
 	return nil
+}
+
+type item struct {
+	Data []byte
+}
+
+func (k *Keyring) reserved() ([]*item, error) {
+	ids, err := k.st.IDs(k.service, &IDsOpts{ShowReserved: true})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*item, 0, len(ids))
+	for _, id := range ids {
+		b, err := k.st.Get(k.service, id)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, &item{Data: b})
+	}
+	return items, nil
 }
 
 // Salt is default salt value, generated on first access and persisted
@@ -245,7 +270,7 @@ func List(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, err
 		if err != nil {
 			return nil, err
 		}
-		item, err := DecodeItem(b, key)
+		item, err := DecryptItem(b, key)
 		if err != nil {
 			return nil, err
 		}
