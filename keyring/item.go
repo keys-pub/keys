@@ -34,12 +34,12 @@ func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-// DecodeItem returns Item from bytes.
-func DecodeItem(b []byte, secretKey SecretKey) (*Item, error) {
-	return unmarshal(b, secretKey)
+// DecryptItem returns Item from bytes.
+func DecryptItem(b []byte, secretKey SecretKey) (*Item, error) {
+	return decrypt(b, secretKey)
 }
 
-func unmarshal(b []byte, secretKey SecretKey) (*Item, error) {
+func decrypt(b []byte, secretKey SecretKey) (*Item, error) {
 	decrypted, ok := secretBoxOpen(b, secretKey)
 	if !ok {
 		return nil, ErrInvalidAuth

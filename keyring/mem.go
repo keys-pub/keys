@@ -41,16 +41,12 @@ func (k mem) Get(service string, id string) ([]byte, error) {
 	return nil, nil
 }
 
-func (k mem) Set(service string, id string, data []byte, typ string) error {
+func (k mem) Set(service string, id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id set")
 	}
 	k.items[id] = data
 	return nil
-}
-
-func (k mem) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return List(k, service, key, opts)
 }
 
 func (k mem) Reset(service string) error {

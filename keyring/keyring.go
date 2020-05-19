@@ -48,6 +48,11 @@ type Keyring struct {
 	key     SecretKey
 }
 
+// Store used by Keyring.
+func (k *Keyring) Store() Store {
+	return k.st
+}
+
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
@@ -116,7 +121,7 @@ type ListOpts struct {
 // Items with ids that start with "." are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
 func (k *Keyring) List(opts *ListOpts) ([]*Item, error) {
-	return k.st.List(k.service, k.key, opts)
+	return List(k.st, k.service, k.key, opts)
 }
 
 // UnlockWithPassword unlocks a Keyring with a password.
@@ -245,7 +250,7 @@ func List(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, err
 		if err != nil {
 			return nil, err
 		}
-		item, err := DecodeItem(b, key)
+		item, err := DecryptItem(b, key)
 		if err != nil {
 			return nil, err
 		}

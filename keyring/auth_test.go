@@ -83,7 +83,7 @@ func TestSystemStore(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, kh)
 
-	err = st.Set("KeysTest", ".raw", []byte{0x01}, "")
+	err = st.Set("KeysTest", ".raw", []byte{0x01})
 	require.NoError(t, err)
 
 	_, err = kr.Get(".raw")
