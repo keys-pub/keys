@@ -9,9 +9,9 @@ import (
 )
 
 // ErrItemValueTooLarge is item value is too large.
-// ID is max of 254 bytes.
-// Type is max of 32 bytes.
-// Data is max of 2048 bytes.
+// Item.ID is max of 254 bytes.
+// Item.Type is max of 32 bytes.
+// Item.Data is max of 2048 bytes.
 var ErrItemValueTooLarge = errors.New("keyring item value is too large")
 
 // ErrItemNotFound if item not found when trying to update.
@@ -43,9 +43,9 @@ func newKeyring(service string, st Store) *Keyring {
 
 // Keyring stores encrypted keyring items.
 type Keyring struct {
-	st      Store
-	service string
-	key     SecretKey
+	st        Store
+	service   string
+	masterKey SecretKey
 }
 
 // Store used by Keyring.
@@ -59,7 +59,7 @@ func (k *Keyring) Get(id string) (*Item, error) {
 	if strings.HasPrefix(id, ReservedPrefix) {
 		return nil, errors.Errorf("keyring id prefix reserved %s", id)
 	}
-	return getItem(k.st, k.service, id, k.key)
+	return getItem(k.st, k.service, id, k.masterKey)
 }
 
 // Create item.
@@ -67,12 +67,12 @@ func (k *Keyring) Get(id string) (*Item, error) {
 // Item IDs are not encrypted.
 func (k *Keyring) Create(item *Item) error {
 	if item.ID == "" {
-		return errors.Errorf("no id")
+		return errors.Errorf("empty id")
 	}
 	if strings.HasPrefix(item.ID, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", item.ID)
 	}
-	existing, err := getItem(k.st, k.service, item.ID, k.key)
+	existing, err := getItem(k.st, k.service, item.ID, k.masterKey)
 	if err != nil {
 		return err
 	}
@@ -80,20 +80,20 @@ func (k *Keyring) Create(item *Item) error {
 		return ErrItemAlreadyExists
 	}
 
-	return setItem(k.st, k.service, item, k.key)
+	return setItem(k.st, k.service, item, k.masterKey)
 }
 
 // Update item data.
 // Requires Unlock().
 func (k *Keyring) Update(id string, b []byte) error {
 	if id == "" {
-		return errors.Errorf("no id")
+		return errors.Errorf("empty id")
 	}
 	if strings.HasPrefix(id, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", id)
 	}
 
-	item, err := getItem(k.st, k.service, id, k.key)
+	item, err := getItem(k.st, k.service, id, k.masterKey)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (k *Keyring) Update(id string, b []byte) error {
 	}
 	item.Data = b
 
-	return setItem(k.st, k.service, item, k.key)
+	return setItem(k.st, k.service, item, k.masterKey)
 }
 
 // Delete item.
@@ -118,13 +118,90 @@ type ListOpts struct {
 
 // List items.
 // Requires Unlock().
-// Items with ids that start with "." are not returned by List.
+// Items with ids that start with "." or "#" are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
 func (k *Keyring) List(opts *ListOpts) ([]*Item, error) {
-	return List(k.st, k.service, k.key, opts)
+	return List(k.st, k.service, k.masterKey, opts)
 }
 
-// UnlockWithPassword unlocks a Keyring with a password.
+// Setup auth, if no auth exists.
+// Returns a provision identifier.
+// Returns ErrAlreadySetup if already setup.
+// Doesn't require Unlock().
+func (k *Keyring) Setup(auth Auth) (string, error) {
+	setup, err := k.IsSetup()
+	if err != nil {
+		return "", err
+	}
+	if setup {
+		return "", ErrAlreadySetup
+	}
+	id, masterKey, err := authSetup(k.st, k.service, auth)
+	if err != nil {
+		return "", err
+	}
+	k.masterKey = masterKey
+	return id, nil
+}
+
+// Provision new auth.
+// Returns a provision identifier.
+// Requires Unlock().
+func (k *Keyring) Provision(auth Auth) (string, error) {
+	if k.masterKey == nil {
+		return "", ErrLocked
+	}
+	id, err := authProvision(k.st, k.service, auth, k.masterKey)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Provisions are currently provisioned identifiers.
+// Doesn't require Unlock().
+func (k *Keyring) Provisions() ([]string, error) {
+	return authProvisionIDs(k.st, k.service)
+}
+
+// Deprovision auth.
+// Doesn't require Unlock().
+func (k *Keyring) Deprovision(id string) (bool, error) {
+	return authDeprovision(k.st, k.service, id)
+}
+
+// IsSetup returns true if Keyring has been setup.
+// Doesn't require Unlock().
+func (k *Keyring) IsSetup() (bool, error) {
+	opts := &IDsOpts{
+		Prefix:       reserved("auth"),
+		ShowReserved: true,
+	}
+	auths, err := k.st.IDs(k.service, opts)
+	if err != nil {
+		return false, err
+	}
+	return len(auths) > 0, nil
+}
+
+// SetupWithPassword sets up Keyring with a password.
+func (k *Keyring) SetupWithPassword(password string) (string, error) {
+	salt, err := k.Salt()
+	if err != nil {
+		return "", err
+	}
+	auth, err := NewPasswordAuth(password, salt)
+	if err != nil {
+		return "", err
+	}
+	id, err := k.Setup(auth)
+	if err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// UnlockWithPassword unlocks Keyring with a password.
 func (k *Keyring) UnlockWithPassword(password string) error {
 	salt, err := k.Salt()
 	if err != nil {
@@ -161,43 +238,30 @@ func (k *Keyring) Exists(id string) (bool, error) {
 
 // Unlock with auth.
 func (k *Keyring) Unlock(auth Auth) error {
-	key, err := unlock(k.st, k.service, auth)
+	_, masterKey, err := authUnlock(k.st, k.service, auth)
 	if err != nil {
 		return err
 	}
-	k.key = key
+	if masterKey == nil {
+		return ErrInvalidAuth
+	}
+	k.masterKey = masterKey
 	return nil
 }
 
 // Lock the keyring.
 func (k *Keyring) Lock() error {
-	k.key = nil
+	k.masterKey = nil
 	return nil
 }
 
 // Salt is default salt value, generated on first access and persisted
-// until ResetAuth() or Reset().
+// until Reset().
 // This salt value is not encrypted in the keyring.
 // Doesn't require Unlock().
 func (k *Keyring) Salt() ([]byte, error) {
 	return salt(k.st, k.service)
 }
-
-// Authed returns true if Keyring has ever been unlocked.
-// Doesn't require Unlock().
-func (k *Keyring) Authed() (bool, error) {
-	return k.st.Exists(k.service, reserved("auth"))
-}
-
-// func (k *keyring) ResetAuth() error {
-// 	if _, err := k.st.remove(k.service, reserved("salt")); err != nil {
-// 		return err
-// 	}
-// 	if _, err := k.st.remove(k.service, reserved("auth")); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 // Reset keyring.
 // Doesn't require Unlock().

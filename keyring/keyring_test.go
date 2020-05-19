@@ -42,7 +42,7 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
 
-	err = kr.Unlock(auth)
+	_, err = kr.Setup(auth)
 	require.NoError(t, err)
 
 	// List
@@ -145,7 +145,7 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
 
-	err = kr.Unlock(auth)
+	_, err = kr.Setup(auth)
 	require.NoError(t, err)
 
 	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
@@ -164,9 +164,9 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
-	authed, err := kr.Authed()
+	isSetup, err := kr.IsSetup()
 	require.NoError(t, err)
-	require.False(t, authed)
+	require.False(t, isSetup)
 
 	salt3, err := kr.Salt()
 	require.NoError(t, err)
@@ -174,13 +174,13 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 
 	auth2, err := keyring.NewPasswordAuth("newpassword123", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(auth2)
+	_, err = kr.Setup(auth2)
 	require.NoError(t, err)
 
 	require.NotEqual(t, auth.Key(), auth2.Key())
 }
 
-func TestUnlock(t *testing.T) {
+func TestSetup(t *testing.T) {
 	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
@@ -198,7 +198,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	require.EqualError(t, err, "keyring is locked")
 
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err = kr.Unlock(keyring.NewKeyAuth(key))
+	_, err = kr.Setup(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
 	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
@@ -228,11 +228,11 @@ func TestSetErrors(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err = kr.Unlock(keyring.NewKeyAuth(key))
+	_, err = kr.Setup(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
 	err = kr.Create(keyring.NewItem("", nil, "", time.Time{}))
-	require.EqualError(t, err, "no id")
+	require.EqualError(t, err, "empty id")
 }
 
 func TestReserved(t *testing.T) {
@@ -244,7 +244,7 @@ func TestReserved(t *testing.T) {
 
 func testReserved(t *testing.T, kr *keyring.Keyring) {
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err := kr.Unlock(keyring.NewKeyAuth(key))
+	_, err := kr.Setup(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
 	_, err = kr.Get("#key")
@@ -268,7 +268,7 @@ func TestLargeItems(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	err = kr.Unlock(keyring.NewKeyAuth(key))
+	_, err = kr.Setup(keyring.NewKeyAuth(key))
 	require.NoError(t, err)
 
 	id := string(bytes.Repeat([]byte("a"), maxID))
@@ -310,11 +310,11 @@ func TestIDs(t *testing.T) {
 	require.Equal(t, 1, len(ids))
 	require.Equal(t, "#test", ids[0])
 
-	// Unlock
+	// Setup
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(auth)
+	authID, err := kr.Setup(auth)
 	require.NoError(t, err)
 
 	// Create .hidden
@@ -337,7 +337,7 @@ func TestIDs(t *testing.T) {
 
 	ids, err = kr.IDs(&keyring.IDsOpts{ShowReserved: true, ShowHidden: true})
 	require.NoError(t, err)
-	require.Equal(t, []string{"#auth", "#test", ".hidden", "testid1"}, ids)
+	require.Equal(t, []string{authID, "#test", ".hidden", "testid1"}, ids)
 
 	ids, err = kr.IDs(nil)
 	require.NoError(t, err)

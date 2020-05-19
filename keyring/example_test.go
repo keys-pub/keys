@@ -17,8 +17,8 @@ func ExampleNew() {
 	}
 	// Remove this Reset() if you want to keep the Keyring.
 	defer func() { _ = kr.Reset() }()
-	// Unlock keyring (on first unlock, sets the password)
-	if err := kr.UnlockWithPassword("mypassword"); err != nil {
+	// Setup keyring auth.
+	if _, err := kr.SetupWithPassword("mypassword"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -43,6 +43,16 @@ func ExampleNew() {
 	}
 	for _, item := range items {
 		fmt.Printf("%s: %v\n", item.ID, string(item.Data))
+	}
+
+	// Lock
+	err = kr.Lock()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// After setup, you can call UnlockWithPassword("mypassword").
+	if err := kr.UnlockWithPassword("mypassword"); err != nil {
+		log.Fatal(err)
 	}
 
 	// Output:

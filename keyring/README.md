@@ -11,14 +11,14 @@ For more details visit **[keys.pub](https://keys.pub)**.
 
 ```go
 // Initialize Keyring.
-// You can use keyring.System(), keyring.SystemOrFS(), keyring.FS(dir), or keyring.Mem().
+// You can use keyring.System, keyring.SystemOrFS, keyring.FS, keyring.Mem, git.NewRepository.
 kr, err := keyring.New("AppName", keyring.System())
 if err != nil {
     log.Fatal(err)
 }
 
-// Unlock keyring (on first unlock, sets the password)
-if err := kr.UnlockWithPassword("mypassword"); err != nil {
+// Setup with a password.
+if err := kr.SetupWithPassword("keys.pub", "mypassword"); err != nil {
     log.Fatal(err)
 }
 
@@ -69,3 +69,7 @@ There is a filesystem based keyring for OS' that have no system keyring.
 ## Mem
 
 The is an in memory keyring for ephemeral keys or for testing.
+
+## Git
+
+A git backed keyring allowing for backup/sync, see [github.com/keys-pub/keysd/git](https://github.com/keys-pub/keysd/tree/master/git).

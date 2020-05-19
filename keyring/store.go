@@ -1,16 +1,12 @@
 package keyring
 
 import (
-	"crypto/subtle"
 	"runtime"
-	"time"
-
-	"github.com/pkg/errors"
 )
 
 // Store is the interface that a Keyring uses to save data.
 type Store interface {
-	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs).
+	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs, git).
 	Name() string
 
 	// Get bytes.
@@ -26,7 +22,7 @@ type Store interface {
 	// Exists returns true if exists.
 	Exists(service string, id string) (bool, error)
 
-	// Reset keyring.
+	// Reset removes all items.
 	Reset(service string) error
 }
 
@@ -111,43 +107,4 @@ func decryptItem(b []byte, key SecretKey) (*Item, error) {
 		return nil, err
 	}
 	return item, nil
-}
-
-func unlock(st Store, service string, auth Auth) (SecretKey, error) {
-	if auth == nil {
-		return nil, errors.Errorf("no auth specified")
-	}
-
-	key := auth.Key()
-
-	item, err := getItem(st, service, reserved("auth"), key)
-	if err != nil {
-		return nil, err
-	}
-	if item == nil {
-		err := setItem(st, service, NewItem(reserved("auth"), key[:], "", time.Now()), key)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if subtle.ConstantTimeCompare(item.Data, key[:]) != 1 {
-			return nil, ErrInvalidAuth
-		}
-	}
-
-	return key, nil
-}
-
-func salt(st Store, service string) ([]byte, error) {
-	salt, err := st.Get(service, reserved("salt"))
-	if err != nil {
-		return nil, err
-	}
-	if salt == nil {
-		salt = rand32()[:]
-		if err := st.Set(service, reserved("salt"), salt); err != nil {
-			return nil, err
-		}
-	}
-	return salt, nil
 }
