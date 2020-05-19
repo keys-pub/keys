@@ -219,7 +219,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	require.True(t, del)
 
 	key2 := bytes32(bytes.Repeat([]byte{0x02}, 32))
-	err = kr.Unlock(keyring.NewKeyAuth(key2))
+	_, err = kr.Unlock(keyring.NewKeyAuth(key2))
 	require.EqualError(t, err, "invalid keyring auth")
 }
 

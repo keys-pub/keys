@@ -34,7 +34,7 @@ func NewPasswordAuth(password string, salt []byte) (Auth, error) {
 		return nil, errors.Errorf("not enough salt")
 	}
 	if password == "" {
-		return nil, errors.Errorf("no password")
+		return nil, errors.Errorf("empty password")
 	}
 
 	akey := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)

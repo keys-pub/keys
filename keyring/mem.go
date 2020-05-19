@@ -13,7 +13,7 @@ import (
 func NewMem(unlock bool) *Keyring {
 	kr := newKeyring("", Mem())
 	if unlock {
-		err := kr.Unlock(NewKeyAuth(rand32()))
+		_, err := kr.Unlock(NewKeyAuth(rand32()))
 		if err != nil {
 			panic(err)
 		}

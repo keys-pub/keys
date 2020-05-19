@@ -185,36 +185,37 @@ func (k *Keyring) IsSetup() (bool, error) {
 }
 
 // SetupWithPassword sets up Keyring with a password.
-func (k *Keyring) SetupWithPassword(password string) (string, error) {
+func (k *Keyring) SetupWithPassword(password string) (string, Auth, error) {
 	salt, err := k.Salt()
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	auth, err := NewPasswordAuth(password, salt)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	id, err := k.Setup(auth)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return id, nil
+	return id, auth, nil
 }
 
 // UnlockWithPassword unlocks Keyring with a password.
-func (k *Keyring) UnlockWithPassword(password string) error {
+func (k *Keyring) UnlockWithPassword(password string) (string, Auth, error) {
 	salt, err := k.Salt()
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 	auth, err := NewPasswordAuth(password, salt)
 	if err != nil {
-		return err
+		return "", nil, err
 	}
-	if err = k.Unlock(auth); err != nil {
-		return err
+	id, err := k.Unlock(auth)
+	if err != nil {
+		return "", nil, err
 	}
-	return nil
+	return id, auth, nil
 }
 
 // IDsOpts options for IDs().
@@ -237,16 +238,17 @@ func (k *Keyring) Exists(id string) (bool, error) {
 }
 
 // Unlock with auth.
-func (k *Keyring) Unlock(auth Auth) error {
-	_, masterKey, err := authUnlock(k.st, k.service, auth)
+// Returns provision identifier used to unlock.
+func (k *Keyring) Unlock(auth Auth) (string, error) {
+	id, masterKey, err := authUnlock(k.st, k.service, auth)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if masterKey == nil {
-		return ErrInvalidAuth
+		return "", ErrInvalidAuth
 	}
 	k.masterKey = masterKey
-	return nil
+	return id, nil
 }
 
 // Lock the keyring.

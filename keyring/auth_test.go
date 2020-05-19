@@ -26,12 +26,12 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 
 	// Unlock (error)
-	err = kr.Unlock(auth)
+	_, err = kr.Unlock(auth)
 	require.EqualError(t, err, "invalid keyring auth")
 
 	// Invalid auth
 	_, err = keyring.NewPasswordAuth("", salt)
-	require.EqualError(t, err, "no password")
+	require.EqualError(t, err, "empty password")
 
 	// Setup
 	id, err := kr.Setup(auth)
@@ -49,7 +49,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Lock()
 	require.NoError(t, err)
 
-	err = kr.Unlock(auth)
+	_, err = kr.Unlock(auth)
 	require.NoError(t, err)
 
 	// Create item
@@ -77,7 +77,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	_, err = kr.Provision(auth2)
 	require.EqualError(t, err, "keyring is locked")
-	err = kr.Unlock(auth)
+	_, err = kr.Unlock(auth)
 	require.NoError(t, err)
 	id2, err := kr.Provision(auth2)
 	require.NoError(t, err)
@@ -86,11 +86,11 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	// Test both succeed
 	err = kr.Lock()
 	require.NoError(t, err)
-	err = kr.Unlock(auth)
+	_, err = kr.Unlock(auth)
 	require.NoError(t, err)
 	err = kr.Lock()
 	require.NoError(t, err)
-	err = kr.Unlock(auth2)
+	_, err = kr.Unlock(auth2)
 	require.NoError(t, err)
 
 	// Deprovision
@@ -98,13 +98,13 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	err = kr.Unlock(auth2)
+	_, err = kr.Unlock(auth2)
 	require.EqualError(t, err, "invalid keyring auth")
 
 	// Test wrong password
 	wrongpass, err := keyring.NewPasswordAuth("invalidpassword", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(wrongpass)
+	_, err = kr.Unlock(wrongpass)
 	require.EqualError(t, err, "invalid keyring auth")
 
 	// Test get reserved
@@ -114,7 +114,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	// Test invalid password
 	auth3, err := keyring.NewPasswordAuth("invalidpassword", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(auth3)
+	_, err = kr.Unlock(auth3)
 	require.EqualError(t, err, "invalid keyring auth")
 }
 
