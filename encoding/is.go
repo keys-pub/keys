@@ -5,7 +5,7 @@ import (
 	"unicode/utf8"
 )
 
-// IsAlphaNumeric returns true if string is only a-Z, A-Z, 0-9 characters.
+// IsAlphaNumeric returns true if string is only a-z, A-Z, 0-9 with optional extra characters.
 func IsAlphaNumeric(s string, extra string) bool {
 	return regexp.MustCompile(`^[a-zA-Z0-9` + extra + `]+$`).MatchString(s)
 }
