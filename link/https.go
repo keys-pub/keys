@@ -52,10 +52,22 @@ func (s *https) NormalizeURLString(name string, urs string) (string, error) {
 }
 
 func (s *https) ValidateURLString(name string, urs string) (string, error) {
-	if urs != fmt.Sprintf("https://%s/keyspub.txt", name) {
-		return "", errors.Errorf("invalid url: %s", urs)
+	if err := s.ValidateName(name); err != nil {
+		return "", errors.Wrapf(err, "invalid url")
 	}
-	return urs, nil
+
+	matches := []string{
+		fmt.Sprintf("https://%s/keyspub.txt", name),
+		fmt.Sprintf("https://%s/.well-known/keyspub.txt", name),
+	}
+
+	for _, m := range matches {
+		if urs == m {
+			return urs, nil
+		}
+	}
+
+	return "", errors.Errorf("invalid url: %s", urs)
 }
 
 func (s *https) CheckContent(name string, b []byte) ([]byte, error) {
