@@ -5,7 +5,6 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
-	"unicode/utf8"
 
 	"github.com/keybase/saltpack/encoding/basex"
 	"github.com/pkg/errors"
@@ -129,28 +128,4 @@ func Decode(s string, encoding Encoding) ([]byte, error) {
 	default:
 		return nil, errors.Errorf("unknown encoding")
 	}
-}
-
-// IsASCII returns true if bytes are ASCII.
-func IsASCII(b []byte) bool {
-	isASCII := true
-	for i := 0; i < len(b); i++ {
-		c := b[i]
-		if c >= utf8.RuneSelf {
-			isASCII = false
-			break
-		}
-	}
-	return isASCII
-}
-
-// HasUpper returns true if string has an uppercase character.
-func HasUpper(s string) bool {
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= 'A' && c <= 'Z' {
-			return true
-		}
-	}
-	return false
 }
