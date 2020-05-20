@@ -21,9 +21,9 @@ func NewStore(kr *keyring.Keyring) *Store {
 
 // NewMemStore returns Store backed by an in memory keyring.
 // This is useful for testing or ephemeral key stores.
-// If unlock is true, the mem keyring will be unlocked with a random key.
-func NewMemStore(unlock bool) *Store {
-	mem := keyring.NewMem(unlock)
+// If setup is true, the mem keyring will be setup with a random key.
+func NewMemStore(setup bool) *Store {
+	mem := keyring.NewMem(setup)
 	return NewStore(mem)
 }
 
