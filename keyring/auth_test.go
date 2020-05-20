@@ -17,20 +17,42 @@ func TestAuth(t *testing.T) {
 }
 
 func testAuth(t *testing.T, kr *keyring.Keyring) {
-	authed, err := kr.Authed()
+	isSetup, err := kr.IsSetup()
 	require.NoError(t, err)
-	require.False(t, authed)
+	require.False(t, isSetup)
 
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(auth)
+
+	// Unlock (error)
+	_, err = kr.Unlock(auth)
+	require.EqualError(t, err, "invalid keyring auth")
+
+	// Invalid auth
+	_, err = keyring.NewPasswordAuth("", salt)
+	require.EqualError(t, err, "empty password")
+
+	// Setup
+	id, err := kr.Setup(auth)
 	require.NoError(t, err)
 
-	authed2, err := kr.Authed()
+	isSetup, err = kr.IsSetup()
 	require.NoError(t, err)
-	require.True(t, authed2)
+	require.True(t, isSetup)
 
+	// Setup (again)
+	_, err = kr.Setup(auth)
+	require.EqualError(t, err, "keyring is already setup")
+
+	// Lock
+	err = kr.Lock()
+	require.NoError(t, err)
+
+	_, err = kr.Unlock(auth)
+	require.NoError(t, err)
+
+	// Create item
 	item := keyring.NewItem("key1", []byte("secret"), "", time.Now())
 	err = kr.Create(item)
 	require.NoError(t, err)
@@ -41,30 +63,59 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.Equal(t, "key1", item.ID)
 	require.Equal(t, []byte("secret"), item.Data)
 
+	// Lock
+	err = kr.Lock()
+	require.NoError(t, err)
+
+	// Check provisions
+	ids, err := kr.Provisions()
+	require.NoError(t, err)
+	require.Equal(t, []string{id}, ids)
+
+	// Provision
+	auth2, err := keyring.NewPasswordAuth("diffpassword", salt)
+	require.NoError(t, err)
+	_, err = kr.Provision(auth2)
+	require.EqualError(t, err, "keyring is locked")
+	_, err = kr.Unlock(auth)
+	require.NoError(t, err)
+	id2, err := kr.Provision(auth2)
+	require.NoError(t, err)
+	require.NotEmpty(t, id2)
+
+	// Test both succeed
+	err = kr.Lock()
+	require.NoError(t, err)
+	_, err = kr.Unlock(auth)
+	require.NoError(t, err)
+	err = kr.Lock()
+	require.NoError(t, err)
+	_, err = kr.Unlock(auth2)
+	require.NoError(t, err)
+
+	// Deprovision
+	ok, err := kr.Deprovision(id2)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	_, err = kr.Unlock(auth2)
+	require.EqualError(t, err, "invalid keyring auth")
+
+	// Test wrong password
+	wrongpass, err := keyring.NewPasswordAuth("invalidpassword", salt)
+	require.NoError(t, err)
+	_, err = kr.Unlock(wrongpass)
+	require.EqualError(t, err, "invalid keyring auth")
+
 	// Test get reserved
 	_, err = kr.Get("#auth")
 	require.EqualError(t, err, "keyring id prefix reserved #auth")
 
 	// Test invalid password
-	auth2, err := keyring.NewPasswordAuth("invalidpassword", salt)
+	auth3, err := keyring.NewPasswordAuth("invalidpassword", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(auth2)
+	_, err = kr.Unlock(auth3)
 	require.EqualError(t, err, "invalid keyring auth")
-
-	// // Reset auth, then unlock
-	// reerr := kr.ResetAuth()
-	// require.NoError(t, reerr)
-	// authed3, err := kr.Authed()
-	// require.NoError(t, err)
-	// require.False(t, authed3)
-	// err := kr.Unlock(auth)
-	// require.NoError(t, err)
-
-	// item, err = kr.Get("key1")
-	// require.NoError(t, err)
-	// require.NotNil(t, item)
-	// require.Equal(t, "key1", item.ID)
-	// require.Equal(t, []byte("secret"), item.Secret().Data)
 }
 
 func TestSystemStore(t *testing.T) {
@@ -74,14 +125,14 @@ func TestSystemStore(t *testing.T) {
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
 	require.NoError(t, err)
-	err = kr.Unlock(auth)
+	id, err := kr.Setup(auth)
 	require.NoError(t, err)
 
 	st := keyring.SystemOrFS()
 
-	kh, err := st.Get("KeysTest", "#auth")
+	mk, err := st.Get("KeysTest", id)
 	require.NoError(t, err)
-	require.NotNil(t, kh)
+	require.NotNil(t, mk)
 
 	err = st.Set("KeysTest", ".raw", []byte{0x01})
 	require.NoError(t, err)
