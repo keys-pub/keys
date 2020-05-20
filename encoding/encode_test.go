@@ -41,14 +41,6 @@ func TestEncode(t *testing.T) {
 	require.Equal(t, "3yZe7d", s)
 }
 
-func TestIsASCII(t *testing.T) {
-	ok := encoding.IsASCII([]byte("ok"))
-	require.True(t, ok)
-
-	ok2 := encoding.IsASCII([]byte{0xFF})
-	require.False(t, ok2)
-}
-
 func TestDecode(t *testing.T) {
 	b := []byte{0x01, 0x02, 0x03, 0x04}
 	s := "AQIDBA=="
@@ -59,12 +51,4 @@ func TestDecode(t *testing.T) {
 	bout, err = encoding.Decode("YKecp8NtwMvKIdy lDKcKhWX0nGV.", encoding.Saltpack)
 	require.NoError(t, err)
 	require.Equal(t, []byte("🤓🤓🤓🤓🤓"), bout)
-}
-
-func TestHasUpper(t *testing.T) {
-	ok := encoding.HasUpper("ok")
-	require.False(t, ok)
-
-	ok2 := encoding.HasUpper("Ok")
-	require.True(t, ok2)
 }
