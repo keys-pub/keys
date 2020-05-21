@@ -129,3 +129,12 @@ func Decode(s string, encoding Encoding) ([]byte, error) {
 		return nil, errors.Errorf("unknown encoding")
 	}
 }
+
+// MustDecode decodes or panics.
+func MustDecode(s string, encoding Encoding) []byte {
+	b, err := Decode(s, encoding)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}

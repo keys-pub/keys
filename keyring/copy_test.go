@@ -14,7 +14,8 @@ func TestCopy(t *testing.T) {
 
 	// Keyring #1 (mem)
 	kr := keyring.NewMem(false)
-	authID, _, err := kr.SetupWithPassword("testkeyringpassword")
+	auth := keyring.NewKeyAuth(keys.Rand32())
+	setupID, err := kr.Setup(auth)
 	require.NoError(t, err)
 
 	item := keyring.NewItem(keys.Rand3262(), []byte("testpassword"), "", time.Now())
@@ -27,10 +28,10 @@ func TestCopy(t *testing.T) {
 	// Copy
 	ids, err := keyring.Copy(kr, kr2)
 	require.NoError(t, err)
-	require.Equal(t, []string{authID, "#salt", item.ID}, ids)
+	require.Equal(t, []string{setupID, "#salt", item.ID}, ids)
 
 	// Unlock #2
-	_, _, err = kr2.UnlockWithPassword("testkeyringpassword")
+	_, err = kr2.Unlock(auth)
 	require.NoError(t, err)
 
 	out, err := kr2.Get(item.ID)

@@ -18,7 +18,7 @@ if err != nil {
 }
 
 // Setup keyring auth.
-if _, _, err := kr.SetupWithPassword("mypassword"); err != nil {
+if _, err := kr.UnlockWithPassword("mypassword", true); err != nil {
     log.Fatal(err)
 }
 
@@ -43,16 +43,6 @@ if err != nil {
 }
 for _, item := range items {
     fmt.Printf("%s: %v\n", item.ID, string(item.Data))
-}
-
-// Lock
-err = kr.Lock()
-if err != nil {
-    log.Fatal(err)
-}
-// After setup, you can use UnlockWithPassword.
-if _, _, err := kr.UnlockWithPassword("mypassword"); err != nil {
-    log.Fatal(err)
 }
 ```
 
