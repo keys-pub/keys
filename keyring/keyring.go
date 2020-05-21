@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -111,16 +112,11 @@ func (k *Keyring) Delete(id string) (bool, error) {
 	return k.st.Delete(k.service, id)
 }
 
-// ListOpts options for List().
-type ListOpts struct {
-	Types []string
-}
-
 // List items.
 // Requires Unlock().
 // Items with ids that start with "." or "#" are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
-func (k *Keyring) List(opts *ListOpts) ([]*Item, error) {
+func (k *Keyring) List(opts *options.List) ([]*Item, error) {
 	return List(k.st, k.service, k.masterKey, opts)
 }
 
@@ -173,7 +169,7 @@ func (k *Keyring) Deprovision(id string) (bool, error) {
 // IsSetup returns true if Keyring has been setup.
 // Doesn't require Unlock().
 func (k *Keyring) IsSetup() (bool, error) {
-	opts := &IDsOpts{
+	opts := &options.IDs{
 		Prefix:       reserved("auth"),
 		ShowReserved: true,
 	}
@@ -218,16 +214,9 @@ func (k *Keyring) UnlockWithPassword(password string) (string, Auth, error) {
 	return id, auth, nil
 }
 
-// IDsOpts options for IDs().
-type IDsOpts struct {
-	Prefix       string
-	ShowHidden   bool
-	ShowReserved bool
-}
-
 // IDs returns item IDs.
 // Doesn't require Unlock().
-func (k *Keyring) IDs(opts *IDsOpts) ([]string, error) {
+func (k *Keyring) IDs(opts *options.IDs) ([]string, error) {
 	return k.st.IDs(k.service, opts)
 }
 
@@ -275,7 +264,7 @@ func (k *Keyring) Reset() error {
 }
 
 func resetDefault(st Store, service string) error {
-	ids, err := st.IDs(service, &IDsOpts{ShowHidden: true, ShowReserved: true})
+	ids, err := st.IDs(service, &options.IDs{ShowHidden: true, ShowReserved: true})
 	if err != nil {
 		return err
 	}
@@ -298,9 +287,9 @@ func reserved(s string) string {
 const HiddenPrefix = "."
 
 // List items from Store.
-func List(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
+func List(st Store, service string, key SecretKey, opts *options.List) ([]*Item, error) {
 	if opts == nil {
-		opts = &ListOpts{}
+		opts = &options.List{}
 	}
 	if key == nil {
 		return nil, ErrLocked

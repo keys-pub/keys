@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -53,9 +54,9 @@ func (k mem) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
+func (k mem) IDs(service string, opts *options.IDs) ([]string, error) {
 	if opts == nil {
-		opts = &IDsOpts{}
+		opts = &options.IDs{}
 	}
 	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 

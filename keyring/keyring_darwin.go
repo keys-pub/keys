@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/keybase/go-keychain"
+	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -94,9 +95,9 @@ func (k sys) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
+func (k sys) IDs(service string, opts *options.IDs) ([]string, error) {
 	if opts == nil {
-		opts = &IDsOpts{}
+		opts = &options.IDs{}
 	}
 	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 

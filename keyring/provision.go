@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -42,7 +43,7 @@ func authDeprovision(st Store, service string, id string) (bool, error) {
 }
 
 func authProvisionIDs(st Store, service string) ([]string, error) {
-	opts := &IDsOpts{
+	opts := &options.IDs{
 		Prefix:       reserved("auth"),
 		ShowReserved: true,
 	}

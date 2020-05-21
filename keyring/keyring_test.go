@@ -8,6 +8,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
+	"github.com/keys-pub/keys/keyring/options"
 	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
@@ -305,7 +306,7 @@ func TestIDs(t *testing.T) {
 	err = store.Set("KeysTest", "#test", []byte{0x01})
 	require.NoError(t, err)
 
-	ids, err := kr.IDs(&keyring.IDsOpts{ShowReserved: true})
+	ids, err := kr.IDs(&options.IDs{ShowReserved: true})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ids))
 	require.Equal(t, "#test", ids[0])
@@ -321,7 +322,7 @@ func TestIDs(t *testing.T) {
 	err = kr.Create(keyring.NewItem(".hidden", []byte("test"), "", time.Now()))
 	require.NoError(t, err)
 
-	ids, err = kr.IDs(&keyring.IDsOpts{ShowHidden: true})
+	ids, err = kr.IDs(&options.IDs{ShowHidden: true})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ids))
 	require.Equal(t, ".hidden", ids[0])
@@ -335,7 +336,7 @@ func TestIDs(t *testing.T) {
 	err = kr.Lock()
 	require.NoError(t, err)
 
-	ids, err = kr.IDs(&keyring.IDsOpts{ShowReserved: true, ShowHidden: true})
+	ids, err = kr.IDs(&options.IDs{ShowReserved: true, ShowHidden: true})
 	require.NoError(t, err)
 	require.Equal(t, []string{authID, "#test", ".hidden", "testid1"}, ids)
 

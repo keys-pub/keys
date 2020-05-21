@@ -80,9 +80,9 @@ func (k sys) Reset(service string) error {
 	return nil
 }
 
-func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
+func (k sys) IDs(service string, opts *options.IDs) ([]string, error) {
 	if opts == nil {
-		opts = &IDsOpts{}
+		opts = &options.IDs{}
 	}
 	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
 
