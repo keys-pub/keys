@@ -28,7 +28,7 @@ func TestCopy(t *testing.T) {
 	// Copy
 	ids, err := keyring.Copy(kr, kr2)
 	require.NoError(t, err)
-	require.Equal(t, []string{setupID, "#salt", item.ID}, ids)
+	require.Equal(t, []string{setupID, item.ID}, ids)
 
 	// Unlock #2
 	_, err = kr2.Unlock(auth)
