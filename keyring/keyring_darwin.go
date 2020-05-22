@@ -94,11 +94,12 @@ func (k sys) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
+func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)

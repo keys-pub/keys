@@ -73,11 +73,12 @@ func (k fs) Set(service string, id string, data []byte) error {
 	return nil
 }
 
-func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
+func (k fs) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	path := filepath.Join(k.dir, service)
 

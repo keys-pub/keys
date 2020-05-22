@@ -37,7 +37,7 @@ if err != nil {
 fmt.Printf("secret: %s\n", string(out.Data))
 
 // List items.
-items, err := kr.List(nil)
+items, err := kr.List()
 if err != nil {
     log.Fatal(err)
 }

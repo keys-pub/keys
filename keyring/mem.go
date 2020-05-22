@@ -53,11 +53,12 @@ func (k mem) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
+func (k mem) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {

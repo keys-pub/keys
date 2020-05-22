@@ -132,7 +132,7 @@ func (k *Store) Keys(opts *Opts) ([]Key, error) {
 	for _, t := range opts.Types {
 		itemTypes = append(itemTypes, string(t))
 	}
-	items, err := k.kr.List(&keyring.ListOpts{Types: itemTypes})
+	items, err := k.kr.List(keyring.WithTypes(itemTypes...))
 	if err != nil {
 		return nil, err
 	}
@@ -156,9 +156,7 @@ func (k *Store) Keys(opts *Opts) ([]Key, error) {
 // Also includes edx25519 keys converted to x25519 keys.
 func (k *Store) X25519Keys() ([]*X25519Key, error) {
 	logger.Debugf("Listing x25519 keys...")
-	items, err := k.kr.List(&keyring.ListOpts{
-		Types: []string{string(X25519), string(EdX25519)},
-	})
+	items, err := k.kr.List(keyring.WithTypes(string(X25519), string(EdX25519)))
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +174,7 @@ func (k *Store) X25519Keys() ([]*X25519Key, error) {
 
 // EdX25519Keys from the keyring.
 func (k *Store) EdX25519Keys() ([]*EdX25519Key, error) {
-	items, err := k.kr.List(&keyring.ListOpts{
-		Types: []string{string(EdX25519)},
-	})
+	items, err := k.kr.List(keyring.WithTypes(string(EdX25519)))
 	if err != nil {
 		return nil, err
 	}
@@ -196,12 +192,7 @@ func (k *Store) EdX25519Keys() ([]*EdX25519Key, error) {
 // EdX25519PublicKeys from the keyring.
 // Includes public keys of EdX25519Key's.
 func (k *Store) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
-	items, err := k.kr.List(&keyring.ListOpts{
-		Types: []string{
-			string(EdX25519),
-			string(EdX25519Public),
-		},
-	})
+	items, err := k.kr.List(keyring.WithTypes(string(EdX25519), string(EdX25519Public)))
 	if err != nil {
 		return nil, err
 	}
