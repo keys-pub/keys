@@ -8,6 +8,15 @@ type ListOptions struct {
 	Types []string
 }
 
+// NewListOptions ...
+func NewListOptions(opts ...ListOption) ListOptions {
+	var options ListOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
 // WithTypes ...
 func WithTypes(types ...string) ListOption {
 	return func(o *ListOptions) {
@@ -24,6 +33,15 @@ type IDsOptions struct {
 
 // IDsOption ...
 type IDsOption func(*IDsOptions)
+
+// NewIDsOptions ...
+func NewIDsOptions(opts ...IDsOption) IDsOptions {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
 
 // WithPrefix ...
 func WithPrefix(prefix string) IDsOption {
