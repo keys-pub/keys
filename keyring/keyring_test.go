@@ -8,7 +8,6 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
-	"github.com/keys-pub/keys/keyring/options"
 	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +46,7 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 
 	// List
-	items, err := kr.List(nil)
+	items, err := kr.List()
 	require.NoError(t, err)
 	require.Equal(t, 0, len(items))
 
@@ -104,13 +103,13 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 
 	// List
-	items, err = kr.List(nil)
+	items, err = kr.List()
 	require.NoError(t, err)
 	require.Equal(t, 2, len(items))
 	require.Equal(t, items[0].ID, "abc")
 	require.Equal(t, items[1].ID, "xyz")
 
-	items2, err := kr.List(&keyring.ListOpts{Types: []string{"type2"}})
+	items2, err := kr.List(keyring.WithTypes("type2"))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(items2))
 	require.Equal(t, items2[0].ID, "xyz")
@@ -195,7 +194,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	_, err = kr.Get("key1")
 	require.EqualError(t, err, "keyring is locked")
 
-	_, err = kr.List(nil)
+	_, err = kr.List()
 	require.EqualError(t, err, "keyring is locked")
 
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
@@ -208,7 +207,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Lock()
 	require.NoError(t, err)
 
-	_, err = kr.List(nil)
+	_, err = kr.List()
 	require.EqualError(t, err, "keyring is locked")
 
 	ok, err := kr.Exists("key1")
@@ -306,7 +305,7 @@ func TestIDs(t *testing.T) {
 	err = store.Set("KeysTest", "#test", []byte{0x01})
 	require.NoError(t, err)
 
-	ids, err := kr.IDs(&options.IDs{ShowReserved: true})
+	ids, err := kr.IDs(keyring.Reserved())
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ids))
 	require.Equal(t, "#test", ids[0])
@@ -322,7 +321,7 @@ func TestIDs(t *testing.T) {
 	err = kr.Create(keyring.NewItem(".hidden", []byte("test"), "", time.Now()))
 	require.NoError(t, err)
 
-	ids, err = kr.IDs(&options.IDs{ShowHidden: true})
+	ids, err = kr.IDs(keyring.Hidden())
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ids))
 	require.Equal(t, ".hidden", ids[0])
@@ -336,11 +335,11 @@ func TestIDs(t *testing.T) {
 	err = kr.Lock()
 	require.NoError(t, err)
 
-	ids, err = kr.IDs(&options.IDs{ShowReserved: true, ShowHidden: true})
+	ids, err = kr.IDs(keyring.Reserved(), keyring.Hidden())
 	require.NoError(t, err)
 	require.Equal(t, []string{authID, "#test", ".hidden", "testid1"}, ids)
 
-	ids, err = kr.IDs(nil)
+	ids, err = kr.IDs()
 	require.NoError(t, err)
 	require.Equal(t, []string{"testid1"}, ids)
 }

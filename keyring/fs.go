@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -74,11 +73,12 @@ func (k fs) Set(service string, id string, data []byte) error {
 	return nil
 }
 
-func (k fs) IDs(service string, opts *options.IDs) ([]string, error) {
-	if opts == nil {
-		opts = &options.IDs{}
+func (k fs) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	path := filepath.Join(k.dir, service)
 

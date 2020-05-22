@@ -81,11 +81,12 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) IDs(service string, opts *options.IDs) ([]string, error) {
-	if opts == nil {
-		opts = &options.IDs{}
+func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	creds, err := wincred.List()
 	if err != nil {

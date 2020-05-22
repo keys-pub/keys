@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/keybase/go-keychain"
-	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -95,11 +94,12 @@ func (k sys) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k sys) IDs(service string, opts *options.IDs) ([]string, error) {
-	if opts == nil {
-		opts = &options.IDs{}
+func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)

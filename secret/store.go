@@ -91,14 +91,9 @@ func (s *Store) Get(id string) (*Secret, error) {
 type ListOpts struct{}
 
 // List secrets.
-func (s *Store) List(opts *ListOpts) ([]*Secret, error) {
-	// if opts == nil {
-	// 	opts = &SecretsOpts{}
-	// }
+func (s *Store) List() ([]*Secret, error) {
 	logger.Debugf("Listing secrets...")
-	items, err := s.kr.List(&keyring.ListOpts{
-		Types: []string{secretItemType},
-	})
+	items, err := s.kr.List(keyring.WithTypes(secretItemType))
 	if err != nil {
 		return nil, err
 	}

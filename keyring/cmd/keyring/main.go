@@ -17,9 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	opts := &keyring.options.IDs{ShowHidden: true, ShowReserved: true}
-
-	ids, err := kr.IDs(opts)
+	ids, err := kr.IDs(keyring.Hidden(), keyring.Reserved())
 	if err != nil {
 		log.Fatal(err)
 	}

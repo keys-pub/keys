@@ -50,7 +50,7 @@ func TestSecretStore(t *testing.T) {
 }`
 	require.Equal(t, expected, string(b))
 
-	secrets, err := ss.List(nil)
+	secrets, err := ss.List()
 	require.NoError(t, err)
 	require.Equal(t, 1, len(secrets))
 	require.Equal(t, secrets[0].Name, sec.Name)

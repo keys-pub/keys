@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/keys-pub/keys/keyring/options"
 	"github.com/pkg/errors"
 )
 
@@ -116,8 +115,8 @@ func (k *Keyring) Delete(id string) (bool, error) {
 // Requires Unlock().
 // Items with ids that start with "." or "#" are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
-func (k *Keyring) List(opts *options.List) ([]*Item, error) {
-	return List(k.st, k.service, k.masterKey, opts)
+func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
+	return List(k.st, k.service, k.masterKey, opts...)
 }
 
 // Setup auth, if no auth exists.
@@ -169,11 +168,7 @@ func (k *Keyring) Deprovision(id string) (bool, error) {
 // IsSetup returns true if Keyring has been setup.
 // Doesn't require Unlock().
 func (k *Keyring) IsSetup() (bool, error) {
-	opts := &options.IDs{
-		Prefix:       reserved("auth"),
-		ShowReserved: true,
-	}
-	auths, err := k.st.IDs(k.service, opts)
+	auths, err := k.st.IDs(k.service, WithReservedPrefix("auth"))
 	if err != nil {
 		return false, err
 	}
@@ -216,8 +211,8 @@ func (k *Keyring) UnlockWithPassword(password string) (string, Auth, error) {
 
 // IDs returns item IDs.
 // Doesn't require Unlock().
-func (k *Keyring) IDs(opts *options.IDs) ([]string, error) {
-	return k.st.IDs(k.service, opts)
+func (k *Keyring) IDs(opts ...IDsOption) ([]string, error) {
+	return k.st.IDs(k.service, opts...)
 }
 
 // Exists returns true it has the id.
@@ -264,7 +259,7 @@ func (k *Keyring) Reset() error {
 }
 
 func resetDefault(st Store, service string) error {
-	ids, err := st.IDs(service, &options.IDs{ShowHidden: true, ShowReserved: true})
+	ids, err := st.IDs(service, Hidden(), Reserved())
 	if err != nil {
 		return err
 	}
@@ -287,15 +282,17 @@ func reserved(s string) string {
 const HiddenPrefix = "."
 
 // List items from Store.
-func List(st Store, service string, key SecretKey, opts *options.List) ([]*Item, error) {
-	if opts == nil {
-		opts = &options.List{}
+func List(st Store, service string, key SecretKey, opts ...ListOption) ([]*Item, error) {
+	var options ListOptions
+	for _, o := range opts {
+		o(&options)
 	}
+
 	if key == nil {
 		return nil, ErrLocked
 	}
 
-	ids, err := st.IDs(service, nil)
+	ids, err := st.IDs(service)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +306,7 @@ func List(st Store, service string, key SecretKey, opts *options.List) ([]*Item,
 		if err != nil {
 			return nil, err
 		}
-		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
+		if len(options.Types) != 0 && !contains(options.Types, item.Type) {
 			continue
 		}
 		items = append(items, item)

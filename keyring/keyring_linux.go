@@ -80,11 +80,12 @@ func (k sys) Reset(service string) error {
 	return nil
 }
 
-func (k sys) IDs(service string, opts *options.IDs) ([]string, error) {
-	if opts == nil {
-		opts = &options.IDs{}
+func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+	var options IDsOptions
+	for _, o := range opts {
+		o(&options)
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	svc, err := ss.NewSecretService()
 	if err != nil {

@@ -2,8 +2,6 @@ package keyring
 
 import (
 	"runtime"
-
-	"github.com/keys-pub/keys/keyring/options"
 )
 
 // Store is the interface that a Keyring uses to save data.
@@ -19,7 +17,7 @@ type Store interface {
 	Delete(service string, id string) (bool, error)
 
 	// List IDs.
-	IDs(service string, opts *options.IDs) ([]string, error)
+	IDs(service string, opts ...IDsOption) ([]string, error)
 
 	// Exists returns true if exists.
 	Exists(service string, id string) (bool, error)
