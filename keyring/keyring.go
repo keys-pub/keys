@@ -175,38 +175,30 @@ func (k *Keyring) IsSetup() (bool, error) {
 	return len(auths) > 0, nil
 }
 
-// SetupWithPassword sets up Keyring with a password.
-func (k *Keyring) SetupWithPassword(password string) (string, Auth, error) {
+// UnlockWithPassword unlocks keyring with a password.
+func (k *Keyring) UnlockWithPassword(password string, setup bool) (Auth, error) {
+	if password == "" {
+		return nil, errors.Errorf("empty password")
+	}
 	salt, err := k.Salt()
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	auth, err := NewPasswordAuth(password, salt)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
-	id, err := k.Setup(auth)
-	if err != nil {
-		return "", nil, err
+	if setup {
+		if _, err := k.Setup(auth); err != nil {
+			return nil, err
+		}
+		return auth, nil
 	}
-	return id, auth, nil
-}
 
-// UnlockWithPassword unlocks Keyring with a password.
-func (k *Keyring) UnlockWithPassword(password string) (string, Auth, error) {
-	salt, err := k.Salt()
-	if err != nil {
-		return "", nil, err
+	if _, err := k.Unlock(auth); err != nil {
+		return nil, err
 	}
-	auth, err := NewPasswordAuth(password, salt)
-	if err != nil {
-		return "", nil, err
-	}
-	id, err := k.Unlock(auth)
-	if err != nil {
-		return "", nil, err
-	}
-	return id, auth, nil
+	return auth, nil
 }
 
 // IDs returns item IDs.
