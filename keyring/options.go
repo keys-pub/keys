@@ -1,5 +1,7 @@
 package keyring
 
+import "strings"
+
 // ListOption ...
 type ListOption func(*ListOptions)
 
@@ -52,8 +54,11 @@ func WithPrefix(prefix string) IDsOption {
 
 // WithReservedPrefix ...
 func WithReservedPrefix(prefix string) IDsOption {
+	if !strings.HasPrefix(prefix, ReservedPrefix) {
+		prefix = reserved(prefix)
+	}
 	return func(o *IDsOptions) {
-		o.Prefix = reserved(prefix)
+		o.Prefix = prefix
 		o.Reserved = true
 	}
 }

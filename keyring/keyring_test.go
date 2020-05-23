@@ -301,8 +301,14 @@ func TestIDs(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
+	testIDs(t, kr)
+}
+
+func testIDs(t *testing.T, kr *keyring.Keyring) {
+	var err error
+
 	// Store set reserved
-	err = store.Set("KeysTest", "#test", []byte{0x01})
+	err = kr.Store().Set("KeysTest", "#test", []byte{0x01})
 	require.NoError(t, err)
 
 	ids, err := kr.IDs(keyring.Reserved())
@@ -342,6 +348,14 @@ func TestIDs(t *testing.T) {
 	ids, err = kr.IDs()
 	require.NoError(t, err)
 	require.Equal(t, []string{"testid1"}, ids)
+
+	ids, err = kr.IDs(keyring.WithReservedPrefix("auth"))
+	require.NoError(t, err)
+	require.Equal(t, []string{authID}, ids)
+
+	ids, err = kr.IDs(keyring.WithReservedPrefix("#auth"))
+	require.NoError(t, err)
+	require.Equal(t, []string{authID}, ids)
 }
 
 func randBytes(length int) []byte {
