@@ -40,3 +40,9 @@ func TestMemAuth(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
 }
+
+func TestMemIDs(t *testing.T) {
+	kr := testMem(t)
+	defer func() { _ = kr.Reset() }()
+	testIDs(t, kr)
+}

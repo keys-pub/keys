@@ -176,6 +176,8 @@ func (k *Keyring) IsSetup() (bool, error) {
 }
 
 // UnlockWithPassword unlocks keyring with a password.
+// If setup is true, we are setting up the keyring auth for the first time.
+// This is a convenience method, calling Setup or Unlock with NewPasswordAuth using the keyring#Salt.
 func (k *Keyring) UnlockWithPassword(password string, setup bool) (Auth, error) {
 	if password == "" {
 		return nil, errors.Errorf("empty password")
