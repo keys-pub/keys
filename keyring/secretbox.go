@@ -3,7 +3,6 @@ package keyring
 import (
 	"crypto/rand"
 
-	"github.com/keys-pub/keys/encoding"
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
@@ -30,12 +29,6 @@ func rand32() *[32]byte {
 	var b32 [32]byte
 	copy(b32[:], b[:32])
 	return &b32
-}
-
-func randID() string {
-	buf := randBytes(32)
-	s := encoding.MustEncode(buf, encoding.Base62)
-	return s
 }
 
 func bytes32(b []byte) *[32]byte {
