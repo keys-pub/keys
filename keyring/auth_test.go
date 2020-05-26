@@ -17,9 +17,9 @@ func TestAuth(t *testing.T) {
 }
 
 func testAuth(t *testing.T, kr *keyring.Keyring) {
-	isSetup, err := kr.IsSetup()
+	status, err := kr.Status()
 	require.NoError(t, err)
-	require.False(t, isSetup)
+	require.Equal(t, keyring.Setup, status)
 
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
@@ -37,9 +37,9 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	id, err := kr.Setup(auth)
 	require.NoError(t, err)
 
-	isSetup, err = kr.IsSetup()
+	status, err = kr.Status()
 	require.NoError(t, err)
-	require.True(t, isSetup)
+	require.Equal(t, keyring.Unlocked, status)
 
 	// Setup (again)
 	_, err = kr.Setup(auth)
@@ -49,8 +49,16 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Lock()
 	require.NoError(t, err)
 
+	status, err = kr.Status()
+	require.NoError(t, err)
+	require.Equal(t, keyring.Locked, status)
+
 	_, err = kr.Unlock(auth)
 	require.NoError(t, err)
+
+	status, err = kr.Status()
+	require.NoError(t, err)
+	require.Equal(t, keyring.Unlocked, status)
 
 	// Create item
 	item := keyring.NewItem("key1", []byte("secret"), "", time.Now())

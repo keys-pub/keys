@@ -124,11 +124,11 @@ func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
 // Returns ErrAlreadySetup if already setup.
 // Doesn't require Unlock().
 func (k *Keyring) Setup(auth Auth) (string, error) {
-	setup, err := k.IsSetup()
+	status, err := k.Status()
 	if err != nil {
 		return "", err
 	}
-	if setup {
+	if status != Setup {
 		return "", ErrAlreadySetup
 	}
 	id, masterKey, err := authSetup(k.st, k.service, auth)
@@ -165,15 +165,36 @@ func (k *Keyring) Deprovision(id string) (bool, error) {
 	return authDeprovision(k.st, k.service, id)
 }
 
-// IsSetup returns true if Keyring has been setup.
+// Status returns keyring status.
 // Doesn't require Unlock().
-func (k *Keyring) IsSetup() (bool, error) {
+func (k *Keyring) Status() (Status, error) {
 	auths, err := k.st.IDs(k.service, WithReservedPrefix("auth"))
 	if err != nil {
-		return false, err
+		return Unknown, err
 	}
-	return len(auths) > 0, nil
+	setup := len(auths) > 0
+	if !setup {
+		return Setup, nil
+	}
+	if k.masterKey == nil {
+		return Locked, nil
+	}
+	return Unlocked, nil
 }
+
+// Status for keyring.
+type Status string
+
+const (
+	// Unknown status.
+	Unknown Status = ""
+	// Setup if setup needed.
+	Setup Status = "setup"
+	// Unlocked if unlocked.
+	Unlocked Status = "unlocked"
+	// Locked if locked.
+	Locked Status = "locked"
+)
 
 // UnlockWithPassword unlocks keyring with a password.
 // If setup is true, we are setting up the keyring auth for the first time.
