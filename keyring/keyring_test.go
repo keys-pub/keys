@@ -164,9 +164,9 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
-	isSetup, err := kr.IsSetup()
+	status, err := kr.Status()
 	require.NoError(t, err)
-	require.False(t, isSetup)
+	require.Equal(t, keyring.Setup, status)
 
 	salt3, err := kr.Salt()
 	require.NoError(t, err)
