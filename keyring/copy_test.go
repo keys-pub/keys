@@ -14,7 +14,7 @@ func TestCopy(t *testing.T) {
 
 	// Keyring #1 (mem)
 	kr := keyring.NewMem(false)
-	auth := keyring.NewKeyAuth(keys.Rand32())
+	auth := keyring.NewAuth(keys.Rand32())
 	setupID, err := kr.Setup(auth)
 	require.NoError(t, err)
 
@@ -28,7 +28,7 @@ func TestCopy(t *testing.T) {
 	// Copy
 	ids, err := keyring.Copy(kr, kr2)
 	require.NoError(t, err)
-	require.Equal(t, []string{setupID, item.ID}, ids)
+	require.Equal(t, []string{setupID.KeyringID(), item.ID}, ids)
 
 	// Unlock #2
 	_, err = kr2.Unlock(auth)

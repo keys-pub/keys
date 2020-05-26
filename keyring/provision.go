@@ -1,13 +1,16 @@
 package keyring
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
-func authSetup(st Store, service string, auth Auth) (string, SecretKey, error) {
+func authSetup(st Store, service string, auth Auth) (ProvisionID, SecretKey, error) {
 	// MK is the master key.
 	mk := rand32()
 	id, err := authProvision(st, service, auth, mk)
@@ -17,41 +20,51 @@ func authSetup(st Store, service string, auth Auth) (string, SecretKey, error) {
 	return id, mk, nil
 }
 
-func authProvision(st Store, service string, auth Auth, mk SecretKey) (string, error) {
+func authProvision(st Store, service string, auth Auth, mk SecretKey) (ProvisionID, error) {
 	if mk == nil {
 		return "", ErrLocked
 	}
 
-	id := reserved(fmt.Sprintf("auth-%s", randID()))
+	id := newProvisionID()
+	krid := reserved(fmt.Sprintf("auth-%s", id))
 
 	logger.Debugf("Provisioning %s", id)
-	item := NewItem(id, mk[:], "", time.Now())
+	item := NewItem(krid, mk[:], "", time.Now())
 	if err := setItem(st, service, item, auth.Key()); err != nil {
 		return "", err
 	}
 	return id, nil
 }
 
-func authDeprovision(st Store, service string, id string) (bool, error) {
+func authDeprovision(st Store, service string, id ProvisionID) (bool, error) {
 	logger.Debugf("Deprovisioning %s", id)
-	ok, err := st.Delete(service, id)
+	krid := reserved(fmt.Sprintf("auth-%s", id))
+	ok, err := st.Delete(service, krid)
 	if err != nil {
 		return false, err
 	}
 	return ok, nil
 }
 
-func authProvisionIDs(st Store, service string) ([]string, error) {
-	ids, err := st.IDs(service, WithReservedPrefix("auth"))
+func authProvisionIDs(st Store, service string) ([]ProvisionID, error) {
+	krids, err := st.IDs(service, WithReservedPrefix("auth"))
 	if err != nil {
 		return nil, err
+	}
+	ids := make([]ProvisionID, 0, len(krids))
+	for _, krid := range krids {
+		pid := parseProvisionID(krid)
+		if pid == "" {
+			continue
+		}
+		ids = append(ids, pid)
 	}
 	return ids, nil
 }
 
 // authUnlock returns (identifier, master key) or ("", nil) if a matching auth
 // is not found.
-func authUnlock(st Store, service string, auth Auth) (string, SecretKey, error) {
+func authUnlock(st Store, service string, auth Auth) (ProvisionID, SecretKey, error) {
 	if auth == nil {
 		return "", nil, errors.Errorf("no auth specified")
 	}
@@ -62,8 +75,12 @@ func authUnlock(st Store, service string, auth Auth) (string, SecretKey, error) 
 	}
 
 	for _, id := range ids {
-		item, err := getItem(st, service, id, auth.Key())
+		krid := id.KeyringID()
+		item, err := getItem(st, service, krid, auth.Key())
 		if err != nil {
+			continue
+		}
+		if item == nil {
 			continue
 		}
 		if len(item.Data) != 32 {
@@ -75,4 +92,33 @@ func authUnlock(st Store, service string, auth Auth) (string, SecretKey, error) 
 	}
 
 	return "", nil, nil
+}
+
+// ProvisionID is an identifier for provisioned auth.
+type ProvisionID string
+
+func newProvisionID() ProvisionID {
+	b := rand32()
+	return ProvisionID(encoding.MustEncode(b[:], encoding.Base62))
+}
+
+func parseProvisionID(s string) ProvisionID {
+	if s == "#auth" {
+		return provisionV1ID()
+	}
+	if !strings.HasPrefix(s, "#auth-") {
+		return ""
+	}
+	return ProvisionID(s[6:])
+}
+
+// provisionV1ID is the placeholder id for v1 #auth.
+func provisionV1ID() ProvisionID {
+	b := bytes.Repeat([]byte{0x00}, 8)
+	return ProvisionID(encoding.MustEncode(b, encoding.Base62))
+}
+
+// KeyringID returns keyring item identifier.
+func (p ProvisionID) KeyringID() string {
+	return fmt.Sprintf("#auth-%s", p)
 }

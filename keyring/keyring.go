@@ -123,7 +123,7 @@ func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
 // Returns a provision identifier.
 // Returns ErrAlreadySetup if already setup.
 // Doesn't require Unlock().
-func (k *Keyring) Setup(auth Auth) (string, error) {
+func (k *Keyring) Setup(auth Auth) (ProvisionID, error) {
 	status, err := k.Status()
 	if err != nil {
 		return "", err
@@ -142,7 +142,7 @@ func (k *Keyring) Setup(auth Auth) (string, error) {
 // Provision new auth.
 // Returns a provision identifier.
 // Requires Unlock().
-func (k *Keyring) Provision(auth Auth) (string, error) {
+func (k *Keyring) Provision(auth Auth) (ProvisionID, error) {
 	if k.masterKey == nil {
 		return "", ErrLocked
 	}
@@ -155,13 +155,13 @@ func (k *Keyring) Provision(auth Auth) (string, error) {
 
 // Provisions are currently provisioned identifiers.
 // Doesn't require Unlock().
-func (k *Keyring) Provisions() ([]string, error) {
+func (k *Keyring) Provisions() ([]ProvisionID, error) {
 	return authProvisionIDs(k.st, k.service)
 }
 
 // Deprovision auth.
 // Doesn't require Unlock().
-func (k *Keyring) Deprovision(id string) (bool, error) {
+func (k *Keyring) Deprovision(id ProvisionID) (bool, error) {
 	return authDeprovision(k.st, k.service, id)
 }
 
@@ -238,7 +238,7 @@ func (k *Keyring) Exists(id string) (bool, error) {
 
 // Unlock with auth.
 // Returns provision identifier used to unlock.
-func (k *Keyring) Unlock(auth Auth) (string, error) {
+func (k *Keyring) Unlock(auth Auth) (ProvisionID, error) {
 	id, masterKey, err := authUnlock(k.st, k.service, auth)
 	if err != nil {
 		return "", err

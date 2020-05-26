@@ -78,7 +78,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	// Check provisions
 	ids, err := kr.Provisions()
 	require.NoError(t, err)
-	require.Equal(t, []string{id}, ids)
+	require.Equal(t, []keyring.ProvisionID{id}, ids)
 
 	// Provision
 	auth2, err := keyring.NewPasswordAuth("diffpassword", salt)
@@ -138,7 +138,7 @@ func TestSystemStore(t *testing.T) {
 
 	st := keyring.SystemOrFS()
 
-	mk, err := st.Get("KeysTest", id)
+	mk, err := st.Get("KeysTest", id.KeyringID())
 	require.NoError(t, err)
 	require.NotNil(t, mk)
 

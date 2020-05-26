@@ -20,11 +20,11 @@ type Auth interface {
 	Key() SecretKey
 }
 
-type keyAuth struct {
+type auth struct {
 	key SecretKey
 }
 
-func (k keyAuth) Key() SecretKey {
+func (k auth) Key() SecretKey {
 	return k.key
 }
 
@@ -38,14 +38,14 @@ func NewPasswordAuth(password string, salt []byte) (Auth, error) {
 	}
 
 	akey := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
-	return &keyAuth{
+	return &auth{
 		key: bytes32(akey),
 	}, nil
 }
 
-// NewKeyAuth returns auth with a key.
-func NewKeyAuth(key SecretKey) Auth {
-	return &keyAuth{
+// NewAuth returns auth for key and type.
+func NewAuth(key SecretKey) Auth {
+	return &auth{
 		key: key,
 	}
 }
