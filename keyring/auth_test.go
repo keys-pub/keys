@@ -2,11 +2,9 @@ package keyring_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
@@ -155,9 +153,6 @@ func TestAuthV1(t *testing.T) {
 	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
-
-	out := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
-	fmt.Println(out)
 
 	salt := bytes.Repeat([]byte{0x01}, 32)
 	auth, err := keyring.NewPasswordAuth("password123", salt)
