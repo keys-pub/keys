@@ -3,35 +3,18 @@ package secret_test
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/secret"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
-
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
-}
 
 func TestSecretMarshal(t *testing.T) {
 	kr := keyring.NewMem(true)
 	ss := secret.NewStore(kr)
 
-	clock := newClock()
+	clock := tsutil.NewClock()
 	ss.SetTimeNow(clock.Now)
 
 	secret := &secret.Secret{

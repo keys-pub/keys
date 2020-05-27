@@ -1,5 +1,5 @@
-// Package util provides utility methods used by other packages.
-package util
+// Package request provides clients for requesting data.
+package request
 
 import (
 	"bytes"

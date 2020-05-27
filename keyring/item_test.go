@@ -5,12 +5,13 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/keyring"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v4"
 )
 
 func TestItem(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	secretKey := randKey()
 	item := keyring.NewItem("account1", []byte("password"), "passphrase", clock.Now())
 	b, err := item.Marshal(secretKey)

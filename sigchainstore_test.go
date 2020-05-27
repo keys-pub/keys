@@ -5,10 +5,11 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
-func testSigchainStore(t *testing.T, clock *clock) keys.SigchainStore {
+func testSigchainStore(t *testing.T, clock *tsutil.Clock) keys.SigchainStore {
 	mem := ds.NewMem()
 	mem.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(mem)
@@ -17,7 +18,7 @@ func testSigchainStore(t *testing.T, clock *clock) keys.SigchainStore {
 }
 
 func TestSigchainStore(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	scs := testSigchainStore(t, clock)
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
@@ -97,7 +98,7 @@ func TestSigchainStore(t *testing.T) {
 }
 
 func TestSigchainStoreSpew(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	scs := testSigchainStore(t, clock)
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))

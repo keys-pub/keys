@@ -7,7 +7,7 @@ import (
 
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/json"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
@@ -227,7 +227,7 @@ func statementBytes(st *Statement, sig []byte) ([]byte, error) {
 		mes = append(mes, json.NewInt("seq", st.Seq))
 	}
 	if !st.Timestamp.IsZero() {
-		mes = append(mes, json.NewInt("ts", int(util.TimeToMillis(st.Timestamp))))
+		mes = append(mes, json.NewInt("ts", int(tsutil.Millis(st.Timestamp))))
 	}
 	if st.Type != "" {
 		mes = append(mes, json.NewString("type", st.Type))
@@ -257,7 +257,7 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts := util.TimeFromMillis(int64(stf.Timestamp))
+	ts := tsutil.ParseMillis(int64(stf.Timestamp))
 
 	st, err := NewUnverifiedStatement(sigBytes, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
 	if err != nil {

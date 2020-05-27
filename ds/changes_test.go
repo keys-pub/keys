@@ -9,18 +9,19 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMemChanges(t *testing.T) {
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 	mem := ds.NewMem()
-	clock := newClock()
+	clock := tsutil.NewClock()
 	mem.SetTimeNow(clock.Now)
 	testChanges(t, mem, mem, clock)
 }
 
-func testChanges(t *testing.T, dst ds.DocumentStore, changes ds.Changes, clock *clock) {
+func testChanges(t *testing.T, dst ds.DocumentStore, changes ds.Changes, clock *tsutil.Clock) {
 	ctx := context.TODO()
 
 	paths := []string{}

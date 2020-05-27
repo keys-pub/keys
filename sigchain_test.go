@@ -8,28 +8,11 @@ import (
 	"log"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
-
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
-}
 
 func testdataString(t *testing.T, path string) string {
 	expected, err := ioutil.ReadFile(path)
@@ -38,7 +21,7 @@ func testdataString(t *testing.T, path string) string {
 }
 
 func TestSigchain(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
@@ -116,7 +99,7 @@ func TestSigchain(t *testing.T) {
 }
 
 func TestSigchainJSON(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())
@@ -166,7 +149,7 @@ func TestSigchainJSON(t *testing.T) {
 }
 
 func ExampleNewSigchain() {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	alice := keys.GenerateEdX25519Key()
 	sc := keys.NewSigchain(alice.ID())
 
