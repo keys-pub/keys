@@ -1,3 +1,4 @@
+// Package tsutil provides timestamp and time utilities.
 package tsutil
 
 import (
