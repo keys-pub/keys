@@ -118,7 +118,7 @@ func provisionV1ID() provisionID {
 	return provisionID(encoding.MustEncode(b, encoding.Base62))
 }
 
-// KeyringID returns keyring item identifier.
+// keyringID returns keyring item identifier.
 func (p provisionID) keyringID() string {
 	return fmt.Sprintf("#auth-%s", p)
 }
