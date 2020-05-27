@@ -138,7 +138,7 @@ func TestSystemStore(t *testing.T) {
 
 	st := keyring.SystemOrFS()
 
-	mk, err := st.Get("KeysTest", id)
+	mk, err := st.Get("KeysTest", "#auth-"+id)
 	require.NoError(t, err)
 	require.NotNil(t, mk)
 
@@ -147,4 +147,25 @@ func TestSystemStore(t *testing.T) {
 
 	_, err = kr.Get(".raw")
 	require.EqualError(t, err, "invalid keyring auth")
+}
+
+func TestAuthV1(t *testing.T) {
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
+	require.NoError(t, err)
+	defer func() { _ = kr.Reset() }()
+
+	salt := bytes.Repeat([]byte{0x01}, 32)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
+	require.NoError(t, err)
+
+	// Set auth the old way
+	item := keyring.NewItem("#auth", auth.Key()[:], "", time.Now())
+	b, err := item.Marshal(auth.Key())
+	require.NoError(t, err)
+	err = kr.Store().Set("KeysTest", "#auth", b)
+	require.NoError(t, err)
+
+	// Unlock with old auth
+	_, err = kr.Unlock(auth)
+	require.NoError(t, err)
 }

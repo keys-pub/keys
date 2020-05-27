@@ -136,7 +136,7 @@ func (k *Keyring) Setup(auth Auth) (string, error) {
 		return "", err
 	}
 	k.masterKey = masterKey
-	return id, nil
+	return string(id), nil
 }
 
 // Provision new auth.
@@ -150,13 +150,21 @@ func (k *Keyring) Provision(auth Auth) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return id, nil
+	return string(id), nil
 }
 
-// Provisions are currently provisioned identifiers.
+// Provisions are currently provisioned auth identifiers.
 // Doesn't require Unlock().
 func (k *Keyring) Provisions() ([]string, error) {
-	return authProvisionIDs(k.st, k.service)
+	pids, err := authIDs(k.st, k.service)
+	if err != nil {
+		return nil, err
+	}
+	strs := make([]string, 0, len(pids))
+	for _, pid := range pids {
+		strs = append(strs, string(pid))
+	}
+	return strs, nil
 }
 
 // Deprovision auth.
@@ -199,29 +207,29 @@ const (
 // UnlockWithPassword unlocks keyring with a password.
 // If setup is true, we are setting up the keyring auth for the first time.
 // This is a convenience method, calling Setup or Unlock with NewPasswordAuth using the keyring#Salt.
-func (k *Keyring) UnlockWithPassword(password string, setup bool) (Auth, error) {
+func (k *Keyring) UnlockWithPassword(password string, setup bool) error {
 	if password == "" {
-		return nil, errors.Errorf("empty password")
+		return errors.Errorf("empty password")
 	}
 	salt, err := k.Salt()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	auth, err := NewPasswordAuth(password, salt)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if setup {
 		if _, err := k.Setup(auth); err != nil {
-			return nil, err
+			return err
 		}
-		return auth, nil
+		return nil
 	}
 
 	if _, err := k.Unlock(auth); err != nil {
-		return nil, err
+		return err
 	}
-	return auth, nil
+	return nil
 }
 
 // IDs returns item IDs.
@@ -247,7 +255,14 @@ func (k *Keyring) Unlock(auth Auth) (string, error) {
 		return "", ErrInvalidAuth
 	}
 	k.masterKey = masterKey
-	return id, nil
+	return string(id), nil
+}
+
+// MasterKey returns master key, if unlocked.
+// It's not recommended to use this key for anything other than possibly
+// deriving new keys.
+func (k *Keyring) MasterKey() SecretKey {
+	return k.masterKey
 }
 
 // Lock the keyring.

@@ -18,7 +18,7 @@ if err != nil {
 }
 
 // Setup keyring auth.
-if _, err := kr.UnlockWithPassword("mypassword", true); err != nil {
+if err := kr.UnlockWithPassword("mypassword", true); err != nil {
     log.Fatal(err)
 }
 
