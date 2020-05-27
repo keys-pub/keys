@@ -2,9 +2,11 @@ package keyring_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
@@ -147,4 +149,28 @@ func TestSystemStore(t *testing.T) {
 
 	_, err = kr.Get(".raw")
 	require.EqualError(t, err, "invalid keyring auth")
+}
+
+func TestAuthV1(t *testing.T) {
+	kr, err := keyring.New("KeysTest", keyring.SystemOrFS())
+	require.NoError(t, err)
+	defer func() { _ = kr.Reset() }()
+
+	out := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
+	fmt.Println(out)
+
+	salt := bytes.Repeat([]byte{0x01}, 32)
+	auth, err := keyring.NewPasswordAuth("password123", salt)
+	require.NoError(t, err)
+
+	// Set auth the old way
+	item := keyring.NewItem("#auth", auth.Key()[:], "", time.Now())
+	b, err := item.Marshal(auth.Key())
+	require.NoError(t, err)
+	err = kr.Store().Set("KeysTest", "#auth", b)
+	require.NoError(t, err)
+
+	// Unlock with old auth
+	_, err = kr.Unlock(auth)
+	require.NoError(t, err)
 }

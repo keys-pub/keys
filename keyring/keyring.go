@@ -153,10 +153,10 @@ func (k *Keyring) Provision(auth Auth) (string, error) {
 	return string(id), nil
 }
 
-// Provisions are currently provisioned identifiers.
+// Provisions are currently provisioned auth identifiers.
 // Doesn't require Unlock().
 func (k *Keyring) Provisions() ([]string, error) {
-	pids, err := authProvisionIDs(k.st, k.service)
+	pids, err := authIDs(k.st, k.service)
 	if err != nil {
 		return nil, err
 	}

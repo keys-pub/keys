@@ -1,7 +1,6 @@
 package keyring
 
 import (
-	"bytes"
 	"strings"
 	"time"
 
@@ -45,7 +44,7 @@ func authDeprovision(st Store, service string, id string) (bool, error) {
 	return ok, nil
 }
 
-func authProvisionIDs(st Store, service string) ([]string, error) {
+func authIDs(st Store, service string) ([]string, error) {
 	krids, err := st.IDs(service, WithReservedPrefix("auth"))
 	if err != nil {
 		return nil, err
@@ -61,20 +60,26 @@ func authProvisionIDs(st Store, service string) ([]string, error) {
 	return ids, nil
 }
 
-// authUnlock returns (identifier, master key) or ("", "", nil) if a matching auth
+// authUnlock returns (identifier, master key) or ("", nil) if a matching auth
 // is not found.
 func authUnlock(st Store, service string, auth Auth) (string, SecretKey, error) {
 	if auth == nil {
 		return "", nil, errors.Errorf("no auth specified")
 	}
 
-	ids, err := authProvisionIDs(st, service)
+	ids, err := authIDs(st, service)
 	if err != nil {
 		return "", nil, err
 	}
 
 	for _, id := range ids {
-		krid := reserved("auth-") + id
+		var krid string
+		if id == authV1ID {
+			krid = "#auth"
+		} else {
+			krid = reserved("auth-") + id
+		}
+
 		item, err := getItem(st, service, krid, auth.Key())
 		if err != nil {
 			continue
@@ -100,7 +105,7 @@ func newAuthID() string {
 
 func parseAuthID(s string) string {
 	if s == "#auth" {
-		return authV1ID()
+		return authV1ID
 	}
 	if !strings.HasPrefix(s, "#auth-") {
 		return ""
@@ -108,7 +113,4 @@ func parseAuthID(s string) string {
 	return s[6:]
 }
 
-func authV1ID() string {
-	b := bytes.Repeat([]byte{0x00}, 8)
-	return encoding.MustEncode(b, encoding.Base62)
-}
+const authV1ID = "0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29"
