@@ -28,6 +28,11 @@ func (c *Clock) SetTick(tick time.Duration) {
 	c.tick = tick
 }
 
+// Add to clock.
+func (c *Clock) Add(dt time.Duration) {
+	c.t = c.t.Add(dt)
+}
+
 // NewClockAt creates a Clock starting at timestamp (millis).
 func NewClockAt(ts int64) *Clock {
 	t := ParseMillis(ts)
