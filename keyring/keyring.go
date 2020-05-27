@@ -123,7 +123,7 @@ func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
 // Returns a provision identifier.
 // Returns ErrAlreadySetup if already setup.
 // Doesn't require Unlock().
-func (k *Keyring) Setup(auth Auth) (ProvisionID, error) {
+func (k *Keyring) Setup(auth Auth) (string, error) {
 	status, err := k.Status()
 	if err != nil {
 		return "", err
@@ -136,13 +136,13 @@ func (k *Keyring) Setup(auth Auth) (ProvisionID, error) {
 		return "", err
 	}
 	k.masterKey = masterKey
-	return id, nil
+	return string(id), nil
 }
 
 // Provision new auth.
 // Returns a provision identifier.
 // Requires Unlock().
-func (k *Keyring) Provision(auth Auth) (ProvisionID, error) {
+func (k *Keyring) Provision(auth Auth) (string, error) {
 	if k.masterKey == nil {
 		return "", ErrLocked
 	}
@@ -150,19 +150,27 @@ func (k *Keyring) Provision(auth Auth) (ProvisionID, error) {
 	if err != nil {
 		return "", err
 	}
-	return id, nil
+	return string(id), nil
 }
 
 // Provisions are currently provisioned identifiers.
 // Doesn't require Unlock().
-func (k *Keyring) Provisions() ([]ProvisionID, error) {
-	return authProvisionIDs(k.st, k.service)
+func (k *Keyring) Provisions() ([]string, error) {
+	pids, err := authProvisionIDs(k.st, k.service)
+	if err != nil {
+		return nil, err
+	}
+	strs := make([]string, 0, len(pids))
+	for _, pid := range pids {
+		strs = append(strs, string(pid))
+	}
+	return strs, nil
 }
 
 // Deprovision auth.
 // Doesn't require Unlock().
-func (k *Keyring) Deprovision(id ProvisionID) (bool, error) {
-	return authDeprovision(k.st, k.service, id)
+func (k *Keyring) Deprovision(id string) (bool, error) {
+	return authDeprovision(k.st, k.service, provisionID(id))
 }
 
 // Status returns keyring status.
@@ -238,7 +246,7 @@ func (k *Keyring) Exists(id string) (bool, error) {
 
 // Unlock with auth.
 // Returns provision identifier used to unlock.
-func (k *Keyring) Unlock(auth Auth) (ProvisionID, error) {
+func (k *Keyring) Unlock(auth Auth) (string, error) {
 	id, masterKey, err := authUnlock(k.st, k.service, auth)
 	if err != nil {
 		return "", err
@@ -247,7 +255,7 @@ func (k *Keyring) Unlock(auth Auth) (ProvisionID, error) {
 		return "", ErrInvalidAuth
 	}
 	k.masterKey = masterKey
-	return id, nil
+	return string(id), nil
 }
 
 // Lock the keyring.

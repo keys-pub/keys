@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func authSetup(st Store, service string, auth Auth) (ProvisionID, SecretKey, error) {
+func authSetup(st Store, service string, auth Auth) (provisionID, SecretKey, error) {
 	// MK is the master key.
 	mk := rand32()
 	id, err := authProvision(st, service, auth, mk)
@@ -20,7 +20,7 @@ func authSetup(st Store, service string, auth Auth) (ProvisionID, SecretKey, err
 	return id, mk, nil
 }
 
-func authProvision(st Store, service string, auth Auth, mk SecretKey) (ProvisionID, error) {
+func authProvision(st Store, service string, auth Auth, mk SecretKey) (provisionID, error) {
 	if mk == nil {
 		return "", ErrLocked
 	}
@@ -36,7 +36,7 @@ func authProvision(st Store, service string, auth Auth, mk SecretKey) (Provision
 	return id, nil
 }
 
-func authDeprovision(st Store, service string, id ProvisionID) (bool, error) {
+func authDeprovision(st Store, service string, id provisionID) (bool, error) {
 	logger.Debugf("Deprovisioning %s", id)
 	krid := reserved(fmt.Sprintf("auth-%s", id))
 	ok, err := st.Delete(service, krid)
@@ -46,12 +46,12 @@ func authDeprovision(st Store, service string, id ProvisionID) (bool, error) {
 	return ok, nil
 }
 
-func authProvisionIDs(st Store, service string) ([]ProvisionID, error) {
+func authProvisionIDs(st Store, service string) ([]provisionID, error) {
 	krids, err := st.IDs(service, WithReservedPrefix("auth"))
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]ProvisionID, 0, len(krids))
+	ids := make([]provisionID, 0, len(krids))
 	for _, krid := range krids {
 		pid := parseProvisionID(krid)
 		if pid == "" {
@@ -64,7 +64,7 @@ func authProvisionIDs(st Store, service string) ([]ProvisionID, error) {
 
 // authUnlock returns (identifier, master key) or ("", nil) if a matching auth
 // is not found.
-func authUnlock(st Store, service string, auth Auth) (ProvisionID, SecretKey, error) {
+func authUnlock(st Store, service string, auth Auth) (provisionID, SecretKey, error) {
 	if auth == nil {
 		return "", nil, errors.Errorf("no auth specified")
 	}
@@ -75,7 +75,7 @@ func authUnlock(st Store, service string, auth Auth) (ProvisionID, SecretKey, er
 	}
 
 	for _, id := range ids {
-		krid := id.KeyringID()
+		krid := id.keyringID()
 		item, err := getItem(st, service, krid, auth.Key())
 		if err != nil {
 			continue
@@ -94,31 +94,31 @@ func authUnlock(st Store, service string, auth Auth) (ProvisionID, SecretKey, er
 	return "", nil, nil
 }
 
-// ProvisionID is an identifier for provisioned auth.
-type ProvisionID string
+// provisionID is an identifier for provisioned auth.
+type provisionID string
 
-func newProvisionID() ProvisionID {
+func newProvisionID() provisionID {
 	b := rand32()
-	return ProvisionID(encoding.MustEncode(b[:], encoding.Base62))
+	return provisionID(encoding.MustEncode(b[:], encoding.Base62))
 }
 
-func parseProvisionID(s string) ProvisionID {
+func parseProvisionID(s string) provisionID {
 	if s == "#auth" {
 		return provisionV1ID()
 	}
 	if !strings.HasPrefix(s, "#auth-") {
 		return ""
 	}
-	return ProvisionID(s[6:])
+	return provisionID(s[6:])
 }
 
 // provisionV1ID is the placeholder id for v1 #auth.
-func provisionV1ID() ProvisionID {
+func provisionV1ID() provisionID {
 	b := bytes.Repeat([]byte{0x00}, 8)
-	return ProvisionID(encoding.MustEncode(b, encoding.Base62))
+	return provisionID(encoding.MustEncode(b, encoding.Base62))
 }
 
 // KeyringID returns keyring item identifier.
-func (p ProvisionID) KeyringID() string {
+func (p provisionID) keyringID() string {
 	return fmt.Sprintf("#auth-%s", p)
 }
