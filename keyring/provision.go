@@ -113,4 +113,4 @@ func parseAuthID(s string) string {
 	return s[6:]
 }
 
-const authV1ID = "0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29"
+const authV1ID = "v1.auth"
