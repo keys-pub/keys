@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSignedStatement(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	st := keys.NewSignedStatement(bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
@@ -30,7 +31,7 @@ func TestSignedStatement(t *testing.T) {
 }
 
 func TestSigchainStatement(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())
@@ -52,7 +53,7 @@ func TestSigchainStatement(t *testing.T) {
 }
 
 func TestStatementJSON(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())
@@ -101,7 +102,7 @@ func TestStatementJSON(t *testing.T) {
 }
 
 func TestStatementSpecificSerialization(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(sk.ID())
 	require.Equal(t, 0, sc.Length())
@@ -182,7 +183,7 @@ func TestBadStatements(t *testing.T) {
 }
 
 func TestStatementKeyURL(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())

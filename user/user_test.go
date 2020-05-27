@@ -6,33 +6,17 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
 func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
-}
-
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
 }
 
 func testdataString(t *testing.T, path string) string {
@@ -48,8 +32,8 @@ func testdataBytes(t *testing.T, path string) []byte {
 }
 
 func TestNewValidate(t *testing.T) {
-	clock := newClock()
-	req := util.NewMockRequestor()
+	clock := tsutil.NewClock()
+	req := request.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
@@ -70,8 +54,8 @@ func TestNewValidate(t *testing.T) {
 }
 
 func TestSigchainUsers(t *testing.T) {
-	clock := newClock()
-	req := util.NewMockRequestor()
+	clock := tsutil.NewClock()
+	req := request.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)

@@ -8,25 +8,9 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
-
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
-}
 
 func TestKeyring(t *testing.T) {
 	// keyring.SetLogger(keyring.NewLogger(keyring.DebugLevel))
@@ -69,7 +53,7 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.NotNil(t, item)
 	require.Equal(t, "abc", item.ID)
 	require.Equal(t, []byte("password"), item.Data)
-	require.Equal(t, util.TimeToMillis(now), util.TimeToMillis(item.CreatedAt))
+	require.Equal(t, tsutil.Millis(now), tsutil.Millis(item.CreatedAt))
 
 	has, err := kr.Exists("abc")
 	require.NoError(t, err)
@@ -92,7 +76,7 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.NotNil(t, item)
 	require.Equal(t, "abc", item.ID)
 	require.Equal(t, []byte("newpassword"), item.Data)
-	require.Equal(t, util.TimeToMillis(now), util.TimeToMillis(item.CreatedAt))
+	require.Equal(t, tsutil.Millis(now), tsutil.Millis(item.CreatedAt))
 
 	// Create (hidden)
 	err = kr.Create(keyring.NewItem(".ck", []byte("password"), "", time.Now()))

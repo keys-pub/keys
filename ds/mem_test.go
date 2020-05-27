@@ -5,61 +5,44 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/keys-pub/keys/ds"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
-}
-
 func TestClock(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	t1 := clock.Now()
-	tf1 := t1.Format(util.RFC3339Milli)
+	tf1 := t1.Format(tsutil.RFC3339Milli)
 	require.Equal(t, "2009-02-13T23:31:30.001Z", tf1)
 	t2 := clock.Now()
-	tf2 := t2.Format(util.RFC3339Milli)
+	tf2 := t2.Format(tsutil.RFC3339Milli)
 	require.Equal(t, "2009-02-13T23:31:30.002Z", tf2)
 }
 
 func TestMem(t *testing.T) {
 	mem := ds.NewMem()
-	mem.SetTimeNow(newClock().Now)
+	mem.SetTimeNow(tsutil.NewClock().Now)
 	require.Equal(t, "mem://", mem.URI())
 	testDocumentStore(t, mem)
 }
 
 func TestMemPath(t *testing.T) {
 	mem := ds.NewMem()
-	mem.SetTimeNow(newClock().Now)
+	mem.SetTimeNow(tsutil.NewClock().Now)
 	testDocumentStorePath(t, mem)
 }
 
 func TestMemListOptions(t *testing.T) {
 	mem := ds.NewMem()
-	mem.SetTimeNow(newClock().Now)
+	mem.SetTimeNow(tsutil.NewClock().Now)
 	testDocumentStoreListOptions(t, mem)
 }
 
 func TestMemMetadata(t *testing.T) {
 	mem := ds.NewMem()
-	mem.SetTimeNow(newClock().Now)
+	mem.SetTimeNow(tsutil.NewClock().Now)
 	testMetadata(t, mem)
 }
 
@@ -271,7 +254,7 @@ func testMetadata(t *testing.T, dst ds.DocumentStore) {
 	doc, err := dst.Get(ctx, "/test/key1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, int64(1234567890001), util.TimeToMillis(doc.CreatedAt))
+	require.Equal(t, int64(1234567890001), tsutil.Millis(doc.CreatedAt))
 
 	err = dst.Set(ctx, "/test/key1", []byte("value1b"))
 	require.NoError(t, err)
@@ -279,8 +262,8 @@ func testMetadata(t *testing.T, dst ds.DocumentStore) {
 	doc, err = dst.Get(ctx, "/test/key1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, int64(1234567890001), util.TimeToMillis(doc.CreatedAt))
-	require.Equal(t, int64(1234567890002), util.TimeToMillis(doc.UpdatedAt))
+	require.Equal(t, int64(1234567890001), tsutil.Millis(doc.CreatedAt))
+	require.Equal(t, int64(1234567890002), tsutil.Millis(doc.UpdatedAt))
 }
 
 func TestDeleteAll(t *testing.T) {

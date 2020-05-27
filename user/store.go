@@ -8,7 +8,8 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
@@ -33,13 +34,13 @@ func (r Result) String() string {
 
 // IsTimestampExpired returns true if result Timestamp is older than dt.
 func (r Result) IsTimestampExpired(now time.Time, dt time.Duration) bool {
-	ts := util.TimeFromMillis(r.Timestamp)
+	ts := tsutil.ParseMillis(r.Timestamp)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
 // IsVerifyExpired returns true if result VerifiedAt is older than dt.
 func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
-	ts := util.TimeFromMillis(r.VerifiedAt)
+	ts := tsutil.ParseMillis(r.VerifiedAt)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
@@ -52,12 +53,12 @@ type keyDocument struct {
 type Store struct {
 	dst   ds.DocumentStore
 	scs   keys.SigchainStore
-	req   util.Requestor
+	req   request.Requestor
 	nowFn func() time.Time
 }
 
 // NewStore creates Store.
-func NewStore(dst ds.DocumentStore, scs keys.SigchainStore, req util.Requestor, nowFn func() time.Time) (*Store, error) {
+func NewStore(dst ds.DocumentStore, scs keys.SigchainStore, req request.Requestor, nowFn func() time.Time) (*Store, error) {
 	return &Store{
 		dst:   dst,
 		scs:   scs,
@@ -72,7 +73,7 @@ func (u *Store) Now() time.Time {
 }
 
 // Requestor ...
-func (u *Store) Requestor() util.Requestor {
+func (u *Store) Requestor() request.Requestor {
 	return u.req
 }
 
@@ -335,7 +336,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 			return nil, err
 		}
 		if keyDoc.Result != nil {
-			ts := util.TimeFromMillis(keyDoc.Result.Timestamp)
+			ts := tsutil.ParseMillis(keyDoc.Result.Timestamp)
 
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)

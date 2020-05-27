@@ -10,8 +10,9 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -19,13 +20,13 @@ import (
 func TestSearchUsers(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 	ctx := context.TODO()
 
@@ -149,13 +150,13 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestUserStoreEmpty(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
@@ -172,13 +173,13 @@ func TestUserStoreEmpty(t *testing.T) {
 }
 
 func TestUserValidateName(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x20}, 32)))
@@ -201,13 +202,13 @@ func TestUserValidateName(t *testing.T) {
 }
 
 func TestUserValidateUpdateInvalid(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
 	// Unvalidated user to sigchain
@@ -251,13 +252,13 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 }
 
 func TestReddit(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
@@ -306,13 +307,13 @@ func TestReddit(t *testing.T) {
 func TestSearchUsersRequestErrors(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	dst.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(dst)
 	scs.SetTimeNow(clock.Now)
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 	ctx := context.TODO()
 
@@ -338,7 +339,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set 500 error for alice@github
-	req.SetError("https://gist.github.com/alice/1", util.ErrHTTP{StatusCode: 500})
+	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 500})
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -358,7 +359,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
-	req.SetError("https://gist.github.com/alice/1", util.ErrHTTP{StatusCode: 404})
+	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 404})
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -394,8 +395,8 @@ func TestExpired(t *testing.T) {
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 
-	clock := newClock()
-	req := util.NewMockRequestor()
+	clock := tsutil.NewClock()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 	ctx := context.TODO()
 
@@ -437,13 +438,13 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, []keys.ID{alice.ID()}, ids)
 }
 
-func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *clock, mock *util.MockRequestor) *keys.Statement {
+func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
 	st, err := saveUser(ust, scs, key, name, service, clock, mock)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *clock, mock *util.MockRequestor) (*keys.Statement, error) {
+func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
 	switch service {
 	case "github":
@@ -491,12 +492,12 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 }
 
 func TestNewSigchainUserStatement(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 	sc := keys.NewSigchain(key.ID())
 	usr, err := user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
@@ -513,10 +514,10 @@ func TestNewSigchainUserStatement(t *testing.T) {
 
 func TestSearch(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	clock := newClock()
+	clock := tsutil.NewClock()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
-	req := util.NewMockRequestor()
+	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 	ctx := context.TODO()
 
