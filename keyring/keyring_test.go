@@ -198,7 +198,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	require.EqualError(t, err, "keyring is locked")
 
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	_, err = kr.Setup(keyring.NewAuth(key))
+	_, err = kr.Setup(keyring.NewAuth("test1", key))
 	require.NoError(t, err)
 
 	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
@@ -219,7 +219,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 	require.True(t, del)
 
 	key2 := bytes32(bytes.Repeat([]byte{0x02}, 32))
-	_, err = kr.Unlock(keyring.NewAuth(key2))
+	_, err = kr.Unlock(keyring.NewAuth("test2", key2))
 	require.EqualError(t, err, "invalid keyring auth")
 }
 
@@ -228,7 +228,7 @@ func TestSetErrors(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	_, err = kr.Setup(keyring.NewAuth(key))
+	_, err = kr.Setup(keyring.NewAuth("test", key))
 	require.NoError(t, err)
 
 	err = kr.Create(keyring.NewItem("", nil, "", time.Time{}))
@@ -244,7 +244,7 @@ func TestReserved(t *testing.T) {
 
 func testReserved(t *testing.T, kr *keyring.Keyring) {
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	_, err := kr.Setup(keyring.NewAuth(key))
+	_, err := kr.Setup(keyring.NewAuth("test", key))
 	require.NoError(t, err)
 
 	_, err = kr.Get("#key")
@@ -268,7 +268,7 @@ func TestLargeItems(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	_, err = kr.Setup(keyring.NewAuth(key))
+	_, err = kr.Setup(keyring.NewAuth("test", key))
 	require.NoError(t, err)
 
 	id := string(bytes.Repeat([]byte("a"), maxID))

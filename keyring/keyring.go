@@ -170,7 +170,7 @@ func (k *Keyring) Provisions() ([]string, error) {
 // Deprovision auth.
 // Doesn't require Unlock().
 func (k *Keyring) Deprovision(id string) (bool, error) {
-	return authDeprovision(k.st, k.service, provisionID(id))
+	return authDeprovision(k.st, k.service, id)
 }
 
 // Status returns keyring status.
