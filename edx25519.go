@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"crypto"
 	"crypto/ed25519"
 
 	"github.com/pkg/errors"
@@ -75,6 +76,11 @@ func (k *EdX25519Key) Bytes() []byte {
 // Bytes64 for key.
 func (k *EdX25519Key) Bytes64() *[64]byte {
 	return k.privateKey
+}
+
+// Signer interface.
+func (k *EdX25519Key) Signer() crypto.Signer {
+	return ed25519.PrivateKey(k.Bytes())
 }
 
 // NewEdX25519PublicKey creates a EdX25519PublicKey.
