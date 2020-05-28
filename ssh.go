@@ -138,3 +138,12 @@ func (k *EdX25519PublicKey) EncodeToSSHAuthorized() []byte {
 	// b.WriteByte('\n')
 	return b.Bytes()
 }
+
+// SSHSigner interface.
+func (k *EdX25519Key) SSHSigner() ssh.Signer {
+	signer, err := ssh.NewSignerFromKey(k.Signer())
+	if err != nil {
+		panic(err)
+	}
+	return signer
+}
