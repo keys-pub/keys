@@ -5,6 +5,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/ssh"
 )
 
 func TestSSHPublicKey(t *testing.T) {
@@ -92,28 +93,40 @@ func TestSSHKey(t *testing.T) {
 func TestSSHEncode(t *testing.T) {
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	ssh, err := alice.EncodeToSSH(nil)
+	sout, err := alice.EncodeToSSH(nil)
 	require.NoError(t, err)
-	out, err := keys.ParseSSHKey(ssh, nil, false)
-	require.NoError(t, err)
-	require.NotNil(t, out)
-	require.Equal(t, out.Bytes(), alice.Bytes())
-
-	ssh, err = alice.EncodeToSSH([]byte{})
-	require.NoError(t, err)
-	out, err = keys.ParseSSHKey(ssh, nil, false)
+	out, err := keys.ParseSSHKey(sout, nil, false)
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	require.Equal(t, out.Bytes(), alice.Bytes())
 
-	ssh, err = alice.EncodeToSSH([]byte("testpassword"))
+	sout, err = alice.EncodeToSSH([]byte{})
 	require.NoError(t, err)
-	_, err = keys.ParseSSHKey(ssh, nil, false)
+	out, err = keys.ParseSSHKey(sout, nil, false)
+	require.NoError(t, err)
+	require.NotNil(t, out)
+	require.Equal(t, out.Bytes(), alice.Bytes())
+
+	sout, err = alice.EncodeToSSH(nil)
+	require.NoError(t, err)
+	_, err = ssh.ParsePrivateKey(sout)
+	require.NoError(t, err)
+	// TODO: Verify bytes
+
+	sout, err = alice.EncodeToSSH([]byte("testpassword"))
+	require.NoError(t, err)
+	_, err = keys.ParseSSHKey(sout, nil, false)
 	require.EqualError(t, err, "failed to parse ssh key: ssh: this private key is passphrase protected")
-	out, err = keys.ParseSSHKey(ssh, []byte("testpassword"), false)
+	out, err = keys.ParseSSHKey(sout, []byte("testpassword"), false)
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	require.Equal(t, out.Bytes(), alice.Bytes())
+
+	sout, err = alice.EncodeToSSH([]byte("testpassword"))
+	require.NoError(t, err)
+	_, err = ssh.ParsePrivateKeyWithPassphrase(sout, []byte("testpassword"))
+	require.NoError(t, err)
+	// TODO: Verify bytes
 }
 
 func TestSSHEncodePublic(t *testing.T) {
