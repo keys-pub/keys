@@ -53,6 +53,11 @@ func (k *Keyring) Store() Store {
 	return k.st
 }
 
+// Service name.
+func (k *Keyring) Service() string {
+	return k.service
+}
+
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
@@ -119,60 +124,6 @@ func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
 	return List(k.st, k.service, k.masterKey, opts...)
 }
 
-// Setup auth, if no auth exists.
-// Returns a provision identifier.
-// Returns ErrAlreadySetup if already setup.
-// Doesn't require Unlock().
-func (k *Keyring) Setup(auth Auth) (string, error) {
-	status, err := k.Status()
-	if err != nil {
-		return "", err
-	}
-	if status != Setup {
-		return "", ErrAlreadySetup
-	}
-	id, masterKey, err := authSetup(k.st, k.service, auth)
-	if err != nil {
-		return "", err
-	}
-	k.masterKey = masterKey
-	return string(id), nil
-}
-
-// Provision new auth.
-// Returns a provision identifier.
-// Requires Unlock().
-func (k *Keyring) Provision(auth Auth) (string, error) {
-	if k.masterKey == nil {
-		return "", ErrLocked
-	}
-	id, err := authProvision(k.st, k.service, auth, k.masterKey)
-	if err != nil {
-		return "", err
-	}
-	return string(id), nil
-}
-
-// Provisions are currently provisioned auth identifiers.
-// Doesn't require Unlock().
-func (k *Keyring) Provisions() ([]string, error) {
-	pids, err := authIDs(k.st, k.service)
-	if err != nil {
-		return nil, err
-	}
-	strs := make([]string, 0, len(pids))
-	for _, pid := range pids {
-		strs = append(strs, string(pid))
-	}
-	return strs, nil
-}
-
-// Deprovision auth.
-// Doesn't require Unlock().
-func (k *Keyring) Deprovision(id string) (bool, error) {
-	return authDeprovision(k.st, k.service, id)
-}
-
 // Status returns keyring status.
 // Doesn't require Unlock().
 func (k *Keyring) Status() (Status, error) {
@@ -206,7 +157,7 @@ const (
 
 // UnlockWithPassword unlocks keyring with a password.
 // If setup is true, we are setting up the keyring auth for the first time.
-// This is a convenience method, calling Setup or Unlock with NewPasswordAuth using the keyring#Salt.
+// This is a convenience method, calling Setup or Unlock with KeyForPassword using the keyring#Salt.
 func (k *Keyring) UnlockWithPassword(password string, setup bool) error {
 	if password == "" {
 		return errors.Errorf("empty password")
@@ -215,18 +166,19 @@ func (k *Keyring) UnlockWithPassword(password string, setup bool) error {
 	if err != nil {
 		return err
 	}
-	auth, err := NewPasswordAuth(password, salt)
+	key, err := KeyForPassword(password, salt)
 	if err != nil {
 		return err
 	}
 	if setup {
-		if _, err := k.Setup(auth); err != nil {
+		provision := NewProvision(PasswordAuth)
+		if err := k.Setup(key, provision); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	if _, err := k.Unlock(auth); err != nil {
+	if _, err := k.Unlock(key); err != nil {
 		return err
 	}
 	return nil
@@ -246,16 +198,25 @@ func (k *Keyring) Exists(id string) (bool, error) {
 
 // Unlock with auth.
 // Returns provision identifier used to unlock.
-func (k *Keyring) Unlock(auth Auth) (string, error) {
-	id, masterKey, err := authUnlock(k.st, k.service, auth)
+func (k *Keyring) Unlock(key SecretKey) (*Provision, error) {
+	id, masterKey, err := authUnlock(k.st, k.service, key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if masterKey == nil {
-		return "", ErrInvalidAuth
+		return nil, ErrInvalidAuth
 	}
 	k.masterKey = masterKey
-	return string(id), nil
+
+	provision, err := k.loadProvision(id)
+	if err != nil {
+		return nil, err
+	}
+	if provision == nil {
+		provision = &Provision{ID: id}
+	}
+
+	return provision, nil
 }
 
 // MasterKey returns master key, if unlocked.

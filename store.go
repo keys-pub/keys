@@ -27,11 +27,6 @@ func NewMemStore(setup bool) *Store {
 	return NewStore(mem)
 }
 
-// Keyring used by Store.
-func (k *Store) Keyring() *keyring.Keyring {
-	return k.kr
-}
-
 // EdX25519Key returns an EdX25519Key from the keyring.
 func (k *Store) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	logger.Infof("Store load sign key for %s", kid)

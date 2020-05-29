@@ -22,19 +22,20 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.Equal(t, keyring.Setup, status)
 
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := keyring.NewPasswordAuth("password123", salt)
+	key, err := keyring.KeyForPassword("password123", salt)
 	require.NoError(t, err)
 
 	// Unlock (error)
-	_, err = kr.Unlock(auth)
+	_, err = kr.Unlock(key)
 	require.EqualError(t, err, "invalid keyring auth")
 
 	// Invalid auth
-	_, err = keyring.NewPasswordAuth("", salt)
+	_, err = keyring.KeyForPassword("", salt)
 	require.EqualError(t, err, "empty password")
 
 	// Setup
-	id, err := kr.Setup(auth)
+	provision := keyring.NewProvision(keyring.UnknownAuth)
+	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
 	status, err = kr.Status()
@@ -42,7 +43,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.Equal(t, keyring.Unlocked, status)
 
 	// Setup (again)
-	_, err = kr.Setup(auth)
+	err = kr.Setup(key, provision)
 	require.EqualError(t, err, "keyring is already setup")
 
 	// Lock
@@ -53,7 +54,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.Equal(t, keyring.Locked, status)
 
-	_, err = kr.Unlock(auth)
+	_, err = kr.Unlock(key)
 	require.NoError(t, err)
 
 	status, err = kr.Status()
@@ -76,41 +77,42 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 
 	// Check provisions
-	ids, err := kr.Provisions()
+	mds, err := kr.Provisions()
 	require.NoError(t, err)
-	require.Equal(t, []string{id}, ids)
+	require.Equal(t, 1, len(mds))
+	require.Equal(t, provision.ID, mds[0].ID)
 
 	// Provision
-	auth2, err := keyring.NewPasswordAuth("diffpassword", salt)
+	provision2 := keyring.NewProvision(keyring.UnknownAuth)
+	key2, err := keyring.KeyForPassword("diffpassword", salt)
 	require.NoError(t, err)
-	_, err = kr.Provision(auth2)
+	err = kr.Provision(key2, provision2)
 	require.EqualError(t, err, "keyring is locked")
-	_, err = kr.Unlock(auth)
+	_, err = kr.Unlock(key)
 	require.NoError(t, err)
-	id2, err := kr.Provision(auth2)
+	err = kr.Provision(key2, provision2)
 	require.NoError(t, err)
-	require.NotEmpty(t, id2)
 
 	// Test both succeed
 	err = kr.Lock()
 	require.NoError(t, err)
-	_, err = kr.Unlock(auth)
+	_, err = kr.Unlock(key)
 	require.NoError(t, err)
 	err = kr.Lock()
 	require.NoError(t, err)
-	_, err = kr.Unlock(auth2)
+	_, err = kr.Unlock(key2)
 	require.NoError(t, err)
 
 	// Deprovision
-	ok, err := kr.Deprovision(id2)
+	ok, err := kr.Deprovision(provision2.ID)
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	_, err = kr.Unlock(auth2)
+	_, err = kr.Unlock(key2)
 	require.EqualError(t, err, "invalid keyring auth")
 
 	// Test wrong password
-	wrongpass, err := keyring.NewPasswordAuth("invalidpassword", salt)
+	wrongpass, err := keyring.KeyForPassword("invalidpassword", salt)
 	require.NoError(t, err)
 	_, err = kr.Unlock(wrongpass)
 	require.EqualError(t, err, "invalid keyring auth")
@@ -118,12 +120,6 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	// Test get reserved
 	_, err = kr.Get("#auth")
 	require.EqualError(t, err, "keyring id prefix reserved #auth")
-
-	// Test invalid password
-	auth3, err := keyring.NewPasswordAuth("invalidpassword", salt)
-	require.NoError(t, err)
-	_, err = kr.Unlock(auth3)
-	require.EqualError(t, err, "invalid keyring auth")
 }
 
 func TestSystemStore(t *testing.T) {
@@ -131,14 +127,16 @@ func TestSystemStore(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := keyring.NewPasswordAuth("password123", salt)
+
+	provision := keyring.NewProvision(keyring.UnknownAuth)
+	key, err := keyring.KeyForPassword("password123", salt)
 	require.NoError(t, err)
-	id, err := kr.Setup(auth)
+	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
 	st := keyring.SystemOrFS()
 
-	mk, err := st.Get("KeysTest", "#auth-"+id)
+	mk, err := st.Get("KeysTest", "#auth-"+provision.ID)
 	require.NoError(t, err)
 	require.NotNil(t, mk)
 
@@ -155,17 +153,22 @@ func TestAuthV1(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 
 	salt := bytes.Repeat([]byte{0x01}, 32)
-	auth, err := keyring.NewPasswordAuth("password123", salt)
+	key, err := keyring.KeyForPassword("password123", salt)
 	require.NoError(t, err)
 
 	// Set auth the old way
-	item := keyring.NewItem("#auth", auth.Key()[:], "", time.Now())
-	b, err := item.Marshal(auth.Key())
+	item := keyring.NewItem("#auth", key[:], "", time.Now())
+	b, err := item.Marshal(key)
 	require.NoError(t, err)
 	err = kr.Store().Set("KeysTest", "#auth", b)
 	require.NoError(t, err)
 
 	// Unlock with old auth
-	_, err = kr.Unlock(auth)
+	_, err = kr.Unlock(key)
 	require.NoError(t, err)
+
+	provisions, err := kr.Provisions()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(provisions))
+	require.Equal(t, "v1.auth", provisions[0].ID)
 }
