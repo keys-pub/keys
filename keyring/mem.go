@@ -1,9 +1,11 @@
 package keyring
 
 import (
+	"bytes"
 	"sort"
 	"strings"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
@@ -13,8 +15,11 @@ import (
 func NewMem(setup bool) *Keyring {
 	kr := newKeyring("", Mem())
 	if setup {
-		_, err := kr.Setup(NewAuth("mem", rand32()))
-		if err != nil {
+		id := encoding.MustEncode(bytes.Repeat([]byte{0xFF}, 32), encoding.Base62)
+		provision := &Provision{
+			ID: id,
+		}
+		if err := kr.Setup(rand32(), provision); err != nil {
 			panic(err)
 		}
 	}
