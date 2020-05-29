@@ -280,34 +280,6 @@ func NewProvision(typ AuthType) *Provision {
 	}
 }
 
-// loadProvisions loads all provision.
-func (k *Keyring) loadProvisions() ([]*Provision, error) {
-	st := k.Store()
-	service := k.Service()
-	ids, err := st.IDs(service, WithReservedPrefix(provisionPrefix))
-	if err != nil {
-		return nil, err
-	}
-	logger.Debugf("Looking up provisions %v", ids)
-	provisions := make([]*Provision, 0, len(ids))
-	for _, id := range ids {
-		b, err := st.Get(service, id)
-		if err != nil {
-			return nil, err
-		}
-		if b == nil {
-			logger.Errorf("Missing provision for %s", id)
-			continue
-		}
-		var provision Provision
-		if err := msgpack.Unmarshal(b, &provision); err != nil {
-			return nil, err
-		}
-		provisions = append(provisions, &provision)
-	}
-	return provisions, nil
-}
-
 // loadProvision loads provision for id.
 func (k *Keyring) loadProvision(id string) (*Provision, error) {
 	st := k.Store()
