@@ -52,7 +52,11 @@ func (k fs) Get(service string, id string) ([]byte, error) {
 	}
 
 	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := pathExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return nil, nil
 	}
 	return ioutil.ReadFile(path) // #nosec
@@ -79,7 +83,11 @@ func (k fs) IDs(service string, opts ...IDsOption) ([]string, error) {
 
 	path := filepath.Join(k.dir, service)
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := pathExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return []string{}, nil
 	}
 
@@ -115,18 +123,17 @@ func (k fs) Reset(service string) error {
 
 func (k fs) Exists(service string, id string) (bool, error) {
 	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); err == nil {
-		return true, nil
-	} else if os.IsNotExist(err) {
-		return false, nil
-	} else {
-		return false, err
-	}
+	return pathExists(path)
 }
 
 func (k fs) Delete(service string, id string) (bool, error) {
 	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+
+	exists, err := pathExists(path)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
 		return false, nil
 	}
 	if err := os.Remove(path); err != nil {
@@ -141,4 +148,14 @@ func defaultLinuxFSDir() (string, error) {
 		return "", err
 	}
 	return filepath.Join(usr.HomeDir, ".keyring"), nil
+}
+
+func pathExists(path string) (bool, error) {
+	if _, err := os.Stat(path); err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	} else {
+		return false, err
+	}
 }
