@@ -27,6 +27,14 @@ func KeyForPassword(password string, salt []byte) (SecretKey, error) {
 	return bytes32(akey), nil
 }
 
+// Salt is default salt value, generated on first access and persisted
+// until Reset().
+// This salt value is not encrypted in the keyring.
+// Doesn't require Unlock().
+func (k *Keyring) Salt() ([]byte, error) {
+	return salt(k.st, k.service)
+}
+
 // salt returns a salt value, generating it on first access if it doesn't exist.
 func salt(st Store, service string) ([]byte, error) {
 	salt, err := st.Get(service, reserved("salt"))

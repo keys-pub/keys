@@ -197,7 +197,7 @@ func (k *Keyring) Exists(id string) (bool, error) {
 }
 
 // Unlock with auth.
-// Returns provision identifier used to unlock.
+// Returns provision used to unlock.
 func (k *Keyring) Unlock(key SecretKey) (*Provision, error) {
 	id, masterKey, err := authUnlock(k.st, k.service, key)
 	if err != nil {
@@ -230,14 +230,6 @@ func (k *Keyring) MasterKey() SecretKey {
 func (k *Keyring) Lock() error {
 	k.masterKey = nil
 	return nil
-}
-
-// Salt is default salt value, generated on first access and persisted
-// until Reset().
-// This salt value is not encrypted in the keyring.
-// Doesn't require Unlock().
-func (k *Keyring) Salt() ([]byte, error) {
-	return salt(k.st, k.service)
 }
 
 // Reset keyring.
