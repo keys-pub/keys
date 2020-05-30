@@ -46,6 +46,7 @@ type Keyring struct {
 	st        Store
 	service   string
 	masterKey SecretKey
+	lns       []Listener
 }
 
 // Store used by Keyring.
@@ -215,7 +216,7 @@ func (k *Keyring) Unlock(key SecretKey) (*Provision, error) {
 	if provision == nil {
 		provision = &Provision{ID: id}
 	}
-
+	k.notifyUnlocked(provision)
 	return provision, nil
 }
 
@@ -229,6 +230,7 @@ func (k *Keyring) MasterKey() SecretKey {
 // Lock the keyring.
 func (k *Keyring) Lock() error {
 	k.masterKey = nil
+	k.notifyLocked()
 	return nil
 }
 
