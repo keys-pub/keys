@@ -10,6 +10,8 @@ import (
 )
 
 func TestID(t *testing.T) {
+	var err error
+
 	b := bytes.Repeat([]byte{0xFF}, 32)
 	s := encoding.MustEncode(b[:], encoding.Base58)
 	require.Equal(t, "osEoy933LkHyyBcgjE7v81KvmcNKioeUVktgzXLJ1B3t", s)
@@ -19,6 +21,12 @@ func TestID(t *testing.T) {
 	s = encoding.MustEncode(b[:], encoding.Base58)
 	require.Equal(t, "11111111111111111111111111111111111111111111", s)
 	require.Equal(t, 44, len(s))
+
+	_, err = keys.ParseID("")
+	require.EqualError(t, err, "failed to parse id: empty string")
+
+	_, err = keys.ParseID("???")
+	require.EqualError(t, err, "failed to parse id: separator '1' at invalid position: pos=-1, len=3")
 }
 
 func TestNewID(t *testing.T) {
