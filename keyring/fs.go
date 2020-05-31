@@ -13,7 +13,7 @@ import (
 // FS Store option.
 func FS(service string, dir string) Option {
 	return func(o *Options) error {
-		st, err := newFS(service, dir)
+		st, err := NewFS(service, dir)
 		if err != nil {
 			return err
 		}
@@ -22,8 +22,8 @@ func FS(service string, dir string) Option {
 	}
 }
 
-// FS returns keyring.Store backed by the filesystem.
-func newFS(service string, dir string) (Store, error) {
+// NewFS returns keyring.Store backed by the filesystem.
+func NewFS(service string, dir string) (Store, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}

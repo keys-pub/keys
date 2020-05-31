@@ -45,7 +45,7 @@ func defaultLinuxFS(service string) (Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs, err := newFS(service, dir)
+	fs, err := NewFS(service, dir)
 	if err != nil {
 		return nil, err
 	}
