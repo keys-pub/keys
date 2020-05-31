@@ -10,14 +10,15 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/link"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
 // RequestVerify requests a user URL and verifies it.
 // The result.Status gives the type of failure (unless user.StatusOK), and the
 // result.Err has more specific details about the failure.
-func RequestVerify(ctx context.Context, req util.Requestor, usr *User, now time.Time) *Result {
+func RequestVerify(ctx context.Context, req request.Requestor, usr *User, now time.Time) *Result {
 	res := &Result{
 		User: usr,
 	}
@@ -25,7 +26,7 @@ func RequestVerify(ctx context.Context, req util.Requestor, usr *User, now time.
 	return res
 }
 
-func updateResult(ctx context.Context, req util.Requestor, usr *User, result *Result, now time.Time) {
+func updateResult(ctx context.Context, req request.Requestor, usr *User, result *Result, now time.Time) {
 	if result == nil {
 		panic("no user result specified")
 	}
@@ -52,13 +53,13 @@ func updateResult(ctx context.Context, req util.Requestor, usr *User, result *Re
 		return
 	}
 
-	result.Timestamp = util.TimeToMillis(now)
+	result.Timestamp = tsutil.Millis(now)
 
 	logger.Infof("Requesting %s", urs)
 	body, err := req.RequestURLString(ctx, urs)
 	if err != nil {
 		logger.Warningf("Request failed: %v", err)
-		if errHTTP, ok := errors.Cause(err).(util.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+		if errHTTP, ok := errors.Cause(err).(request.ErrHTTP); ok && errHTTP.StatusCode == 404 {
 			result.Err = err.Error()
 			result.Status = StatusResourceNotFound
 			return
@@ -87,7 +88,7 @@ func updateResult(ctx context.Context, req util.Requestor, usr *User, result *Re
 	logger.Infof("Verified %s", result.User.KID)
 	result.Err = ""
 	result.Status = StatusOK
-	result.VerifiedAt = util.TimeToMillis(now)
+	result.VerifiedAt = tsutil.Millis(now)
 }
 
 func userEqual(usr1 *User, usr2 *User) bool {

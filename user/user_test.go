@@ -6,29 +6,17 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/util"
 	"github.com/stretchr/testify/require"
 )
 
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
+func testSeed(b byte) *[32]byte {
+	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
 }
 
 func testdataString(t *testing.T, path string) string {
@@ -44,13 +32,13 @@ func testdataBytes(t *testing.T, path string) []byte {
 }
 
 func TestNewValidate(t *testing.T) {
-	clock := newClock()
-	req := util.NewMockRequestor()
+	clock := tsutil.NewClock()
+	req := request.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	_, err = user.New(ust, alice.ID(), "github", "alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "invalid scheme for url file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9")
@@ -66,13 +54,13 @@ func TestNewValidate(t *testing.T) {
 }
 
 func TestSigchainUsers(t *testing.T) {
-	clock := newClock()
-	req := util.NewMockRequestor()
+	clock := tsutil.NewClock()
+	req := request.NewMockRequestor()
 	dst := ds.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())

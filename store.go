@@ -21,18 +21,13 @@ func NewStore(kr *keyring.Keyring) *Store {
 
 // NewMemStore returns Store backed by an in memory keyring.
 // This is useful for testing or ephemeral key stores.
-// If unlock is true, the mem keyring will be unlocked with a random key.
-func NewMemStore(unlock bool) *Store {
-	mem := keyring.NewMem(unlock)
+// If setup is true, the mem keyring will be setup with a random key.
+func NewMemStore(setup bool) *Store {
+	mem := keyring.NewMem(setup)
 	return NewStore(mem)
 }
 
-// Keyring used by Store.
-func (k *Store) Keyring() *keyring.Keyring {
-	return k.kr
-}
-
-// EdX25519Key returns sign key for a key identifier.
+// EdX25519Key returns an EdX25519Key from the keyring.
 func (k *Store) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	logger.Infof("Store load sign key for %s", kid)
 	item, err := k.kr.Get(kid.String())
@@ -45,9 +40,9 @@ func (k *Store) EdX25519Key(kid ID) (*EdX25519Key, error) {
 	return AsEdX25519Key(item)
 }
 
-// EdX25519PublicKey returns EdX25519 public key from the Store.
+// EdX25519PublicKey returns EdX25519 public key from the keyring.
 // Since the public key itself is in the ID, you can convert the ID without
-// getting it from the keystore via NewEdX25519PublicKeyFromID.
+// getting it from the Store via NewEdX25519PublicKeyFromID.
 func (k *Store) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	logger.Infof("Store load EdX25519 public key for %s", kid)
 	item, err := k.kr.Get(kid.String())
@@ -60,7 +55,7 @@ func (k *Store) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	return AsEdX25519PublicKey(item)
 }
 
-// X25519Key returns a box key for an identifier
+// X25519Key returns an X25519Key from the keyring.
 func (k *Store) X25519Key(kid ID) (*X25519Key, error) {
 	logger.Infof("Store load box key for %s", kid)
 	item, err := k.kr.Get(kid.String())
@@ -73,60 +68,16 @@ func (k *Store) X25519Key(kid ID) (*X25519Key, error) {
 	return AsX25519Key(item)
 }
 
-// SaveEdX25519Key saves a EdX25519Key to the Store.
+// Save saves a Key to the keyring.
 // Returns keyring.ErrItemAlreadyExists if key exists already.
-func (k *Store) SaveEdX25519Key(key *EdX25519Key) error {
-	return k.kr.Create(NewEdX25519KeyItem(key))
+func (k *Store) Save(key Key) error {
+	return k.kr.Create(ItemForKey(key))
 }
 
-// SaveEdX25519PublicKey saves EdX25519PublicKey to the Store.
-// Returns keyring.ErrItemAlreadyExists if key exists already.
-func (k *Store) SaveEdX25519PublicKey(spk *EdX25519PublicKey) error {
-	// Check we don't clobber an existing private key.
-	item, err := k.kr.Get(spk.ID().String())
-	if err != nil {
-		return err
-	}
-	if item != nil && item.Type != string(EdX25519Public) {
-		return errors.Errorf("failed to save key: existing keyring item exists of alternate type")
-	}
-	return k.kr.Create(NewEdX25519PublicKeyItem(spk))
-}
-
-// SavePublicKey saves a public key from a key identifier.
-// Returns keyring.ErrItemAlreadyExists if key exists already.
-func (k *Store) SavePublicKey(kid ID) error {
-	key, err := kid.Key()
-	if err != nil {
-		return err
-	}
-	return k.SaveKey(key)
-}
-
-// SaveX25519Key saves a X25519Key to the Store.
-// Returns keyring.ErrItemAlreadyExists if key exists already.
-func (k *Store) SaveX25519Key(bk *X25519Key) error {
-	return k.kr.Create(NewX25519KeyItem(bk))
-}
-
-// SaveX25519PublicKey saves a X25519PublicKey to the Store.
-// Returns keyring.ErrItemAlreadyExists if key exists already.
-func (k *Store) SaveX25519PublicKey(bpk *X25519PublicKey) error {
-	// Check we don't clobber an existing box key
-	item, err := k.kr.Get(bpk.ID().String())
-	if err != nil {
-		return err
-	}
-	if item != nil && item.Type != string(X25519Public) {
-		return errors.Errorf("failed to save box public key: existing keyring item exists of alternate type")
-	}
-	return k.kr.Create(NewX25519PublicKeyItem(bpk))
-}
-
-// Delete removes an item from the keystore.
+// Delete removes an item from the keyring.
 func (k *Store) Delete(kid ID) (bool, error) {
 	if kid == "" {
-		return false, errors.Errorf("failed to delete in keystore: empty id specified")
+		return false, errors.Errorf("failed to delete: empty id")
 	}
 	logger.Infof("Store deleting: %s", kid)
 	return k.kr.Delete(kid.String())
@@ -176,7 +127,7 @@ func (k *Store) Keys(opts *Opts) ([]Key, error) {
 	for _, t := range opts.Types {
 		itemTypes = append(itemTypes, string(t))
 	}
-	items, err := k.kr.List(&keyring.ListOpts{Types: itemTypes})
+	items, err := k.kr.List(keyring.WithTypes(itemTypes...))
 	if err != nil {
 		return nil, err
 	}
@@ -196,13 +147,11 @@ func (k *Store) Keys(opts *Opts) ([]Key, error) {
 	return keys, nil
 }
 
-// X25519Keys from the Store.
+// X25519Keys from the keyring.
 // Also includes edx25519 keys converted to x25519 keys.
 func (k *Store) X25519Keys() ([]*X25519Key, error) {
 	logger.Debugf("Listing x25519 keys...")
-	items, err := k.kr.List(&keyring.ListOpts{
-		Types: []string{string(X25519), string(EdX25519)},
-	})
+	items, err := k.kr.List(keyring.WithTypes(string(X25519), string(EdX25519)))
 	if err != nil {
 		return nil, err
 	}
@@ -218,11 +167,9 @@ func (k *Store) X25519Keys() ([]*X25519Key, error) {
 	return keys, nil
 }
 
-// EdX25519Keys from the Store.
+// EdX25519Keys from the keyring.
 func (k *Store) EdX25519Keys() ([]*EdX25519Key, error) {
-	items, err := k.kr.List(&keyring.ListOpts{
-		Types: []string{string(EdX25519)},
-	})
+	items, err := k.kr.List(keyring.WithTypes(string(EdX25519)))
 	if err != nil {
 		return nil, err
 	}
@@ -237,15 +184,10 @@ func (k *Store) EdX25519Keys() ([]*EdX25519Key, error) {
 	return keys, nil
 }
 
-// EdX25519PublicKeys from the Store.
+// EdX25519PublicKeys from the keyring.
 // Includes public keys of EdX25519Key's.
 func (k *Store) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
-	items, err := k.kr.List(&keyring.ListOpts{
-		Types: []string{
-			string(EdX25519),
-			string(EdX25519Public),
-		},
-	})
+	items, err := k.kr.List(keyring.WithTypes(string(EdX25519), string(EdX25519Public)))
 	if err != nil {
 		return nil, err
 	}
@@ -269,9 +211,9 @@ func (k *Store) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 	return keys, nil
 }
 
-// X25519PublicKey returns box public key from the Store.
+// X25519PublicKey returns box public key from the keyring.
 // Since the public key itself is in the ID, you can convert the ID without
-// getting it from the keystore via X25519PublicKeyForID.
+// getting it from the Store via X25519PublicKeyForID.
 func (k *Store) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
 	logger.Infof("Store load box public key for %s", kid)
 	item, err := k.kr.Get(kid.String())
@@ -306,36 +248,19 @@ func (k *Store) FindEdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
 	return nil, err
 }
 
-// SaveKey saves Key based on its type.
-// Returns keyring.ErrItemAlreadyExists if key exists already.
-func (k *Store) SaveKey(key Key) error {
-	switch v := key.(type) {
-	case *EdX25519Key:
-		return k.SaveEdX25519Key(v)
-	case *X25519Key:
-		return k.SaveX25519Key(v)
-	case *EdX25519PublicKey:
-		return k.SaveEdX25519PublicKey(v)
-	case *X25519PublicKey:
-		return k.SaveX25519PublicKey(v)
-	default:
-		return errors.Errorf("failed to save key: unsupported key type")
-	}
-}
-
-// ImportSaltpack imports key into the keystore from a saltpack message.
+// ImportSaltpack imports key into the keyring from a Saltpack message.
 func (k *Store) ImportSaltpack(msg string, password string, isHTML bool) (Key, error) {
 	key, err := DecodeKeyFromSaltpack(msg, password, isHTML)
 	if err != nil {
 		return nil, err
 	}
-	if err := k.SaveKey(key); err != nil {
+	if err := k.Save(key); err != nil {
 		return nil, err
 	}
 	return key, nil
 }
 
-// ExportSaltpack exports key from the keystore to a saltpack message.
+// ExportSaltpack exports key from the keyring to a Saltpack message.
 func (k *Store) ExportSaltpack(id ID, password string) (string, error) {
 	key, err := k.Key(id)
 	if err != nil {

@@ -1,28 +1,28 @@
 package keyring
 
 import (
-	"crypto/subtle"
 	"runtime"
-	"time"
-
-	"github.com/pkg/errors"
 )
 
-// Store is the cross platform keyring interface that a Keyring uses.
+// Store is the interface that a Keyring uses to save data.
 type Store interface {
-	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs).
+	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs, git).
 	Name() string
 
 	// Get bytes.
 	Get(service string, id string) ([]byte, error)
 	// Set bytes.
-	Set(service string, id string, data []byte, typ string) error
+	Set(service string, id string, data []byte) error
 	// Delete bytes.
 	Delete(service string, id string) (bool, error)
 
-	IDs(service string, opts *IDsOpts) ([]string, error)
-	List(service string, key SecretKey, opts *ListOpts) ([]*Item, error)
+	// List IDs.
+	IDs(service string, opts ...IDsOption) ([]string, error)
+
+	// Exists returns true if exists.
 	Exists(service string, id string) (bool, error)
+
+	// Reset removes all items.
 	Reset(service string) error
 }
 
@@ -31,8 +31,8 @@ func System() Store {
 	return system()
 }
 
-func defaultFS() Store {
-	dir, err := defaultFSDir()
+func defaultLinuxFS() Store {
+	dir, err := defaultLinuxFSDir()
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ func SystemOrFS() Store {
 	if runtime.GOOS == "linux" {
 		if err := checkSystem(); err != nil {
 			logger.Infof("Keyring (system) unavailable: %v", err)
-			return defaultFS()
+			return defaultLinuxFS()
 		}
 	}
 	return system()
@@ -66,7 +66,7 @@ func getItem(st Store, service string, id string, key SecretKey) (*Item, error) 
 	if b == nil {
 		return nil, nil
 	}
-	return decodeItem(b, key)
+	return decryptItem(b, key)
 }
 
 const maxID = 254
@@ -95,55 +95,16 @@ func setItem(st Store, service string, item *Item, key SecretKey) error {
 	if len(data) > (5 * 512) {
 		return ErrItemValueTooLarge
 	}
-	return st.Set(service, item.ID, []byte(data), item.Type)
+	return st.Set(service, item.ID, []byte(data))
 }
 
-func decodeItem(b []byte, key SecretKey) (*Item, error) {
+func decryptItem(b []byte, key SecretKey) (*Item, error) {
 	if b == nil {
 		return nil, nil
 	}
-	item, err := NewItemFromBytes(b, key)
+	item, err := DecryptItem(b, key)
 	if err != nil {
 		return nil, err
 	}
 	return item, nil
-}
-
-func unlock(st Store, service string, auth Auth) (SecretKey, error) {
-	if auth == nil {
-		return nil, errors.Errorf("no auth specified")
-	}
-
-	key := auth.Key()
-
-	item, err := getItem(st, service, reserved("auth"), key)
-	if err != nil {
-		return nil, err
-	}
-	if item == nil {
-		err := setItem(st, service, NewItem(reserved("auth"), key[:], "", time.Now()), key)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if subtle.ConstantTimeCompare(item.Data, key[:]) != 1 {
-			return nil, errors.Errorf("invalid auth")
-		}
-	}
-
-	return key, nil
-}
-
-func salt(st Store, service string) ([]byte, error) {
-	salt, err := st.Get(service, reserved("salt"))
-	if err != nil {
-		return nil, err
-	}
-	if salt == nil {
-		salt = rand32()[:]
-		if err := st.Set(service, reserved("salt"), salt, ""); err != nil {
-			return nil, err
-		}
-	}
-	return salt, nil
 }

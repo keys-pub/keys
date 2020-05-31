@@ -13,7 +13,7 @@ func ParseKey(b []byte, password string) (Key, error) {
 		if err != nil {
 			return nil, err
 		}
-		return id.Key()
+		return id, nil
 	case SaltpackArmoredType:
 		return DecodeKeyFromSaltpack(string(b), password, false)
 	case SSHPublicType:

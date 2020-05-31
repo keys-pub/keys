@@ -12,12 +12,6 @@ const (
 	certificateItemType string = "cert-key-x509v3"
 )
 
-// NewX25519KeyItem creates keyring item for X25519Key.
-func NewX25519KeyItem(key *X25519Key) *keyring.Item {
-	item := keyring.NewItem(key.ID().String(), key.PrivateKey()[:], string(X25519), time.Now())
-	return item
-}
-
 // AsX25519Key returns X25519Key for keyring Item.
 // If item is EdX25519Key returns converted to X25519Key.
 func AsX25519Key(item *keyring.Item) (*X25519Key, error) {
@@ -36,12 +30,6 @@ func AsX25519Key(item *keyring.Item) (*X25519Key, error) {
 	}
 }
 
-// NewEdX25519KeyItem creates keyring item for EdX25519Key.
-func NewEdX25519KeyItem(key *EdX25519Key) *keyring.Item {
-	item := keyring.NewItem(key.ID().String(), key.PrivateKey()[:], string(EdX25519), time.Now())
-	return item
-}
-
 // AsEdX25519Key returns EdX25519Key for keyring Item.
 func AsEdX25519Key(item *keyring.Item) (*EdX25519Key, error) {
 	if item.Type != string(EdX25519) {
@@ -53,12 +41,6 @@ func AsEdX25519Key(item *keyring.Item) (*EdX25519Key, error) {
 	}
 	key := NewEdX25519KeyFromPrivateKey(Bytes64(b))
 	return key, nil
-}
-
-// NewEdX25519PublicKeyItem creates keyring item for EdX25519PublicKey.
-func NewEdX25519PublicKeyItem(publicKey *EdX25519PublicKey) *keyring.Item {
-	item := keyring.NewItem(publicKey.ID().String(), publicKey.Bytes()[:], string(EdX25519Public), time.Now())
-	return item
 }
 
 // AsEdX25519PublicKey returns EdX25519PublicKey for keyring Item.
@@ -80,12 +62,6 @@ func AsEdX25519PublicKey(item *keyring.Item) (*EdX25519PublicKey, error) {
 	default:
 		return nil, errors.Errorf("invalid item type for edx25519 public key: %s", item.Type)
 	}
-}
-
-// NewX25519PublicKeyItem creates keyring item for X25519PublicKey.
-func NewX25519PublicKeyItem(publicKey *X25519PublicKey) *keyring.Item {
-	item := keyring.NewItem(publicKey.ID().String(), publicKey.Bytes()[:], string(X25519Public), time.Now())
-	return item
 }
 
 // AsX25519PublicKey returns X25519PublicKey for keyring Item.
@@ -134,4 +110,25 @@ func AsCertificateKey(item *keyring.Item) (*CertificateKey, error) {
 		return nil, err
 	}
 	return NewCertificateKey(cert.Private, cert.Public)
+}
+
+// ItemForKey returns *keyring.Item for a Key.
+func ItemForKey(key Key) *keyring.Item {
+	return keyring.NewItem(key.ID().String(), key.Bytes(), string(key.Type()), time.Now())
+}
+
+// KeyForItem returns Key from *keyring.Item or nil if not recognized as a Key.
+func KeyForItem(item *keyring.Item) (Key, error) {
+	switch item.Type {
+	case string(X25519):
+		return AsX25519Key(item)
+	case string(X25519Public):
+		return AsX25519PublicKey(item)
+	case string(EdX25519):
+		return AsEdX25519Key(item)
+	case string(EdX25519Public):
+		return AsEdX25519PublicKey(item)
+	default:
+		return nil, nil
+	}
 }

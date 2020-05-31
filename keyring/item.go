@@ -34,25 +34,23 @@ func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-// NewItemFromBytes creates Item from marshalled bytes.
-func NewItemFromBytes(b []byte, secretKey SecretKey) (*Item, error) {
-	var itemBytes []byte
-	if secretKey != nil {
-		decrypted, ok := secretBoxOpen(b, secretKey)
-		if !ok {
-			return nil, ErrInvalidAuth
-		}
-		itemBytes = decrypted
-	} else {
-		itemBytes = b
+// DecryptItem returns Item from bytes.
+func DecryptItem(b []byte, secretKey SecretKey) (*Item, error) {
+	return decrypt(b, secretKey)
+}
+
+func decrypt(b []byte, secretKey SecretKey) (*Item, error) {
+	decrypted, ok := secretBoxOpen(b, secretKey)
+	if !ok {
+		return nil, ErrInvalidAuth
 	}
 
-	if itemBytes == nil {
+	if decrypted == nil {
 		return nil, errors.Errorf("no data")
 	}
 
 	var item Item
-	if err := msgpack.Unmarshal(itemBytes, &item); err != nil {
+	if err := msgpack.Unmarshal(decrypted, &item); err != nil {
 		return nil, errors.Wrapf(err, "keyring item data is invalid")
 	}
 

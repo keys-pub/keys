@@ -14,7 +14,9 @@ func TestHTTPSNormalizeName(t *testing.T) {
 }
 
 func TestHTTPSValidateName(t *testing.T) {
-	err := link.HTTPS.ValidateName("keys.pub")
+	var err error
+
+	err = link.HTTPS.ValidateName("keys.pub")
 	require.NoError(t, err)
 
 	err = link.HTTPS.ValidateName("keys.co.uk")
@@ -28,6 +30,9 @@ func TestHTTPSValidateName(t *testing.T) {
 
 	err = link.HTTPS.ValidateName("llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch.co.uk")
 	require.NoError(t, err)
+
+	err = link.HTTPS.ValidateName("keys.pub ")
+	require.EqualError(t, err, "not a valid domain name")
 
 	err = link.HTTPS.ValidateName("keys.pub/test")
 	require.EqualError(t, err, "not a valid domain name")
@@ -64,6 +69,16 @@ func TestHTTPSValidateURL(t *testing.T) {
 		"https://keys.pub/keyspub.txt",
 		"https://keys.pub/keyspub.txt")
 
+	testValidateURL(t, link.HTTPS,
+		"keys.pub",
+		"https://keys.pub/.well-known/keyspub.txt",
+		"https://keys.pub/.well-known/keyspub.txt")
+
+	testValidateURLErr(t, link.HTTPS,
+		"keys.pub ",
+		"https://keys.pub /keyspub.txt",
+		"invalid url: not a valid domain name")
+
 	testValidateURLErr(t, link.HTTPS,
 		"keys.pub",
 		"https://keys.pub/foo.txt",
@@ -87,5 +102,5 @@ func TestHTTPSValidateURL(t *testing.T) {
 	testValidateURLErr(t, link.HTTPS,
 		"keys.pub/test/",
 		"http://keys.pub/test/keyspub.txt",
-		"invalid url: http://keys.pub/test/keyspub.txt")
+		"invalid url: not a valid domain name")
 }

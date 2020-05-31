@@ -55,3 +55,9 @@ func TestFSAuth(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
 }
+
+func TestFSIDs(t *testing.T) {
+	kr := testFS(t)
+	defer func() { _ = kr.Reset() }()
+	testIDs(t, kr)
+}

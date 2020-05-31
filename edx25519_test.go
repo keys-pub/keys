@@ -13,7 +13,7 @@ import (
 func TestSaveLoadEdX25519Key(t *testing.T) {
 	ks := keys.NewMemStore(true)
 	signKey := keys.GenerateEdX25519Key()
-	err := ks.SaveEdX25519Key(signKey)
+	err := ks.Save(signKey)
 	require.NoError(t, err)
 	signKeyOut, err := ks.EdX25519Key(signKey.ID())
 	require.NoError(t, err)

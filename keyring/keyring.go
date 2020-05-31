@@ -9,9 +9,9 @@ import (
 )
 
 // ErrItemValueTooLarge is item value is too large.
-// ID is max of 254 bytes.
-// Type is max of 32 bytes.
-// Data is max of 2048 bytes.
+// Item.ID is max of 254 bytes.
+// Item.Type is max of 32 bytes.
+// Item.Data is max of 2048 bytes.
 var ErrItemValueTooLarge = errors.New("keyring item value is too large")
 
 // ErrItemNotFound if item not found when trying to update.
@@ -43,18 +43,29 @@ func newKeyring(service string, st Store) *Keyring {
 
 // Keyring stores encrypted keyring items.
 type Keyring struct {
-	st      Store
-	service string
-	key     SecretKey
+	st        Store
+	service   string
+	masterKey SecretKey
+	lns       []Listener
+}
+
+// Store used by Keyring.
+func (k *Keyring) Store() Store {
+	return k.st
+}
+
+// Service name.
+func (k *Keyring) Service() string {
+	return k.service
 }
 
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
-	if strings.HasPrefix(id, reservedPrefix) {
+	if strings.HasPrefix(id, ReservedPrefix) {
 		return nil, errors.Errorf("keyring id prefix reserved %s", id)
 	}
-	return getItem(k.st, k.service, id, k.key)
+	return getItem(k.st, k.service, id, k.masterKey)
 }
 
 // Create item.
@@ -62,12 +73,12 @@ func (k *Keyring) Get(id string) (*Item, error) {
 // Item IDs are not encrypted.
 func (k *Keyring) Create(item *Item) error {
 	if item.ID == "" {
-		return errors.Errorf("no id")
+		return errors.Errorf("empty id")
 	}
-	if strings.HasPrefix(item.ID, reservedPrefix) {
+	if strings.HasPrefix(item.ID, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", item.ID)
 	}
-	existing, err := getItem(k.st, k.service, item.ID, k.key)
+	existing, err := getItem(k.st, k.service, item.ID, k.masterKey)
 	if err != nil {
 		return err
 	}
@@ -75,20 +86,20 @@ func (k *Keyring) Create(item *Item) error {
 		return ErrItemAlreadyExists
 	}
 
-	return setItem(k.st, k.service, item, k.key)
+	return setItem(k.st, k.service, item, k.masterKey)
 }
 
 // Update item data.
 // Requires Unlock().
 func (k *Keyring) Update(id string, b []byte) error {
 	if id == "" {
-		return errors.Errorf("no id")
+		return errors.Errorf("empty id")
 	}
-	if strings.HasPrefix(id, reservedPrefix) {
+	if strings.HasPrefix(id, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", id)
 	}
 
-	item, err := getItem(k.st, k.service, id, k.key)
+	item, err := getItem(k.st, k.service, id, k.masterKey)
 	if err != nil {
 		return err
 	}
@@ -97,7 +108,7 @@ func (k *Keyring) Update(id string, b []byte) error {
 	}
 	item.Data = b
 
-	return setItem(k.st, k.service, item, k.key)
+	return setItem(k.st, k.service, item, k.masterKey)
 }
 
 // Delete item.
@@ -106,46 +117,78 @@ func (k *Keyring) Delete(id string) (bool, error) {
 	return k.st.Delete(k.service, id)
 }
 
-// ListOpts options for List().
-type ListOpts struct {
-	Types []string
-}
-
 // List items.
 // Requires Unlock().
-// Items with ids that start with "." are not returned by List.
+// Items with ids that start with "." or "#" are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
-func (k *Keyring) List(opts *ListOpts) ([]*Item, error) {
-	return k.st.List(k.service, k.key, opts)
+func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
+	return List(k.st, k.service, k.masterKey, opts...)
 }
 
-// UnlockWithPassword unlocks a Keyring with a password.
-func (k *Keyring) UnlockWithPassword(password string) error {
+// Status returns keyring status.
+// Doesn't require Unlock().
+func (k *Keyring) Status() (Status, error) {
+	auths, err := k.st.IDs(k.service, WithReservedPrefix("auth"))
+	if err != nil {
+		return Unknown, err
+	}
+	setup := len(auths) > 0
+	if !setup {
+		return Setup, nil
+	}
+	if k.masterKey == nil {
+		return Locked, nil
+	}
+	return Unlocked, nil
+}
+
+// Status for keyring.
+type Status string
+
+const (
+	// Unknown status.
+	Unknown Status = ""
+	// Setup if setup needed.
+	Setup Status = "setup"
+	// Unlocked if unlocked.
+	Unlocked Status = "unlocked"
+	// Locked if locked.
+	Locked Status = "locked"
+)
+
+// UnlockWithPassword unlocks keyring with a password.
+// If setup is true, we are setting up the keyring auth for the first time.
+// This is a convenience method, calling Setup or Unlock with KeyForPassword using the keyring#Salt.
+func (k *Keyring) UnlockWithPassword(password string, setup bool) error {
+	if password == "" {
+		return errors.Errorf("empty password")
+	}
 	salt, err := k.Salt()
 	if err != nil {
 		return err
 	}
-	auth, err := NewPasswordAuth(password, salt)
+	key, err := KeyForPassword(password, salt)
 	if err != nil {
 		return err
 	}
-	if err = k.Unlock(auth); err != nil {
+	if setup {
+		provision := NewProvision(PasswordAuth)
+		if err := k.Setup(key, provision); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if _, err := k.Unlock(key); err != nil {
 		return err
 	}
 	return nil
 }
 
-// IDsOpts options for IDs().
-type IDsOpts struct {
-	Prefix       string
-	ShowHidden   bool
-	ShowReserved bool
-}
-
 // IDs returns item IDs.
 // Doesn't require Unlock().
-func (k *Keyring) IDs(opts *IDsOpts) ([]string, error) {
-	return k.st.IDs(k.service, opts)
+func (k *Keyring) IDs(opts ...IDsOption) ([]string, error) {
+	return k.st.IDs(k.service, opts...)
 }
 
 // Exists returns true it has the id.
@@ -155,44 +198,41 @@ func (k *Keyring) Exists(id string) (bool, error) {
 }
 
 // Unlock with auth.
-func (k *Keyring) Unlock(auth Auth) error {
-	key, err := unlock(k.st, k.service, auth)
+// Returns provision used to unlock.
+func (k *Keyring) Unlock(key SecretKey) (*Provision, error) {
+	id, masterKey, err := authUnlock(k.st, k.service, key)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	k.key = key
-	return nil
+	if masterKey == nil {
+		return nil, ErrInvalidAuth
+	}
+	k.masterKey = masterKey
+
+	provision, err := k.loadProvision(id)
+	if err != nil {
+		return nil, err
+	}
+	if provision == nil {
+		provision = &Provision{ID: id}
+	}
+	k.notifyUnlocked(provision)
+	return provision, nil
+}
+
+// MasterKey returns master key, if unlocked.
+// It's not recommended to use this key for anything other than possibly
+// deriving new keys.
+func (k *Keyring) MasterKey() SecretKey {
+	return k.masterKey
 }
 
 // Lock the keyring.
 func (k *Keyring) Lock() error {
-	k.key = nil
+	k.masterKey = nil
+	k.notifyLocked()
 	return nil
 }
-
-// Salt is default salt value, generated on first access and persisted
-// until ResetAuth() or Reset().
-// This salt value is not encrypted in the keyring.
-// Doesn't require Unlock().
-func (k *Keyring) Salt() ([]byte, error) {
-	return salt(k.st, k.service)
-}
-
-// Authed returns true if Keyring has ever been unlocked.
-// Doesn't require Unlock().
-func (k *Keyring) Authed() (bool, error) {
-	return k.st.Exists(k.service, reserved("auth"))
-}
-
-// func (k *keyring) ResetAuth() error {
-// 	if _, err := k.st.remove(k.service, reserved("salt")); err != nil {
-// 		return err
-// 	}
-// 	if _, err := k.st.remove(k.service, reserved("auth")); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 // Reset keyring.
 // Doesn't require Unlock().
@@ -204,7 +244,7 @@ func (k *Keyring) Reset() error {
 }
 
 func resetDefault(st Store, service string) error {
-	ids, err := st.IDs(service, &IDsOpts{ShowHidden: true, ShowReserved: true})
+	ids, err := st.IDs(service, Hidden(), Reserved())
 	if err != nil {
 		return err
 	}
@@ -216,23 +256,28 @@ func resetDefault(st Store, service string) error {
 	return nil
 }
 
-const reservedPrefix = "#"
+// ReservedPrefix are reserved items.
+const ReservedPrefix = "#"
 
 func reserved(s string) string {
-	return reservedPrefix + s
+	return ReservedPrefix + s
 }
 
-const hiddenPrefix = "."
+// HiddenPrefix are hidden items.
+const HiddenPrefix = "."
 
-func listDefault(st Store, service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
+// List items from Store.
+func List(st Store, service string, key SecretKey, opts ...ListOption) ([]*Item, error) {
+	var options ListOptions
+	for _, o := range opts {
+		o(&options)
 	}
+
 	if key == nil {
 		return nil, ErrLocked
 	}
 
-	ids, err := st.IDs(service, nil)
+	ids, err := st.IDs(service)
 	if err != nil {
 		return nil, err
 	}
@@ -242,11 +287,11 @@ func listDefault(st Store, service string, key SecretKey, opts *ListOpts) ([]*It
 		if err != nil {
 			return nil, err
 		}
-		item, err := NewItemFromBytes(b, key)
+		item, err := DecryptItem(b, key)
 		if err != nil {
 			return nil, err
 		}
-		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
+		if len(options.Types) != 0 && !contains(options.Types, item.Type) {
 			continue
 		}
 		items = append(items, item)

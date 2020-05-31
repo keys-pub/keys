@@ -14,8 +14,11 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/rsa"
+	"encoding/base64"
 	"fmt"
 	"strings"
+
+	"github.com/ScaleFT/sshkeys"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
@@ -70,14 +73,18 @@ func ParseSSHKey(pemBytes []byte, passphrase []byte, trim bool) (*EdX25519Key, e
 	}
 
 	var k interface{}
-	var err error
 	if len(passphrase) > 0 {
+		var err error
 		k, err = ssh.ParseRawPrivateKeyWithPassphrase(pemBytes, passphrase)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse ssh key with passphrase")
+		}
 	} else {
+		var err error
 		k, err = ssh.ParseRawPrivateKey(pemBytes)
-	}
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse ssh key")
+		}
 	}
 
 	switch k := k.(type) {
@@ -86,9 +93,57 @@ func ParseSSHKey(pemBytes []byte, passphrase []byte, trim bool) (*EdX25519Key, e
 			return nil, errors.Errorf("invalid ed25519 private key length")
 		}
 		return NewEdX25519KeyFromPrivateKey(Bytes64(*k)), nil
+	case ed25519.PrivateKey:
+		if len(k) != 64 {
+			return nil, errors.Errorf("invalid ed25519 private key length")
+		}
+		return NewEdX25519KeyFromPrivateKey(Bytes64(k)), nil
 	case *rsa.PrivateKey:
 		return nil, errors.Errorf("SSH RSA key not currently supported")
 	}
 
 	return nil, fmt.Errorf("unsupported SSH identity type: %T", k)
+}
+
+// EncodeToSSH encodes a EdX25519Key for SSH.
+func (k *EdX25519Key) EncodeToSSH(password []byte) ([]byte, error) {
+	key := ed25519.PrivateKey(k.Bytes())
+	return sshkeys.Marshal(key, &sshkeys.MarshalOptions{
+		Passphrase: password,
+	})
+}
+
+// EncodeToSSHAuthorized encodes a EdX25519PublicKey for SSH.
+func (k *EdX25519PublicKey) EncodeToSSHAuthorized() []byte {
+	b := &bytes.Buffer{}
+	b.WriteString(ssh.KeyAlgoED25519)
+	b.WriteByte(' ')
+	e := base64.NewEncoder(base64.StdEncoding, b)
+
+	w := struct {
+		Name     string
+		KeyBytes []byte
+	}{
+		ssh.KeyAlgoED25519,
+		k.Bytes(),
+	}
+	mb := ssh.Marshal(&w)
+
+	if _, err := e.Write(mb); err != nil {
+		panic(err)
+	}
+	if err := e.Close(); err != nil {
+		panic(err)
+	}
+	// b.WriteByte('\n')
+	return b.Bytes()
+}
+
+// SSHSigner interface.
+func (k *EdX25519Key) SSHSigner() ssh.Signer {
+	signer, err := ssh.NewSignerFromKey(k.Signer())
+	if err != nil {
+		panic(err)
+	}
+	return signer
 }

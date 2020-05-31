@@ -12,7 +12,7 @@ type Brand string
 const EdX25519Brand Brand = "EDX25519 KEY"
 
 // X25519Brand is saltpack brand for X25519 key.
-const X25519Brand Brand = "CURVE25519 KEY"
+const X25519Brand Brand = "X25519 KEY"
 
 // EncodeKeyToSaltpack encrypts a key to saltpack with password.
 func EncodeKeyToSaltpack(key Key, password string) (string, error) {

@@ -43,14 +43,6 @@ func (k fs) Name() string {
 	return "fs"
 }
 
-func defaultFSDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, ".keyring"), nil
-}
-
 func (k fs) Get(service string, id string) ([]byte, error) {
 	if id == "" {
 		return nil, errors.Errorf("failed to get keyring item: no id specified")
@@ -60,13 +52,17 @@ func (k fs) Get(service string, id string) ([]byte, error) {
 	}
 
 	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := pathExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return nil, nil
 	}
 	return ioutil.ReadFile(path) // #nosec
 }
 
-func (k fs) Set(service string, id string, data []byte, typ string) error {
+func (k fs) Set(service string, id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id specified")
 	}
@@ -81,15 +77,17 @@ func (k fs) Set(service string, id string, data []byte, typ string) error {
 	return nil
 }
 
-func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
-	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+func (k fs) IDs(service string, opts ...IDsOption) ([]string, error) {
+	options := NewIDsOptions(opts...)
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	path := filepath.Join(k.dir, service)
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := pathExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return []string{}, nil
 	}
 
@@ -101,10 +99,10 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 	ids := make([]string, 0, len(files))
 	for _, f := range files {
 		id := f.Name()
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
@@ -113,10 +111,6 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 		ids = append(ids, id)
 	}
 	return ids, nil
-}
-
-func (k fs) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return listDefault(k, service, key, opts)
 }
 
 func (k fs) Reset(service string) error {
@@ -129,6 +123,34 @@ func (k fs) Reset(service string) error {
 
 func (k fs) Exists(service string, id string) (bool, error) {
 	path := filepath.Join(k.dir, service, id)
+	return pathExists(path)
+}
+
+func (k fs) Delete(service string, id string) (bool, error) {
+	path := filepath.Join(k.dir, service, id)
+
+	exists, err := pathExists(path)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+	if err := os.Remove(path); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+func defaultLinuxFSDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, ".keyring"), nil
+}
+
+func pathExists(path string) (bool, error) {
 	if _, err := os.Stat(path); err == nil {
 		return true, nil
 	} else if os.IsNotExist(err) {
@@ -136,15 +158,4 @@ func (k fs) Exists(service string, id string) (bool, error) {
 	} else {
 		return false, err
 	}
-}
-
-func (k fs) Delete(service string, id string) (bool, error) {
-	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false, nil
-	}
-	if err := os.Remove(path); err != nil {
-		return true, err
-	}
-	return true, nil
 }

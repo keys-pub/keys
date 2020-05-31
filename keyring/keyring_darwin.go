@@ -44,13 +44,13 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 	return results[0].Data, nil
 }
 
-func (k sys) Set(service string, id string, data []byte, typ string) error {
+func (k sys) Set(service string, id string, data []byte) error {
 	// Remove existing
 	_, err := k.Delete(service, id)
 	if err != nil {
 		return errors.Wrapf(err, "failed to remove existing keychain item before add")
 	}
-	return add(service, id, data, typ)
+	return add(service, id, data, "")
 }
 
 func (k sys) Delete(service string, id string) (bool, error) {
@@ -90,64 +90,13 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	if opts == nil {
-		opts = &ListOpts{}
-	}
-	if key == nil {
-		return nil, ErrLocked
-	}
-	listQuery := keychain.NewItem()
-	listQuery.SetSecClass(keychain.SecClassGenericPassword)
-	listQuery.SetService(service)
-	// if k.skc != nil {
-	// 	query.SetMatchSearchList(*k.skc)
-	// }
-
-	listQuery.SetMatchLimit(keychain.MatchLimitAll)
-	// listQuery.SetReturnData(true)
-	listQuery.SetReturnAttributes(true)
-	results, err := keychain.QueryItem(listQuery)
-	if err != nil {
-		return nil, err
-	} else if len(results) == 0 {
-		return []*Item{}, nil
-	}
-
-	items := make([]*Item, 0, len(results))
-	for _, r := range results {
-		if strings.HasPrefix(r.Account, hiddenPrefix) || strings.HasPrefix(r.Account, reservedPrefix) {
-			continue
-		}
-		item, err := getItem(k, service, r.Account, key)
-		if err != nil {
-			return nil, err
-		}
-		if item == nil {
-			continue
-		}
-		if len(opts.Types) != 0 && !contains(opts.Types, item.Type) {
-			continue
-		}
-		items = append(items, item)
-	}
-
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].ID < items[j].ID
-	})
-
-	return items, nil
-}
-
 func (k sys) Reset(service string) error {
 	return resetDefault(k, service)
 }
 
-func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
-	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+	options := NewIDsOptions(opts...)
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
@@ -169,10 +118,10 @@ func (k sys) IDs(service string, opts *IDsOpts) ([]string, error) {
 	ids := make([]string, 0, len(results))
 	for _, r := range results {
 		id := r.Account
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

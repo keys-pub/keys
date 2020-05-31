@@ -5,12 +5,13 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/keyring"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v4"
 )
 
 func TestItem(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	secretKey := randKey()
 	item := keyring.NewItem("account1", []byte("password"), "passphrase", clock.Now())
 	b, err := item.Marshal(secretKey)
@@ -19,7 +20,7 @@ func TestItem(t *testing.T) {
 	_, err = item.Marshal(nil)
 	require.EqualError(t, err, "no secret key specified")
 
-	itemOut, err := keyring.NewItemFromBytes(b, secretKey)
+	itemOut, err := keyring.DecryptItem(b, secretKey)
 	require.NoError(t, err)
 
 	require.Equal(t, item.ID, itemOut.ID)
@@ -27,7 +28,7 @@ func TestItem(t *testing.T) {
 	require.Equal(t, item.Data, itemOut.Data)
 
 	secretKey2 := randKey()
-	_, err = keyring.NewItemFromBytes(b, secretKey2)
+	_, err = keyring.DecryptItem(b, secretKey2)
 	require.EqualError(t, err, "invalid keyring auth")
 
 	b, err = msgpack.Marshal(item)
