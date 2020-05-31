@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/pkg/errors"
 )
@@ -19,15 +18,15 @@ type tgz struct {
 	nowFn func() time.Time
 }
 
-// NewTGZStore creates a Store for a tar/gz file (tgz).
-func NewTGZStore(path string, nowFn func() time.Time) Store {
+// NewTGZ implements backup for a tar/gz file (tgz).
+func NewTGZ(path string, nowFn func() time.Time) Backup {
 	if nowFn == nil {
 		nowFn = time.Now
 	}
 	return &tgz{path: path, nowFn: nowFn}
 }
 
-func (t *tgz) SaveItems(items []*keyring.Item, key keyring.SecretKey) error {
+func (t *tgz) Backup(service string, st keyring.Store) error {
 	file, err := os.Create(t.path)
 	if err != nil {
 		return err
@@ -39,14 +38,19 @@ func (t *tgz) SaveItems(items []*keyring.Item, key keyring.SecretKey) error {
 	defer tw.Close()
 
 	now := t.nowFn()
-	for _, item := range items {
-		b, err := item.Marshal(key)
+
+	ids, err := st.IDs(service, keyring.Hidden(), keyring.Reserved())
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		b, err := st.Get(service, id)
 		if err != nil {
 			return err
 		}
 
 		header := new(tar.Header)
-		header.Name = keys.Rand3262()
+		header.Name = id
 		header.Size = int64(len(b))
 		header.Mode = 0600
 		header.ModTime = now
@@ -60,27 +64,26 @@ func (t *tgz) SaveItems(items []*keyring.Item, key keyring.SecretKey) error {
 	return nil
 }
 
-func (t *tgz) ListItems(key keyring.SecretKey) ([]*keyring.Item, error) {
+func (t *tgz) Restore(service string, st keyring.Store) error {
 	f, err := os.Open(t.path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
 
 	gz, err := gzip.NewReader(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	tr := tar.NewReader(gz)
-	items := []*keyring.Item{}
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		switch header.Typeflag {
@@ -89,17 +92,18 @@ func (t *tgz) ListItems(key keyring.SecretKey) ([]*keyring.Item, error) {
 		case tar.TypeReg:
 			b, err := ioutil.ReadAll(tr)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			item, err := keyring.NewItemFromBytes(b, key)
-			if err != nil {
-				return nil, err
+
+			id := header.Name
+			if err := st.Set(service, id, b); err != nil {
+				return err
 			}
-			items = append(items, item)
+
 		default:
-			return nil, errors.Errorf("invalid tar flag")
+			return errors.Errorf("invalid tar flag")
 		}
 	}
 
-	return items, nil
+	return nil
 }
