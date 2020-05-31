@@ -32,7 +32,7 @@ func TestCopy(t *testing.T) {
 	kr2 := keyring.NewMem(false)
 
 	// Copy
-	ids, err := keyring.Copy(kr, kr2)
+	ids, err := keyring.Copy(kr.Store(), kr2.Store())
 	require.NoError(t, err)
 	require.Equal(t, []string{"#auth-0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29", "#provision-0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29", item.ID}, ids)
 

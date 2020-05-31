@@ -8,11 +8,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-type sys struct{}
+type sys struct {
+	service string
+}
 
 // System returns keyring store for darwin.
-func system() Store {
-	return sys{}
+func system(service string) Store {
+	return sys{
+		service: service,
+	}
 }
 
 func checkSystem() error {
@@ -23,10 +27,10 @@ func (k sys) Name() string {
 	return "keychain"
 }
 
-func (k sys) Get(service string, id string) ([]byte, error) {
+func (k sys) Get(id string) ([]byte, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
-	query.SetService(service)
+	query.SetService(k.service)
 	query.SetAccount(id)
 	// if k.skc != nil {
 	// 	query.SetMatchSearchList(*k.skc)
@@ -44,19 +48,19 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 	return results[0].Data, nil
 }
 
-func (k sys) Set(service string, id string, data []byte) error {
+func (k sys) Set(id string, data []byte) error {
 	// Remove existing
-	_, err := k.Delete(service, id)
+	_, err := k.Delete(id)
 	if err != nil {
 		return errors.Wrapf(err, "failed to remove existing keychain item before add")
 	}
-	return add(service, id, data, "")
+	return add(k.service, id, data, "")
 }
 
-func (k sys) Delete(service string, id string) (bool, error) {
+func (k sys) Delete(id string) (bool, error) {
 	item := keychain.NewItem()
 	item.SetSecClass(keychain.SecClassGenericPassword)
-	item.SetService(service)
+	item.SetService(k.service)
 	item.SetAccount(id)
 	// if k.skc != nil {
 	// 	item.SetMatchSearchList(*k.skc)
@@ -72,10 +76,10 @@ func (k sys) Delete(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Exists(service string, id string) (bool, error) {
+func (k sys) Exists(id string) (bool, error) {
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
-	query.SetService(service)
+	query.SetService(k.service)
 	query.SetAccount(id)
 	query.SetMatchLimit(keychain.MatchLimitAll)
 	// Do not return data.
@@ -90,17 +94,17 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Reset(service string) error {
-	return resetDefault(k, service)
+func (k sys) Reset() error {
+	return resetDefault(k)
 }
 
-func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
 	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
-	query.SetService(service)
+	query.SetService(k.service)
 	// if k.skc != nil {
 	// 	query.SetMatchSearchList(*k.skc)
 	// }

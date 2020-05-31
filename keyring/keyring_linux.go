@@ -11,11 +11,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func system() Store {
-	return sys{}
+func system(service string) Store {
+	return sys{service: service}
 }
 
-type sys struct{}
+type sys struct {
+	service string
+}
 
 func (k sys) Name() string {
 	return "secret-service"
@@ -37,8 +39,8 @@ func checkSystem() error {
 }
 
 // Get item in keyring.
-func (k sys) Get(service string, id string) ([]byte, error) {
-	s, err := gokeyring.Get(service, id)
+func (k sys) Get(id string) ([]byte, error) {
+	s, err := gokeyring.Get(k.service, id)
 	if err != nil {
 		if err == gokeyring.ErrNotFound {
 			return nil, nil
@@ -49,12 +51,12 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 }
 
 // Set item in keyring.
-func (k sys) Set(service string, id string, data []byte) error {
-	return gokeyring.Set(service, id, string(data))
+func (k sys) Set(id string, data []byte) error {
+	return gokeyring.Set(k.service, id, string(data))
 }
 
-func (k sys) Delete(service string, id string) (bool, error) {
-	if err := gokeyring.Delete(service, id); err != nil {
+func (k sys) Delete(id string) (bool, error) {
+	if err := gokeyring.Delete(k.service, id); err != nil {
 		if err == gokeyring.ErrNotFound {
 			return false, nil
 		}
@@ -63,12 +65,12 @@ func (k sys) Delete(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Reset(service string) error {
+func (k sys) Reset() error {
 	svc, err := ss.NewSecretService()
 	if err != nil {
 		return err
 	}
-	paths, err := objectPaths(svc, service)
+	paths, err := objectPaths(svc, k.service)
 	if err != nil {
 		return err
 	}
@@ -80,7 +82,7 @@ func (k sys) Reset(service string) error {
 	return nil
 }
 
-func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
 	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
@@ -88,7 +90,7 @@ func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	ids, err := secretServiceList(svc, service)
+	ids, err := secretServiceList(svc, k.service)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +110,8 @@ func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
 	return out, nil
 }
 
-func (k sys) Exists(service string, id string) (bool, error) {
-	s, err := gokeyring.Get(service, id)
+func (k sys) Exists(id string) (bool, error) {
+	s, err := gokeyring.Get(k.service, id)
 	if err != nil {
 		if err == gokeyring.ErrNotFound {
 			return false, nil
