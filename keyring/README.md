@@ -12,7 +12,7 @@ For more details visit **[keys.pub](https://keys.pub)**.
 ```go
 // Initialize Keyring.
 // You can use keyring.System, keyring.SystemOrFS, keyring.FS, keyring.Mem, git.NewRepository.
-kr, err := keyring.New("AppName", keyring.System())
+kr, err := keyring.New(keyring.System("AppName"))
 if err != nil {
     log.Fatal(err)
 }

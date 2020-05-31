@@ -13,7 +13,7 @@ import (
 // The Keyring is unlocked (setup with a random key).
 // If setup is true, the mem Keyring will be setup with a random key.
 func NewMem(setup bool) *Keyring {
-	kr := newKeyring("", Mem())
+	kr := newKeyring(Mem())
 	if setup {
 		id := encoding.MustEncode(bytes.Repeat([]byte{0xFF}, 32), encoding.Base62)
 		provision := &Provision{
@@ -39,14 +39,14 @@ func (k mem) Name() string {
 	return "mem"
 }
 
-func (k mem) Get(service string, id string) ([]byte, error) {
+func (k mem) Get(id string) ([]byte, error) {
 	if b, ok := k.items[id]; ok {
 		return b, nil
 	}
 	return nil, nil
 }
 
-func (k mem) Set(service string, id string, data []byte) error {
+func (k mem) Set(id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id set")
 	}
@@ -54,11 +54,11 @@ func (k mem) Set(service string, id string, data []byte) error {
 	return nil
 }
 
-func (k mem) Reset(service string) error {
-	return resetDefault(k, service)
+func (k mem) Reset() error {
+	return resetDefault(k)
 }
 
-func (k mem) IDs(service string, opts ...IDsOption) ([]string, error) {
+func (k mem) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
 	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
@@ -81,12 +81,12 @@ func (k mem) IDs(service string, opts ...IDsOption) ([]string, error) {
 	return ids, nil
 }
 
-func (k mem) Exists(service string, id string) (bool, error) {
+func (k mem) Exists(id string) (bool, error) {
 	_, ok := k.items[id]
 	return ok, nil
 }
 
-func (k mem) Delete(service string, id string) (bool, error) {
+func (k mem) Delete(id string) (bool, error) {
 	if _, ok := k.items[id]; ok {
 		delete(k.items, id)
 		return true, nil

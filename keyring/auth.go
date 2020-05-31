@@ -32,18 +32,18 @@ func KeyForPassword(password string, salt []byte) (SecretKey, error) {
 // This salt value is not encrypted in the keyring.
 // Doesn't require Unlock().
 func (k *Keyring) Salt() ([]byte, error) {
-	return salt(k.st, k.service)
+	return salt(k.st)
 }
 
 // salt returns a salt value, generating it on first access if it doesn't exist.
-func salt(st Store, service string) ([]byte, error) {
-	salt, err := st.Get(service, reserved("salt"))
+func salt(st Store) ([]byte, error) {
+	salt, err := st.Get(reserved("salt"))
 	if err != nil {
 		return nil, err
 	}
 	if salt == nil {
 		salt = rand32()[:]
-		if err := st.Set(service, reserved("salt"), salt); err != nil {
+		if err := st.Set(reserved("salt"), salt); err != nil {
 			return nil, err
 		}
 	}

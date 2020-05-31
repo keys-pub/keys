@@ -22,29 +22,29 @@ var ErrItemAlreadyExists = errors.New("keyring item already exists")
 
 // New creates a new Keyring with backing Store.
 //
-// Use keyring.System() for the default system Store.
+// Use keyring.System(service) for the default system Store.
 // On macOS this is the Keychain, on Windows wincred and linux SecretService.
 //
-// Use keyring.SystemOrFS() for the default system Store or fallback to FS.
+// Use keyring.SystemOrFS(service) for the default system Store or fallback to FS.
 // Use keyring.Mem() for testing or ephemeral keys.
-// Use keyring.FS(dir) for filesystem based keyring at dir.
-func New(service string, st Store) (*Keyring, error) {
-	if service == "" {
-		return nil, errors.Errorf("no service specified")
+// Use keyring.FS(service, dir) for filesystem based keyring at dir.
+func New(opt ...Option) (*Keyring, error) {
+	opts, err := NewOptions(opt...)
+	if err != nil {
+		return nil, err
 	}
-	logger.Debugf("Keyring (%s, %s)", service, st.Name())
-	kr := newKeyring(service, st)
-	return kr, nil
+
+	logger.Debugf("Keyring (%s)", opts.st.Name())
+	return newKeyring(opts.st), nil
 }
 
-func newKeyring(service string, st Store) *Keyring {
-	return &Keyring{service: service, st: st}
+func newKeyring(st Store) *Keyring {
+	return &Keyring{st: st}
 }
 
 // Keyring stores encrypted keyring items.
 type Keyring struct {
 	st        Store
-	service   string
 	masterKey SecretKey
 	lns       []Listener
 }
@@ -54,18 +54,13 @@ func (k *Keyring) Store() Store {
 	return k.st
 }
 
-// Service name.
-func (k *Keyring) Service() string {
-	return k.service
-}
-
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
 	if strings.HasPrefix(id, ReservedPrefix) {
 		return nil, errors.Errorf("keyring id prefix reserved %s", id)
 	}
-	return getItem(k.st, k.service, id, k.masterKey)
+	return getItem(k.st, id, k.masterKey)
 }
 
 // Create item.
@@ -78,7 +73,7 @@ func (k *Keyring) Create(item *Item) error {
 	if strings.HasPrefix(item.ID, ReservedPrefix) {
 		return errors.Errorf("keyring id prefix reserved %s", item.ID)
 	}
-	existing, err := getItem(k.st, k.service, item.ID, k.masterKey)
+	existing, err := getItem(k.st, item.ID, k.masterKey)
 	if err != nil {
 		return err
 	}
@@ -86,7 +81,7 @@ func (k *Keyring) Create(item *Item) error {
 		return ErrItemAlreadyExists
 	}
 
-	return setItem(k.st, k.service, item, k.masterKey)
+	return setItem(k.st, item, k.masterKey)
 }
 
 // Update item data.
@@ -99,7 +94,7 @@ func (k *Keyring) Update(id string, b []byte) error {
 		return errors.Errorf("keyring id prefix reserved %s", id)
 	}
 
-	item, err := getItem(k.st, k.service, id, k.masterKey)
+	item, err := getItem(k.st, id, k.masterKey)
 	if err != nil {
 		return err
 	}
@@ -108,13 +103,13 @@ func (k *Keyring) Update(id string, b []byte) error {
 	}
 	item.Data = b
 
-	return setItem(k.st, k.service, item, k.masterKey)
+	return setItem(k.st, item, k.masterKey)
 }
 
 // Delete item.
 // Doesn't require Unlock().
 func (k *Keyring) Delete(id string) (bool, error) {
-	return k.st.Delete(k.service, id)
+	return k.st.Delete(id)
 }
 
 // List items.
@@ -122,13 +117,13 @@ func (k *Keyring) Delete(id string) (bool, error) {
 // Items with ids that start with "." or "#" are not returned by List.
 // If you need to list IDs only, see Keyring.IDs.
 func (k *Keyring) List(opts ...ListOption) ([]*Item, error) {
-	return List(k.st, k.service, k.masterKey, opts...)
+	return List(k.st, k.masterKey, opts...)
 }
 
 // Status returns keyring status.
 // Doesn't require Unlock().
 func (k *Keyring) Status() (Status, error) {
-	auths, err := k.st.IDs(k.service, WithReservedPrefix("auth"))
+	auths, err := k.st.IDs(WithReservedPrefix("auth"))
 	if err != nil {
 		return Unknown, err
 	}
@@ -188,19 +183,19 @@ func (k *Keyring) UnlockWithPassword(password string, setup bool) error {
 // IDs returns item IDs.
 // Doesn't require Unlock().
 func (k *Keyring) IDs(opts ...IDsOption) ([]string, error) {
-	return k.st.IDs(k.service, opts...)
+	return k.st.IDs(opts...)
 }
 
 // Exists returns true it has the id.
 // Doesn't require Unlock().
 func (k *Keyring) Exists(id string) (bool, error) {
-	return k.st.Exists(k.service, id)
+	return k.st.Exists(id)
 }
 
 // Unlock with auth.
 // Returns provision used to unlock.
 func (k *Keyring) Unlock(key SecretKey) (*Provision, error) {
-	id, masterKey, err := authUnlock(k.st, k.service, key)
+	id, masterKey, err := authUnlock(k.st, key)
 	if err != nil {
 		return nil, err
 	}
@@ -237,19 +232,19 @@ func (k *Keyring) Lock() error {
 // Reset keyring.
 // Doesn't require Unlock().
 func (k *Keyring) Reset() error {
-	if err := k.st.Reset(k.service); err != nil {
+	if err := k.st.Reset(); err != nil {
 		return err
 	}
 	return k.Lock()
 }
 
-func resetDefault(st Store, service string) error {
-	ids, err := st.IDs(service, Hidden(), Reserved())
+func resetDefault(st Store) error {
+	ids, err := st.IDs(Hidden(), Reserved())
 	if err != nil {
 		return err
 	}
 	for _, id := range ids {
-		if _, err := st.Delete(service, id); err != nil {
+		if _, err := st.Delete(id); err != nil {
 			return err
 		}
 	}
@@ -267,7 +262,7 @@ func reserved(s string) string {
 const HiddenPrefix = "."
 
 // List items from Store.
-func List(st Store, service string, key SecretKey, opts ...ListOption) ([]*Item, error) {
+func List(st Store, key SecretKey, opts ...ListOption) ([]*Item, error) {
 	var options ListOptions
 	for _, o := range opts {
 		o(&options)
@@ -277,13 +272,13 @@ func List(st Store, service string, key SecretKey, opts ...ListOption) ([]*Item,
 		return nil, ErrLocked
 	}
 
-	ids, err := st.IDs(service)
+	ids, err := st.IDs()
 	if err != nil {
 		return nil, err
 	}
 	items := make([]*Item, 0, len(ids))
 	for _, id := range ids {
-		b, err := st.Get(service, id)
+		b, err := st.Get(id)
 		if err != nil {
 			return nil, err
 		}

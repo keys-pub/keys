@@ -10,8 +10,8 @@ import (
 
 func ExampleNew() {
 	// Initialize Keyring.
-	// You can use keyring.System(), keyring.SystemOrFS(), keyring.FS(dir), or keyring.Mem().
-	kr, err := keyring.New("AppName", keyring.SystemOrFS())
+	// You can use keyring.System(service), keyring.SystemOrFS(service), keyring.FS(service, dir), or keyring.Mem().
+	kr, err := keyring.New(keyring.SystemOrFS("AppName"))
 	if err != nil {
 		log.Fatal(err)
 	}

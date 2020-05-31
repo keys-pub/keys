@@ -12,7 +12,7 @@ func main() {
 	appName := flag.String("app", "Keys.keyring", "App name")
 	flag.Parse()
 
-	kr, err := keyring.New(*appName, keyring.System())
+	kr, err := keyring.New(keyring.SystemOrFS(*appName))
 	if err != nil {
 		log.Fatal(err)
 	}
