@@ -44,10 +44,10 @@ func decrypt(b []byte, secretKey SecretKey) (*Item, error) {
 	if !ok {
 		return nil, ErrInvalidAuth
 	}
+
 	if decrypted == nil {
 		return nil, errors.Errorf("no data")
 	}
-
 	var item Item
 	if err := msgpack.Unmarshal(decrypted, &item); err != nil {
 		return nil, errors.Wrapf(err, "keyring item data is invalid")
