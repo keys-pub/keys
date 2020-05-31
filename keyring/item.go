@@ -44,7 +44,6 @@ func decrypt(b []byte, secretKey SecretKey) (*Item, error) {
 	if !ok {
 		return nil, ErrInvalidAuth
 	}
-
 	if decrypted == nil {
 		return nil, errors.Errorf("no data")
 	}
