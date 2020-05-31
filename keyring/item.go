@@ -21,7 +21,7 @@ func NewItem(id string, b []byte, typ string, createdAt time.Time) *Item {
 	return item
 }
 
-// Marshal Item to bytes, encrypted with a secret key.
+// Marshal to bytes, encrypted with a secret key.
 func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	if secretKey == nil {
 		return nil, errors.Errorf("no secret key specified")
