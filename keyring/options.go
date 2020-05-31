@@ -2,6 +2,25 @@ package keyring
 
 import "strings"
 
+// Options ...
+type Options struct {
+	st Store
+}
+
+// Option ...
+type Option func(*Options) error
+
+// NewOptions ...
+func NewOptions(opts ...Option) (Options, error) {
+	var options Options
+	for _, o := range opts {
+		if err := o(&options); err != nil {
+			return options, err
+		}
+	}
+	return options, nil
+}
+
 // ListOption ...
 type ListOption func(*ListOptions)
 

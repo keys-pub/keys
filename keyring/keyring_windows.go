@@ -9,22 +9,26 @@ import (
 )
 
 // System returns keyring store for windows.
-func system() Store {
-	return sys{}
+func system(service string) Store {
+	return sys{
+		service: service,
+	}
 }
 
 func checkSystem() error {
 	return nil
 }
 
-type sys struct{}
+type sys struct {
+	service string
+}
 
 func (k sys) Name() string {
 	return "wincred"
 }
 
-func (k sys) Get(service string, id string) ([]byte, error) {
-	targetName := service + "/" + id
+func (k sys) Get(id string) ([]byte, error) {
+	targetName := k.service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
 		if errors.Cause(err) == wincred.ErrElementNotFound {
@@ -38,8 +42,8 @@ func (k sys) Get(service string, id string) ([]byte, error) {
 	return cred.CredentialBlob, nil
 }
 
-func (k sys) Set(service string, id string, data []byte) error {
-	targetName := service + "/" + id
+func (k sys) Set(id string, data []byte) error {
+	targetName := k.service + "/" + id
 	cred := wincred.NewGenericCredential(targetName)
 	cred.CredentialBlob = data
 	if err := cred.Write(); err != nil {
@@ -48,8 +52,8 @@ func (k sys) Set(service string, id string, data []byte) error {
 	return nil
 }
 
-func (k sys) Delete(service string, id string) (bool, error) {
-	targetName := service + "/" + id
+func (k sys) Delete(id string) (bool, error) {
+	targetName := k.service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
 		if errors.Cause(err) == wincred.ErrElementNotFound {
@@ -66,8 +70,8 @@ func (k sys) Delete(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Exists(service string, id string) (bool, error) {
-	targetName := service + "/" + id
+func (k sys) Exists(id string) (bool, error) {
+	targetName := k.service + "/" + id
 	cred, err := wincred.GetGenericCredential(targetName)
 	if err != nil {
 		if errors.Cause(err) == wincred.ErrElementNotFound {
@@ -81,7 +85,7 @@ func (k sys) Exists(service string, id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
+func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
 	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
@@ -91,8 +95,8 @@ func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
 	}
 	ids := make([]string, 0, len(creds))
 	for _, cred := range creds {
-		if strings.HasPrefix(cred.TargetName, service+"/") {
-			id := cred.TargetName[len(service+"/"):]
+		if strings.HasPrefix(cred.TargetName, k.service+"/") {
+			id := cred.TargetName[len(k.service+"/"):]
 			if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 				continue
 			}
@@ -109,8 +113,8 @@ func (k sys) IDs(service string, opts ...IDsOption) ([]string, error) {
 	return ids, nil
 }
 
-func (k sys) Reset(service string) error {
-	return resetDefault(k, service)
+func (k sys) Reset() error {
+	return resetDefault(k)
 }
 
 // Utility to dump wincred list:
