@@ -14,23 +14,45 @@ import (
 
 // Backup Store into TGZ.
 func Backup(path string, st Store, now time.Time) error {
-	file, err := os.Create(path)
+	tmpPath := path + ".tmp"
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	file, err := os.Create(tmpPath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+
+	if err := backup(file, st, now); err != nil {
+		_ = file.Close()
+		return err
+	}
+
+	if err := file.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tmpPath, path); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func backup(file *os.File, st Store, now time.Time) error {
 	gz := gzip.NewWriter(file)
-	defer gz.Close()
 	tw := tar.NewWriter(gz)
-	defer tw.Close()
 
 	ids, err := st.IDs(Hidden(), Reserved())
 	if err != nil {
+		_ = tw.Close()
+		_ = gz.Close()
 		return err
 	}
 	for _, id := range ids {
 		b, err := st.Get(id)
 		if err != nil {
+			_ = tw.Close()
+			_ = gz.Close()
 			return err
 		}
 
@@ -40,26 +62,47 @@ func Backup(path string, st Store, now time.Time) error {
 		header.Mode = 0600
 		header.ModTime = now
 		if err := tw.WriteHeader(header); err != nil {
+			_ = tw.Close()
+			_ = gz.Close()
 			return err
 		}
 		if _, err := io.Copy(tw, bytes.NewReader(b)); err != nil {
+			_ = tw.Close()
+			_ = gz.Close()
 			return err
 		}
 	}
+
+	if err := tw.Close(); err != nil {
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Restore from path.tgz into Store.
 func Restore(path string, st Store) error {
-	f, err := os.Open(path)
+	file, err := os.OpenFile(path, os.O_RDONLY, 0)
 	if err != nil {
+		return errors.Wrapf(err, "failed to open backup")
+	}
+
+	if err := restore(file, st); err != nil {
+		_ = file.Close()
 		return err
 	}
-	defer f.Close()
 
-	gz, err := gzip.NewReader(f)
+	return file.Close()
+
+}
+
+func restore(file *os.File, st Store) error {
+	gz, err := gzip.NewReader(file)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to open gzip")
 	}
 
 	tr := tar.NewReader(gz)
@@ -69,7 +112,7 @@ func Restore(path string, st Store) error {
 			break
 		}
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to read next tar")
 		}
 
 		switch header.Typeflag {
@@ -78,7 +121,7 @@ func Restore(path string, st Store) error {
 		case tar.TypeReg:
 			b, err := ioutil.ReadAll(tr)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to read tar")
 			}
 
 			id := header.Name
