@@ -1,6 +1,6 @@
 package keyring
 
-// Copy data from a keyring to another keyring.
+// Copy data from a keyring.Store to another keyring.Store.
 // It copies raw data, it doesn't need to be unlocked.
 // Doesn't overwrite existing data.
 func Copy(from Store, to Store) ([]string, error) {
