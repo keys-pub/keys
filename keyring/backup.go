@@ -1,4 +1,4 @@
-package backup
+package keyring
 
 import (
 	"archive/tar"
@@ -9,25 +9,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/keys-pub/keys/keyring"
 	"github.com/pkg/errors"
 )
 
-type tgz struct {
-	path  string
-	nowFn func() time.Time
-}
-
-// NewTGZ implements backup for a tar/gz file (tgz).
-func NewTGZ(path string, nowFn func() time.Time) Backup {
-	if nowFn == nil {
-		nowFn = time.Now
-	}
-	return &tgz{path: path, nowFn: nowFn}
-}
-
-func (t *tgz) Backup(service string, st keyring.Store) error {
-	file, err := os.Create(t.path)
+// Backup Store into TGZ.
+func Backup(path string, st Store, now time.Time) error {
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -37,14 +24,12 @@ func (t *tgz) Backup(service string, st keyring.Store) error {
 	tw := tar.NewWriter(gz)
 	defer tw.Close()
 
-	now := t.nowFn()
-
-	ids, err := st.IDs(service, keyring.Hidden(), keyring.Reserved())
+	ids, err := st.IDs(Hidden(), Reserved())
 	if err != nil {
 		return err
 	}
 	for _, id := range ids {
-		b, err := st.Get(service, id)
+		b, err := st.Get(id)
 		if err != nil {
 			return err
 		}
@@ -64,8 +49,9 @@ func (t *tgz) Backup(service string, st keyring.Store) error {
 	return nil
 }
 
-func (t *tgz) Restore(service string, st keyring.Store) error {
-	f, err := os.Open(t.path)
+// Restore from path.tgz into Store.
+func Restore(path string, st Store) error {
+	f, err := os.Open(path)
 	if err != nil {
 		return err
 	}
@@ -96,7 +82,7 @@ func (t *tgz) Restore(service string, st keyring.Store) error {
 			}
 
 			id := header.Name
-			if err := st.Set(service, id, b); err != nil {
+			if err := st.Set(id, b); err != nil {
 				return err
 			}
 
