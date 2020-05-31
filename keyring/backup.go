@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Backup Store into TGZ.
+// Backup Store into {path}.tgz.
 func Backup(path string, st Store, now time.Time) error {
 	tmpPath := path + ".tmp"
 	defer func() { _ = os.Remove(tmpPath) }()
