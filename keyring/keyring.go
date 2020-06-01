@@ -222,6 +222,14 @@ func (k *Keyring) MasterKey() SecretKey {
 	return k.masterKey
 }
 
+// SetMasterKey directly sets the master key.
+// If the key is wrong this could leave the keyring in a weird state and should
+// only be used in special circumstances.
+// You probably want to use Setup or Unlock instead.
+func (k *Keyring) SetMasterKey(mk SecretKey) {
+	k.masterKey = mk
+}
+
 // Lock the keyring.
 func (k *Keyring) Lock() error {
 	k.masterKey = nil
