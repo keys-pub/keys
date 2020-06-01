@@ -22,12 +22,12 @@ var ErrItemAlreadyExists = errors.New("keyring item already exists")
 
 // New creates a new Keyring with backing Store.
 //
-// Use keyring.System(service) for the default system Store.
+// Use keyring.System for the default system Store.
 // On macOS this is the Keychain, on Windows wincred and linux SecretService.
 //
-// Use keyring.SystemOrFS(service) for the default system Store or fallback to FS.
-// Use keyring.Mem() for testing or ephemeral keys.
-// Use keyring.FS(service, dir) for filesystem based keyring at dir.
+// Use keyring.SystemOrFS for the default system Store or fallback to FS.
+// Use keyring.Mem for testing or ephemeral keys.
+// Use keyring.FS for filesystem based keyring.
 func New(opt ...Option) (*Keyring, error) {
 	opts, err := newOptions(opt...)
 	if err != nil {

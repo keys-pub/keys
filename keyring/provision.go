@@ -10,6 +10,42 @@ import (
 	"github.com/vmihailenco/msgpack/v4"
 )
 
+// AuthType describes an auth method.
+type AuthType string
+
+const (
+	// UnknownAuth ...
+	UnknownAuth AuthType = ""
+	// PasswordAuth ...
+	PasswordAuth AuthType = "password"
+	// FIDO2HMACSecretAuth ...
+	FIDO2HMACSecretAuth AuthType = "fido2-hmac-secret" // #nosec
+)
+
+var provisionPrefix = reserved("provision-")
+
+// Provision is unencrypted provision and parameters used by client auth.
+type Provision struct {
+	ID        string    `msgpack:"id"`
+	Type      AuthType  `msgpack:"type"`
+	CreatedAt time.Time `msgpack:"cts"`
+
+	// For FIDO2HMACSecret
+
+	AAGUID string `msgpack:"aaguid"`
+	Salt   []byte `msgpack:"salt"`
+	NoPin  bool   `msgpack:"nopin"`
+}
+
+// NewProvision creates a new provision.
+func NewProvision(typ AuthType) *Provision {
+	return &Provision{
+		ID:        newProvisionID(),
+		Type:      typ,
+		CreatedAt: time.Now(),
+	}
+}
+
 // Setup auth, if no auth exists.
 // Returns ErrAlreadySetup if already setup.
 // Doesn't require Unlock().
@@ -243,42 +279,6 @@ func parseProvisionID(s string) string {
 }
 
 const authV1ID = "v1.auth"
-
-// AuthType describes an auth method.
-type AuthType string
-
-const (
-	// UnknownAuth ...
-	UnknownAuth AuthType = ""
-	// PasswordAuth ...
-	PasswordAuth AuthType = "password"
-	// FIDO2HMACSecretAuth ...
-	FIDO2HMACSecretAuth AuthType = "fido2-hmac-secret" // #nosec
-)
-
-var provisionPrefix = reserved("provision-")
-
-// Provision is unencrypted provision and parameters used by client auth.
-type Provision struct {
-	ID        string    `msgpack:"id"`
-	Type      AuthType  `msgpack:"type"`
-	CreatedAt time.Time `msgpack:"cts"`
-
-	// For FIDO2HMACSecret
-
-	AAGUID string `msgpack:"aaguid"`
-	Salt   []byte `msgpack:"salt"`
-	NoPin  bool   `msgpack:"nopin"`
-}
-
-// NewProvision creates a new provision.
-func NewProvision(typ AuthType) *Provision {
-	return &Provision{
-		ID:        newProvisionID(),
-		Type:      typ,
-		CreatedAt: time.Now(),
-	}
-}
 
 // loadProvision loads provision for id.
 func (k *Keyring) loadProvision(id string) (*Provision, error) {
