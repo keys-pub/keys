@@ -6,7 +6,7 @@ import "github.com/pkg/errors"
 // It copies raw data, it doesn't need to be unlocked.
 // Doesn't overwrite existing data.
 func Copy(from Store, to Store, opt ...CopyOption) ([]string, error) {
-	opts := NewCopyOptions(opt...)
+	opts := newCopyOptions(opt...)
 
 	ids, err := from.IDs(Reserved(), Hidden())
 	if err != nil {
@@ -50,8 +50,7 @@ type CopyOptions struct {
 	DryRun       bool
 }
 
-// NewCopyOptions ...
-func NewCopyOptions(opts ...CopyOption) CopyOptions {
+func newCopyOptions(opts ...CopyOption) CopyOptions {
 	var options CopyOptions
 	for _, o := range opts {
 		o(&options)
