@@ -26,6 +26,14 @@ type Store interface {
 	Reset() error
 }
 
+// WithStore specifies Store to use with Keyring.
+func WithStore(st Store) Option {
+	return func(o *Options) error {
+		o.st = st
+		return nil
+	}
+}
+
 // System Store option.
 func System(service string) Option {
 	return func(o *Options) error {
