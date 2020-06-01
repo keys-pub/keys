@@ -25,7 +25,7 @@ func TestBackupRestore(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	tmpFile := keys.RandTempPath("")
+	tmpFile := keys.RandTempPath()
 	defer func() { _ = os.Remove(tmpFile) }()
 
 	err = keyring.Backup(tmpFile, kr.Store(), clock.Now())
