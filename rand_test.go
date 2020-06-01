@@ -62,5 +62,8 @@ func TestRand3262(t *testing.T) {
 }
 
 func TestRandTempPath(t *testing.T) {
-	_ = keys.RandTempPath()
+	p := keys.RandTempPath()
+	require.NotEmpty(t, p)
+	p2 := keys.RandTempPath()
+	require.NotEqual(t, p, p2)
 }
