@@ -29,7 +29,7 @@ var ErrItemAlreadyExists = errors.New("keyring item already exists")
 // Use keyring.Mem() for testing or ephemeral keys.
 // Use keyring.FS(service, dir) for filesystem based keyring at dir.
 func New(opt ...Option) (*Keyring, error) {
-	opts, err := NewOptions(opt...)
+	opts, err := newOptions(opt...)
 	if err != nil {
 		return nil, err
 	}
