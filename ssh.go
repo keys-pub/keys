@@ -25,7 +25,7 @@ import (
 )
 
 // ParseSSHPublicKey parses a SSH public key.
-func ParseSSHPublicKey(s string) (*EdX25519PublicKey, error) {
+func ParseSSHPublicKey(s string) (Key, error) {
 	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(s))
 	if err != nil {
 		return nil, fmt.Errorf("malformed SSH recipient: %q: %v", s, err)
@@ -63,7 +63,7 @@ func trimLineSpace(b []byte) ([]byte, error) {
 }
 
 // ParseSSHKey parses a SSH private key.
-func ParseSSHKey(pemBytes []byte, passphrase []byte, trim bool) (*EdX25519Key, error) {
+func ParseSSHKey(pemBytes []byte, passphrase []byte, trim bool) (Key, error) {
 	if trim {
 		b, err := trimLineSpace(pemBytes)
 		if err != nil {
