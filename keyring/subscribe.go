@@ -41,9 +41,6 @@ func (k *Keyring) Subscribe(topic string) chan Event {
 
 // Unsubscribe from topic.
 func (k *Keyring) Unsubscribe(topic string) {
-	if k.subs == nil {
-		return
-	}
 	k.subs.Unsubscribe(topic)
 }
 
