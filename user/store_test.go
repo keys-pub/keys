@@ -220,7 +220,7 @@ func TestResultTwitter(t *testing.T) {
 	_, err = user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	req.SetResponse("https://twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
+	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
 
 	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -291,7 +291,7 @@ func TestUserUnverified(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	req.SetError("https://twitter.com/bob/status/1", errors.Errorf("testing"))
+	req.SetError("https://mobile.twitter.com/bob/status/1", errors.Errorf("testing"))
 	require.NoError(t, err)
 
 	// users, err := ust.Update(context.TODO(), sk.ID())
@@ -328,7 +328,7 @@ func TestCheckFailure(t *testing.T) {
 	ust := testStore(t, dst, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
-	req.SetResponse("https://twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
+	req.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
 
 	usr := &user.User{
 		Name:    "gabriel",
@@ -435,7 +435,7 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 	ust := testStore(t, dst, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
-	req.SetResponse("https://twitter.com/gabriel/status/1259188857846632448", []byte(msg))
+	req.SetResponse("https://mobile.twitter.com/gabriel/status/1259188857846632448", []byte(msg))
 
 	err = scs.SaveSigchain(sc)
 	require.NoError(t, err)

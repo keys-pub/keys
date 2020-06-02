@@ -446,13 +446,17 @@ func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *ke
 
 func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
+	murl := ""
 	switch service {
 	case "github":
 		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
+		murl = url
 	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
+		murl = fmt.Sprintf("https://mobile.twitter.com/%s/status/1", name)
 	case "reddit":
 		url = fmt.Sprintf("https://reddit.com/r/keyspubmsgs/comments/%s", name)
+		murl = url
 	default:
 		return nil, errors.Errorf("unsupported service in test")
 	}
@@ -486,7 +490,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 	if err != nil {
 		return nil, err
 	}
-	mock.SetResponse(url, []byte(msg))
+	mock.SetResponse(murl, []byte(msg))
 
 	return st, nil
 }
