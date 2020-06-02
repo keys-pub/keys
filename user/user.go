@@ -120,13 +120,13 @@ func (u *User) UnmarshalJSON(b []byte) error {
 
 // New creates a User.
 // Name and URL string are NOT normalized.
-func New(ust *Store, kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
+func New(kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
 
-	usr, err := newUser(ust, kid, svc, name, urs)
+	usr, err := newUser(kid, svc, name, urs)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func New(ust *Store, kid keys.ID, service string, name string, urs string, seq i
 	return usr, nil
 }
 
-func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs string) (*User, error) {
+func newUser(kid keys.ID, service link.Service, name string, urs string) (*User, error) {
 	usr := &User{
 		KID:     kid,
 		Service: service.ID(),
@@ -152,7 +152,7 @@ func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs str
 
 // NewUserForSigning returns User for signing (doesn't have remote URL yet).
 // The name is normalized, for example for twitter "@Username" => "username".
-func NewUserForSigning(ust *Store, kid keys.ID, service string, name string) (*User, error) {
+func NewUserForSigning(kid keys.ID, service string, name string) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err

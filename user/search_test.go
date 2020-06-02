@@ -465,7 +465,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 		sc = keys.NewSigchain(key.ID())
 	}
 
-	usr, err := user.New(ust, key.ID(), service, name, url, sc.LastSeq()+1)
+	usr, err := user.New(key.ID(), service, name, url, sc.LastSeq()+1)
 	if err != nil {
 		return nil, err
 	}
@@ -493,20 +493,15 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 
 func TestNewSigchainUserStatement(t *testing.T) {
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-
-	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
 	sc := keys.NewSigchain(key.ID())
-	usr, err := user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
+	usr, err := user.New(key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.NoError(t, err)
 	require.Equal(t, st.Seq, usr.Seq)
 
-	usr, err = user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
+	usr, err = user.New(key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
 	require.NoError(t, err)
 	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
