@@ -28,9 +28,13 @@ func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
 	if u.Scheme != "https" {
 		return "", errors.Errorf("invalid scheme for url %s", u)
 	}
-	if u.Host != "twitter.com" {
+	switch u.Host {
+	case "twitter.com", "mobile.twitter.com":
+		// OK
+	default:
 		return "", errors.Errorf("invalid host for url %s", u)
 	}
+
 	path := u.Path
 	path = strings.TrimPrefix(path, "/")
 	paths := strings.Split(path, "/")
@@ -40,7 +44,9 @@ func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
 	if paths[0] != name {
 		return "", errors.Errorf("path invalid (name mismatch) for url %s", u)
 	}
-	return u.String(), nil
+
+	// Use mobile twitter url.
+	return "https://mobile.twitter.com/" + path, nil
 }
 
 func (s *twitter) NormalizeName(name string) string {

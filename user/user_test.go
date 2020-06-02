@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/ds"
-	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/stretchr/testify/require"
@@ -32,34 +30,25 @@ func testdataBytes(t *testing.T, path string) []byte {
 }
 
 func TestNewValidate(t *testing.T) {
-	clock := tsutil.NewClock()
-	req := request.NewMockRequestor()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust, err := user.NewStore(dst, scs, req, clock.Now)
-	require.NoError(t, err)
+	var err error
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	_, err = user.New(ust, alice.ID(), "github", "alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
+	_, err = user.New(alice.ID(), "github", "alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "invalid scheme for url file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9")
 
-	_, err = user.New(ust, alice.ID(), "github", "alice", "https://githubb.com/alice/70281cc427850c272a8574af4d8564d9", 1)
+	_, err = user.New(alice.ID(), "github", "alice", "https://githubb.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "invalid host for url https://githubb.com/alice/70281cc427850c272a8574af4d8564d9")
 
-	_, err = user.New(ust, alice.ID(), "github", "alice", "http://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
+	_, err = user.New(alice.ID(), "github", "alice", "http://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "invalid scheme for url http://gist.github.com/alice/70281cc427850c272a8574af4d8564d9")
 
-	_, err = user.New(ust, alice.ID(), "github", "Alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
+	_, err = user.New(alice.ID(), "github", "Alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "name has an invalid character")
 }
 
 func TestSigchainUsers(t *testing.T) {
 	clock := tsutil.NewClock()
-	req := request.NewMockRequestor()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust, err := user.NewStore(dst, scs, req, clock.Now)
-	require.NoError(t, err)
+
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
@@ -69,7 +58,7 @@ func TestSigchainUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, usr)
 
-	usr, err = user.New(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	usr, err = user.New(alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, usr, alice, clock.Now())
 	require.NoError(t, err)
@@ -90,12 +79,12 @@ func TestSigchainUsers(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, usr)
 
-	usr2, err := user.New(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	usr2, err := user.New(alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	_, err = user.NewUserSigchainStatement(sc, usr2, alice, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 
-	usr2, err = user.New(ust, alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
+	usr2, err = user.New(alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
 	require.NoError(t, err)
 	st2, err := user.NewUserSigchainStatement(sc, usr2, alice, clock.Now())
 	require.NoError(t, err)

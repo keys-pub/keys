@@ -446,13 +446,17 @@ func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *ke
 
 func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
+	murl := ""
 	switch service {
 	case "github":
 		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
+		murl = url
 	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
+		murl = fmt.Sprintf("https://mobile.twitter.com/%s/status/1", name)
 	case "reddit":
 		url = fmt.Sprintf("https://reddit.com/r/keyspubmsgs/comments/%s", name)
+		murl = url
 	default:
 		return nil, errors.Errorf("unsupported service in test")
 	}
@@ -465,7 +469,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 		sc = keys.NewSigchain(key.ID())
 	}
 
-	usr, err := user.New(ust, key.ID(), service, name, url, sc.LastSeq()+1)
+	usr, err := user.New(key.ID(), service, name, url, sc.LastSeq()+1)
 	if err != nil {
 		return nil, err
 	}
@@ -486,27 +490,22 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 	if err != nil {
 		return nil, err
 	}
-	mock.SetResponse(url, []byte(msg))
+	mock.SetResponse(murl, []byte(msg))
 
 	return st, nil
 }
 
 func TestNewSigchainUserStatement(t *testing.T) {
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-
-	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
 	sc := keys.NewSigchain(key.ID())
-	usr, err := user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
+	usr, err := user.New(key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.NoError(t, err)
 	require.Equal(t, st.Seq, usr.Seq)
 
-	usr, err = user.New(ust, key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
+	usr, err = user.New(key.ID(), "github", "alice", "https://gist.github.com/alice/1", 100)
 	require.NoError(t, err)
 	_, err = user.NewUserSigchainStatement(sc, usr, key, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")

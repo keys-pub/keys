@@ -45,6 +45,11 @@ func TestTwitterNormalizeURL(t *testing.T) {
 }
 
 func TestTwitterValidateURL(t *testing.T) {
+	testValidateURL(t, link.Twitter,
+		"boboloblaw",
+		"https://twitter.com/boboloblaw/status/1250914920146669568",
+		"https://mobile.twitter.com/boboloblaw/status/1250914920146669568")
+
 	testValidateURLErr(t, link.Twitter,
 		"boboloblaw",
 		"https://twitter.com/bobolobla/status/1250914920146669568",

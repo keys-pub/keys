@@ -23,12 +23,7 @@ func testStore(t *testing.T, dst ds.DocumentStore, scs keys.SigchainStore, req *
 func TestNewUserForTwitterSigning(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	req := request.NewMockRequestor()
-	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust := testStore(t, dst, scs, req, clock)
-	usr, err := user.NewUserForSigning(ust, sk.ID(), "twitter", "123456789012345")
+	usr, err := user.NewUserForSigning(sk.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -51,12 +46,7 @@ END MESSAGE.`
 func TestNewUserMarshal(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	req := request.NewMockRequestor()
-	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust := testStore(t, dst, scs, req, clock)
-	usr, err := user.New(ust, sk.ID(), "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
+	usr, err := user.New(sk.ID(), "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(usr)
 	require.NoError(t, err)
@@ -71,7 +61,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.Equal(t, usr.Service, usrOut.Service)
 	require.Equal(t, usr.URL, usrOut.URL)
 
-	usr, err = user.NewUserForSigning(ust, sk.ID(), "twitter", "123456789012345")
+	usr, err = user.NewUserForSigning(sk.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	b, err = json.Marshal(usr)
 	require.NoError(t, err)
@@ -90,7 +80,7 @@ func TestResultGithub(t *testing.T) {
 
 	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdataBytes(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
 
-	usr, err := user.NewUserForSigning(ust, sk.ID(), "github", "alice")
+	usr, err := user.NewUserForSigning(sk.ID(), "github", "alice")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -99,7 +89,7 @@ func TestResultGithub(t *testing.T) {
 	require.NoError(t, err)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -145,7 +135,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
-	usr, err := user.NewUserForSigning(ust, sk.ID(), "github", "alice2")
+	usr, err := user.NewUserForSigning(sk.ID(), "github", "alice2")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -154,7 +144,7 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	sc := keys.NewSigchain(sk.ID())
 	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdataBytes(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
-	user2, err := user.New(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	b2, err := json.Marshal(user2)
 	require.NoError(t, err)
@@ -186,7 +176,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	t.Logf(msg)
 
 	req.SetResponse("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", testdataBytes(t, "testdata/github/bd679134acba688cbcc0a65fa0890d76"))
-	usr, err := user.New(ust, sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
+	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(usr)
 	require.NoError(t, err)
@@ -211,14 +201,14 @@ func TestResultTwitter(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
-	usr, err := user.NewUserForSigning(ust, sk.ID(), "twitter", "bob")
+	usr, err := user.NewUserForSigning(sk.ID(), "twitter", "bob")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -230,7 +220,7 @@ func TestResultTwitter(t *testing.T) {
 	_, err = user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	req.SetResponse("https://twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
+	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
 
 	result, err := ust.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -255,14 +245,14 @@ func TestResultReddit(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
-	usr, err := user.NewUserForSigning(ust, sk.ID(), "reddit", "charlie")
+	usr, err := user.NewUserForSigning(sk.ID(), "reddit", "charlie")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(ust, sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -292,19 +282,16 @@ func TestUserUnverified(t *testing.T) {
 
 	clock := tsutil.NewClock()
 	req := request.NewMockRequestor()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust := testStore(t, dst, scs, req, clock)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(ust, sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	req.SetError("https://twitter.com/bob/status/1", errors.Errorf("testing"))
+	req.SetError("https://mobile.twitter.com/bob/status/1", errors.Errorf("testing"))
 	require.NoError(t, err)
 
 	// users, err := ust.Update(context.TODO(), sk.ID())
@@ -341,7 +328,7 @@ func TestCheckFailure(t *testing.T) {
 	ust := testStore(t, dst, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
-	req.SetResponse("https://twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
+	req.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
 
 	usr := &user.User{
 		Name:    "gabriel",
@@ -359,13 +346,7 @@ func TestCheckFailure(t *testing.T) {
 func TestVerify(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	req := request.NewMockRequestor()
-	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	ust := testStore(t, dst, scs, req, clock)
-
-	u, uerr := user.NewUserForSigning(ust, sk.ID(), "github", "gabriel")
+	u, uerr := user.NewUserForSigning(sk.ID(), "github", "gabriel")
 	require.NoError(t, uerr)
 	require.NotNil(t, u)
 
@@ -385,53 +366,48 @@ func TestVerify(t *testing.T) {
 
 func TestNewUser(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
-	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
 
-	u, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	u, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.NoError(t, uerr)
 	require.NotNil(t, u)
 
-	u2, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
+	u2, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid host for url https://gist.githb.com/gabriel/deadbeef")
 	require.Nil(t, u2)
 
-	u3, uerr := user.New(ust, sk.ID(), "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
+	u3, uerr := user.New(sk.ID(), "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid scheme for url http://gist.github.com/gabriel/deadbeef")
 	require.Nil(t, u3)
 
-	u4, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
+	u4, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
 	require.EqualError(t, uerr, "path invalid (name mismatch) gabril != gabriel")
 	require.Nil(t, u4)
 
-	u5, uerr := user.New(ust, sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel", 1)
+	u5, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel", 1)
 	require.EqualError(t, uerr, "path invalid [gabriel] for url https://gist.github.com/gabriel")
 	require.Nil(t, u5)
 
-	u6, uerr := user.New(ust, sk.ID(), "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
+	u6, uerr := user.New(sk.ID(), "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "path invalid (name mismatch) gabriel != gab")
 	require.Nil(t, u6)
 
-	u7, uerr := user.New(ust, sk.ID(), "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	u7, uerr := user.New(sk.ID(), "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "invalid service git")
 	require.Nil(t, u7)
 
-	u8, uerr := user.New(ust, sk.ID(), "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
+	u8, uerr := user.New(sk.ID(), "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
 	require.EqualError(t, uerr, "name is empty")
 	require.Nil(t, u8)
 
-	u10, uerr := user.New(ust, sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	u10, uerr := user.New(sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "name has an invalid character")
 	require.Nil(t, u10)
 
-	u11, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
+	u11, uerr := user.New(sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "name has an invalid character")
 	require.Nil(t, u11)
 
-	u12, uerr := user.New(ust, sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
+	u12, uerr := user.New(sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
 	require.EqualError(t, uerr, "invalid scheme for url twitter.com/gbrltest/status/1234")
 	require.Nil(t, u12)
 }
@@ -459,7 +435,7 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 	ust := testStore(t, dst, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
-	req.SetResponse("https://twitter.com/gabriel/status/1259188857846632448", []byte(msg))
+	req.SetResponse("https://mobile.twitter.com/gabriel/status/1259188857846632448", []byte(msg))
 
 	err = scs.SaveSigchain(sc)
 	require.NoError(t, err)
