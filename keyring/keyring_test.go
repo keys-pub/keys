@@ -384,3 +384,12 @@ func bytes32(b []byte) *[32]byte {
 	copy(b32[:], b)
 	return &b32
 }
+
+func bytes24(b []byte) *[24]byte {
+	if len(b) != 24 {
+		panic("not 24 bytes")
+	}
+	var b24 [24]byte
+	copy(b24[:], b)
+	return &b24
+}

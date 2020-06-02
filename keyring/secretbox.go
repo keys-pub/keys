@@ -31,6 +31,15 @@ func rand32() *[32]byte {
 	return &b32
 }
 
+func bytes24(b []byte) *[24]byte {
+	if len(b) != 24 {
+		panic("not 24 bytes")
+	}
+	var b24 [24]byte
+	copy(b24[:], b)
+	return &b24
+}
+
 func bytes32(b []byte) *[32]byte {
 	if len(b) != 32 {
 		panic("not 32 bytes")
@@ -42,6 +51,10 @@ func bytes32(b []byte) *[32]byte {
 
 func secretBoxSeal(b []byte, secretKey SecretKey) []byte {
 	nonce := rand24()
+	return secretBoxSealWithNonce(b, nonce, secretKey)
+}
+
+func secretBoxSealWithNonce(b []byte, nonce *[24]byte, secretKey SecretKey) []byte {
 	encrypted := secretbox.Seal(nil, b, nonce, secretKey)
 	encrypted = append(nonce[:], encrypted...)
 	return encrypted
