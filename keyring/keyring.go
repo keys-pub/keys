@@ -39,14 +39,17 @@ func New(opt ...Option) (*Keyring, error) {
 }
 
 func newKeyring(st Store) *Keyring {
-	return &Keyring{st: st}
+	return &Keyring{
+		st:   st,
+		subs: newSubscribers(),
+	}
 }
 
 // Keyring stores encrypted keyring items.
 type Keyring struct {
 	st        Store
 	masterKey SecretKey
-	subs      *Subscribers
+	subs      *subscribers
 }
 
 // Store used by Keyring.

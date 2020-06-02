@@ -23,19 +23,19 @@ type UpdateEvent struct {
 	ID string
 }
 
-// Subscribers ...
-type Subscribers struct {
+type subscribers struct {
 	sync.Mutex
 	subs map[string]chan Event
 }
 
+func newSubscribers() *subscribers {
+	return &subscribers{
+		subs: map[string]chan Event{},
+	}
+}
+
 // Subscribe to topic.
 func (k *Keyring) Subscribe(topic string) chan Event {
-	if k.subs == nil {
-		k.subs = &Subscribers{
-			subs: map[string]chan Event{},
-		}
-	}
 	return k.subs.Subscribe(topic)
 }
 
@@ -48,7 +48,7 @@ func (k *Keyring) Unsubscribe(topic string) {
 }
 
 // Subscribe to events.
-func (s *Subscribers) Subscribe(topic string) chan Event {
+func (s *subscribers) Subscribe(topic string) chan Event {
 	s.Lock()
 	defer s.Unlock()
 	c := make(chan Event, 2)
@@ -57,18 +57,19 @@ func (s *Subscribers) Subscribe(topic string) chan Event {
 }
 
 // Unsubscribe from events.
-func (s *Subscribers) Unsubscribe(topic string) {
+func (s *subscribers) Unsubscribe(topic string) {
 	s.Lock()
 	defer s.Unlock()
 
 	delete(s.subs, topic)
 }
 
-func (s *Subscribers) notify(event Event) {
+func (s *subscribers) notify(event Event) {
 	s.Lock()
 	defer s.Unlock()
 
 	for _, c := range s.subs {
+		// TODO: This will block if buffer is met
 		c <- event
 	}
 }
