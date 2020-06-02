@@ -9,9 +9,13 @@ import (
 
 // Item is a keyring entry.
 type Item struct {
-	ID        string    `msgpack:"id"`
-	Type      string    `msgpack:"typ"`
-	Data      []byte    `msgpack:"dat"`
+	// ID for item. IDs are NOT encrypted.
+	ID string `msgpack:"id"`
+	// Type for item data.
+	Type string `msgpack:"typ"`
+	// Data for item.
+	Data []byte `msgpack:"dat"`
+	// CreatedAt when item was created.
 	CreatedAt time.Time `msgpack:"cts"`
 }
 
