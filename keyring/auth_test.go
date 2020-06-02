@@ -159,7 +159,7 @@ func TestAuthV1(t *testing.T) {
 
 	// Set auth the old way
 	item := keyring.NewItem("#auth", key[:], "", time.Now())
-	b, err := item.Marshal(key)
+	b, err := item.Encrypt(key)
 	require.NoError(t, err)
 	err = kr.Store().Set("#auth", b)
 	require.NoError(t, err)

@@ -116,7 +116,7 @@ func setItem(st Store, item *Item, key SecretKey) error {
 		return ErrItemValueTooLarge
 	}
 
-	data, err := item.Marshal(key)
+	data, err := item.Encrypt(key)
 	if err != nil {
 		return err
 	}

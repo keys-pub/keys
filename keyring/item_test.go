@@ -14,10 +14,10 @@ func TestItem(t *testing.T) {
 	clock := tsutil.NewClock()
 	secretKey := randKey()
 	item := keyring.NewItem("account1", []byte("password"), "passphrase", clock.Now())
-	b, err := item.Marshal(secretKey)
+	b, err := item.Encrypt(secretKey)
 	require.NoError(t, err)
 
-	_, err = item.Marshal(nil)
+	_, err = item.Encrypt(nil)
 	require.EqualError(t, err, "no secret key specified")
 
 	itemOut, err := keyring.DecryptItem(b, secretKey)
