@@ -46,7 +46,7 @@ func newKeyring(st Store) *Keyring {
 type Keyring struct {
 	st        Store
 	masterKey SecretKey
-	lns       []Listener
+	subs      *Subscribers
 }
 
 // Store used by Keyring.
@@ -81,7 +81,12 @@ func (k *Keyring) Create(item *Item) error {
 		return ErrItemAlreadyExists
 	}
 
-	return setItem(k.st, item, k.masterKey)
+	if err := setItem(k.st, item, k.masterKey); err != nil {
+		return err
+	}
+
+	k.subs.notify(CreateEvent{ID: item.ID})
+	return nil
 }
 
 // Update item data.
@@ -103,7 +108,12 @@ func (k *Keyring) Update(id string, b []byte) error {
 	}
 	item.Data = b
 
-	return setItem(k.st, item, k.masterKey)
+	if err := setItem(k.st, item, k.masterKey); err != nil {
+		return err
+	}
+
+	k.subs.notify(UpdateEvent{ID: item.ID})
+	return nil
 }
 
 // Delete item.
@@ -211,7 +221,7 @@ func (k *Keyring) Unlock(key SecretKey) (*Provision, error) {
 	if provision == nil {
 		provision = &Provision{ID: id}
 	}
-	k.notifyUnlocked(provision)
+	k.subs.notify(UnlockEvent{Provision: provision})
 	return provision, nil
 }
 
@@ -233,7 +243,7 @@ func (k *Keyring) SetMasterKey(mk SecretKey) {
 // Lock the keyring.
 func (k *Keyring) Lock() error {
 	k.masterKey = nil
-	k.notifyLocked()
+	k.subs.notify(LockEvent{})
 	return nil
 }
 
