@@ -60,7 +60,7 @@ func TestSigchainUsers(t *testing.T) {
 
 	usr, err = user.New(alice.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
-	st, err := user.NewUserSigchainStatement(sc, usr, alice, clock.Now())
+	st, err := user.NewSigchainStatement(sc, usr, alice, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -81,12 +81,12 @@ func TestSigchainUsers(t *testing.T) {
 
 	usr2, err := user.New(alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
-	_, err = user.NewUserSigchainStatement(sc, usr2, alice, clock.Now())
+	_, err = user.NewSigchainStatement(sc, usr2, alice, clock.Now())
 	require.EqualError(t, err, "user seq mismatch")
 
 	usr2, err = user.New(alice.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 3)
 	require.NoError(t, err)
-	st2, err := user.NewUserSigchainStatement(sc, usr2, alice, clock.Now())
+	st2, err := user.NewSigchainStatement(sc, usr2, alice, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st2)
 	require.NoError(t, err)

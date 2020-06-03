@@ -150,9 +150,9 @@ func newUser(kid keys.ID, service link.Service, name string, urs string) (*User,
 	return usr, nil
 }
 
-// NewUserForSigning returns User for signing (doesn't have remote URL yet).
+// NewForSigning returns User for signing (doesn't have remote URL yet).
 // The name is normalized, for example for twitter "@Username" => "username".
-func NewUserForSigning(kid keys.ID, service string, name string) (*User, error) {
+func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
@@ -214,9 +214,9 @@ func (u *User) Validate() error {
 // ErrUserAlreadySet is user already set in sigchain.
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
-// NewUserSigchainStatement for a user to add to a Sigchain.
+// NewSigchainStatement for a user to add to a Sigchain.
 // Returns ErrUserAlreadySet is user already exists in the Sigchain.
-func NewUserSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, ts time.Time) (*keys.Statement, error) {
+func NewSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, ts time.Time) (*keys.Statement, error) {
 	if user == nil {
 		return nil, errors.Errorf("no user specified")
 	}

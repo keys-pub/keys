@@ -23,7 +23,7 @@ func testStore(t *testing.T, dst ds.DocumentStore, scs keys.SigchainStore, req *
 func TestNewUserForTwitterSigning(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	usr, err := user.NewUserForSigning(sk.ID(), "twitter", "123456789012345")
+	usr, err := user.NewForSigning(sk.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestNewUserMarshal(t *testing.T) {
 	require.Equal(t, usr.Service, usrOut.Service)
 	require.Equal(t, usr.URL, usrOut.URL)
 
-	usr, err = user.NewUserForSigning(sk.ID(), "twitter", "123456789012345")
+	usr, err = user.NewForSigning(sk.ID(), "twitter", "123456789012345")
 	require.NoError(t, err)
 	b, err = json.Marshal(usr)
 	require.NoError(t, err)
@@ -80,7 +80,7 @@ func TestResultGithub(t *testing.T) {
 
 	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdataBytes(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
 
-	usr, err := user.NewUserForSigning(sk.ID(), "github", "alice")
+	usr, err := user.NewForSigning(sk.ID(), "github", "alice")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -91,14 +91,14 @@ func TestResultGithub(t *testing.T) {
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
 	require.NoError(t, err)
-	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
 	err = scs.SaveSigchain(sc)
 	require.NoError(t, err)
 
-	_, err = user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
 	result, err := ust.Update(context.TODO(), sk.ID())
@@ -135,7 +135,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
-	usr, err := user.NewUserForSigning(sk.ID(), "github", "alice2")
+	usr, err := user.NewForSigning(sk.ID(), "github", "alice2")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -201,7 +201,7 @@ func TestResultTwitter(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
-	usr, err := user.NewUserForSigning(sk.ID(), "twitter", "bob")
+	usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -210,14 +210,14 @@ func TestResultTwitter(t *testing.T) {
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
 	require.NoError(t, err)
-	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
 	err = scs.SaveSigchain(sc)
 	require.NoError(t, err)
 
-	_, err = user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
 	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
@@ -245,7 +245,7 @@ func TestResultReddit(t *testing.T) {
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
-	usr, err := user.NewUserForSigning(sk.ID(), "reddit", "charlie")
+	usr, err := user.NewForSigning(sk.ID(), "reddit", "charlie")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
@@ -254,14 +254,14 @@ func TestResultReddit(t *testing.T) {
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
 	require.NoError(t, err)
-	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
 	err = scs.SaveSigchain(sc)
 	require.NoError(t, err)
 
-	_, err = user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
 	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdataBytes(t, "testdata/reddit/charlie.json"))
@@ -286,7 +286,7 @@ func TestUserUnverified(t *testing.T) {
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
 	require.NoError(t, err)
-	st, err := user.NewUserSigchainStatement(sc, stu, sk, clock.Now())
+	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
@@ -346,7 +346,7 @@ func TestCheckFailure(t *testing.T) {
 func TestVerify(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	u, uerr := user.NewUserForSigning(sk.ID(), "github", "gabriel")
+	u, uerr := user.NewForSigning(sk.ID(), "github", "gabriel")
 	require.NoError(t, uerr)
 	require.NotNil(t, u)
 
