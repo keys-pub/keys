@@ -8,7 +8,53 @@ import (
 	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack/v4"
+	"golang.org/x/crypto/argon2"
 )
+
+// ErrInvalidAuth if auth is invalid.
+var ErrInvalidAuth = errors.New("invalid keyring auth")
+
+// ErrLocked if no keyring key is set.
+var ErrLocked = errors.New("keyring is locked")
+
+// ErrAlreadySetup if already setup.
+var ErrAlreadySetup = errors.New("keyring is already setup")
+
+// KeyForPassword generates a key from a password and salt.
+func KeyForPassword(password string, salt []byte) (SecretKey, error) {
+	if len(salt) < 16 {
+		return nil, errors.Errorf("not enough salt")
+	}
+	if password == "" {
+		return nil, errors.Errorf("empty password")
+	}
+
+	akey := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
+	return bytes32(akey), nil
+}
+
+// Salt is default salt value, generated on first access and persisted
+// until Reset().
+// This salt value is not encrypted in the keyring.
+// Doesn't require Unlock().
+func (k *Keyring) Salt() ([]byte, error) {
+	return salt(k.st)
+}
+
+// salt returns a salt value, generating it on first access if it doesn't exist.
+func salt(st Store) ([]byte, error) {
+	salt, err := st.Get(reserved("salt"))
+	if err != nil {
+		return nil, err
+	}
+	if salt == nil {
+		salt = rand32()[:]
+		if err := st.Set(reserved("salt"), salt); err != nil {
+			return nil, err
+		}
+	}
+	return salt, nil
+}
 
 // AuthType describes an auth method.
 type AuthType string
@@ -22,6 +68,7 @@ const (
 	FIDO2HMACSecretAuth AuthType = "fido2-hmac-secret" // #nosec
 )
 
+var authPrefix = reserved("auth-")
 var provisionPrefix = reserved("provision-")
 
 // Provision is unencrypted provision and parameters used by client auth.
@@ -175,8 +222,7 @@ func authCreate(st Store, id string, key SecretKey, mk SecretKey) error {
 	if id == "" {
 		return errors.Errorf("no provision id")
 	}
-	krid := reserved("auth-") + id
-
+	krid := encodeAuthID(id)
 	logger.Debugf("Provisioning %s", id)
 	item := NewItem(krid, mk[:], "", time.Now())
 	if err := setItem(st, item, key); err != nil {
@@ -190,7 +236,7 @@ func authDelete(st Store, id string) (bool, error) {
 		return false, errors.Errorf("no provision id")
 	}
 	logger.Debugf("Deprovisioning %s", id)
-	krid := reserved("auth-") + id
+	krid := encodeAuthID(id)
 	ok, err := st.Delete(krid)
 	if err != nil {
 		return false, err
@@ -239,13 +285,7 @@ func authUnlock(st Store, key SecretKey) (string, SecretKey, error) {
 	}
 
 	for _, id := range ids {
-		var krid string
-		if id == authV1ID {
-			krid = "#auth"
-		} else {
-			krid = reserved("auth-") + id
-		}
-
+		krid := encodeAuthID(id)
 		item, err := getItem(st, krid, key)
 		if err != nil {
 			continue
@@ -273,10 +313,17 @@ func parseAuthID(s string) string {
 	if s == "#auth" {
 		return authV1ID
 	}
-	if !strings.HasPrefix(s, "#auth-") {
+	if !strings.HasPrefix(s, authPrefix) {
 		return ""
 	}
 	return s[6:]
+}
+
+func encodeAuthID(id string) string {
+	if id == authV1ID {
+		return reserved("auth")
+	}
+	return authPrefix + id
 }
 
 func parseProvisionID(s string) string {
@@ -286,6 +333,10 @@ func parseProvisionID(s string) string {
 	return s[11:]
 }
 
+func encodeProvisionID(id string) string {
+	return provisionPrefix + id
+}
+
 const authV1ID = "v1.auth"
 
 // loadProvision loads provision for id.
@@ -293,7 +344,7 @@ func (k *Keyring) loadProvision(id string) (*Provision, error) {
 	st := k.Store()
 	logger.Debugf("Loading provision %s", id)
 
-	b, err := st.Get(provisionPrefix + id)
+	b, err := st.Get(encodeProvisionID(id))
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +362,7 @@ func (k *Keyring) loadProvision(id string) (*Provision, error) {
 func (k *Keyring) saveProvision(provision *Provision) error {
 	logger.Debugf("Saving provision %s", provision.ID)
 	st := k.Store()
-	krid := provisionPrefix + provision.ID
+	krid := encodeProvisionID(provision.ID)
 	b, err := msgpack.Marshal(provision)
 	if err != nil {
 		return err
@@ -326,6 +377,6 @@ func (k *Keyring) saveProvision(provision *Provision) error {
 func (k *Keyring) deleteProvision(id string) (bool, error) {
 	logger.Debugf("Deleting provision %s", id)
 	st := k.Store()
-	krid := provisionPrefix + id
+	krid := encodeProvisionID(id)
 	return st.Delete(krid)
 }
