@@ -6,12 +6,13 @@ import (
 	"log"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/tsutil"
 )
 
 func ExampleNewSignedStatement() {
-	clock := newClock()
+	clock := tsutil.NewClock()
 
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	st := keys.NewSignedStatement(bytes.Repeat([]byte{0x01}, 16), sk, "", clock.Now())
 

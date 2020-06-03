@@ -1,20 +1,25 @@
 package keyring
 
 import (
+	"bytes"
 	"sort"
 	"strings"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
 // NewMem returns an in memory Keyring useful for testing or ephemeral keys.
 // The Keyring is unlocked (setup with a random key).
-// If unlock is true, the mem Keyring will be unlocked with a random key.
-func NewMem(unlock bool) *Keyring {
-	kr := newKeyring("", Mem())
-	if unlock {
-		err := kr.Unlock(NewKeyAuth(rand32()))
-		if err != nil {
+// If setup is true, the mem Keyring will be setup with a random key.
+func NewMem(setup bool) *Keyring {
+	kr := newKeyring(Mem())
+	if setup {
+		id := encoding.MustEncode(bytes.Repeat([]byte{0xFF}, 32), encoding.Base62)
+		provision := &Provision{
+			ID: id,
+		}
+		if err := kr.Setup(rand32(), provision); err != nil {
 			panic(err)
 		}
 	}
@@ -34,14 +39,14 @@ func (k mem) Name() string {
 	return "mem"
 }
 
-func (k mem) Get(service string, id string) ([]byte, error) {
+func (k mem) Get(id string) ([]byte, error) {
 	if b, ok := k.items[id]; ok {
 		return b, nil
 	}
 	return nil, nil
 }
 
-func (k mem) Set(service string, id string, data []byte, typ string) error {
+func (k mem) Set(id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id set")
 	}
@@ -49,26 +54,20 @@ func (k mem) Set(service string, id string, data []byte, typ string) error {
 	return nil
 }
 
-func (k mem) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return listDefault(k, service, key, opts)
+func (k mem) Reset() error {
+	return resetDefault(k)
 }
 
-func (k mem) Reset(service string) error {
-	return resetDefault(k, service)
-}
-
-func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
-	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
+func (k mem) IDs(opts ...IDsOption) ([]string, error) {
+	options := NewIDsOptions(opts...)
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
@@ -82,12 +81,12 @@ func (k mem) IDs(service string, opts *IDsOpts) ([]string, error) {
 	return ids, nil
 }
 
-func (k mem) Exists(service string, id string) (bool, error) {
+func (k mem) Exists(id string) (bool, error) {
 	_, ok := k.items[id]
 	return ok, nil
 }
 
-func (k mem) Delete(service string, id string) (bool, error) {
+func (k mem) Delete(id string) (bool, error) {
 	if _, ok := k.items[id]; ok {
 		delete(k.items, id)
 		return true, nil

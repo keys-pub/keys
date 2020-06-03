@@ -1,15 +1,15 @@
 package keys_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
-func testSigchainStore(t *testing.T, clock *clock) keys.SigchainStore {
+func testSigchainStore(t *testing.T, clock *tsutil.Clock) keys.SigchainStore {
 	mem := ds.NewMem()
 	mem.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(mem)
@@ -18,10 +18,10 @@ func testSigchainStore(t *testing.T, clock *clock) keys.SigchainStore {
 }
 
 func TestSigchainStore(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	scs := testSigchainStore(t, clock)
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	ok, err := scs.SigchainExists(alice.ID())
 	require.NoError(t, err)
@@ -60,7 +60,7 @@ func TestSigchainStore(t *testing.T) {
 	require.NotNil(t, sc)
 	require.Equal(t, alice.ID(), sc.KID())
 
-	bob := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x02}, 32)))
+	bob := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 	scb := keys.NewSigchain(bob.ID())
 	st, err = keys.NewSigchainStatement(scb, []byte("bob"), bob, "", clock.Now())
 	require.NoError(t, err)
@@ -98,10 +98,10 @@ func TestSigchainStore(t *testing.T) {
 }
 
 func TestSigchainStoreSpew(t *testing.T) {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	scs := testSigchainStore(t, clock)
 
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(alice.ID())
 
 	st, err := keys.NewSigchainStatement(sc, []byte("test1"), alice, "", clock.Now())
@@ -130,7 +130,6 @@ func TestSigchainStoreSpew(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(sc.Statements()))
 
-	spew, err := sc.Spew()
-	require.NoError(t, err)
+	spew := sc.Spew()
 	require.Equal(t, testdataString(t, "testdata/sc1.spew"), spew.String())
 }

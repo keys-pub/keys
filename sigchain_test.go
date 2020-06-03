@@ -8,28 +8,11 @@ import (
 	"log"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/util"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
-
-type clock struct {
-	t time.Time
-}
-
-func newClock() *clock {
-	t := util.TimeFromMillis(1234567890000)
-	return &clock{
-		t: t,
-	}
-}
-
-func (c *clock) Now() time.Time {
-	c.t = c.t.Add(time.Millisecond)
-	return c.t
-}
 
 func testdataString(t *testing.T, path string) string {
 	expected, err := ioutil.ReadFile(path)
@@ -38,8 +21,8 @@ func testdataString(t *testing.T, path string) string {
 }
 
 func TestSigchain(t *testing.T) {
-	clock := newClock()
-	alice := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	clock := tsutil.NewClock()
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
 	require.Equal(t, 0, sc.Length())
@@ -111,14 +94,13 @@ func TestSigchain(t *testing.T) {
 	_, err = sc.Revoke(5, alice)
 	require.EqualError(t, err, "invalid revoke seq 5")
 
-	spew, err := sc.Spew()
-	require.NoError(t, err)
+	spew := sc.Spew()
 	require.Equal(t, testdataString(t, "testdata/sc2.spew"), spew.String())
 }
 
 func TestSigchainJSON(t *testing.T) {
-	clock := newClock()
-	sk := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x01}, 32)))
+	clock := tsutil.NewClock()
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())
 
@@ -167,7 +149,7 @@ func TestSigchainJSON(t *testing.T) {
 }
 
 func ExampleNewSigchain() {
-	clock := newClock()
+	clock := tsutil.NewClock()
 	alice := keys.GenerateEdX25519Key()
 	sc := keys.NewSigchain(alice.ID())
 
@@ -196,9 +178,6 @@ func ExampleNewSigchain() {
 	}
 
 	// Spew
-	spew, err := sc.Spew()
-	if err != nil {
-		log.Fatal(err)
-	}
+	spew := sc.Spew()
 	fmt.Println(spew.String())
 }

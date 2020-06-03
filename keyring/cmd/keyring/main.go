@@ -12,14 +12,12 @@ func main() {
 	appName := flag.String("app", "Keys.keyring", "App name")
 	flag.Parse()
 
-	kr, err := keyring.New(*appName, keyring.System())
+	kr, err := keyring.New(keyring.SystemOrFS(*appName))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	opts := &keyring.IDsOpts{ShowHidden: true, ShowReserved: true}
-
-	ids, err := kr.IDs(opts)
+	ids, err := kr.IDs(keyring.Hidden(), keyring.Reserved())
 	if err != nil {
 		log.Fatal(err)
 	}

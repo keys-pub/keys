@@ -10,48 +10,36 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewFS creates a Keyring using the local filesystem. This is an alternate
-// Keyring implementation that is platform agnostic.
-func NewFS(service string, dir string) (*Keyring, error) {
-	if service == "" {
-		return nil, errors.Errorf("no service specified")
+// FS Store option.
+func FS(service string, dir string) Option {
+	return func(o *Options) error {
+		st, err := NewFS(service, dir)
+		if err != nil {
+			return err
+		}
+		o.st = st
+		return nil
 	}
-	fs, err := FS(dir)
-	if err != nil {
-		return nil, err
-	}
-	kr, err := New(service, fs)
-	if err != nil {
-		return nil, err
-	}
-	return kr, nil
 }
 
-// FS returns keyring.Store backed by the filesystem.
-func FS(dir string) (Store, error) {
+// NewFS returns keyring.Store backed by the filesystem.
+func NewFS(service string, dir string) (Store, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}
-	return fs{dir: dir}, nil
+	return fs{service: service, dir: dir}, nil
 }
 
 type fs struct {
-	dir string
+	service string
+	dir     string
 }
 
 func (k fs) Name() string {
 	return "fs"
 }
 
-func defaultFSDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, ".keyring"), nil
-}
-
-func (k fs) Get(service string, id string) ([]byte, error) {
+func (k fs) Get(id string) ([]byte, error) {
 	if id == "" {
 		return nil, errors.Errorf("failed to get keyring item: no id specified")
 	}
@@ -59,18 +47,22 @@ func (k fs) Get(service string, id string) ([]byte, error) {
 		return nil, errors.Errorf("failed to get keyring item: invalid id %q", id)
 	}
 
-	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	path := filepath.Join(k.dir, k.service, id)
+	exists, err := pathExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return nil, nil
 	}
 	return ioutil.ReadFile(path) // #nosec
 }
 
-func (k fs) Set(service string, id string, data []byte, typ string) error {
+func (k fs) Set(id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id specified")
 	}
-	dir := filepath.Join(k.dir, service)
+	dir := filepath.Join(k.dir, k.service)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
@@ -81,15 +73,17 @@ func (k fs) Set(service string, id string, data []byte, typ string) error {
 	return nil
 }
 
-func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
-	if opts == nil {
-		opts = &IDsOpts{}
+func (k fs) IDs(opts ...IDsOption) ([]string, error) {
+	options := NewIDsOptions(opts...)
+	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+
+	path := filepath.Join(k.dir, k.service)
+
+	exists, err := pathExists(path)
+	if err != nil {
+		return nil, err
 	}
-	prefix, showHidden, showReserved := opts.Prefix, opts.ShowHidden, opts.ShowReserved
-
-	path := filepath.Join(k.dir, service)
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if !exists {
 		return []string{}, nil
 	}
 
@@ -101,10 +95,10 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 	ids := make([]string, 0, len(files))
 	for _, f := range files {
 		id := f.Name()
-		if !showReserved && strings.HasPrefix(id, reservedPrefix) {
+		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
-		if !showHidden && strings.HasPrefix(id, hiddenPrefix) {
+		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
@@ -115,20 +109,44 @@ func (k fs) IDs(service string, opts *IDsOpts) ([]string, error) {
 	return ids, nil
 }
 
-func (k fs) List(service string, key SecretKey, opts *ListOpts) ([]*Item, error) {
-	return listDefault(k, service, key, opts)
-}
-
-func (k fs) Reset(service string) error {
-	path := filepath.Join(k.dir, service)
+func (k fs) Reset() error {
+	path := filepath.Join(k.dir, k.service)
 	if err := os.RemoveAll(path); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (k fs) Exists(service string, id string) (bool, error) {
-	path := filepath.Join(k.dir, service, id)
+func (k fs) Exists(id string) (bool, error) {
+	path := filepath.Join(k.dir, k.service, id)
+	return pathExists(path)
+}
+
+func (k fs) Delete(id string) (bool, error) {
+	path := filepath.Join(k.dir, k.service, id)
+
+	exists, err := pathExists(path)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+	if err := os.Remove(path); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+func defaultLinuxFSDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, ".keyring"), nil
+}
+
+func pathExists(path string) (bool, error) {
 	if _, err := os.Stat(path); err == nil {
 		return true, nil
 	} else if os.IsNotExist(err) {
@@ -136,15 +154,4 @@ func (k fs) Exists(service string, id string) (bool, error) {
 	} else {
 		return false, err
 	}
-}
-
-func (k fs) Delete(service string, id string) (bool, error) {
-	path := filepath.Join(k.dir, service, id)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false, nil
-	}
-	if err := os.Remove(path); err != nil {
-		return true, err
-	}
-	return true, nil
 }

@@ -1,6 +1,6 @@
 package keys
 
-// Key with identifier, bytes and type string.
+// Key with identifier, bytes and a type.
 type Key interface {
 	// ID for the key.
 	ID() ID
@@ -19,3 +19,4 @@ var _ Key = &EdX25519Key{}
 var _ Key = &EdX25519PublicKey{}
 var _ Key = &X25519Key{}
 var _ Key = &X25519PublicKey{}
+var _ Key = ID("")

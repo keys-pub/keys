@@ -7,23 +7,17 @@ import (
 	"log"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/saltpack"
 )
 
-func ExampleSaltpack_Encrypt() {
-	sp := saltpack.NewSaltpack(nil)
-
-	// Alice
-	alice := keys.GenerateEdX25519Key()
-
-	// Bob
-	bobID := keys.ID("kex1yy7amjzd5ld3k0uphvyetlz2vd8yy3fky64dut9jdf9qh852f0nsxjgv0m")
+func ExampleEncryptArmored() {
+	alice := keys.GenerateX25519Key()
+	bob := keys.GenerateX25519Key()
 
 	message := []byte("hi bob")
 
 	// Encrypt from alice to bob
-	encrypted, err := sp.EncryptArmored(message, alice.X25519Key(), bobID)
+	encrypted, err := saltpack.EncryptArmored(message, alice, bob.ID())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,61 +25,35 @@ func ExampleSaltpack_Encrypt() {
 	// Output: 375
 }
 
-func ExampleSaltpack_Decrypt() {
-	// Message from Alice
-	aliceID := keys.ID("kex1vrpxw9rqmf49kygc7ujjrdlx8lkzaarjc3s24j73xlqxhwvsyx2sw06r82")
-	encrypted := `BEGIN SALTPACK ENCRYPTED MESSAGE. 
-	kcJn5brvybfNjz6 D5ll2Nk0YusOJBf 9x1CB6V3o7cdMOV ZPenXvEVhLpMBj0 8rJiM2GJTyXbhDn 
-	cGIoczvWtRoxL5r 3EIPrfVqpwhLDke LfCV6YykdYdGwY1 lUfrzkOIUGdeURb HDSwgrTSrcexwj3 
-	ix9Mw1FVXQGBwBV yil8lLyD1q0VFGv KmgJYyARppqQEIF HgAsZq0BJL6Dosz WGrFalmG90QA6PO 
-	avDlwRXMDbjKFvE wQtaBDKXVSBaM9k 0Xu0CfdGUkEICbN vZNV67cGqEz2IiH kr8. 
-	END SALTPACK ENCRYPTED MESSAGE.`
+func ExampleDecryptArmored() {
+	// Message from ExampleEncryptArmored
+	aliceID := keys.ID("kbx17jhqvdrgdyruyseuaat0rerj7ep4n63n4klufzxtzmk9p3d944gs4fg39g")
+	encrypted := `BEGIN SALTPACK ENCRYPTED MESSAGE.
+	kcJn5brvybfNjz6 D5ll2Nk0YiiGFCz I2xgcLXuPzYNBe3 OboFDA8Gh0TxosH yo82IRf2OZzteqO
+	GaPWlm7t0lC0M0U vNnOvsussLf1nMw Oo1Llf9oAbA7qxa GjupUEWnTgyjjUn GKb3WvtjSgRsJS2
+	Y92GMEx8cHvbGrJ zvLGlbqAhEIDNZ2 SE15aoV6ahVxeVH 1inHyghv3H1oTAC K86mBl4fg9FY1QK
+	4n0gLOmSHbD8UYH V3HAPS0yaBC4xJB g3y04Xcqiij36Nb WmJgvSFdGugXd7O yfU.
+	END SALTPACK ENCRYPTED MESSAGE.
+	`
 
-	// Bob creates a Keyring and Store
-	kr, err := keyring.New("BobKeyring", keyring.System())
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Remove this Reset() if you want to keep the Keyring
-	defer func() { _ = kr.Reset() }()
-	if err := kr.UnlockWithPassword("bobpassword"); err != nil {
-		log.Fatal(err)
-	}
-	ks := keys.NewStore(kr)
-
-	kmsg := `BEGIN EDX25519 KEY MESSAGE.
-	E9zL57KzBY1CIdJ d5tlpnyCIX8R5DB oLswy2g17kbfK4s CwryRUoII3ZNk3l
-	scLQrPmgNuKi9OK 7ugGoVWBY2n5xbK 7w500Vp2iXo6LAe XZiB06UjUdCoYJv
-	YjKbul2B61uxTZc waeBgRV91RZoKCn xLQnRhLXE2KC.
-	END EDX25519 KEY MESSAGE.`
-	bob, err := keys.DecodeKeyFromSaltpack(kmsg, "password", false)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := ks.SaveKey(bob); err != nil {
-		log.Fatal(err)
-	}
-	if err := ks.SavePublicKey(aliceID); err != nil {
-		log.Fatal(err)
-	}
-
-	// Bob decrypt's
-	sp := saltpack.NewSaltpack(ks)
-	out, sender, err := sp.DecryptArmored(encrypted)
+	// bobID := keys.ID("kbx18x22l7nemmxcj76f9l3aaflc5487lp5u5q778gpe3t3wzhlqvu8qxa9z07")
+	key := `BEGIN X25519 KEY MESSAGE.
+	umCRo9iHIudLWoz 4Ugt0hUXQVJ7lhV p7A9mb3kOTg6PeV fhqetAc9ZOUjagi
+	91gENEkp0xfjF2E Tyakwe90kzo1FNT gRacWRL5B59strN OoZYHQooqvlMKM.
+	END X25519 KEY MESSAGE.`
+	bob, err := keys.DecodeKeyFromSaltpack(key, "", true)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// The sender from Saltpack Decrypt is a X25519 public key, so find the
-	// corresponding EdX25519 public key.
-	if sender != nil {
-		pk, err := ks.FindEdX25519PublicKey(sender.ID())
-		if err != nil {
-			log.Fatal(err)
-		}
-		if pk != nil && pk.ID() == aliceID {
-			fmt.Printf("signer is alice\n")
-		}
+	// Bob decrypts
+	out, sender, err := saltpack.DecryptArmored(encrypted, saltpack.NewKeyStore(bob))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if sender != nil && sender.ID() == aliceID {
+		fmt.Printf("signer is alice\n")
 	}
 	fmt.Printf("%s\n", string(out))
 

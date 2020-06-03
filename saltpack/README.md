@@ -28,7 +28,7 @@ bobID := keys.ID("kex1yy7amjzd5ld3k0uphvyetlz2vd8yy3fky64dut9jdf9qh852f0nsxjgv0m
 message := []byte("hi bob")
 
 // Encrypt using Saltpack from alice to bob (include alice as a recipient too).
-sp := saltpack.NewSaltpack(nil)
+sp := saltpack.New(nil)
 encrypted, err := sp.EncryptArmored(message, alice.X25519Key(), bobID, alice.ID())
 if err != nil {
     log.Fatal(err)
@@ -69,7 +69,7 @@ kr, err := keyring.New("BobKeyring")
 if err != nil {
     log.Fatal(err)
 }
-if err := keyring.UnlockWithPassword(kr, "bobpassword"); err != nil {
+if err := kr.UnlockWithPassword("bobpassword", true); err != nil {
     log.Fatal(err)
 }
 ks := keys.NewStore(kr)
@@ -89,7 +89,7 @@ if err := ks.SaveKey(bob); err != nil {
 }
 
 // Bob decrypts the saltpack message.
-sp := saltpack.NewSaltpack(ks)
+sp := saltpack.New(ks)
 out, sender, err := sp.DecryptArmored(encrypted)
 if err != nil {
     log.Fatal(err)
@@ -121,7 +121,7 @@ import (
 )
 ...
 
-sp := saltpack.NewSaltpack(nil)
+sp := saltpack.New(nil)
 
 alice := keys.GenerateEdX25519Key()
 
@@ -146,7 +146,7 @@ import (
 )
 ...
 
-sp := saltpack.NewSaltpack(nil)
+sp := saltpack.New(nil)
 
 aliceID := keys.ID("kex1w2jep8dkr2s0g9kx5g6xe3387jslnlj08yactvn8xdtrx4cnypjq9rpnux")
 signed := `BEGIN SALTPACK SIGNED MESSAGE.

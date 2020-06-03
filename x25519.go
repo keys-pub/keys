@@ -29,32 +29,32 @@ type X25519Key struct {
 }
 
 // ID is key identifer.
-func (k X25519Key) ID() ID {
+func (k *X25519Key) ID() ID {
 	return k.id
 }
 
 // Type of key.
-func (k X25519Key) Type() KeyType {
+func (k *X25519Key) Type() KeyType {
 	return X25519
 }
 
 // Bytes for key.
-func (k X25519Key) Bytes() []byte {
+func (k *X25519Key) Bytes() []byte {
 	return k.privateKey[:]
 }
 
 // Bytes32 for key.
-func (k X25519Key) Bytes32() *[32]byte {
+func (k *X25519Key) Bytes32() *[32]byte {
 	return k.privateKey
 }
 
 // PrivateKey returns private part of this X25519Key.
-func (k X25519Key) PrivateKey() *[32]byte {
+func (k *X25519Key) PrivateKey() *[32]byte {
 	return k.privateKey
 }
 
 // PublicKey returns public part of this X25519Key.
-func (k X25519Key) PublicKey() *X25519PublicKey {
+func (k *X25519Key) PublicKey() *X25519PublicKey {
 	return k.publicKey
 }
 
@@ -139,21 +139,21 @@ func NewX25519PublicKey(b *[32]byte) *X25519PublicKey {
 }
 
 // ID for box public key.
-func (k X25519PublicKey) ID() ID {
+func (k *X25519PublicKey) ID() ID {
 	return k.id
 }
 
 // Type of key.
-func (k X25519PublicKey) Type() KeyType {
+func (k *X25519PublicKey) Type() KeyType {
 	return X25519Public
 }
 
 // Bytes for key.
-func (k X25519PublicKey) Bytes() []byte {
+func (k *X25519PublicKey) Bytes() []byte {
 	return k.publicKey[:]
 }
 
 // Bytes32 for key.
-func (k X25519PublicKey) Bytes32() *[32]byte {
+func (k *X25519PublicKey) Bytes32() *[32]byte {
 	return k.publicKey
 }

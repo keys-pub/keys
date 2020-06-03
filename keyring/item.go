@@ -9,9 +9,13 @@ import (
 
 // Item is a keyring entry.
 type Item struct {
-	ID        string    `msgpack:"id"`
-	Type      string    `msgpack:"typ"`
-	Data      []byte    `msgpack:"dat"`
+	// ID for item. IDs are NOT encrypted.
+	ID string `msgpack:"id"`
+	// Type for item data.
+	Type string `msgpack:"typ"`
+	// Data for item.
+	Data []byte `msgpack:"dat"`
+	// CreatedAt when item was created.
 	CreatedAt time.Time `msgpack:"cts"`
 }
 
@@ -21,8 +25,8 @@ func NewItem(id string, b []byte, typ string, createdAt time.Time) *Item {
 	return item
 }
 
-// Marshal to bytes, encrypted with a secret key.
-func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
+// Encrypt item with a secret key.
+func (i *Item) Encrypt(secretKey SecretKey) ([]byte, error) {
 	if secretKey == nil {
 		return nil, errors.Errorf("no secret key specified")
 	}
@@ -34,12 +38,12 @@ func (i *Item) Marshal(secretKey SecretKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-// DecodeItem returns Item from bytes.
-func DecodeItem(b []byte, secretKey SecretKey) (*Item, error) {
-	return unmarshal(b, secretKey)
+// DecryptItem returns Item from bytes.
+func DecryptItem(b []byte, secretKey SecretKey) (*Item, error) {
+	return decrypt(b, secretKey)
 }
 
-func unmarshal(b []byte, secretKey SecretKey) (*Item, error) {
+func decrypt(b []byte, secretKey SecretKey) (*Item, error) {
 	decrypted, ok := secretBoxOpen(b, secretKey)
 	if !ok {
 		return nil, ErrInvalidAuth

@@ -1,3 +1,4 @@
+// Package user defines user statements, store and search.
 package user
 
 import (
@@ -119,13 +120,13 @@ func (u *User) UnmarshalJSON(b []byte) error {
 
 // New creates a User.
 // Name and URL string are NOT normalized.
-func New(ust *Store, kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
+func New(kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
 	}
 
-	usr, err := newUser(ust, kid, svc, name, urs)
+	usr, err := newUser(kid, svc, name, urs)
 	if err != nil {
 		return nil, err
 	}
@@ -136,14 +137,14 @@ func New(ust *Store, kid keys.ID, service string, name string, urs string, seq i
 	return usr, nil
 }
 
-func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs string) (*User, error) {
+func newUser(kid keys.ID, service link.Service, name string, urs string) (*User, error) {
 	usr := &User{
 		KID:     kid,
 		Service: service.ID(),
 		Name:    name,
 		URL:     urs,
 	}
-	if err := ValidateUser(usr); err != nil {
+	if err := Validate(usr); err != nil {
 		return nil, err
 	}
 	return usr, nil
@@ -151,7 +152,7 @@ func newUser(ust *Store, kid keys.ID, service link.Service, name string, urs str
 
 // NewForSigning returns User for signing (doesn't have remote URL yet).
 // The name is normalized, for example for twitter "@Username" => "username".
-func NewForSigning(ust *Store, kid keys.ID, service string, name string) (*User, error) {
+func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
 	svc, err := link.NewService(service)
 	if err != nil {
 		return nil, err
@@ -174,8 +175,9 @@ func validateServiceAndName(service link.Service, name string) error {
 	return service.ValidateName(name)
 }
 
-// ValidateUser service and name.
-func ValidateUser(user *User) error {
+// Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
+func Validate(user *User) error {
 	service, err := link.NewService(user.Service)
 	if err != nil {
 		return err
@@ -191,6 +193,24 @@ func ValidateUser(user *User) error {
 	return nil
 }
 
+// Validate service and name and URL.
+// If you want to request the URL and verify the remote statement, use RequestVerify.
+func (u *User) Validate() error {
+	service, err := link.NewService(u.Service)
+	if err != nil {
+		return err
+	}
+
+	if err := validateServiceAndName(service, u.Name); err != nil {
+		return err
+	}
+
+	if _, err := service.ValidateURLString(u.Name, u.URL); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ErrUserAlreadySet is user already set in sigchain.
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
@@ -201,12 +221,12 @@ func NewSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, t
 		return nil, errors.Errorf("no user specified")
 	}
 
-	if err := ValidateUser(user); err != nil {
+	if err := Validate(user); err != nil {
 		return nil, err
 	}
 
 	// Check if we have an existing user set.
-	existing, err := FindUserInSigchain(sc)
+	existing, err := FindInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -291,9 +311,9 @@ func Verify(msg string, kid keys.ID, user *User) (*User, error) {
 	return &dec, nil
 }
 
-// FindUserInSigchain returns User from a Sigchain.
+// FindInSigchain returns User from a Sigchain.
 // If user is invalid returns nil.
-func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
+func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 	st := sc.FindLast("user")
 	if st == nil {
 		return nil, nil
@@ -303,7 +323,7 @@ func FindUserInSigchain(sc *keys.Sigchain) (*User, error) {
 		return nil, err
 	}
 
-	if err := ValidateUser(&user); err != nil {
+	if err := Validate(&user); err != nil {
 		return nil, nil
 	}
 

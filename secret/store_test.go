@@ -6,6 +6,7 @@ import (
 
 	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/secret"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,7 +14,7 @@ func TestSecretStore(t *testing.T) {
 	kr := keyring.NewMem(true)
 	ss := secret.NewStore(kr)
 
-	clock := newClock()
+	clock := tsutil.NewClock()
 	ss.SetTimeNow(clock.Now)
 
 	out, err := ss.Get(secret.RandID())
@@ -50,7 +51,7 @@ func TestSecretStore(t *testing.T) {
 }`
 	require.Equal(t, expected, string(b))
 
-	secrets, err := ss.List(nil)
+	secrets, err := ss.List()
 	require.NoError(t, err)
 	require.Equal(t, 1, len(secrets))
 	require.Equal(t, secrets[0].Name, sec.Name)

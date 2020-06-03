@@ -12,10 +12,10 @@ import (
 // It prepends a 24 byte nonce to the the encrypted bytes.
 func SecretBoxSeal(b []byte, secretKey *[32]byte) []byte {
 	nonce := Rand24()
-	return sealSecretBox(b, nonce, secretKey)
+	return secretBoxSeal(b, nonce, secretKey)
 }
 
-func sealSecretBox(b []byte, nonce *[24]byte, secretKey *[32]byte) []byte {
+func secretBoxSeal(b []byte, nonce *[24]byte, secretKey *[32]byte) []byte {
 	encrypted := secretbox.Seal(nil, b, nonce, secretKey)
 	encrypted = append(nonce[:], encrypted...)
 	return encrypted
@@ -24,10 +24,10 @@ func sealSecretBox(b []byte, nonce *[24]byte, secretKey *[32]byte) []byte {
 // SecretBoxOpen decrypt using a key.
 // It assumes a 24 byte nonce before the encrypted bytes.
 func SecretBoxOpen(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
-	return openSecretBox(encrypted, secretKey)
+	return secretBoxOpen(encrypted, secretKey)
 }
 
-func openSecretBox(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
+func secretBoxOpen(encrypted []byte, secretKey *[32]byte) ([]byte, error) {
 	if len(encrypted) < 24 {
 		return nil, errors.Errorf("not enough bytes")
 	}

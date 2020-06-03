@@ -1,4 +1,5 @@
-package util
+// Package request provides clients for requesting data.
+package request
 
 import (
 	"bytes"
@@ -99,7 +100,7 @@ func doRequest(client *http.Client, method string, urs string, body []byte, opti
 	if err != nil {
 		return nil, nil, err
 	}
-	logger.Debugf("Response body: %s", string(respBody))
+	logger.Debugf("Response body (len=%d)", len(respBody))
 
 	return resp.Header, respBody, nil
 }

@@ -62,6 +62,8 @@ func TestRand3262(t *testing.T) {
 }
 
 func TestRandTempPath(t *testing.T) {
-	s := keys.RandTempPath(".txt")
-	require.True(t, strings.HasSuffix(s, ".txt"))
+	p := keys.RandTempPath()
+	require.NotEmpty(t, p)
+	p2 := keys.RandTempPath()
+	require.NotEqual(t, p, p2)
 }
