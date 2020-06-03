@@ -104,7 +104,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 
 	// Deprovision
-	ok, err := kr.Deprovision(provision2.ID)
+	ok, err := kr.Deprovision(provision2.ID, true)
 	require.NoError(t, err)
 	require.True(t, ok)
 

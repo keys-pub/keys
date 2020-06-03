@@ -348,13 +348,29 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.Equal(t, []string{"#auth-" + provision.ID}, ids)
 
-	ok, err := kr.Deprovision(provision.ID)
+	// Unlock
+	_, err = kr.Unlock(key)
+	require.NoError(t, err)
+	provision2 := keyring.NewProvision(keyring.UnknownAuth)
+	key2 := keys.Rand32()
+	err = kr.Provision(key2, provision2)
+	require.NoError(t, err)
+
+	// Lock
+	err = kr.Lock()
+	require.NoError(t, err)
+
+	ok, err := kr.Deprovision(provision.ID, false)
 	require.NoError(t, err)
 	require.True(t, ok)
 
 	ids, err = kr.IDs(keyring.Reserved(), keyring.Hidden())
 	require.NoError(t, err)
-	require.Equal(t, []string{"#test", ".hidden", "testid1"}, ids)
+	require.Equal(t, []string{"#auth-" + provision2.ID, "#provision-" + provision2.ID, "#test", ".hidden", "testid1"}, ids)
+
+	// Don't deprovision last
+	_, err = kr.Deprovision(provision2.ID, false)
+	require.EqualError(t, err, "deprovisioning the last auth is not supported")
 }
 
 func randBytes(length int) []byte {
