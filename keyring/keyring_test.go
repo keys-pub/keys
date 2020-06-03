@@ -371,6 +371,14 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 	// Don't deprovision last
 	_, err = kr.Deprovision(provision2.ID, false)
 	require.EqualError(t, err, "deprovisioning the last auth is not supported")
+
+	ok, err = kr.Deprovision(provision2.ID, true)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	ids, err = kr.IDs(keyring.Reserved(), keyring.Hidden())
+	require.NoError(t, err)
+	require.Equal(t, []string{"#test", ".hidden", "testid1"}, ids)
 }
 
 func randBytes(length int) []byte {
