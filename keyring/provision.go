@@ -85,7 +85,7 @@ func (k *Keyring) Provision(key SecretKey, provision *Provision) error {
 		return errors.Errorf("no provision")
 	}
 
-	if err := authProvision(k.st, provision.ID, key, k.masterKey); err != nil {
+	if err := authCreate(k.st, provision.ID, key, k.masterKey); err != nil {
 		return err
 	}
 
@@ -136,8 +136,16 @@ func (k *Keyring) Provisions() ([]*Provision, error) {
 
 // Deprovision auth.
 // Doesn't require Unlock().
-func (k *Keyring) Deprovision(id string) (bool, error) {
-	ok, err := authDeprovision(k.st, id)
+func (k *Keyring) Deprovision(id string, force bool) (bool, error) {
+	ids, err := authIDs(k.Store())
+	if err != nil {
+		return false, err
+	}
+	if !force && len(ids) == 1 && id == ids[0] {
+		return false, errors.Errorf("deprovisioning the last auth is not supported")
+	}
+
+	ok, err := authDelete(k.st, id)
 	if err != nil {
 		return false, err
 	}
@@ -154,13 +162,13 @@ func (k *Keyring) SaveProvision(provision *Provision) error {
 func authSetup(st Store, id string, key SecretKey) (SecretKey, error) {
 	// MK is the master key.
 	mk := rand32()
-	if err := authProvision(st, id, key, mk); err != nil {
+	if err := authCreate(st, id, key, mk); err != nil {
 		return nil, err
 	}
 	return mk, nil
 }
 
-func authProvision(st Store, id string, key SecretKey, mk SecretKey) error {
+func authCreate(st Store, id string, key SecretKey, mk SecretKey) error {
 	if mk == nil {
 		return ErrLocked
 	}
@@ -177,7 +185,7 @@ func authProvision(st Store, id string, key SecretKey, mk SecretKey) error {
 	return nil
 }
 
-func authDeprovision(st Store, id string) (bool, error) {
+func authDelete(st Store, id string) (bool, error) {
 	if id == "" {
 		return false, errors.Errorf("no provision id")
 	}
