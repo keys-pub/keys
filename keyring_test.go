@@ -9,28 +9,28 @@ import (
 
 func TestX25519KeyItem(t *testing.T) {
 	key := keys.GenerateX25519Key()
-	out, err := keys.AsX25519Key(keys.ItemForKey(key))
+	out, err := keys.KeyForItem(keys.ItemForKey(key))
 	require.NoError(t, err)
 	require.Equal(t, key.ID(), out.ID())
 }
 
 func TestX25519PublicKeyItem(t *testing.T) {
 	key := keys.GenerateX25519Key()
-	out, err := keys.AsX25519PublicKey(keys.ItemForKey(key.ID()))
+	out, err := keys.KeyForItem(keys.ItemForKey(key.ID()))
 	require.NoError(t, err)
 	require.Equal(t, key.ID(), out.ID())
 }
 
 func TestEdX25519KeyItem(t *testing.T) {
 	key := keys.GenerateEdX25519Key()
-	out, err := keys.AsEdX25519Key(keys.ItemForKey(key))
+	out, err := keys.KeyForItem(keys.ItemForKey(key))
 	require.NoError(t, err)
 	require.Equal(t, key.ID(), out.ID())
 }
 
 func TestEdX25519PublicKeyItem(t *testing.T) {
 	key := keys.GenerateEdX25519Key()
-	out, err := keys.AsEdX25519PublicKey(keys.ItemForKey(key.ID()))
+	out, err := keys.KeyForItem(keys.ItemForKey(key.ID()))
 	require.NoError(t, err)
 	require.Equal(t, key.ID(), out.ID())
 }

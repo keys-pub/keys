@@ -29,43 +29,28 @@ func NewMemStore(setup bool) *Store {
 
 // EdX25519Key returns an EdX25519Key from the keyring.
 func (k *Store) EdX25519Key(kid ID) (*EdX25519Key, error) {
-	logger.Infof("Store load sign key for %s", kid)
-	item, err := k.kr.Get(kid.String())
+	key, err := k.Key(kid)
 	if err != nil {
 		return nil, err
 	}
-	if item == nil || item.Type != string(EdX25519) {
+	sk, ok := key.(*EdX25519Key)
+	if !ok {
 		return nil, nil
 	}
-	return AsEdX25519Key(item)
+	return sk, nil
 }
 
-// EdX25519PublicKey returns EdX25519 public key from the keyring.
-// Since the public key itself is in the ID, you can convert the ID without
-// getting it from the Store via NewEdX25519PublicKeyFromID.
-func (k *Store) EdX25519PublicKey(kid ID) (*EdX25519PublicKey, error) {
-	logger.Infof("Store load EdX25519 public key for %s", kid)
-	item, err := k.kr.Get(kid.String())
-	if err != nil {
-		return nil, err
-	}
-	if item == nil {
-		return nil, nil
-	}
-	return AsEdX25519PublicKey(item)
-}
-
-// X25519Key returns an X25519Key from the keyring.
+// X25519Key from the keyring.
 func (k *Store) X25519Key(kid ID) (*X25519Key, error) {
-	logger.Infof("Store load box key for %s", kid)
-	item, err := k.kr.Get(kid.String())
+	key, err := k.Key(kid)
 	if err != nil {
 		return nil, err
 	}
-	if item == nil || item.Type != string(X25519) {
+	bk, ok := key.(*X25519Key)
+	if !ok {
 		return nil, nil
 	}
-	return AsX25519Key(item)
+	return bk, nil
 }
 
 // Save saves a Key to the keyring.
@@ -92,23 +77,7 @@ func (k *Store) Key(id ID) (Key, error) {
 	if item == nil {
 		return nil, nil
 	}
-	return keyForItem(item)
-}
-
-// keyForItem returns Key or nil if not recognized as a key.
-func keyForItem(item *keyring.Item) (Key, error) {
-	switch item.Type {
-	case string(X25519):
-		return AsX25519Key(item)
-	case string(X25519Public):
-		return AsX25519PublicKey(item)
-	case string(EdX25519):
-		return AsEdX25519Key(item)
-	case string(EdX25519Public):
-		return AsEdX25519PublicKey(item)
-	default:
-		return nil, nil
-	}
+	return KeyForItem(item)
 }
 
 // Opts are options for listing keys.
@@ -134,7 +103,7 @@ func (k *Store) Keys(opts *Opts) ([]Key, error) {
 	keys := make([]Key, 0, len(items))
 	for _, item := range items {
 		// logger.Debugf("Key for item type: %s", item.Type)
-		key, err := keyForItem(item)
+		key, err := KeyForItem(item)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +126,7 @@ func (k *Store) X25519Keys() ([]*X25519Key, error) {
 	}
 	keys := make([]*X25519Key, 0, len(items))
 	for _, item := range items {
-		key, err := AsX25519Key(item)
+		key, err := x25519KeyForItem(item)
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +144,7 @@ func (k *Store) EdX25519Keys() ([]*EdX25519Key, error) {
 	}
 	keys := make([]*EdX25519Key, 0, len(items))
 	for _, item := range items {
-		key, err := AsEdX25519Key(item)
+		key, err := edx25519KeyForItem(item)
 		if err != nil {
 			return nil, err
 		}
@@ -195,13 +164,13 @@ func (k *Store) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 	for _, item := range items {
 		switch item.Type {
 		case string(EdX25519):
-			key, err := AsEdX25519Key(item)
+			key, err := edx25519KeyForItem(item)
 			if err != nil {
 				return nil, err
 			}
 			keys = append(keys, key.PublicKey())
 		case string(EdX25519Public):
-			key, err := AsEdX25519PublicKey(item)
+			key, err := edx25519PublicKeyForItem(item)
 			if err != nil {
 				return nil, err
 			}
@@ -209,21 +178,6 @@ func (k *Store) EdX25519PublicKeys() ([]*EdX25519PublicKey, error) {
 		}
 	}
 	return keys, nil
-}
-
-// X25519PublicKey returns box public key from the keyring.
-// Since the public key itself is in the ID, you can convert the ID without
-// getting it from the Store via X25519PublicKeyForID.
-func (k *Store) X25519PublicKey(kid ID) (*X25519PublicKey, error) {
-	logger.Infof("Store load box public key for %s", kid)
-	item, err := k.kr.Get(kid.String())
-	if err != nil {
-		return nil, err
-	}
-	if item == nil {
-		return nil, nil
-	}
-	return AsX25519PublicKey(item)
 }
 
 // FindEdX25519PublicKey searches all our EdX25519 public keys for a match to a converted

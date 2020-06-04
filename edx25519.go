@@ -114,7 +114,7 @@ func NewEdX25519PublicKeyFromID(id ID) (*EdX25519PublicKey, error) {
 }
 
 // PublicKeyIDEquals returns true if public keys are equal.
-// It will also compare EdX25519 public key and X25519 public keys.
+// It will also compare EdX25519 public keys and X25519 public keys.
 func PublicKeyIDEquals(expected ID, kid ID) bool {
 	if expected == kid {
 		return true
