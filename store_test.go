@@ -99,21 +99,17 @@ func TestStoreList(t *testing.T) {
 	err = ks.Save(bk2.PublicKey())
 	require.NoError(t, err)
 
-	out, err := ks.Keys(nil)
+	out, err := ks.Keys()
 	require.NoError(t, err)
 	require.Equal(t, 4, len(out))
 
-	out, err = ks.Keys(&keys.Opts{
-		Types: []keys.KeyType{keys.X25519, keys.X25519Public},
-	})
+	out, err = ks.Keys(keys.WithTypes(keys.X25519, keys.X25519Public))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(out))
 	require.Equal(t, bk.ID(), out[0].ID())
 	require.Equal(t, bk2.ID(), out[1].ID())
 
-	out, err = ks.Keys(&keys.Opts{
-		Types: []keys.KeyType{keys.X25519},
-	})
+	out, err = ks.Keys(keys.WithTypes(keys.X25519))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(out))
 	require.Equal(t, bk.ID(), out[0].ID())

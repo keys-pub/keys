@@ -80,17 +80,40 @@ func (k *Store) Key(id ID) (Key, error) {
 	return KeyForItem(item)
 }
 
-// Opts are options for listing keys.
-type Opts struct {
+// Options ...
+type Options struct {
 	Types []KeyType
+}
+
+// Option ...
+type Option func(*Options) error
+
+func newOptions(opts ...Option) (Options, error) {
+	var options Options
+	for _, o := range opts {
+		if err := o(&options); err != nil {
+			return options, err
+		}
+	}
+	return options, nil
+}
+
+// WithTypes ...
+func WithTypes(types ...KeyType) Option {
+	return func(o *Options) error {
+		o.Types = types
+		return nil
+	}
 }
 
 // Keys lists keys in the keyring.
 // It ignores keyring items that aren't keys or of the specified types.
-func (k *Store) Keys(opts *Opts) ([]Key, error) {
-	if opts == nil {
-		opts = &Opts{}
+func (k *Store) Keys(opt ...Option) ([]Key, error) {
+	opts, err := newOptions(opt...)
+	if err != nil {
+		return nil, err
 	}
+
 	logger.Debugf("Keys %+v", opts)
 	itemTypes := make([]string, 0, len(opts.Types))
 	for _, t := range opts.Types {
