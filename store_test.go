@@ -27,13 +27,6 @@ func TestEdX25519Key(t *testing.T) {
 	require.Equal(t, 1, len(sks))
 	require.Equal(t, sk.Seed()[:], sks[0].Seed()[:])
 
-	spkOut, err := ks.EdX25519PublicKey(sk.ID())
-	require.NoError(t, err)
-	require.Equal(t, sk.PublicKey().Bytes()[:], spkOut.Bytes()[:])
-
-	err = ks.Save(sk.PublicKey())
-	require.EqualError(t, err, "keyring item already exists")
-
 	spk := keys.GenerateEdX25519Key().PublicKey()
 	err = ks.Save(spk)
 	require.NoError(t, err)
@@ -44,21 +37,6 @@ func TestEdX25519Key(t *testing.T) {
 	// Save again
 	err = ks.Save(spk)
 	require.Equal(t, err, keyring.ErrItemAlreadyExists)
-}
-
-func TestEdX25519PublicKey(t *testing.T) {
-	ks := keys.NewMemStore(true)
-	spk := keys.GenerateEdX25519Key().PublicKey()
-	err := ks.Save(spk)
-	require.NoError(t, err)
-	spkOut, err := ks.EdX25519PublicKey(spk.ID())
-	require.NoError(t, err)
-	require.Equal(t, spk.Bytes()[:], spkOut.Bytes()[:])
-
-	spks, err := ks.EdX25519PublicKeys()
-	require.NoError(t, err)
-	require.Equal(t, 1, len(spks))
-	require.Equal(t, spk.Bytes()[:], spks[0].Bytes()[:])
 }
 
 func TestFindEdX25519PublicKey(t *testing.T) {
