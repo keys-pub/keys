@@ -11,17 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSaveLoadEdX25519Key(t *testing.T) {
-	ks := keys.NewMemStore(true)
-	signKey := keys.GenerateEdX25519Key()
-	err := ks.Save(signKey)
-	require.NoError(t, err)
-	signKeyOut, err := ks.EdX25519Key(signKey.ID())
-	require.NoError(t, err)
-	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
-	require.Equal(t, signKey.PublicKey().Bytes(), signKeyOut.PublicKey().Bytes())
-}
-
 func TestEdX25519KeySeed(t *testing.T) {
 	signKey := keys.GenerateEdX25519Key()
 	seed := signKey.Seed()
