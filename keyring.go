@@ -72,6 +72,11 @@ func Save(kr *keyring.Keyring, key Key) error {
 	return kr.Create(ItemForKey(key))
 }
 
+// Delete key from keyring.
+func Delete(kr *keyring.Keyring, id ID) (bool, error) {
+	return kr.Delete(id.String())
+}
+
 // Options ...
 type Options struct {
 	Types []KeyType

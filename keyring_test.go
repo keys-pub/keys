@@ -37,15 +37,27 @@ func TestEdX25519PublicKeyItem(t *testing.T) {
 	require.Equal(t, key.ID(), out.ID())
 }
 
-func TestSaveLoadEdX25519Key(t *testing.T) {
+func TestSaveFindDelete(t *testing.T) {
 	kr := keyring.NewMem(true)
 	sk := keys.GenerateEdX25519Key()
 	err := keys.Save(kr, sk)
 	require.NoError(t, err)
-	skOut, err := keys.FindEdX25519Key(kr, sk.ID())
+	out, err := keys.FindEdX25519Key(kr, sk.ID())
 	require.NoError(t, err)
-	require.Equal(t, sk.PrivateKey(), skOut.PrivateKey())
-	require.Equal(t, sk.PublicKey().Bytes(), skOut.PublicKey().Bytes())
+	require.Equal(t, sk.PrivateKey(), out.PrivateKey())
+	require.Equal(t, sk.PublicKey().Bytes(), out.PublicKey().Bytes())
+
+	ok, err := keys.Delete(kr, sk.ID())
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	out, err = keys.FindEdX25519Key(kr, sk.ID())
+	require.NoError(t, err)
+	require.Nil(t, out)
+
+	ok, err = keys.Delete(kr, sk.ID())
+	require.NoError(t, err)
+	require.False(t, ok)
 }
 
 func TestEdX25519Key(t *testing.T) {
