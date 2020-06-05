@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/keys-pub/keys/tsutil"
@@ -27,6 +28,7 @@ func FSV(dir string) Option {
 }
 
 type fsv struct {
+	sync.Mutex
 	dir   string
 	cache *files
 	nowFn func() time.Time
@@ -53,12 +55,13 @@ func (r *fsv) Get(id string) ([]byte, error) {
 	if id == "." || id == ".." || strings.Contains(id, "/") || strings.Contains(id, "\\") {
 		return nil, errors.Errorf("failed to get keyring item: invalid id %q", id)
 	}
-	logger.Debugf("Get %s", id)
+	// logger.Debugf("Get %s", id)
 
-	if err := r.updateFilesCache(); err != nil {
+	files, err := r.checkCache()
+	if err != nil {
 		return nil, err
 	}
-	file, ok := r.cache.current[id]
+	file, ok := files.current[id]
 	if !ok {
 		return nil, nil
 	}
@@ -73,14 +76,15 @@ func (r *fsv) Set(id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id specified")
 	}
-	logger.Debugf("Set %s", id)
+	// logger.Debugf("Set %s", id)
 	now := r.nowFn()
 
-	if err := r.updateFilesCache(); err != nil {
+	files, err := r.checkCache()
+	if err != nil {
 		return err
 	}
 
-	file, ok := r.cache.current[id]
+	file, ok := files.current[id]
 	if !ok {
 		file = newFile(id, 1, now)
 		logger.Debugf("Set (new) %s", file)
@@ -104,6 +108,9 @@ func (r *fsv) add(name string, data []byte, msg string) error {
 		return errors.Wrapf(err, "failed to write file")
 	}
 
+	// Clear cache
+	r.cache = nil
+
 	return nil
 }
 
@@ -112,11 +119,12 @@ func (r *fsv) Delete(id string) (bool, error) {
 		return false, errors.Errorf("no id specified")
 	}
 
-	if err := r.updateFilesCache(); err != nil {
+	files, err := r.checkCache()
+	if err != nil {
 		return false, err
 	}
 
-	file, ok := r.cache.current[id]
+	file, ok := files.current[id]
 	if !ok {
 		return false, nil
 	}
@@ -141,12 +149,13 @@ func (r *fsv) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
 	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
-	if err := r.updateFilesCache(); err != nil {
+	files, err := r.checkCache()
+	if err != nil {
 		return nil, err
 	}
 
-	ids := make([]string, 0, len(r.cache.ids))
-	for _, id := range r.cache.ids {
+	ids := make([]string, 0, len(files.ids))
+	for _, id := range files.ids {
 		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
 			continue
 		}
@@ -163,10 +172,11 @@ func (r *fsv) IDs(opts ...IDsOption) ([]string, error) {
 
 // Exists ...
 func (r *fsv) Exists(id string) (bool, error) {
-	if err := r.updateFilesCache(); err != nil {
+	files, err := r.checkCache()
+	if err != nil {
 		return false, err
 	}
-	file, ok := r.cache.current[id]
+	file, ok := files.current[id]
 	if !ok {
 		return false, nil
 	}
@@ -181,14 +191,24 @@ func (r *fsv) Reset() error {
 	return os.RemoveAll(r.dir)
 }
 
-func (r *fsv) updateFilesCache() error {
+func (r *fsv) checkCache() (*files, error) {
+	r.Lock()
+	defer r.Unlock()
+	cache := r.cache
+	if cache != nil {
+		return cache, nil
+	}
+
 	files, err := listFiles(r.dir)
 	if err != nil {
-		// TODO: Clear cache?
-		return err
+		return nil, err
 	}
 	r.cache = files
-	return nil
+
+	time.AfterFunc(time.Second*2, func() {
+		r.cache = nil
+	})
+	return files, nil
 }
 
 type file struct {
@@ -222,7 +242,7 @@ type files struct {
 }
 
 func listFiles(dir string) (*files, error) {
-	logger.Debugf("Git files: %s", dir)
+	logger.Debugf("Keyring (fsv) list: %s", dir)
 
 	exists, err := pathExists(dir)
 	if err != nil {
@@ -249,7 +269,7 @@ func listFiles(dir string) (*files, error) {
 			// logger.Warningf("Unrecognized git file name: %s", fileInfo.Name())
 			continue
 		}
-		logger.Debugf("File: %s", f)
+		// logger.Debugf("File: %s", f)
 
 		versions, ok := files.versions[f.id]
 		if !ok {
