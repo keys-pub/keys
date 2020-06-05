@@ -17,8 +17,8 @@ func TestDirs(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, strings.HasSuffix(logsDir, `\AppData\Local\KeysTest`))
 
-	err := os.Setenv("LOCALAPPDATA", "")
+	err = os.Setenv("LOCALAPPDATA", "")
 	require.NoError(t, err)
-	_, err := env.AppPath(env.Dir("KeysTest"))
+	_, err = env.AppPath(env.Dir("KeysTest"))
 	require.EqualError(t, err, "LOCALAPPDATA not set")
 }
