@@ -2,6 +2,7 @@
 package tsutil
 
 import (
+	"strconv"
 	"time"
 )
 
@@ -20,9 +21,26 @@ func Millis(t time.Time) int64 {
 }
 
 // ParseMillis returns time.Time from milliseconds since epoch.
-func ParseMillis(m int64) time.Time {
+func ParseMillis(i interface{}) time.Time {
+	switch v := i.(type) {
+	case int64:
+		return parseInt64(v)
+	case int:
+		return parseInt64(int64(v))
+	case string:
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return time.Time{}
+		}
+		return parseInt64(int64(n))
+	default:
+		return time.Time{}
+	}
+}
+
+func parseInt64(m int64) time.Time {
 	if m == 0 {
 		return time.Time{}
 	}
-	return time.Unix(0, int64(m)*int64(time.Millisecond)).UTC()
+	return time.Unix(0, m*int64(time.Millisecond)).UTC()
 }
