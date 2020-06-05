@@ -11,9 +11,9 @@ import (
 )
 
 // FS Store option.
-func FS(service string, dir string) Option {
+func FS(dir string) Option {
 	return func(o *Options) error {
-		st, err := NewFS(service, dir)
+		st, err := NewFS(dir)
 		if err != nil {
 			return err
 		}
@@ -23,16 +23,15 @@ func FS(service string, dir string) Option {
 }
 
 // NewFS returns keyring.Store backed by the filesystem.
-func NewFS(service string, dir string) (Store, error) {
+func NewFS(dir string) (Store, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}
-	return fs{service: service, dir: dir}, nil
+	return fs{dir: dir}, nil
 }
 
 type fs struct {
-	service string
-	dir     string
+	dir string
 }
 
 func (k fs) Name() string {
@@ -47,7 +46,7 @@ func (k fs) Get(id string) ([]byte, error) {
 		return nil, errors.Errorf("failed to get keyring item: invalid id %q", id)
 	}
 
-	path := filepath.Join(k.dir, k.service, id)
+	path := filepath.Join(k.dir, id)
 	exists, err := pathExists(path)
 	if err != nil {
 		return nil, err
@@ -62,11 +61,10 @@ func (k fs) Set(id string, data []byte) error {
 	if id == "" {
 		return errors.Errorf("no id specified")
 	}
-	dir := filepath.Join(k.dir, k.service)
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := os.MkdirAll(k.dir, 0700); err != nil {
 		return err
 	}
-	path := filepath.Join(dir, id)
+	path := filepath.Join(k.dir, id)
 	if err := ioutil.WriteFile(path, data, 0600); err != nil {
 		return errors.Wrapf(err, "failed to write file")
 	}
@@ -77,9 +75,7 @@ func (k fs) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
 	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
 
-	path := filepath.Join(k.dir, k.service)
-
-	exists, err := pathExists(path)
+	exists, err := pathExists(k.dir)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +83,7 @@ func (k fs) IDs(opts ...IDsOption) ([]string, error) {
 		return []string{}, nil
 	}
 
-	files, err := ioutil.ReadDir(path)
+	files, err := ioutil.ReadDir(k.dir)
 	if err != nil {
 		return nil, err
 	}
@@ -110,20 +106,19 @@ func (k fs) IDs(opts ...IDsOption) ([]string, error) {
 }
 
 func (k fs) Reset() error {
-	path := filepath.Join(k.dir, k.service)
-	if err := os.RemoveAll(path); err != nil {
+	if err := os.RemoveAll(k.dir); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (k fs) Exists(id string) (bool, error) {
-	path := filepath.Join(k.dir, k.service, id)
+	path := filepath.Join(k.dir, id)
 	return pathExists(path)
 }
 
 func (k fs) Delete(id string) (bool, error) {
-	path := filepath.Join(k.dir, k.service, id)
+	path := filepath.Join(k.dir, id)
 
 	exists, err := pathExists(path)
 	if err != nil {

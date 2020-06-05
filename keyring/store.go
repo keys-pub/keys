@@ -1,6 +1,7 @@
 package keyring
 
 import (
+	"path/filepath"
 	"runtime"
 )
 
@@ -53,7 +54,7 @@ func defaultLinuxFS(service string) (Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs, err := NewFS(service, dir)
+	fs, err := NewFS(filepath.Join(dir, service))
 	if err != nil {
 		return nil, err
 	}
