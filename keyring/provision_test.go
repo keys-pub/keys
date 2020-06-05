@@ -15,7 +15,7 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	kr, err := keyring.New(keyring.SystemOrFS("KeysTest"))
+	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
@@ -128,7 +128,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 }
 
 func TestSystemStore(t *testing.T) {
-	kr, err := keyring.New(keyring.SystemOrFS("KeysTest"))
+	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	salt := bytes.Repeat([]byte{0x01}, 32)
@@ -139,8 +139,7 @@ func TestSystemStore(t *testing.T) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	st, err := keyring.NewSystemOrFS("KeysTest")
-	require.NoError(t, err)
+	st := keyring.NewSystem("KeysTest")
 
 	mk, err := st.Get("#auth-" + provision.ID)
 	require.NoError(t, err)
@@ -154,7 +153,7 @@ func TestSystemStore(t *testing.T) {
 }
 
 func TestAuthV1(t *testing.T) {
-	kr, err := keyring.New(keyring.SystemOrFS("KeysTest"))
+	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 

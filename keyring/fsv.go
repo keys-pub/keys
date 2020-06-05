@@ -39,7 +39,7 @@ var _ Store = &fsv{}
 // NewFSV creates a versioned FS store.
 func NewFSV(dir string) (Store, error) {
 	if dir == "" || dir == "/" {
-		return nil, errors.Errorf("invalid directory")
+		return nil, errors.Errorf("invalid directory %q", dir)
 	}
 	return &fsv{dir: dir, nowFn: time.Now}, nil
 }
