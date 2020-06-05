@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTimeInMillis(t *testing.T) {
+func TestParseMillis(t *testing.T) {
 	t1 := time.Now().UTC()
 	ts1 := tsutil.Millis(t1)
 	t2 := tsutil.ParseMillis(ts1)
@@ -23,6 +23,15 @@ func TestTimeInMillis(t *testing.T) {
 	require.Equal(t, "Fri, 13 Feb 2009 23:31:30 GMT", tf3)
 	tf3 = t3.Format(tsutil.RFC3339Milli)
 	require.Equal(t, "2009-02-13T23:31:30.001Z", tf3)
+
+	t4 := tsutil.ParseMillis("1234567890001")
+	tf4 := t4.Format(tsutil.RFC3339Milli)
+	require.Equal(t, "2009-02-13T23:31:30.001Z", tf4)
+	require.Equal(t, int64(1234567890001), tsutil.Millis(t4))
+
+	t5 := tsutil.ParseMillis(int64(1234567890001))
+	tf5 := t5.Format(tsutil.RFC3339Milli)
+	require.Equal(t, "2009-02-13T23:31:30.001Z", tf5)
 }
 
 func TestRFC3339Milli(t *testing.T) {

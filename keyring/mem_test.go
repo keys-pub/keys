@@ -46,3 +46,8 @@ func TestMemIDs(t *testing.T) {
 	defer func() { _ = kr.Reset() }()
 	testIDs(t, kr)
 }
+
+func TestMemStore(t *testing.T) {
+	kr := testMem(t)
+	testStore(t, kr.Store())
+}
