@@ -22,6 +22,10 @@ func TestMkdir(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, exists)
 
+	exists, err = env.PathExists(path)
+	require.NoError(t, err)
+	require.False(t, exists)
+
 	path, err = env.AppPath(env.Dir(dir), env.File("test.txt"), env.Mkdir())
 	require.NoError(t, err)
 
