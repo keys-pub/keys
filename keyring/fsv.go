@@ -17,7 +17,10 @@ import (
 // FSV (filesystem versioned) Store option.
 func FSV(dir string) Option {
 	return func(o *Options) error {
-		st := NewFSV(dir)
+		st, err := NewFSV(dir)
+		if err != nil {
+			return err
+		}
 		o.st = st
 		return nil
 	}
@@ -32,8 +35,11 @@ type fsv struct {
 var _ Store = &fsv{}
 
 // NewFSV creates a versioned FS store.
-func NewFSV(dir string) Store {
-	return &fsv{dir: dir, nowFn: time.Now}
+func NewFSV(dir string) (Store, error) {
+	if dir == "" || dir == "/" {
+		return nil, errors.Errorf("invalid directory")
+	}
+	return &fsv{dir: dir, nowFn: time.Now}, nil
 }
 
 func (r *fsv) Name() string {

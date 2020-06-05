@@ -28,6 +28,7 @@ func TestFSVStore(t *testing.T) {
 	path := keys.RandTempPath()
 	defer os.RemoveAll(path)
 
-	fs := keyring.NewFSV(path)
+	fs, err := keyring.NewFSV(path)
+	require.NoError(t, err)
 	testStore(t, fs)
 }
