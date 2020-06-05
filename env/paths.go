@@ -32,15 +32,15 @@ func MustAppPath(opt ...PathOption) string {
 // AppPath returns path for a files or directory in an app support directory.
 //
 // darwin:
-// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.MakeDir())
+// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
 //   => "~/Library/Application Support/MyApp/test.txt"
 //
 // windows:
-// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.MakeDir())
+// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
 //   => "%LOCALAPPDATA%/MyApp/test.txt"
 //
 // linux:
-// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.MakeDir())
+// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
 //   => "~/.local/share/MyApp/test.txt"
 //
 func AppPath(opt ...PathOption) (string, error) {
@@ -52,7 +52,7 @@ func AppPath(opt ...PathOption) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if opts.MkDir {
+	if opts.Mkdir {
 		if err := mkdir(dir); err != nil {
 			return "", err
 		}
@@ -113,7 +113,7 @@ func LogsPath(opt ...PathOption) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if opts.MkDir {
+	if opts.Mkdir {
 		if err := mkdir(dir); err != nil {
 			return "", err
 		}

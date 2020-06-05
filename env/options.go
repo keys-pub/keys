@@ -4,7 +4,7 @@ package env
 type PathOptions struct {
 	Dirs  []string
 	File  string
-	MkDir bool
+	Mkdir bool
 }
 
 // PathOption ...
@@ -36,10 +36,10 @@ func File(file string) PathOption {
 	}
 }
 
-// MkDir ...
-func MkDir() PathOption {
+// Mkdir ...
+func Mkdir() PathOption {
 	return func(o *PathOptions) error {
-		o.MkDir = true
+		o.Mkdir = true
 		return nil
 	}
 }

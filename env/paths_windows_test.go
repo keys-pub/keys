@@ -1,6 +1,7 @@
 package env_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -15,4 +16,9 @@ func TestDirs(t *testing.T) {
 	logsDir, err := env.LogsPath(env.Dir("KeysTest"))
 	require.NoError(t, err)
 	require.True(t, strings.HasSuffix(logsDir, `\AppData\Local\KeysTest`))
+
+	err := os.Setenv("LOCALAPPDATA", "")
+	require.NoError(t, err)
+	_, err := env.AppPath(env.Dir("KeysTest"))
+	require.EqualError(t, err, "LOCALAPPDATA not set")
 }
