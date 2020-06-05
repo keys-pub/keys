@@ -153,7 +153,7 @@ func TestSystemStore(t *testing.T) {
 }
 
 func TestAuthV1(t *testing.T) {
-	kr, err := keyring.New(keyring.System("KeysTest"))
+	kr, err := keyring.New(keyring.Mem())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -188,7 +188,9 @@ func TestAuthV1(t *testing.T) {
 func TestProvisions(t *testing.T) {
 	var err error
 
-	kr := keyring.NewMem(true)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
+	kr.SetMasterKey(keys.Rand32())
 	key := keys.Rand32()
 	id := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
 	provision := &keyring.Provision{
@@ -207,7 +209,8 @@ func TestProvisions(t *testing.T) {
 func TestSaveProvision(t *testing.T) {
 	var err error
 
-	kr := keyring.NewMem(false)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 	id := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
 	provision := &keyring.Provision{
 		ID: id,
@@ -235,7 +238,9 @@ func TestProvisionMarshal(t *testing.T) {
 		NoPin:     true,
 		CreatedAt: clock.Now(),
 	}
-	kr := keyring.NewMem(true)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
+	kr.SetMasterKey(keys.Rand32())
 	key := keys.Rand32()
 	err = kr.Provision(key, provision)
 	require.NoError(t, err)

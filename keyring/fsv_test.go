@@ -13,7 +13,7 @@ import (
 func testFSV(t *testing.T) *keyring.Keyring {
 	dir, err := ioutil.TempDir("", "KeysTest")
 	require.NoError(t, err)
-	kr, err := keyring.New(keyring.FSV(dir))
+	kr, err := keyring.New(keyring.FS(dir, true))
 	require.NoError(t, err)
 	return kr
 }
@@ -28,7 +28,7 @@ func TestFSVStore(t *testing.T) {
 	path := keys.RandTempPath()
 	defer os.RemoveAll(path)
 
-	fs, err := keyring.NewFSV(path)
+	fs, err := keyring.NewFS(path, true)
 	require.NoError(t, err)
 	testStore(t, fs)
 }

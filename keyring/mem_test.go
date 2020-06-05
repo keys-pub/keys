@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys/keyring"
+	"github.com/stretchr/testify/require"
 )
 
 func testMem(t *testing.T) *keyring.Keyring {
-	kr := keyring.NewMem(false)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 	return kr
 }
 

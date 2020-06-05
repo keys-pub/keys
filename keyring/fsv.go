@@ -15,18 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// FSV (filesystem versioned) Store option.
-func FSV(dir string) Option {
-	return func(o *Options) error {
-		st, err := NewFSV(dir)
-		if err != nil {
-			return err
-		}
-		o.st = st
-		return nil
-	}
-}
-
 type fsv struct {
 	sync.Mutex
 	dir   string
@@ -36,8 +24,8 @@ type fsv struct {
 
 var _ Store = &fsv{}
 
-// NewFSV creates a versioned FS store.
-func NewFSV(dir string) (Store, error) {
+// newFSV creates a versioned FS store.
+func newFSV(dir string) (Store, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory %q", dir)
 	}

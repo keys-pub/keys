@@ -14,7 +14,8 @@ import (
 func TestSubscribe(t *testing.T) {
 	var err error
 
-	kr := keyring.NewMem(false)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 	ch := kr.Subscribe("test")
 
 	key := keys.Rand32()

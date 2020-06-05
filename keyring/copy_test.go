@@ -15,7 +15,8 @@ func TestCopy(t *testing.T) {
 	var err error
 
 	// Keyring #1 (mem)
-	kr := keyring.NewMem(false)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 	key := keys.Rand32()
 	id := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
 	provision := &keyring.Provision{
@@ -29,7 +30,8 @@ func TestCopy(t *testing.T) {
 	require.NoError(t, err)
 
 	// Keyring #2 (mem)
-	kr2 := keyring.NewMem(false)
+	kr2, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 
 	// Copy
 	expected := []string{"#auth-0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29", "#provision-0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29", item.ID}
@@ -55,7 +57,8 @@ func TestCopy(t *testing.T) {
 	require.Equal(t, []string{}, ids)
 
 	// Copy (dry-run)
-	kr3 := keyring.NewMem(false)
+	kr3, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 	ids, err = keyring.Copy(kr.Store(), kr3.Store(), keyring.DryRun())
 	require.NoError(t, err)
 	require.Equal(t, expected, ids)

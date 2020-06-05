@@ -11,7 +11,8 @@ import (
 func ExampleNew() {
 	// Initialize Keyring.
 	// You can use keyring.System, keyring.FS, or keyring.Mem, keyring.FSV.
-	kr, err := keyring.New(keyring.System("MyApp"))
+	dir := env.MustAppPath(env.Dir("MyApp", "keyring"))
+	kr, err := keyring.New(keyring.FS(dir), true)
 	if err != nil {
 		log.Fatal(err)
 	}

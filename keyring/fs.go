@@ -11,9 +11,9 @@ import (
 )
 
 // FS Store option.
-func FS(dir string) Option {
+func FS(dir string, versioned bool) Option {
 	return func(o *Options) error {
-		st, err := NewFS(dir)
+		st, err := NewFS(dir, versioned)
 		if err != nil {
 			return err
 		}
@@ -23,7 +23,17 @@ func FS(dir string) Option {
 }
 
 // NewFS returns keyring.Store backed by the filesystem.
-func NewFS(dir string) (Store, error) {
+// If versioned is true, it returns a filesystem that is create only,
+// any update creates a new version including deletes, which can be used
+// to backup and sync to a remote.
+func NewFS(dir string, versioned bool) (Store, error) {
+	if versioned {
+		return newFSV(dir)
+	}
+	return newFS(dir)
+}
+
+func newFS(dir string) (Store, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}
