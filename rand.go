@@ -73,11 +73,6 @@ func Rand32P4(n uint32) *[32]byte {
 	return r
 }
 
-// Rand3262 returns random 32 bytes Base62 encoded (length 43).
-func Rand3262() string {
-	return encoding.MustEncode(RandBytes(32), encoding.Base62)
-}
-
 // RandUsername returns random lowercase string of length.
 func RandUsername(length int) string {
 	r := []rune{}
