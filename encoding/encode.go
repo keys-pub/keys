@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
+	"strings"
 
 	"github.com/keybase/saltpack/encoding/basex"
 	"github.com/pkg/errors"
@@ -74,16 +75,33 @@ func ParseOr(s string, d Encoding) (Encoding, error) {
 }
 
 // Encode encodes bytes to an Encoding.
-func Encode(b []byte, encoding Encoding) (string, error) {
+func Encode(b []byte, encoding Encoding, opt ...EncodeOption) (string, error) {
+	opts, err := newEncodeOptions(opt, encoding)
+	if err != nil {
+		return "", err
+	}
+
 	switch encoding {
 	case Base64:
-		return base64.StdEncoding.EncodeToString(b), nil
+		encoder := base64.StdEncoding
+		if opts.NoPadding {
+			encoder = base64.RawStdEncoding
+		}
+		return encoder.EncodeToString(b), nil
 	case Base62:
 		return basex.Base62StdEncodingStrict.EncodeToString(b), nil
 	case Base58:
 		return basex.Base58StdEncodingStrict.EncodeToString(b), nil
 	case Base32:
-		return base32.StdEncoding.EncodeToString(b), nil
+		encoder := base32.StdEncoding
+		if opts.NoPadding {
+			encoder = encoder.WithPadding(base32.NoPadding)
+		}
+		out := encoder.EncodeToString(b)
+		if opts.Lowercase {
+			out = strings.ToLower(out)
+		}
+		return out, nil
 	case Hex:
 		return hex.EncodeToString(b), nil
 	case Saltpack:
@@ -96,8 +114,8 @@ func Encode(b []byte, encoding Encoding) (string, error) {
 }
 
 // MustEncode returns encoding or panics on error.
-func MustEncode(b []byte, encoding Encoding) string {
-	s, err := Encode(b, encoding)
+func MustEncode(b []byte, encoding Encoding, opt ...EncodeOption) string {
+	s, err := Encode(b, encoding, opt...)
 	if err != nil {
 		panic(err)
 	}

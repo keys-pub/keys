@@ -52,3 +52,28 @@ func TestDecode(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("🤓🤓🤓🤓🤓"), bout)
 }
+
+func TestEncodeBase32(t *testing.T) {
+	var out string
+	b := bytes.Repeat([]byte{0x01}, 32)
+
+	out = encoding.MustEncode(b, encoding.Base32)
+	require.Equal(t, "AEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQ====", out)
+	out = encoding.MustEncode(b, encoding.Base32, encoding.NoPadding())
+	require.Equal(t, "AEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQ", out)
+	out = encoding.MustEncode(b, encoding.Base32, encoding.NoPadding(), encoding.Lowercase())
+	require.Equal(t, "aeaqcaibaeaqcaibaeaqcaibaeaqcaibaeaqcaibaeaqcaibaeaq", out)
+}
+
+func TestEncodeBase64(t *testing.T) {
+	var out string
+	var err error
+	b := bytes.Repeat([]byte{0x01}, 32)
+
+	out = encoding.MustEncode(b, encoding.Base64)
+	require.Equal(t, "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=", out)
+	out = encoding.MustEncode(b, encoding.Base64, encoding.NoPadding())
+	require.Equal(t, "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE", out)
+	out, err = encoding.Encode(b, encoding.Base64, encoding.NoPadding(), encoding.Lowercase())
+	require.EqualError(t, err, "invalid option: lowercase")
+}
