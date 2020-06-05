@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSecretID(t *testing.T) {
+	id := secret.RandID()
+	require.Equal(t, 43, len(id))
+}
+
 func TestSecretMarshal(t *testing.T) {
 	kr := keyring.NewMem(true)
 	ss := secret.NewStore(kr)

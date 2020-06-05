@@ -2,7 +2,6 @@ package keys
 
 import (
 	"crypto/rand"
-	"encoding/base32"
 	"encoding/binary"
 	"math/big"
 	"os"
@@ -74,13 +73,6 @@ func Rand32P4(n uint32) *[32]byte {
 	return r
 }
 
-// Rand3262 returns random 32 bytes Base62 encoded (length 43).
-func Rand3262() string {
-	buf := RandBytes(32)
-	s := encoding.MustEncode(buf, encoding.Base62)
-	return s
-}
-
 // RandUsername returns random lowercase string of length.
 func RandUsername(length int) string {
 	r := []rune{}
@@ -95,15 +87,16 @@ func RandUsername(length int) string {
 	return string(r)
 }
 
-// RandTempPath returns a unique random path in os.TempDir.
+// RandTempPath returns a unique random file name in os.TempDir.
 // RandTempPath() => "/tmp/CTGMMOLLZCXMGP7VR4BHKAI7PE"
 func RandTempPath() string {
-	buf := make([]byte, 16)
-	if _, err := rand.Read(buf); err != nil {
-		panic(err)
-	}
-	s := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(buf)
-	return filepath.Join(os.TempDir(), s)
+	return filepath.Join(os.TempDir(), RandFileName())
+}
+
+// RandFileName returns a unique random file name.
+// RandFileName() => CTGMMOLLZCXMGP7VR4BHKAI7PE
+func RandFileName() string {
+	return encoding.MustEncode(RandBytes(16), encoding.Base32, encoding.NoPadding())
 }
 
 // Bytes64 converts byte slice to *[64]byte.

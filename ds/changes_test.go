@@ -9,6 +9,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +29,7 @@ func testChanges(t *testing.T, dst ds.DocumentStore, changes ds.Changes, clock *
 	length := 40
 
 	for i := 0; i < length; i++ {
-		id := fmt.Sprintf("%s-%06d", keys.Rand3262(), i)
+		id := fmt.Sprintf("%s-%06d", encoding.MustEncode(keys.RandBytes(32), encoding.Base62), i)
 		path := ds.Path("test", id)
 		paths = append(paths, path)
 		err := dst.Create(ctx, path, []byte(fmt.Sprintf("value%d", i)))
