@@ -74,6 +74,6 @@ func TestEncodeBase64(t *testing.T) {
 	require.Equal(t, "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=", out)
 	out = encoding.MustEncode(b, encoding.Base64, encoding.NoPadding())
 	require.Equal(t, "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE", out)
-	out, err = encoding.Encode(b, encoding.Base64, encoding.NoPadding(), encoding.Lowercase())
+	_, err = encoding.Encode(b, encoding.Base64, encoding.NoPadding(), encoding.Lowercase())
 	require.EqualError(t, err, "invalid option: lowercase")
 }
