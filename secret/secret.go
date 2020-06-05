@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/pkg/errors"
 )
@@ -78,7 +79,7 @@ const (
 
 // RandID creates a random secret ID.
 func RandID() string {
-	return keys.Rand3262()
+	return encoding.MustEncode(keys.RandBytes(32), encoding.Base62)
 }
 
 // NewSecret creates a new Secret.

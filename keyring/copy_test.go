@@ -24,7 +24,7 @@ func TestCopy(t *testing.T) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	item := keyring.NewItem(keys.Rand3262(), []byte("testpassword"), "", time.Now())
+	item := keyring.NewItem(encoding.MustEncode(keys.RandBytes(32), encoding.Base62), []byte("testpassword"), "", time.Now())
 	err = kr.Create(item)
 	require.NoError(t, err)
 

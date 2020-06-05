@@ -56,11 +56,6 @@ func TestRandUsername(t *testing.T) {
 	}
 }
 
-func TestRand3262(t *testing.T) {
-	s := keys.Rand3262()
-	require.Equal(t, 43, len(s))
-}
-
 func TestRandTempPath(t *testing.T) {
 	p := keys.RandTempPath()
 	require.NotEmpty(t, p)
