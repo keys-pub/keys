@@ -15,7 +15,7 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	kr, err := keyring.New(keyring.System("KeysTest"))
+	kr, err := keyring.New(keyring.Mem())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
@@ -128,6 +128,9 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 }
 
 func TestSystemStore(t *testing.T) {
+	if skipSystem(t) {
+		return
+	}
 	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
@@ -201,9 +204,8 @@ func TestProvisions(t *testing.T) {
 
 	provisions, err := kr.Provisions()
 	require.NoError(t, err)
-	require.Equal(t, 2, len(provisions))
+	require.Equal(t, 1, len(provisions))
 	require.Equal(t, "0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29", provisions[0].ID)
-	require.Equal(t, "yhjskwdA6OZ1AL1YmHWZWm8LLG7HjnuCA2j5rOw8Xp1", provisions[1].ID)
 }
 
 func TestSaveProvision(t *testing.T) {
@@ -247,9 +249,8 @@ func TestProvisionMarshal(t *testing.T) {
 
 	provisions, err := kr.Provisions()
 	require.NoError(t, err)
-	require.Equal(t, 2, len(provisions))
-	require.Equal(t, "yhjskwdA6OZ1AL1YmHWZWm8LLG7HjnuCA2j5rOw8Xp1", provisions[0].ID)
-	out := provisions[1]
+	require.Equal(t, 1, len(provisions))
+	out := provisions[0]
 	require.Equal(t, provision.ID, out.ID)
 	require.Equal(t, provision.Salt, out.Salt)
 	require.Equal(t, provision.AAGUID, out.AAGUID)

@@ -3,6 +3,7 @@ package keyring_test
 import (
 	"bytes"
 	"crypto/rand"
+	"runtime"
 	"testing"
 	"time"
 
@@ -13,6 +14,9 @@ import (
 )
 
 func TestKeyring(t *testing.T) {
+	if skipSystem(t) {
+		return
+	}
 	// keyring.SetLogger(keyring.NewLogger(keyring.DebugLevel))
 	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
@@ -118,6 +122,9 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 }
 
 func TestReset(t *testing.T) {
+	if skipSystem(t) {
+		return
+	}
 	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
@@ -167,14 +174,17 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 	require.NotEqual(t, key, key2)
 }
 
-func TestSetup(t *testing.T) {
+func TestSetupUnlock(t *testing.T) {
+	if skipSystem(t) {
+		return
+	}
 	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
-	testUnlock(t, kr)
+	testSetupUnlock(t, kr)
 }
 
-func testUnlock(t *testing.T, kr *keyring.Keyring) {
+func testSetupUnlock(t *testing.T, kr *keyring.Keyring) {
 	err := kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
@@ -212,7 +222,7 @@ func testUnlock(t *testing.T, kr *keyring.Keyring) {
 }
 
 func TestSetErrors(t *testing.T) {
-	kr, err := keyring.New(keyring.System("KeysTest"))
+	kr, err := keyring.New(keyring.Mem())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
@@ -224,7 +234,20 @@ func TestSetErrors(t *testing.T) {
 	require.EqualError(t, err, "empty id")
 }
 
+func skipSystem(t *testing.T) bool {
+	if runtime.GOOS == "linux" {
+		if err := keyring.CheckSystem(); err != nil {
+			t.Skip()
+			return true
+		}
+	}
+	return false
+}
+
 func TestReserved(t *testing.T) {
+	if skipSystem(t) {
+		return
+	}
 	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
@@ -253,7 +276,7 @@ func TestLargeItems(t *testing.T) {
 	const maxType = 32
 	const maxData = 2048
 
-	kr, err := keyring.New(keyring.System("KeysTest"))
+	kr, err := keyring.New(keyring.Mem())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -287,6 +310,10 @@ func TestLargeItems(t *testing.T) {
 }
 
 func TestIDs(t *testing.T) {
+	if skipSystem(t) {
+		return
+	}
+
 	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()

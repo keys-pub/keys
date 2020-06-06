@@ -176,7 +176,13 @@ func (r *fsv) Exists(id string) (bool, error) {
 
 // Reset ...
 func (r *fsv) Reset() error {
-	return os.RemoveAll(r.dir)
+	r.Lock()
+	defer r.Unlock()
+	if err := os.RemoveAll(r.dir); err != nil {
+		return err
+	}
+	r.cache = nil
+	return nil
 }
 
 func (r *fsv) checkCache() (*files, error) {

@@ -19,7 +19,8 @@ func system(service string) Store {
 	}
 }
 
-func checkSystem() error {
+// CheckSystem returns error if system keychain/keyring/credentials api is not available.
+func CheckSystem() error {
 	return nil
 }
 

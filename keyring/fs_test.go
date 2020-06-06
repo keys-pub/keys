@@ -38,10 +38,10 @@ func TestFSReset(t *testing.T) {
 	testReset(t, kr)
 }
 
-func TestFSUnlock(t *testing.T) {
+func TestFSSetupUnlock(t *testing.T) {
 	kr := testFS(t)
 	defer func() { _ = kr.Reset() }()
-	testUnlock(t, kr)
+	testSetupUnlock(t, kr)
 }
 
 func TestFSReserved(t *testing.T) {

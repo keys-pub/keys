@@ -15,7 +15,8 @@ func system(service string) Store {
 	}
 }
 
-func checkSystem() error {
+// CheckSystem returns error if wincred is not available.
+func CheckSystem() error {
 	return nil
 }
 

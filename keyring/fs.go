@@ -3,7 +3,6 @@ package keyring
 import (
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -23,9 +22,10 @@ func FS(dir string, versioned bool) Option {
 }
 
 // NewFS returns keyring.Store backed by the filesystem.
-// If versioned is true, it returns a filesystem that is create only,
-// any update creates a new version including deletes, which can be used
-// to backup and sync to a remote.
+// If versioned is true, it returns a filesystem that is create (append) only,
+// and update or delete creates a new version.
+// A versioned filesystem is also necessary if you want to use backup/sync to
+// a remote bucket/git etc.
 func NewFS(dir string, versioned bool) (Store, error) {
 	if versioned {
 		return newFSV(dir)
@@ -141,14 +141,6 @@ func (k fs) Delete(id string) (bool, error) {
 		return true, err
 	}
 	return true, nil
-}
-
-func defaultLinuxFSDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, ".keyring"), nil
 }
 
 func pathExists(path string) (bool, error) {

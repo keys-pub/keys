@@ -25,10 +25,10 @@ func TestMemReset(t *testing.T) {
 	testReset(t, kr)
 }
 
-func TestMemUnlock(t *testing.T) {
+func TestMemSetupUnlock(t *testing.T) {
 	kr := testMem(t)
 	defer func() { _ = kr.Reset() }()
-	testUnlock(t, kr)
+	testSetupUnlock(t, kr)
 }
 
 func TestMemReserved(t *testing.T) {
