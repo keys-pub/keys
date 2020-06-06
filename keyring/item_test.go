@@ -20,15 +20,18 @@ func TestItem(t *testing.T) {
 	_, err = item.Encrypt(nil)
 	require.EqualError(t, err, "no secret key specified")
 
-	itemOut, err := keyring.DecryptItem(b, secretKey)
+	itemOut, err := keyring.DecryptItem(b, secretKey, "account1")
 	require.NoError(t, err)
 
 	require.Equal(t, item.ID, itemOut.ID)
 	require.Equal(t, item.Type, itemOut.Type)
 	require.Equal(t, item.Data, itemOut.Data)
 
+	itemOut, err = keyring.DecryptItem(b, secretKey, "account2")
+	require.EqualError(t, err, "item id doesn't match account1 != account2")
+
 	secretKey2 := randKey()
-	_, err = keyring.DecryptItem(b, secretKey2)
+	_, err = keyring.DecryptItem(b, secretKey2, "account1")
 	require.EqualError(t, err, "invalid keyring auth")
 
 	b, err = msgpack.Marshal(item)

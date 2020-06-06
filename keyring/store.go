@@ -55,7 +55,7 @@ func getItem(st Store, id string, key SecretKey) (*Item, error) {
 	if b == nil {
 		return nil, nil
 	}
-	return decryptItem(b, key)
+	return decryptItem(b, key, id)
 }
 
 const maxID = 254
@@ -87,11 +87,11 @@ func setItem(st Store, item *Item, key SecretKey) error {
 	return st.Set(item.ID, []byte(data))
 }
 
-func decryptItem(b []byte, key SecretKey) (*Item, error) {
+func decryptItem(b []byte, key SecretKey, id string) (*Item, error) {
 	if b == nil {
 		return nil, nil
 	}
-	item, err := DecryptItem(b, key)
+	item, err := DecryptItem(b, key, id)
 	if err != nil {
 		return nil, err
 	}
