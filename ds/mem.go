@@ -159,20 +159,18 @@ func (m *Mem) Collections(ctx context.Context, parent string) (CollectionIterato
 }
 
 // Documents ...
-func (m *Mem) Documents(ctx context.Context, parent string, opts *DocumentsOpts) (DocumentIterator, error) {
-	docs, err := m.list(ctx, parent, opts)
+func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error) {
+	docs, err := m.list(ctx, parent, opt...)
 	if err != nil {
 		return nil, err
 	}
 	return NewDocumentIterator(docs), nil
 }
 
-func (m *Mem) list(ctx context.Context, parent string, opts *DocumentsOpts) ([]*Document, error) {
+func (m *Mem) list(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
 	m.RLock()
 	defer m.RUnlock()
-	if opts == nil {
-		opts = &DocumentsOpts{}
-	}
+	opts := NewDocumentsOptions(opt...)
 
 	path := Path(parent)
 	if path == "/" {

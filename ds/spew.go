@@ -21,15 +21,33 @@ const (
 	SpewFormatFlat SpewFormat = "flat"
 )
 
-// SpewOpts are options for Spew.
-type SpewOpts struct {
+// SpewOptions are options for Spew.
+type SpewOptions struct {
 	Format SpewFormat
 }
 
+// SpewOption ...
+type SpewOption func(*SpewOptions)
+
+// WithSpewFormat ...
+func WithSpewFormat(format SpewFormat) SpewOption {
+	return func(o *SpewOptions) {
+		o.Format = format
+	}
+}
+
+func newSpewOptions(opts ...SpewOption) SpewOptions {
+	var options SpewOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
 // Spew writes DocumentIterator to buffer.
-func Spew(iter DocumentIterator, opts *SpewOpts) (*bytes.Buffer, error) {
+func Spew(iter DocumentIterator, opt ...SpewOption) (*bytes.Buffer, error) {
 	var b bytes.Buffer
-	if err := SpewOut(iter, opts, &b); err != nil {
+	if err := SpewOut(iter, &b, opt...); err != nil {
 		return nil, err
 	}
 	return &b, nil
@@ -37,10 +55,8 @@ func Spew(iter DocumentIterator, opts *SpewOpts) (*bytes.Buffer, error) {
 
 // SpewOut writes DocumentIterator to io.Writer.
 // You need to specify a path or prefix, since listing root is not supported.
-func SpewOut(iter DocumentIterator, opts *SpewOpts, out io.Writer) error {
-	if opts == nil {
-		opts = &SpewOpts{}
-	}
+func SpewOut(iter DocumentIterator, out io.Writer, opt ...SpewOption) error {
+	opts := newSpewOptions(opt...)
 	ofmt := opts.Format
 	if ofmt == "" {
 		ofmt = SpewFormatTable

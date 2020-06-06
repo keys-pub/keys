@@ -136,15 +136,15 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "twitter", results[0].Result.User.Service)
 
 	// Check Documents
-	iter, err := dst.Documents(context.TODO(), "kid", nil)
+	iter, err := dst.Documents(context.TODO(), "kid")
 	require.NoError(t, err)
-	spew, err := ds.Spew(iter, nil)
+	spew, err := ds.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/kid.spew"), spew.String())
 
-	iter, err = dst.Documents(context.TODO(), "user", nil)
+	iter, err = dst.Documents(context.TODO(), "user")
 	require.NoError(t, err)
-	spew, err = ds.Spew(iter, nil)
+	spew, err = ds.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/user.spew"), spew.String())
 }
@@ -368,15 +368,15 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, 0, len(results))
 
 	// Check Documents
-	iter, err := dst.Documents(context.TODO(), "kid", nil)
+	iter, err := dst.Documents(context.TODO(), "kid")
 	require.NoError(t, err)
-	spew, err := ds.Spew(iter, nil)
+	spew, err := ds.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/kid2.spew"), spew.String())
 
-	iter, err = dst.Documents(context.TODO(), "user", nil)
+	iter, err = dst.Documents(context.TODO(), "user")
 	require.NoError(t, err)
-	spew, err = ds.Spew(iter, nil)
+	spew, err = ds.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, "", spew.String())
 

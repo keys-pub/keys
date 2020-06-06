@@ -41,7 +41,7 @@ func testChanges(t *testing.T, dst ds.DocumentStore, changes ds.Changes, clock *
 	sorted := stringsCopy(paths)
 	sort.Strings(sorted)
 
-	iter, err := dst.Documents(ctx, "test", &ds.DocumentsOpts{Index: 1, Limit: 2})
+	iter, err := dst.Documents(ctx, "test", ds.Index(1), ds.Limit(2))
 	require.NoError(t, err)
 	doc, err := iter.Next()
 	require.NoError(t, err)
