@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/secret"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSecretStore(t *testing.T) {
-	kr := keyring.NewMem(true)
+	kr := testMem(t, true)
 	ss := secret.NewStore(kr)
 
 	clock := tsutil.NewClock()

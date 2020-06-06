@@ -37,10 +37,20 @@ func TestEdX25519PublicKeyItem(t *testing.T) {
 	require.Equal(t, key.ID(), out.ID())
 }
 
+func testMem(t *testing.T, unlocked bool) *keyring.Keyring {
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
+	if unlocked {
+		kr.SetMasterKey(keys.Rand32())
+	}
+	return kr
+}
+
 func TestSaveFindDelete(t *testing.T) {
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 	sk := keys.GenerateEdX25519Key()
-	err := keys.Save(kr, sk)
+	err = keys.Save(kr, sk)
 	require.NoError(t, err)
 	out, err := keys.FindEdX25519Key(kr, sk.ID())
 	require.NoError(t, err)
@@ -62,11 +72,11 @@ func TestSaveFindDelete(t *testing.T) {
 
 func TestEdX25519Key(t *testing.T) {
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
-
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 	sk := keys.GenerateEdX25519Key()
 
-	err := keys.Save(kr, sk)
+	err = keys.Save(kr, sk)
 	require.NoError(t, err)
 	skOut, err := keys.FindEdX25519Key(kr, sk.ID())
 	require.NoError(t, err)
@@ -91,9 +101,10 @@ func TestEdX25519Key(t *testing.T) {
 }
 
 func TestFindEdX25519PublicKey(t *testing.T) {
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 	sk := keys.GenerateEdX25519Key()
-	err := keys.Save(kr, sk)
+	err = keys.Save(kr, sk)
 	require.NoError(t, err)
 
 	spkConv, err := keys.FindEdX25519PublicKey(kr, sk.PublicKey().X25519PublicKey().ID())
@@ -110,9 +121,10 @@ func TestFindEdX25519PublicKey(t *testing.T) {
 }
 
 func TestX25519Key(t *testing.T) {
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 	bk := keys.GenerateX25519Key()
-	err := keys.Save(kr, bk)
+	err = keys.Save(kr, bk)
 	require.NoError(t, err)
 	bkOut, err := keys.FindX25519Key(kr, bk.ID())
 	require.NoError(t, err)
@@ -132,10 +144,11 @@ func TestX25519Key(t *testing.T) {
 
 func TestList(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	err := keys.Save(kr, sk)
+	err = keys.Save(kr, sk)
 	require.NoError(t, err)
 
 	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
@@ -167,9 +180,10 @@ func TestList(t *testing.T) {
 }
 
 func TestStoreConcurrent(t *testing.T) {
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 	sk := keys.GenerateEdX25519Key()
-	err := keys.Save(kr, sk)
+	err = keys.Save(kr, sk)
 	require.NoError(t, err)
 
 	skOut, err := keys.FindEdX25519Key(kr, sk.ID())
@@ -195,23 +209,25 @@ func TestStoreConcurrent(t *testing.T) {
 }
 
 func TestExportImportKey(t *testing.T) {
+	var err error
+	kr := testMem(t, true)
 	sk := keys.GenerateEdX25519Key()
-	kr := keyring.NewMem(true)
-	err := keys.Save(kr, sk)
+	err = keys.Save(kr, sk)
 	require.NoError(t, err)
 
 	password := "testpassword"
 	msg, err := keys.ExportSaltpack(kr, sk.ID(), password)
 	require.NoError(t, err)
 
-	kr2 := keyring.NewMem(true)
+	kr2 := testMem(t, true)
 	key, err := keys.ImportSaltpack(kr2, msg, "testpassword", false)
 	require.NoError(t, err)
 	require.Equal(t, sk.ID(), key.ID())
 }
 
 func TestUnknownKey(t *testing.T) {
-	kr := keyring.NewMem(true)
+	var err error
+	kr := testMem(t, true)
 	key, err := keys.Find(kr, keys.RandID("kex"))
 	require.NoError(t, err)
 	require.Nil(t, key)
