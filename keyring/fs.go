@@ -22,8 +22,11 @@ func FS(dir string, versioned bool) Option {
 }
 
 // NewFS returns keyring.Store backed by the filesystem.
+//
 // If versioned is true, it returns a filesystem that is create (append) only,
-// and update or delete creates a new version.
+// which means any update or delete creates a new file (version).
+// TODO: Link to version filesystem spec.
+//
 // A versioned filesystem is also necessary if you want to use backup/sync to
 // a remote bucket/git etc.
 func NewFS(dir string, versioned bool) (Store, error) {
