@@ -1,33 +1,23 @@
 package keyring
 
 import (
-	"bytes"
 	"sort"
 	"strings"
 
-	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
-// NewMem returns an in memory Keyring useful for testing or ephemeral keys.
-// The Keyring is unlocked (setup with a random key).
-// If setup is true, the mem Keyring will be setup with a random key.
-func NewMem(setup bool) *Keyring {
-	kr := newKeyring(Mem())
-	if setup {
-		id := encoding.MustEncode(bytes.Repeat([]byte{0xFF}, 32), encoding.Base62)
-		provision := &Provision{
-			ID: id,
-		}
-		if err := kr.Setup(rand32(), provision); err != nil {
-			panic(err)
-		}
+// Mem Store option.
+func Mem() Option {
+	return func(o *Options) error {
+		st := NewMem()
+		o.st = st
+		return nil
 	}
-	return kr
 }
 
-// Mem returns in memory keyring.Store.
-func Mem() Store {
+// NewMem returns an in memory Keyring useful for testing or ephemeral keys.
+func NewMem() Store {
 	return &mem{map[string][]byte{}}
 }
 

@@ -23,7 +23,8 @@ func (k sys) Name() string {
 	return "secret-service"
 }
 
-func checkSystem() error {
+// CheckSystem returns error if system keyring (dbus+libsecret) is not available.
+func CheckSystem() error {
 	path, err := exec.LookPath("dbus-launch")
 	if err != nil || path == "" {
 		return errors.Errorf("no dbus")

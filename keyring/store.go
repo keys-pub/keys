@@ -1,10 +1,5 @@
 package keyring
 
-import (
-	"path/filepath"
-	"runtime"
-)
-
 // Store is the interface that a Keyring uses to save data.
 type Store interface {
 	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs, git).
@@ -47,42 +42,6 @@ func System(service string) Option {
 // NewSystem creates system Store.
 func NewSystem(service string) Store {
 	return system(service)
-}
-
-func defaultLinuxFS(service string) (Store, error) {
-	dir, err := defaultLinuxFSDir()
-	if err != nil {
-		return nil, err
-	}
-	fs, err := NewFS(filepath.Join(dir, service))
-	if err != nil {
-		return nil, err
-	}
-	return fs, nil
-}
-
-// SystemOrFS Store option.
-func SystemOrFS(service string) Option {
-	return func(o *Options) error {
-		st, err := NewSystemOrFS(service)
-		if err != nil {
-			return err
-		}
-		o.st = st
-		return nil
-	}
-}
-
-// NewSystemOrFS returns system keyring store or FS if unavailable.
-// On linux, if dbus is not available, uses the filesystem at ~/.keyring.
-func NewSystemOrFS(service string) (Store, error) {
-	if runtime.GOOS == "linux" {
-		if err := checkSystem(); err != nil {
-			logger.Infof("Keyring (system) unavailable: %v", err)
-			return defaultLinuxFS(service)
-		}
-	}
-	return system(service), nil
 }
 
 func getItem(st Store, id string, key SecretKey) (*Item, error) {

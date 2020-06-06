@@ -3,7 +3,8 @@
 Securely store secrets.
 
 This package provides a cross platform keyring using system APIs (macOS/keychain,
-Windows/wincred, Linux/SecretService) or filesystem, protected by a password derived key.
+Windows/wincred, Linux/libsecret) or filesystem, encrypted by a password or
+FIDO2 hmac-secret key.
 
 For more details visit **[keys.pub](https://keys.pub)**.
 
@@ -11,8 +12,9 @@ For more details visit **[keys.pub](https://keys.pub)**.
 
 ```go
 // Initialize Keyring.
-// You can use keyring.System, keyring.SystemOrFS, keyring.FS, keyring.Mem, git.NewRepository.
-kr, err := keyring.New(keyring.System("AppName"))
+// You can use keyring.System, keyring.FS, or keyring.Mem.
+dir := env.MustAppPath(env.Dir("MyApp", "keyring"))
+kr, err := keyring.New(keyring.FS(dir, true))
 if err != nil {
     log.Fatal(err)
 }
@@ -64,12 +66,9 @@ In the meantime, you can fall back to the FS based keyring.
 
 ## FS
 
-There is a filesystem based keyring for OS' that have no system keyring.
+There is a filesystem based keyring, with a "versioned" option which can be used
+to backup/sync to a remote bucket, git, etc.
 
 ## Mem
 
 The is an in memory keyring for ephemeral keys or for testing.
-
-## Git
-
-A git backed keyring allowing for backup/sync, see [github.com/keys-pub/keysd/git](https://github.com/keys-pub/keysd/tree/master/git).

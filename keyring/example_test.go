@@ -5,13 +5,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/keys-pub/keys/env"
 	"github.com/keys-pub/keys/keyring"
 )
 
 func ExampleNew() {
 	// Initialize Keyring.
-	// You can use keyring.System(service), keyring.SystemOrFS(service), keyring.FS(service, dir), or keyring.Mem().
-	kr, err := keyring.New(keyring.SystemOrFS("AppName"))
+	// You can use keyring.System, keyring.FS, or keyring.Mem.
+	dir := env.MustAppPath(env.Dir("MyApp", "keyring"))
+	kr, err := keyring.New(keyring.FS(dir, true))
 	if err != nil {
 		log.Fatal(err)
 	}

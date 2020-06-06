@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/secret"
 	"github.com/keys-pub/keys/tsutil"
@@ -15,8 +16,17 @@ func TestSecretID(t *testing.T) {
 	require.Equal(t, 43, len(id))
 }
 
+func testMem(t *testing.T, unlocked bool) *keyring.Keyring {
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
+	if unlocked {
+		kr.SetMasterKey(keys.Rand32())
+	}
+	return kr
+}
+
 func TestSecretMarshal(t *testing.T) {
-	kr := keyring.NewMem(true)
+	kr := testMem(t, true)
 	ss := secret.NewStore(kr)
 
 	clock := tsutil.NewClock()
@@ -47,7 +57,7 @@ func TestSecretMarshal(t *testing.T) {
 }
 
 func TestSecretStoreSaveDefault(t *testing.T) {
-	kr := keyring.NewMem(true)
+	kr := testMem(t, true)
 	ss := secret.NewStore(kr)
 
 	secret := &secret.Secret{

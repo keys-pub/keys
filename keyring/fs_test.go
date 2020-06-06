@@ -11,7 +11,7 @@ import (
 func testFS(t *testing.T) *keyring.Keyring {
 	dir, err := ioutil.TempDir("", "KeysTest.keyring")
 	require.NoError(t, err)
-	kr, err := keyring.New(keyring.FS(dir))
+	kr, err := keyring.New(keyring.FS(dir, false))
 	require.NoError(t, err)
 	return kr
 }
@@ -38,10 +38,10 @@ func TestFSReset(t *testing.T) {
 	testReset(t, kr)
 }
 
-func TestFSUnlock(t *testing.T) {
+func TestFSSetupUnlock(t *testing.T) {
 	kr := testFS(t)
 	defer func() { _ = kr.Reset() }()
-	testUnlock(t, kr)
+	testSetupUnlock(t, kr)
 }
 
 func TestFSReserved(t *testing.T) {

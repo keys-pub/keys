@@ -15,7 +15,7 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	kr, err := keyring.New(keyring.SystemOrFS("KeysTest"))
+	kr, err := keyring.New(keyring.Mem())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	testAuth(t, kr)
@@ -128,7 +128,10 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 }
 
 func TestSystemStore(t *testing.T) {
-	kr, err := keyring.New(keyring.SystemOrFS("KeysTest"))
+	if skipSystem(t) {
+		return
+	}
+	kr, err := keyring.New(keyring.System("KeysTest"))
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 	salt := bytes.Repeat([]byte{0x01}, 32)
@@ -139,8 +142,7 @@ func TestSystemStore(t *testing.T) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	st, err := keyring.NewSystemOrFS("KeysTest")
-	require.NoError(t, err)
+	st := keyring.NewSystem("KeysTest")
 
 	mk, err := st.Get("#auth-" + provision.ID)
 	require.NoError(t, err)
@@ -154,7 +156,7 @@ func TestSystemStore(t *testing.T) {
 }
 
 func TestAuthV1(t *testing.T) {
-	kr, err := keyring.New(keyring.SystemOrFS("KeysTest"))
+	kr, err := keyring.New(keyring.Mem())
 	require.NoError(t, err)
 	defer func() { _ = kr.Reset() }()
 
@@ -188,8 +190,7 @@ func TestAuthV1(t *testing.T) {
 
 func TestProvisions(t *testing.T) {
 	var err error
-
-	kr := keyring.NewMem(true)
+	kr := testMem(t, true)
 	key := keys.Rand32()
 	id := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
 	provision := &keyring.Provision{
@@ -200,15 +201,14 @@ func TestProvisions(t *testing.T) {
 
 	provisions, err := kr.Provisions()
 	require.NoError(t, err)
-	require.Equal(t, 2, len(provisions))
+	require.Equal(t, 1, len(provisions))
 	require.Equal(t, "0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29", provisions[0].ID)
-	require.Equal(t, "yhjskwdA6OZ1AL1YmHWZWm8LLG7HjnuCA2j5rOw8Xp1", provisions[1].ID)
 }
 
 func TestSaveProvision(t *testing.T) {
 	var err error
+	kr := testMem(t, true)
 
-	kr := keyring.NewMem(false)
 	id := encoding.MustEncode(bytes.Repeat([]byte{0x01}, 32), encoding.Base62)
 	provision := &keyring.Provision{
 		ID: id,
@@ -236,16 +236,15 @@ func TestProvisionMarshal(t *testing.T) {
 		NoPin:     true,
 		CreatedAt: clock.Now(),
 	}
-	kr := keyring.NewMem(true)
+	kr := testMem(t, true)
 	key := keys.Rand32()
 	err = kr.Provision(key, provision)
 	require.NoError(t, err)
 
 	provisions, err := kr.Provisions()
 	require.NoError(t, err)
-	require.Equal(t, 2, len(provisions))
-	require.Equal(t, "yhjskwdA6OZ1AL1YmHWZWm8LLG7HjnuCA2j5rOw8Xp1", provisions[0].ID)
-	out := provisions[1]
+	require.Equal(t, 1, len(provisions))
+	out := provisions[0]
 	require.Equal(t, provision.ID, out.ID)
 	require.Equal(t, provision.Salt, out.Salt)
 	require.Equal(t, provision.AAGUID, out.AAGUID)

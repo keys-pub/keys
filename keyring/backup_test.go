@@ -15,7 +15,8 @@ func TestBackupRestore(t *testing.T) {
 	var err error
 	clock := tsutil.NewClock()
 
-	kr := keyring.NewMem(false)
+	kr, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 
 	err = kr.UnlockWithPassword("testpassword", true)
 	require.NoError(t, err)
@@ -31,7 +32,8 @@ func TestBackupRestore(t *testing.T) {
 	err = keyring.Backup(tmpFile, kr.Store(), clock.Now())
 	require.NoError(t, err)
 
-	kr2 := keyring.NewMem(false)
+	kr2, err := keyring.New(keyring.Mem())
+	require.NoError(t, err)
 	err = keyring.Restore(tmpFile, kr2.Store())
 	require.NoError(t, err)
 	testEqualKeyrings(t, kr.Store(), kr2.Store())
