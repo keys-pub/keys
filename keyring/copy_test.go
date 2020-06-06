@@ -63,7 +63,7 @@ func TestCopy(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expected, ids)
 
-	out3, err := kr3.IDs(keyring.Hidden(), keyring.Reserved())
+	out3, err := kr3.IDs(keyring.Reserved())
 	require.NoError(t, err)
 	require.Equal(t, 0, len(out3))
 }

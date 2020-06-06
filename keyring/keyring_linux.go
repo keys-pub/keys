@@ -85,7 +85,7 @@ func (k sys) Reset() error {
 
 func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
-	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+	prefix, showReserved := options.Prefix, options.Reserved
 
 	svc, err := ss.NewSecretService()
 	if err != nil {
@@ -98,9 +98,6 @@ func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	out := make([]string, 0, len(ids))
 	for _, id := range ids {
 		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

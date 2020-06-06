@@ -17,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ids, err := kr.IDs(keyring.Hidden(), keyring.Reserved())
+	ids, err := kr.IDs(keyring.Reserved())
 	if err != nil {
 		log.Fatal(err)
 	}

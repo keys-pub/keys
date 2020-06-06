@@ -88,7 +88,7 @@ func (k sys) Exists(id string) (bool, error) {
 
 func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
-	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+	prefix, showReserved := options.Prefix, options.Reserved
 
 	creds, err := wincred.List()
 	if err != nil {
@@ -99,9 +99,6 @@ func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 		if strings.HasPrefix(cred.TargetName, k.service+"/") {
 			id := cred.TargetName[len(k.service+"/"):]
 			if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-				continue
-			}
-			if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 				continue
 			}
 			if prefix != "" && !strings.HasPrefix(id, prefix) {

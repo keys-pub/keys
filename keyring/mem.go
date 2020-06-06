@@ -50,14 +50,11 @@ func (k mem) Reset() error {
 
 func (k mem) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
-	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+	prefix, showReserved := options.Prefix, options.Reserved
 
 	ids := make([]string, 0, len(k.items))
 	for id := range k.items {
 		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

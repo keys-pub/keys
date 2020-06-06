@@ -83,10 +83,6 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.Equal(t, []byte("newpassword"), item.Data)
 	require.Equal(t, tsutil.Millis(now), tsutil.Millis(item.CreatedAt))
 
-	// Create (hidden)
-	err = kr.Create(keyring.NewItem(".ck", []byte("password"), "", time.Now()))
-	require.NoError(t, err)
-
 	// Create "xyz"
 	err = kr.Create(keyring.NewItem("xyz", []byte("xpassword"), "type2", time.Now()))
 	require.NoError(t, err)
@@ -341,15 +337,6 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	// Create .hidden
-	err = kr.Create(keyring.NewItem(".hidden", []byte("test"), "", time.Now()))
-	require.NoError(t, err)
-
-	ids, err = kr.IDs(keyring.Hidden())
-	require.NoError(t, err)
-	require.Equal(t, 1, len(ids))
-	require.Equal(t, ".hidden", ids[0])
-
 	// Create item
 	item := keyring.NewItem("testid1", []byte("testpassword"), "", time.Now())
 	err = kr.Create(item)
@@ -359,9 +346,9 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Lock()
 	require.NoError(t, err)
 
-	ids, err = kr.IDs(keyring.Reserved(), keyring.Hidden())
+	ids, err = kr.IDs(keyring.Reserved())
 	require.NoError(t, err)
-	require.Equal(t, []string{"#auth-" + provision.ID, "#provision-" + provision.ID, "#test", ".hidden", "testid1"}, ids)
+	require.Equal(t, []string{"#auth-" + provision.ID, "#provision-" + provision.ID, "#test", "testid1"}, ids)
 
 	ids, err = kr.IDs()
 	require.NoError(t, err)
@@ -391,9 +378,9 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	ids, err = kr.IDs(keyring.Reserved(), keyring.Hidden())
+	ids, err = kr.IDs(keyring.Reserved())
 	require.NoError(t, err)
-	require.Equal(t, []string{"#auth-" + provision2.ID, "#provision-" + provision2.ID, "#test", ".hidden", "testid1"}, ids)
+	require.Equal(t, []string{"#auth-" + provision2.ID, "#provision-" + provision2.ID, "#test", "testid1"}, ids)
 
 	// Don't deprovision last
 	_, err = kr.Deprovision(provision2.ID, false)
@@ -403,9 +390,9 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	ids, err = kr.IDs(keyring.Reserved(), keyring.Hidden())
+	ids, err = kr.IDs(keyring.Reserved())
 	require.NoError(t, err)
-	require.Equal(t, []string{"#test", ".hidden", "testid1"}, ids)
+	require.Equal(t, []string{"#test", "testid1"}, ids)
 }
 
 func randBytes(length int) []byte {

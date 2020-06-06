@@ -47,7 +47,6 @@ func WithTypes(types ...string) ListOption {
 // IDsOptions ...
 type IDsOptions struct {
 	Prefix   string
-	Hidden   bool
 	Reserved bool
 }
 
@@ -78,13 +77,6 @@ func WithReservedPrefix(prefix string) IDsOption {
 	return func(o *IDsOptions) {
 		o.Prefix = prefix
 		o.Reserved = true
-	}
-}
-
-// Hidden ...
-func Hidden() IDsOption {
-	return func(o *IDsOptions) {
-		o.Hidden = true
 	}
 }
 

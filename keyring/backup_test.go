@@ -43,9 +43,9 @@ func TestBackupRestore(t *testing.T) {
 }
 
 func testEqualKeyrings(t *testing.T, st1 keyring.Store, st2 keyring.Store) {
-	ids1, err := st1.IDs(keyring.Reserved(), keyring.Hidden())
+	ids1, err := st1.IDs(keyring.Reserved())
 	require.NoError(t, err)
-	ids2, err := st2.IDs(keyring.Reserved(), keyring.Hidden())
+	ids2, err := st2.IDs(keyring.Reserved())
 	require.NoError(t, err)
 
 	require.Equal(t, len(ids1), len(ids2))
