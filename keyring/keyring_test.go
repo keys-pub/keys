@@ -83,10 +83,6 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.Equal(t, []byte("newpassword"), item.Data)
 	require.Equal(t, tsutil.Millis(now), tsutil.Millis(item.CreatedAt))
 
-	// Create (hidden)
-	err = kr.Create(keyring.NewItem(".ck", []byte("password"), "", time.Now()))
-	require.NoError(t, err)
-
 	// Create "xyz"
 	err = kr.Create(keyring.NewItem("xyz", []byte("xpassword"), "type2", time.Now()))
 	require.NoError(t, err)
