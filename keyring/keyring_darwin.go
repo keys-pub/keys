@@ -101,7 +101,7 @@ func (k sys) Reset() error {
 
 func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
-	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+	prefix, showReserved := options.Prefix, options.Reserved
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
@@ -124,9 +124,6 @@ func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	for _, r := range results {
 		id := r.Account
 		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

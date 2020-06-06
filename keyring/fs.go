@@ -86,7 +86,7 @@ func (k fs) Set(id string, data []byte) error {
 
 func (k fs) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
-	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+	prefix, showReserved := options.Prefix, options.Reserved
 
 	exists, err := pathExists(k.dir)
 	if err != nil {
@@ -105,9 +105,6 @@ func (k fs) IDs(opts ...IDsOption) ([]string, error) {
 	for _, f := range files {
 		id := f.Name()
 		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

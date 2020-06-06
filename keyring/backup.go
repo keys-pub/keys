@@ -42,7 +42,7 @@ func backup(file *os.File, st Store, now time.Time) error {
 	gz := gzip.NewWriter(file)
 	tw := tar.NewWriter(gz)
 
-	ids, err := st.IDs(Hidden(), Reserved())
+	ids, err := st.IDs(Reserved())
 	if err != nil {
 		_ = tw.Close()
 		_ = gz.Close()

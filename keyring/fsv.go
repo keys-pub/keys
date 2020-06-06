@@ -135,7 +135,7 @@ func (r *fsv) Delete(id string) (bool, error) {
 // IDs ...
 func (r *fsv) IDs(opts ...IDsOption) ([]string, error) {
 	options := NewIDsOptions(opts...)
-	prefix, showHidden, showReserved := options.Prefix, options.Hidden, options.Reserved
+	prefix, showReserved := options.Prefix, options.Reserved
 
 	files, err := r.checkCache()
 	if err != nil {
@@ -145,9 +145,6 @@ func (r *fsv) IDs(opts ...IDsOption) ([]string, error) {
 	ids := make([]string, 0, len(files.ids))
 	for _, id := range files.ids {
 		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if !showHidden && strings.HasPrefix(id, HiddenPrefix) {
 			continue
 		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {

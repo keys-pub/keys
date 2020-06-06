@@ -260,7 +260,7 @@ func (k *Keyring) Reset() error {
 }
 
 func resetDefault(st Store) error {
-	ids, err := st.IDs(Hidden(), Reserved())
+	ids, err := st.IDs(Reserved())
 	if err != nil {
 		return err
 	}
@@ -278,9 +278,6 @@ const ReservedPrefix = "#"
 func reserved(s string) string {
 	return ReservedPrefix + s
 }
-
-// HiddenPrefix are hidden items.
-const HiddenPrefix = "."
 
 // List items from Store.
 func List(st Store, key SecretKey, opts ...ListOption) ([]*Item, error) {

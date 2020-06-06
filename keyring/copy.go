@@ -8,7 +8,7 @@ import "github.com/pkg/errors"
 func Copy(from Store, to Store, opt ...CopyOption) ([]string, error) {
 	opts := newCopyOptions(opt...)
 
-	ids, err := from.IDs(Reserved(), Hidden())
+	ids, err := from.IDs(Reserved())
 	if err != nil {
 		return nil, err
 	}
