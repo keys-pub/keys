@@ -27,7 +27,7 @@ func TestItem(t *testing.T) {
 	require.Equal(t, item.Type, itemOut.Type)
 	require.Equal(t, item.Data, itemOut.Data)
 
-	itemOut, err = keyring.DecryptItem(b, secretKey, "account2")
+	_, err = keyring.DecryptItem(b, secretKey, "account2")
 	require.EqualError(t, err, "item id doesn't match account1 != account2")
 
 	secretKey2 := randKey()
