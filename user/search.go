@@ -24,7 +24,7 @@ type SearchResult struct {
 
 func (u *Store) search(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
-	iter, err := u.dst.Documents(ctx, indexUser, &ds.DocumentsOpts{Prefix: query})
+	iter, err := u.dst.Documents(ctx, indexUser, ds.Prefix(query))
 	if err != nil {
 		return nil, err
 	}

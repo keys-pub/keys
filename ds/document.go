@@ -15,18 +15,23 @@ import (
 // Document is a data at a path with metadata.
 type Document struct {
 	// Path of document.
-	Path string
+	Path string `json:"path" msgpack:"p"`
 	// Data ...
-	Data []byte
+	Data []byte `json:"data" msgpack:"dat"`
 
 	// CreatedAt (read only). The time at which the document was created.
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"cts" msgpack:"cts"`
 	// UpdatedAt (read only). The time at which the document was last changed.
-	UpdatedAt time.Time
+	UpdatedAt time.Time `json:"uts" msgpack:"uts"`
 }
 
 func (d Document) String() string {
 	return fmt.Sprintf("%s %s", d.Path, spew.Sdump(d.Data))
+}
+
+// Name for document (last path component).
+func (d Document) Name() string {
+	return LastPathComponent(d.Path)
 }
 
 // NewDocument creates a datastore document.

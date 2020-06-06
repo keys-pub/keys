@@ -60,7 +60,7 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 		require.NoError(t, err)
 	}
 
-	iter, err := dst.Documents(ctx, "test0", nil)
+	iter, err := dst.Documents(ctx, "test0")
 	require.NoError(t, err)
 	doc, err := iter.Next()
 	require.NoError(t, err)
@@ -109,22 +109,22 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 /test0/key30 value30
 `
 	var b bytes.Buffer
-	iter, err = dst.Documents(context.TODO(), "test0", nil)
+	iter, err = dst.Documents(context.TODO(), "test0")
 	require.NoError(t, err)
-	err = ds.SpewOut(iter, nil, &b)
+	err = ds.SpewOut(iter, &b)
 	require.NoError(t, err)
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
-	iter, err = dst.Documents(context.TODO(), "test0", nil)
+	iter, err = dst.Documents(context.TODO(), "test0")
 	require.NoError(t, err)
-	spew, err := ds.Spew(iter, nil)
+	spew, err := ds.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, b.String(), spew.String())
 	require.Equal(t, expected, spew.String())
 	iter.Release()
 
-	iter, err = dst.Documents(context.TODO(), "test0", &ds.DocumentsOpts{Prefix: "key1", PathOnly: true})
+	iter, err = dst.Documents(context.TODO(), "test0", ds.Prefix("key1"), ds.NoData())
 	require.NoError(t, err)
 	doc, err = iter.Next()
 	require.NoError(t, err)
@@ -205,7 +205,7 @@ func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
 		require.NoError(t, err)
 	}
 
-	iter, err := dst.Documents(ctx, "test", nil)
+	iter, err := dst.Documents(ctx, "test")
 	require.NoError(t, err)
 	paths := []string{}
 	for {
@@ -219,9 +219,9 @@ func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
 	require.Equal(t, []string{"/test/1", "/test/2", "/test/3"}, paths)
 	iter.Release()
 
-	iter, err = dst.Documents(context.TODO(), "test", nil)
+	iter, err = dst.Documents(context.TODO(), "test")
 	require.NoError(t, err)
-	b, err := ds.Spew(iter, nil)
+	b, err := ds.Spew(iter)
 	require.NoError(t, err)
 	expected := `/test/1 val1
 /test/2 val2
@@ -230,7 +230,7 @@ func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
-	iter, err = dst.Documents(ctx, "b", &ds.DocumentsOpts{Prefix: "eb"})
+	iter, err = dst.Documents(ctx, "b", ds.Prefix("eb"))
 	require.NoError(t, err)
 	paths = []string{}
 	for {

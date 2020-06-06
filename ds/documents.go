@@ -31,7 +31,7 @@ type DocumentStore interface {
 	DeleteAll(ctx context.Context, paths []string) error
 
 	// Documents for Document's.
-	Documents(ctx context.Context, parent string, opts *DocumentsOpts) (DocumentIterator, error)
+	Documents(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error)
 
 	// Collections are parents of Document's.
 	Collections(ctx context.Context, parent string) (CollectionIterator, error)
@@ -49,16 +49,4 @@ func (e ErrPathExists) Error() string {
 // NewErrPathExists ...
 func NewErrPathExists(path string) ErrPathExists {
 	return ErrPathExists{Path: path}
-}
-
-// DocumentsOpts are options for iterating documents.
-type DocumentsOpts struct {
-	// Prefix to filter on.
-	Prefix string
-	// Index is offset into number of documents.
-	Index int
-	// Limit is number of documents (max) to return.
-	Limit int
-	// PathOnly to only include only path in Document (no data).
-	PathOnly bool
 }

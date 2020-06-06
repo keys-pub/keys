@@ -13,7 +13,7 @@ func TestSpew(t *testing.T) {
 	}
 	iter := NewDocumentIterator(docs)
 
-	spew, err := Spew(iter, nil)
+	spew, err := Spew(iter)
 	require.NoError(t, err)
 	expected := `/test/1 value1
 /test/2 ff0203

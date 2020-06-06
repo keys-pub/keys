@@ -2,7 +2,7 @@ package keyring
 
 // Store is the interface that a Keyring uses to save data.
 type Store interface {
-	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs, git).
+	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs, fsv).
 	Name() string
 
 	// Get bytes.

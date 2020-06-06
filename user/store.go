@@ -288,7 +288,7 @@ func indexName(user *User) string {
 
 // Status returns KIDs that match a status.
 func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
-	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
+	iter, err := u.dst.Documents(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 
 // Expired returns KIDs that haven't been checked in a duration.
 func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error) {
-	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
+	iter, err := u.dst.Documents(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.I
 
 // KIDs returns all key ids in the user store.
 func (u *Store) KIDs(ctx context.Context) ([]keys.ID, error) {
-	iter, err := u.dst.Documents(context.TODO(), indexKID, nil)
+	iter, err := u.dst.Documents(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
