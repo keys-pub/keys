@@ -300,7 +300,7 @@ func List(st Store, key SecretKey, opts ...ListOption) ([]*Item, error) {
 		if err != nil {
 			return nil, err
 		}
-		item, err := DecryptItem(b, key)
+		item, err := DecryptItem(b, key, id)
 		if err != nil {
 			return nil, err
 		}
