@@ -21,13 +21,11 @@ func TestMemChanges(t *testing.T) {
 	col := "changes"
 
 	length := 40
-	paths := []string{}
 	values := []string{}
 	for i := 0; i < length; i++ {
 		value := fmt.Sprintf("value%d", i)
-		path, err := changes.ChangeAdd(ctx, col, []byte(value))
+		_, err := changes.ChangeAdd(ctx, col, []byte(value))
 		require.NoError(t, err)
-		paths = append(paths, path)
 		values = append(values, value)
 	}
 
@@ -98,12 +96,6 @@ func TestMemChanges(t *testing.T) {
 		chgsValues = append(chgsValues, string(doc.Data))
 	}
 	require.Equal(t, revValues[9:14], chgsValues)
-}
-
-func stringsCopy(s []string) []string {
-	a := make([]string, len(s))
-	copy(a, s)
-	return a
 }
 
 func reverseCopy(s []string) []string {

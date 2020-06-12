@@ -129,9 +129,9 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 	iter.Release()
 
 	err = dst.Create(ctx, "", []byte{})
-	require.EqualError(t, err, "invalid path /")
+	require.EqualError(t, err, "invalid path")
 	err = dst.Set(ctx, "", []byte{})
-	require.EqualError(t, err, "invalid path /")
+	require.EqualError(t, err, "invalid path")
 
 	citer, err := dst.Collections(ctx, "")
 	require.NoError(t, err)
