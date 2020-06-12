@@ -1,5 +1,7 @@
 package ds
 
+import "time"
+
 // DocumentIterator is an iterator for Document's.
 type DocumentIterator interface {
 	// Next document, or nil.
@@ -92,4 +94,55 @@ func DocumentsFromIterator(iter DocumentIterator) ([]*Document, error) {
 		docs = append(docs, doc)
 	}
 	return docs, nil
+}
+
+// ChangeIterator is an iterator for Change's.
+type ChangeIterator interface {
+	// Next document, or nil.
+	Next() (*Change, error)
+	// Release resources associated with the iterator.
+	Release()
+}
+
+// NewChangeIterator returns an iterator for a Change slice.
+func NewChangeIterator(changes []*Change) ChangeIterator {
+	return &changesIterator{changes: changes}
+}
+
+type changesIterator struct {
+	changes []*Change
+	index   int
+}
+
+func (i *changesIterator) Next() (*Change, error) {
+	if i.index >= len(i.changes) {
+		return nil, nil
+	}
+	d := i.changes[i.index]
+	i.index++
+	return d, nil
+}
+
+func (i *changesIterator) Release() {
+	i.changes = nil
+}
+
+// ChangesFromIterator returns Change's from ChangeIterator.
+func ChangesFromIterator(iter ChangeIterator, from time.Time) ([]*Change, time.Time, error) {
+	changes := []*Change{}
+	for {
+		change, err := iter.Next()
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		if change == nil {
+			break
+		}
+		changes = append(changes, change)
+	}
+	to := from
+	if len(changes) > 0 {
+		to = changes[len(changes)-1].Timestamp
+	}
+	return changes, to, nil
 }

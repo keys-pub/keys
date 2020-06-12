@@ -28,12 +28,6 @@ func TestMem(t *testing.T) {
 	testDocumentStore(t, mem)
 }
 
-func TestMemPath(t *testing.T) {
-	mem := ds.NewMem()
-	mem.SetTimeNow(tsutil.NewClock().Now)
-	testDocumentStorePath(t, mem)
-}
-
 func TestMemListOptions(t *testing.T) {
 	mem := ds.NewMem()
 	mem.SetTimeNow(tsutil.NewClock().Now)
@@ -156,22 +150,44 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 	require.EqualError(t, err, "only root collections supported")
 }
 
-func testDocumentStorePath(t *testing.T, ds ds.DocumentStore) {
+func TestDocumentStorePath(t *testing.T) {
+	dst := ds.NewMem()
+	dst.SetTimeNow(tsutil.NewClock().Now)
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "test/1", []byte("value1"))
+	err := dst.Create(ctx, "test/1", []byte("value1"))
 	require.NoError(t, err)
 
-	doc, err := ds.Get(ctx, "/test/1")
+	doc, err := dst.Get(ctx, "/test/1")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
 
-	ok, err := ds.Exists(ctx, "/test/1")
+	ok, err := dst.Exists(ctx, "/test/1")
 	require.NoError(t, err)
 	require.True(t, ok)
-	ok, err = ds.Exists(ctx, "test/1")
+	ok, err = dst.Exists(ctx, "test/1")
 	require.NoError(t, err)
 	require.True(t, ok)
+
+	err = dst.Create(ctx, ds.Path("test", "key2", "col2", "key3"), []byte("value3"))
+	require.NoError(t, err)
+
+	doc, err = dst.Get(ctx, ds.Path("test", "key2", "col2", "key3"))
+	require.NoError(t, err)
+	require.NotNil(t, doc)
+	require.Equal(t, []byte("value3"), doc.Data)
+
+	citer, err := dst.Collections(ctx, "")
+	require.NoError(t, err)
+	cols, err := ds.CollectionsFromIterator(citer)
+	require.NoError(t, err)
+	require.Equal(t, "/test", cols[0].Path)
+
+	// citer, err = dst.Collections(ctx, "/test/key2")
+	// require.NoError(t, err)
+	// cols, err = ds.CollectionsFromIterator(citer)
+	// require.NoError(t, err)
+	// require.Equal(t, "/test/key2/col2", cols[0].Path)
 }
 
 func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
