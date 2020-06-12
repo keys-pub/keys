@@ -9,9 +9,27 @@ import (
 type DocumentStore interface {
 	// Create data at path.
 	// ErrPathExists if path already exists.
+	//
+	// Paths can be nested as long as they are even length components.
+	// For example,
+	//
+	//   collection1/key1 (OK)
+	//   collection1/key1/collection2/key2 (OK)
+	//   collection1 (INVALID)
+	//   collection1/key1/collection2 (INVALID)
+	//
 	Create(ctx context.Context, path string, b []byte) error
 
 	// Create or set data at path.
+	//
+	// Paths can be nested as long as they are even length components.
+	// For example,
+	//
+	//   collection1/key1 (OK)
+	//   collection1/key1/collection2/key2 (OK)
+	//   collection1 (INVALID)
+	//   collection1/key1/collection2 (INVALID)
+	//
 	Set(ctx context.Context, path string, b []byte) error
 
 	// Get path.

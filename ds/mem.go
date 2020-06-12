@@ -2,12 +2,14 @@ package ds
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
@@ -85,7 +87,7 @@ func (m *Mem) set(ctx context.Context, path string, b []byte, create bool) error
 	m.Lock()
 	defer m.Unlock()
 
-	if len(PathComponents(path)) != 2 {
+	if len(PathComponents(path))%2 != 0 {
 		return errors.Errorf("invalid path %s", path)
 	}
 
@@ -125,7 +127,7 @@ func (m *Mem) Get(ctx context.Context, path string) (*Document, error) {
 	m.RLock()
 	defer m.RUnlock()
 	path = Path(path)
-	if len(PathComponents(path)) != 2 {
+	if len(PathComponents(path))%2 != 0 {
 		return nil, errors.Errorf("invalid path %s", path)
 	}
 	return m.document(path), nil
@@ -148,6 +150,7 @@ func (m *Mem) document(path string) *Document {
 // Collections ...
 func (m *Mem) Collections(ctx context.Context, parent string) (CollectionIterator, error) {
 	if Path(parent) != "/" {
+		// TODO: Support nested collections
 		return nil, errors.Errorf("only root collections supported")
 	}
 	parents := m.collections.Sorted()
@@ -265,17 +268,29 @@ func (m *Mem) Exists(ctx context.Context, path string) (bool, error) {
 	return ok, nil
 }
 
+func randBytes(length int) []byte {
+	buf := make([]byte, length)
+	if _, err := rand.Read(buf); err != nil {
+		panic(err)
+	}
+	return buf
+}
+
 // ChangeAdd ...
-func (m *Mem) ChangeAdd(ctx context.Context, name string, id string, ref string) error {
-	path := Path(name, id)
+func (m *Mem) ChangeAdd(ctx context.Context, collection string, data []byte) (string, error) {
 	b, err := json.Marshal(Change{
-		Path:      ref,
+		Data:      data,
 		Timestamp: m.nowFn(),
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
-	return m.Create(ctx, path, b)
+	id := encoding.MustEncode(randBytes(32), encoding.Base62)
+	path := Path(collection, id)
+	if err := m.Create(ctx, path, b); err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func min(n1 int, n2 int) int {
@@ -286,39 +301,33 @@ func min(n1 int, n2 int) int {
 }
 
 // Changes ...
-func (m *Mem) Changes(ctx context.Context, name string, ts time.Time, limit int, direction Direction) ([]*Change, time.Time, error) {
+func (m *Mem) Changes(ctx context.Context, collection string, ts time.Time, limit int, direction Direction) (ChangeIterator, error) {
 	changes := make([]*Change, 0, m.paths.Size())
 
 	for _, p := range m.paths.Strings() {
-		if !strings.HasPrefix(p, Path(name)+"/") {
+		if !strings.HasPrefix(p, Path(collection)+"/") {
 			continue
 		}
 		doc, err := m.Get(ctx, p)
 		if err != nil {
-			return nil, time.Time{}, err
+			return nil, err
 		}
 		if doc == nil {
-			return nil, time.Time{}, errors.Errorf("path not found %s", p)
+			return nil, errors.Errorf("path not found %s", p)
 		}
 		var change Change
 		if err := json.Unmarshal(doc.Data, &change); err != nil {
-			return nil, time.Time{}, err
+			return nil, err
 		}
 		changes = append(changes, &change)
 	}
 	switch direction {
 	case Ascending:
 		sort.Slice(changes, func(i, j int) bool {
-			if changes[i].Timestamp == changes[j].Timestamp {
-				return changes[i].Path < changes[j].Path
-			}
 			return changes[i].Timestamp.Before(changes[j].Timestamp)
 		})
 	case Descending:
 		sort.Slice(changes, func(i, j int) bool {
-			if changes[i].Timestamp == changes[j].Timestamp {
-				return changes[i].Path > changes[j].Path
-			}
 			return changes[i].Timestamp.After(changes[j].Timestamp)
 		})
 	}
@@ -356,12 +365,7 @@ func (m *Mem) Changes(ctx context.Context, name string, ts time.Time, limit int,
 		changes = changes[0:min(limit, len(changes))]
 	}
 
-	to := ts
-	if len(changes) > 0 {
-		to = changes[len(changes)-1].Timestamp
-	}
-
-	return changes, to, nil
+	return NewChangeIterator(changes), nil
 }
 
 // Watch ...

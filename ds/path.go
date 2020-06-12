@@ -30,6 +30,8 @@ func toStrings(is ...interface{}) []string {
 		switch v := i.(type) {
 		case string:
 			strs = append(strs, v)
+		case []string:
+			strs = append(strs, v...)
 		case int:
 			strs = append(strs, strconv.Itoa(v))
 		case stringify:

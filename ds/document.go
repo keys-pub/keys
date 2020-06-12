@@ -78,6 +78,6 @@ func DocumentPaths(docs []*Document) []string {
 
 // Collection is a location for Document's.
 type Collection struct {
-	// Path to Document's.
+	// Path for collection.
 	Path string
 }
