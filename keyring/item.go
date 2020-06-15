@@ -25,7 +25,7 @@ func NewItem(id string, b []byte, typ string, createdAt time.Time) *Item {
 	return item
 }
 
-// Encrypt item with a secret key.
+// Encrypt item with a key.
 func (i *Item) Encrypt(secretKey SecretKey) ([]byte, error) {
 	if secretKey == nil {
 		return nil, errors.Errorf("no secret key specified")
@@ -38,12 +38,8 @@ func (i *Item) Encrypt(secretKey SecretKey) ([]byte, error) {
 	return encrypted, nil
 }
 
-// DecryptItem returns Item from bytes.
-func DecryptItem(b []byte, secretKey SecretKey, id string) (*Item, error) {
-	return decrypt(b, secretKey, id)
-}
-
-func decrypt(b []byte, secretKey SecretKey, id string) (*Item, error) {
+// DecryptItem decrypts an Item.
+func DecryptItem(b []byte, secretKey SecretKey) (*Item, error) {
 	decrypted, ok := secretBoxOpen(b, secretKey)
 	if !ok {
 		return nil, ErrInvalidAuth
@@ -55,10 +51,6 @@ func decrypt(b []byte, secretKey SecretKey, id string) (*Item, error) {
 	var item Item
 	if err := msgpack.Unmarshal(decrypted, &item); err != nil {
 		return nil, errors.Wrapf(err, "keyring item data is invalid")
-	}
-
-	if item.ID != id {
-		return nil, errors.Errorf("item id doesn't match %s != %s", item.ID, id)
 	}
 
 	return &item, nil

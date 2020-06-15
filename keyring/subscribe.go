@@ -13,13 +13,8 @@ type UnlockEvent struct {
 // LockEvent when keyring is locked.
 type LockEvent struct{}
 
-// CreateEvent when item is created.
-type CreateEvent struct {
-	ID string
-}
-
-// UpdateEvent when item is updated.
-type UpdateEvent struct {
+// SetEvent when item is saved.
+type SetEvent struct {
 	ID string
 }
 

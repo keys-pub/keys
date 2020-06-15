@@ -42,14 +42,14 @@ func TestSubscribe(t *testing.T) {
 	require.NoError(t, err)
 
 	item := keyring.NewItem("test", []byte("testdata"), "", time.Now())
-	err = kr.Create(item)
+	err = kr.Set(item)
 	require.NoError(t, err)
 
 	event = <-ch
 	require.IsType(t, event, keyring.UnlockEvent{})
 	event = <-ch
-	require.IsType(t, event, keyring.CreateEvent{})
-	create := event.(keyring.CreateEvent)
+	require.IsType(t, event, keyring.SetEvent{})
+	create := event.(keyring.SetEvent)
 	require.Equal(t, item.ID, create.ID)
 
 	kr.Unsubscribe("test")

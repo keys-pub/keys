@@ -44,12 +44,6 @@ func TestFSSetupUnlock(t *testing.T) {
 	testSetupUnlock(t, kr)
 }
 
-func TestFSReserved(t *testing.T) {
-	kr := testFS(t)
-	defer func() { _ = kr.Reset() }()
-	testReserved(t, kr)
-}
-
 func TestFSAuth(t *testing.T) {
 	kr := testFS(t)
 	defer func() { _ = kr.Reset() }()

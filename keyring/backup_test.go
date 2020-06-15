@@ -22,7 +22,7 @@ func TestBackupRestore(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 10; i++ {
-		err := kr.Create(keyring.NewItem(fmt.Sprintf("item%d", i), []byte(fmt.Sprintf("value%d", i)), fmt.Sprintf("type%d", i), clock.Now()))
+		err := kr.Set(keyring.NewItem(fmt.Sprintf("item%d", i), []byte(fmt.Sprintf("value%d", i)), fmt.Sprintf("type%d", i), clock.Now()))
 		require.NoError(t, err)
 	}
 
