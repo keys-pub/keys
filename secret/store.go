@@ -38,17 +38,16 @@ func (s *Store) Set(secret *Secret) (*Secret, bool, error) {
 		return nil, false, errors.Errorf("no secret id")
 	}
 
-	existing, err := s.Get(secret.ID)
+	item, err := s.kr.Get(secret.ID)
 	if err != nil {
 		return nil, false, err
 	}
 
 	updated := false
-	if existing != nil {
-		secret.CreatedAt = existing.CreatedAt
+	if item != nil {
 		secret.UpdatedAt = s.nowFn()
-		b := marshalSecret(secret)
-		if err := s.kr.Update(secret.ID, b); err != nil {
+		item.Data = marshalSecret(secret)
+		if err := s.kr.Set(item); err != nil {
 			return nil, false, err
 		}
 		updated = true
@@ -62,7 +61,7 @@ func (s *Store) Set(secret *Secret) (*Secret, bool, error) {
 		if err != nil {
 			return nil, false, err
 		}
-		if err := s.kr.Create(item); err != nil {
+		if err := s.kr.Set(item); err != nil {
 			return nil, false, err
 		}
 	}

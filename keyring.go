@@ -69,7 +69,7 @@ func FindX25519Key(kr *keyring.Keyring, id ID) (*X25519Key, error) {
 
 // Save key to keyring.
 func Save(kr *keyring.Keyring, key Key) error {
-	return kr.Create(ItemForKey(key))
+	return kr.Set(ItemForKey(key))
 }
 
 // Delete key from keyring.
@@ -228,7 +228,7 @@ func ImportSaltpack(kr *keyring.Keyring, msg string, password string, isHTML boo
 	if err != nil {
 		return nil, err
 	}
-	if err := kr.Create(ItemForKey(key)); err != nil {
+	if err := kr.Set(ItemForKey(key)); err != nil {
 		return nil, err
 	}
 	return key, nil

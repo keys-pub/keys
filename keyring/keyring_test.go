@@ -39,26 +39,22 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(items))
 
-	item, err := kr.Get("abc")
+	out, err := kr.Get("abc")
 	require.NoError(t, err)
-	require.Nil(t, item)
+	require.Nil(t, out)
 
 	now := time.Now()
 
-	// Update missing ErrItemNotFound
-	err = kr.Update("abc", []byte("password"))
-	require.Equal(t, err, keyring.ErrItemNotFound)
-
-	// Create
-	err = kr.Create(keyring.NewItem("abc", []byte("password"), "type1", now))
+	item := keyring.NewItem("abc", []byte("password"), "type1", now)
+	err = kr.Set(item)
 	require.NoError(t, err)
 
-	item, err = kr.Get("abc")
+	out, err = kr.Get("abc")
 	require.NoError(t, err)
-	require.NotNil(t, item)
-	require.Equal(t, "abc", item.ID)
-	require.Equal(t, []byte("password"), item.Data)
-	require.Equal(t, tsutil.Millis(now), tsutil.Millis(item.CreatedAt))
+	require.NotNil(t, out)
+	require.Equal(t, "abc", out.ID)
+	require.Equal(t, []byte("password"), out.Data)
+	require.Equal(t, tsutil.Millis(now), tsutil.Millis(out.CreatedAt))
 
 	has, err := kr.Exists("abc")
 	require.NoError(t, err)
@@ -68,23 +64,20 @@ func testKeyring(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	require.False(t, has2)
 
-	// Create exising ErrItemAlreadyExists
-	err = kr.Create(keyring.NewItem("abc", []byte("password"), "type1", now))
-	require.Equal(t, err, keyring.ErrItemAlreadyExists)
-
 	// Update
-	err = kr.Update("abc", []byte("newpassword"))
+	item.Data = []byte("newpassword")
+	err = kr.Set(item)
 	require.NoError(t, err)
 
-	item, err = kr.Get("abc")
+	out, err = kr.Get("abc")
 	require.NoError(t, err)
-	require.NotNil(t, item)
-	require.Equal(t, "abc", item.ID)
-	require.Equal(t, []byte("newpassword"), item.Data)
-	require.Equal(t, tsutil.Millis(now), tsutil.Millis(item.CreatedAt))
+	require.NotNil(t, out)
+	require.Equal(t, "abc", out.ID)
+	require.Equal(t, []byte("newpassword"), out.Data)
+	require.Equal(t, tsutil.Millis(now), tsutil.Millis(out.CreatedAt))
 
 	// Create "xyz"
-	err = kr.Create(keyring.NewItem("xyz", []byte("xpassword"), "type2", time.Now()))
+	err = kr.Set(keyring.NewItem("xyz", []byte("xpassword"), "type2", time.Now()))
 	require.NoError(t, err)
 
 	// List
@@ -137,7 +130,7 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
+	err = kr.Set(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.NoError(t, err)
 
 	salt, err = kr.Salt()
@@ -150,7 +143,7 @@ func testReset(t *testing.T, kr *keyring.Keyring) {
 	reerr := kr.Reset()
 	require.NoError(t, reerr)
 
-	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
+	err = kr.Set(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
 	status, err := kr.Status()
@@ -181,7 +174,7 @@ func TestSetupUnlock(t *testing.T) {
 }
 
 func testSetupUnlock(t *testing.T, kr *keyring.Keyring) {
-	err := kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
+	err := kr.Set(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.EqualError(t, err, "keyring is locked")
 
 	_, err = kr.Get("key1")
@@ -195,7 +188,7 @@ func testSetupUnlock(t *testing.T, kr *keyring.Keyring) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	err = kr.Create(keyring.NewItem("key1", []byte("password"), "", time.Now()))
+	err = kr.Set(keyring.NewItem("key1", []byte("password"), "", time.Now()))
 	require.NoError(t, err)
 
 	err = kr.Lock()
@@ -226,7 +219,7 @@ func TestSetErrors(t *testing.T) {
 	err = kr.Setup(key, provision)
 	require.NoError(t, err)
 
-	err = kr.Create(keyring.NewItem("", nil, "", time.Time{}))
+	err = kr.Set(keyring.NewItem("", nil, "", time.Time{}))
 	require.EqualError(t, err, "empty id")
 }
 
@@ -238,33 +231,6 @@ func skipSystem(t *testing.T) bool {
 		}
 	}
 	return false
-}
-
-func TestReserved(t *testing.T) {
-	if skipSystem(t) {
-		return
-	}
-	kr, err := keyring.New(keyring.System("KeysTest"))
-	require.NoError(t, err)
-	defer func() { _ = kr.Reset() }()
-	testReserved(t, kr)
-}
-
-func testReserved(t *testing.T, kr *keyring.Keyring) {
-	key := bytes32(bytes.Repeat([]byte{0x01}, 32))
-	provision := keyring.NewProvision(keyring.UnknownAuth)
-	err := kr.Setup(key, provision)
-	require.NoError(t, err)
-
-	_, err = kr.Get("#key")
-	require.EqualError(t, err, "keyring id prefix reserved #key")
-	_, err = kr.Get("#salt")
-	require.EqualError(t, err, "keyring id prefix reserved #salt")
-
-	err = kr.Create(keyring.NewItem("#key", nil, "", time.Now()))
-	require.EqualError(t, err, "keyring id prefix reserved #key")
-	err = kr.Create(keyring.NewItem("#salt", nil, "", time.Now()))
-	require.EqualError(t, err, "keyring id prefix reserved #salt")
 }
 
 func TestLargeItems(t *testing.T) {
@@ -287,16 +253,16 @@ func TestLargeItems(t *testing.T) {
 	largeType := string(bytes.Repeat([]byte("a"), maxType+1))
 
 	large := keys.RandBytes(maxData + 1)
-	err = kr.Create(keyring.NewItem(id, large, typ, time.Now()))
+	err = kr.Set(keyring.NewItem(id, large, typ, time.Now()))
 	require.EqualError(t, err, "keyring item value is too large")
 
-	err = kr.Create(keyring.NewItem(largeID, []byte{0x01}, typ, time.Now()))
+	err = kr.Set(keyring.NewItem(largeID, []byte{0x01}, typ, time.Now()))
 	require.EqualError(t, err, "keyring item value is too large")
-	err = kr.Create(keyring.NewItem(id, []byte{0x01}, largeType, time.Now()))
+	err = kr.Set(keyring.NewItem(id, []byte{0x01}, largeType, time.Now()))
 	require.EqualError(t, err, "keyring item value is too large")
 
 	b := bytes.Repeat([]byte{0x01}, maxData)
-	err = kr.Create(keyring.NewItem(id, b, typ, time.Now()))
+	err = kr.Set(keyring.NewItem(id, b, typ, time.Now()))
 	require.NoError(t, err)
 
 	item, err := kr.Get(id)
@@ -339,7 +305,7 @@ func testIDs(t *testing.T, kr *keyring.Keyring) {
 
 	// Create item
 	item := keyring.NewItem("testid1", []byte("testpassword"), "", time.Now())
-	err = kr.Create(item)
+	err = kr.Set(item)
 	require.NoError(t, err)
 
 	// Lock

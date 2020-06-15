@@ -68,7 +68,7 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 
 	// Create item
 	item := keyring.NewItem("key1", []byte("secret"), "", time.Now())
-	err = kr.Create(item)
+	err = kr.Set(item)
 	require.NoError(t, err)
 
 	item, err = kr.Get("key1")
@@ -121,10 +121,6 @@ func testAuth(t *testing.T, kr *keyring.Keyring) {
 	require.NoError(t, err)
 	_, err = kr.Unlock(wrongpass)
 	require.EqualError(t, err, "invalid keyring auth")
-
-	// Test get reserved
-	_, err = kr.Get("#auth")
-	require.EqualError(t, err, "keyring id prefix reserved #auth")
 }
 
 func TestSystemStore(t *testing.T) {

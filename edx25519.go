@@ -4,15 +4,16 @@ import (
 	"crypto"
 	"crypto/ed25519"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/nacl/sign"
 )
 
-// EdX25519 key.
+// EdX25519 key type.
 const EdX25519 KeyType = "edx25519"
 const edx25519KeyHRP string = "kex"
 
-// EdX25519Public public key.
+// EdX25519Public public key type.
 const EdX25519Public KeyType = "ed25519-public"
 
 // EdX25519PublicKey is the public part of EdX25519 key pair.
@@ -30,23 +31,30 @@ type EdX25519Key struct {
 // NewEdX25519KeyFromPrivateKey constructs EdX25519Key from a private key.
 // The public key is derived from the private key.
 func NewEdX25519KeyFromPrivateKey(privateKey *[ed25519.PrivateKeySize]byte) *EdX25519Key {
+	k := &EdX25519Key{}
+	if err := k.setPrivateKey(privateKey[:]); err != nil {
+		panic(err)
+	}
+	return k
+}
+
+func (k *EdX25519Key) setPrivateKey(b []byte) error {
 	// Derive public key from private key
-	edpk := ed25519.PrivateKey(privateKey[:])
+	edpk := ed25519.PrivateKey(b)
 	publicKey := edpk.Public().(ed25519.PublicKey)
 	if len(publicKey) != ed25519.PublicKeySize {
-		panic(errors.Errorf("invalid public key bytes (len=%d)", len(publicKey)))
+		return errors.Errorf("invalid public key bytes (len=%d)", len(publicKey))
 	}
 
 	var privateKeyBytes [ed25519.PrivateKeySize]byte
-	copy(privateKeyBytes[:], privateKey[:ed25519.PrivateKeySize])
+	copy(privateKeyBytes[:], b[:ed25519.PrivateKeySize])
 
 	var publicKeyBytes [ed25519.PublicKeySize]byte
 	copy(publicKeyBytes[:], publicKey[:ed25519.PublicKeySize])
 
-	return &EdX25519Key{
-		privateKey: &privateKeyBytes,
-		publicKey:  NewEdX25519PublicKey(&publicKeyBytes),
-	}
+	k.privateKey = &privateKeyBytes
+	k.publicKey = NewEdX25519PublicKey(&publicKeyBytes)
+	return nil
 }
 
 // X25519Key converts EdX25519Key to X25519Key.
@@ -83,8 +91,24 @@ func (k *EdX25519Key) Signer() crypto.Signer {
 	return ed25519.PrivateKey(k.Bytes())
 }
 
+// MarshalText for encoding.TextMarshaler interface.
+func (k *EdX25519Key) MarshalText() ([]byte, error) {
+	return []byte(encoding.MustEncode(k.Bytes(), encoding.Base64)), nil
+}
+
+// UnmarshalText for encoding.TextUnmarshaler interface.
+func (k *EdX25519Key) UnmarshalText(s []byte) error {
+	b, err := encoding.Decode(string(s), encoding.Base64)
+	if err != nil {
+		return err
+	}
+	if err := k.setPrivateKey(b); err != nil {
+		return err
+	}
+	return nil
+}
+
 // NewEdX25519PublicKey creates a EdX25519PublicKey.
-// Metadata is optional.
 func NewEdX25519PublicKey(b *[ed25519.PublicKeySize]byte) *EdX25519PublicKey {
 	return &EdX25519PublicKey{
 		id:        MustID(edx25519KeyHRP, b[:]),
@@ -92,7 +116,7 @@ func NewEdX25519PublicKey(b *[ed25519.PublicKeySize]byte) *EdX25519PublicKey {
 	}
 }
 
-// NewEdX25519PublicKeyFromID converts ID to EdX25519PublicKey.
+// NewEdX25519PublicKeyFromID creates a EdX25519PublicKey from an ID.
 func NewEdX25519PublicKeyFromID(id ID) (*EdX25519PublicKey, error) {
 	if id == "" {
 		return nil, errors.Errorf("empty id")
@@ -136,7 +160,7 @@ func PublicKeyIDEquals(expected ID, kid ID) bool {
 	return false
 }
 
-// NewX25519PublicKeyFromEdX25519ID creates public key from EdX25519 key ID.
+// NewX25519PublicKeyFromEdX25519ID creates a X25519PublicKey from a EdX25519 ID.
 func NewX25519PublicKeyFromEdX25519ID(id ID) (*X25519PublicKey, error) {
 	spk, err := NewEdX25519PublicKeyFromID(id)
 	if err != nil {

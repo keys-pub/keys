@@ -1,5 +1,7 @@
 package keyring
 
+import "github.com/pkg/errors"
+
 // Store is the interface that a Keyring uses to save data.
 type Store interface {
 	// Name of the Store implementation (keychain, wincred, secret-service, mem, fs, fsv).
@@ -55,7 +57,14 @@ func getItem(st Store, id string, key SecretKey) (*Item, error) {
 	if b == nil {
 		return nil, nil
 	}
-	return decryptItem(b, key, id)
+	item, err := DecryptItem(b, key)
+	if err != nil {
+		return nil, err
+	}
+	if item.ID != id {
+		return nil, errors.Errorf("item id doesn't match %s != %s", item.ID, id)
+	}
+	return item, nil
 }
 
 const maxID = 254
@@ -85,15 +94,4 @@ func setItem(st Store, item *Item, key SecretKey) error {
 		return ErrItemValueTooLarge
 	}
 	return st.Set(item.ID, []byte(data))
-}
-
-func decryptItem(b []byte, key SecretKey, id string) (*Item, error) {
-	if b == nil {
-		return nil, nil
-	}
-	item, err := DecryptItem(b, key, id)
-	if err != nil {
-		return nil, err
-	}
-	return item, nil
 }

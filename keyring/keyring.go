@@ -3,7 +3,6 @@ package keyring
 
 import (
 	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -14,20 +13,13 @@ import (
 // Item.Data is max of 2048 bytes.
 var ErrItemValueTooLarge = errors.New("keyring item value is too large")
 
-// ErrItemNotFound if item not found when trying to update.
-var ErrItemNotFound = errors.New("keyring item not found")
-
-// ErrItemAlreadyExists if item already exists trying to create.
-var ErrItemAlreadyExists = errors.New("keyring item already exists")
-
 // New creates a new Keyring with backing Store.
 //
 // Use keyring.System for the default system Store.
-// On macOS this is the Keychain, on Windows wincred and linux SecretService.
+// On macOS this is the Keychain, on Windows wincred and linux libsecret.
 //
-// Use keyring.SystemOrFS for the default system Store or fallback to FS.
 // Use keyring.Mem for testing or ephemeral keys.
-// Use keyring.FS for filesystem based keyring.
+// Use keyring.FS for a filesystem based keyring.
 func New(opt ...Option) (*Keyring, error) {
 	opts, err := newOptions(opt...)
 	if err != nil {
@@ -60,62 +52,20 @@ func (k *Keyring) Store() Store {
 // Get item.
 // Requires Unlock().
 func (k *Keyring) Get(id string) (*Item, error) {
-	if strings.HasPrefix(id, ReservedPrefix) {
-		return nil, errors.Errorf("keyring id prefix reserved %s", id)
-	}
 	return getItem(k.st, id, k.masterKey)
 }
 
-// Create item.
+// Set item.
 // Requires Unlock().
-// Item IDs are not encrypted.
-func (k *Keyring) Create(item *Item) error {
+// Item IDs are NOT encrypted.
+func (k *Keyring) Set(item *Item) error {
 	if item.ID == "" {
 		return errors.Errorf("empty id")
 	}
-	if strings.HasPrefix(item.ID, ReservedPrefix) {
-		return errors.Errorf("keyring id prefix reserved %s", item.ID)
-	}
-	existing, err := getItem(k.st, item.ID, k.masterKey)
-	if err != nil {
-		return err
-	}
-	if existing != nil {
-		return ErrItemAlreadyExists
-	}
-
 	if err := setItem(k.st, item, k.masterKey); err != nil {
 		return err
 	}
-
-	k.subs.notify(CreateEvent{ID: item.ID})
-	return nil
-}
-
-// Update item data.
-// Requires Unlock().
-func (k *Keyring) Update(id string, b []byte) error {
-	if id == "" {
-		return errors.Errorf("empty id")
-	}
-	if strings.HasPrefix(id, ReservedPrefix) {
-		return errors.Errorf("keyring id prefix reserved %s", id)
-	}
-
-	item, err := getItem(k.st, id, k.masterKey)
-	if err != nil {
-		return err
-	}
-	if item == nil {
-		return ErrItemNotFound
-	}
-	item.Data = b
-
-	if err := setItem(k.st, item, k.masterKey); err != nil {
-		return err
-	}
-
-	k.subs.notify(UpdateEvent{ID: item.ID})
+	k.subs.notify(SetEvent{ID: item.ID})
 	return nil
 }
 
@@ -300,9 +250,12 @@ func List(st Store, key SecretKey, opts ...ListOption) ([]*Item, error) {
 		if err != nil {
 			return nil, err
 		}
-		item, err := DecryptItem(b, key, id)
+		item, err := DecryptItem(b, key)
 		if err != nil {
 			return nil, err
+		}
+		if item.ID != id {
+			return nil, errors.Errorf("item id doesn't match %s != %s", item.ID, id)
 		}
 		if len(options.Types) != 0 && !contains(options.Types, item.Type) {
 			continue

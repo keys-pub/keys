@@ -2,6 +2,7 @@ package keys_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"testing"
@@ -91,4 +92,21 @@ func TestSign(t *testing.T) {
 
 	out = key.SignDetached(msg)
 	require.Equal(t, sig, out)
+}
+
+func TestEdX25519JSON(t *testing.T) {
+	key := keys.GenerateEdX25519Key()
+
+	type test struct {
+		Key *keys.EdX25519Key `json:"key"`
+	}
+
+	b, err := json.Marshal(test{Key: key})
+	require.NoError(t, err)
+
+	var out test
+	err = json.Unmarshal(b, &out)
+	require.NoError(t, err)
+
+	require.Equal(t, key.Bytes(), out.Key.Bytes())
 }

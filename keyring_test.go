@@ -94,10 +94,6 @@ func TestEdX25519Key(t *testing.T) {
 	skOut, err = keys.FindEdX25519Key(kr, spk.ID())
 	require.NoError(t, err)
 	require.Nil(t, skOut)
-
-	// Save again
-	err = keys.Save(kr, spk)
-	require.Equal(t, err, keyring.ErrItemAlreadyExists)
 }
 
 func TestFindEdX25519PublicKey(t *testing.T) {
@@ -130,9 +126,6 @@ func TestX25519Key(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, bk.PrivateKey()[:], bkOut.PrivateKey()[:])
 	require.Equal(t, bk.PublicKey().Bytes()[:], bkOut.PublicKey().Bytes()[:])
-
-	err = keys.Save(kr, bk.PublicKey())
-	require.EqualError(t, err, "keyring item already exists")
 
 	bpk := keys.GenerateX25519Key().PublicKey()
 	err = keys.Save(kr, bpk)

@@ -34,12 +34,6 @@ func TestMemSetupUnlock(t *testing.T) {
 	testSetupUnlock(t, kr)
 }
 
-func TestMemReserved(t *testing.T) {
-	kr := testMem(t, false)
-	defer func() { _ = kr.Reset() }()
-	testReserved(t, kr)
-}
-
 func TestMemAuth(t *testing.T) {
 	kr := testMem(t, false)
 	defer func() { _ = kr.Reset() }()

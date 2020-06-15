@@ -24,10 +24,10 @@ func ExampleNew() {
 		log.Fatal(err)
 	}
 
-	// Create item.
+	// Save item.
 	// Item IDs are NOT encrypted.
 	item := keyring.NewItem("id1", []byte("mysecret"), "", time.Now())
-	if err := kr.Create(item); err != nil {
+	if err := kr.Set(item); err != nil {
 		log.Fatal(err)
 	}
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// DocumentStore is a place for Document's.
+// DocumentStore is a place for Documents.
 type DocumentStore interface {
 	// Create data at path.
 	// ErrPathExists if path already exists.
