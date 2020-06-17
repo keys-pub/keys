@@ -25,7 +25,7 @@ func TestStore(t *testing.T) {
 	}
 	sys, err := keyring.NewSystem("KeysTest")
 	require.NoError(t, err)
-	defer sys.Reset()
+	defer func() { _ = sys.Reset() }()
 	testStore(t, sys)
 }
 
@@ -107,7 +107,7 @@ func TestReset(t *testing.T) {
 	}
 	sys, err := keyring.NewSystem("KeysTest")
 	require.NoError(t, err)
-	defer sys.Reset()
+	defer func() { _ = sys.Reset() }()
 	testReset(t, sys)
 }
 
@@ -130,7 +130,7 @@ func TestDocuments(t *testing.T) {
 	}
 	sys, err := keyring.NewSystem("KeysTest")
 	require.NoError(t, err)
-	defer sys.Reset()
+	defer func() { _ = sys.Reset() }()
 	testDocuments(t, sys)
 }
 

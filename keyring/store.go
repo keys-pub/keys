@@ -79,15 +79,6 @@ func reset(st Store) error {
 	return nil
 }
 
-func deleteAll(st Store, paths []string) error {
-	for _, p := range paths {
-		if _, err := st.Delete(p); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func copyBytes(source []byte) []byte {
 	dest := make([]byte, len(source))
 	copy(dest, source)
