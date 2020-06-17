@@ -34,7 +34,7 @@ func (k fs) Get(id string) ([]byte, error) {
 	if id == "" {
 		return nil, errors.Errorf("invalid id")
 	}
-	if id == "." || id == ".." {
+	if strings.Contains(id, "..") {
 		return nil, errors.Errorf("invalid id %s", id)
 	}
 
@@ -124,7 +124,7 @@ func (k fs) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 			// TODO: Iterator
 			doc := &ds.Document{Path: name}
 			if !opts.NoData {
-				b, err := ioutil.ReadFile(filepath.Join(k.dir, name))
+				b, err := ioutil.ReadFile(filepath.Join(k.dir, name)) // #nosec
 				if err != nil {
 					return nil, err
 				}
