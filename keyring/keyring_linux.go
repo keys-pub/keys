@@ -137,13 +137,11 @@ func objectPaths(svc *ss.SecretService, service string) ([]dbus.ObjectPath, erro
 		"service": service,
 	}
 
-	logger.Debugf("Unlock %s", collection.Path())
 	err := svc.Unlock(collection.Path())
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Debugf("Search %s", service)
 	return svc.SearchItems(collection, search)
 }
 
