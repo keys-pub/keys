@@ -34,7 +34,7 @@ func (k fs) Get(id string) ([]byte, error) {
 	if id == "" {
 		return nil, errors.Errorf("invalid id")
 	}
-	if strings.Contains(id, "..") {
+	if id == "." || strings.Contains(id, "..") {
 		return nil, errors.Errorf("invalid id %s", id)
 	}
 

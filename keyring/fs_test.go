@@ -10,7 +10,7 @@ import (
 )
 
 func testFS(t *testing.T) (keyring.Store, func()) {
-	dir, err := ioutil.TempDir("", "KeysTest.keyring")
+	dir, err := ioutil.TempDir("", "KeysTest.")
 	require.NoError(t, err)
 	fs, err := keyring.NewFS(dir)
 	require.NoError(t, err)
@@ -26,9 +26,9 @@ func TestFSStore(t *testing.T) {
 	testStore(t, st)
 
 	_, err := st.Get(".")
-	require.EqualError(t, err, "invalid path .")
+	require.EqualError(t, err, "invalid id .")
 	_, err = st.Get("..")
-	require.EqualError(t, err, "invalid path ..")
+	require.EqualError(t, err, "invalid id ..")
 }
 
 func TestFSReset(t *testing.T) {
