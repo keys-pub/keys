@@ -66,6 +66,8 @@ func Documents(st Store, prefix string) ([]*ds.Document, error) {
 	return docs, nil
 }
 
+var _ = reset
+
 func reset(st Store) error {
 	paths, err := Paths(st, "")
 	if err != nil {
