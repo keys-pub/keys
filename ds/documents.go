@@ -48,10 +48,10 @@ type DocumentStore interface {
 	// If a path is not found, it is ignored.
 	DeleteAll(ctx context.Context, paths []string) error
 
-	// Documents for Document's.
+	// Documents iterator.
 	Documents(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error)
 
-	// Collections are parents of Document's.
+	// Collections are parents of Documents.
 	Collections(ctx context.Context, parent string) (CollectionIterator, error)
 }
 

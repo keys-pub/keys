@@ -2,13 +2,10 @@
 package secret
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/keyring"
-	"github.com/pkg/errors"
 )
 
 // Secret to keep.
@@ -89,56 +86,4 @@ func NewSecret() *Secret {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-}
-
-// // Copy secret.
-// func (s *Secret) Copy() *Secret {
-// 	b, err := json.Marshal(s)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	var copy Secret
-// 	if err := json.Unmarshal(b, &copy); err != nil {
-// 		panic(err)
-// 	}
-// 	return &copy
-// }
-
-// // AddToHistory adds secret (copy) to history.
-// func (s *Secret) AddToHistory(secret *Secret) {
-// 	if s.History == nil {
-// 		s.History = []*Secret{}
-// 	}
-// 	s.History = append(s.History, secret.Copy())
-// }
-
-const secretItemType string = "secret"
-
-// newItem creates keyring item for a secret.
-func newItem(secret *Secret) (*keyring.Item, error) {
-	if secret.ID == "" {
-		return nil, errors.Errorf("no secret id")
-	}
-	b := marshalSecret(secret)
-	return keyring.NewItem(secret.ID, b, secretItemType, time.Now()), nil
-}
-
-func marshalSecret(secret *Secret) []byte {
-	b, err := json.Marshal(secret)
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
-
-// asSecret returns Secret for keyring Item.
-func asSecret(item *keyring.Item) (*Secret, error) {
-	if item.Type != secretItemType {
-		return nil, errors.Errorf("item type %s != %s", item.Type, secretItemType)
-	}
-	var secret Secret
-	if err := json.Unmarshal(item.Data, &secret); err != nil {
-		logger.Errorf("invalid secret item")
-	}
-	return &secret, nil
 }

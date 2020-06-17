@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/secret"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
@@ -16,21 +14,8 @@ func TestSecretID(t *testing.T) {
 	require.Equal(t, 43, len(id))
 }
 
-func testMem(t *testing.T, unlocked bool) *keyring.Keyring {
-	kr, err := keyring.New(keyring.Mem())
-	require.NoError(t, err)
-	if unlocked {
-		kr.SetMasterKey(keys.Rand32())
-	}
-	return kr
-}
-
 func TestSecretMarshal(t *testing.T) {
-	kr := testMem(t, true)
-	ss := secret.NewStore(kr)
-
 	clock := tsutil.NewClock()
-	ss.SetTimeNow(clock.Now)
 
 	secret := &secret.Secret{
 		ID:        "Ibgoe3sXvdpxFUeR1hSUriTRdxvcoWjou80WnPiFcPC",
@@ -54,19 +39,4 @@ func TestSecretMarshal(t *testing.T) {
   "updatedAt": "2009-02-13T23:31:30.002Z"
 }`
 	require.Equal(t, expected, string(b))
-}
-
-func TestSecretStoreSaveDefault(t *testing.T) {
-	kr := testMem(t, true)
-	ss := secret.NewStore(kr)
-
-	secret := &secret.Secret{
-		ID:   "Ibgoe3sXvdpxFUeR1hSUriTRdxvcoWjou80WnPiFcPC",
-		Type: secret.PasswordType,
-	}
-
-	out, updated, err := ss.Set(secret)
-	require.NoError(t, err)
-	require.False(t, updated)
-	require.Equal(t, out.ID, secret.ID)
 }

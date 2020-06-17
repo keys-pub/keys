@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/danieljoos/wincred"
+	"github.com/keys-pub/keys/ds"
 	"github.com/pkg/errors"
 )
 
-// System returns keyring store for windows.
-func system(service string) Store {
+func newSystem(service string) Store {
 	return sys{
 		service: service,
 	}
@@ -86,44 +86,41 @@ func (k sys) Exists(id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) IDs(opts ...IDsOption) ([]string, error) {
-	options := NewIDsOptions(opts...)
-	prefix, showReserved := options.Prefix, options.Reserved
+func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+	opts := ds.NewDocumentsOptions(opt...)
+	prefix := opts.Prefix
 
 	creds, err := wincred.List()
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]string, 0, len(creds))
+
+	docs := make([]*ds.Document, 0, len(creds))
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, k.service+"/") {
 			id := cred.TargetName[len(k.service+"/"):]
-			if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-				continue
-			}
 			if prefix != "" && !strings.HasPrefix(id, prefix) {
 				continue
 			}
-			ids = append(ids, id)
+			doc := &ds.Document{Path: id}
+			if !opts.NoData {
+				// TODO: Iterator
+				b, err := k.Get(id)
+				if err != nil {
+					return nil, err
+				}
+				doc.Data = b
+			}
+			docs = append(docs, doc)
 		}
 	}
-	sort.Strings(ids)
-	return ids, nil
+
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].Path < docs[j].Path
+	})
+	return ds.NewDocumentIterator(docs...), nil
 }
 
 func (k sys) Reset() error {
-	return resetDefault(k)
+	return reset(k)
 }
-
-// Utility to dump wincred list:
-// func main() {
-// 	creds, err := wincred.List()
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	for _, cred := range creds {
-// 		fmt.Println(cred.TargetName)
-// 		spew.Dump(cred.CredentialBlob)
-// 		fmt.Println("")
-// 	}
-// }

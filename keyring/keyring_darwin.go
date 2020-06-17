@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/keybase/go-keychain"
+	"github.com/keys-pub/keys/ds"
 	"github.com/pkg/errors"
 )
 
@@ -12,8 +13,7 @@ type sys struct {
 	service string
 }
 
-// System returns keyring store for darwin.
-func system(service string) Store {
+func newSystem(service string) Store {
 	return sys{
 		service: service,
 	}
@@ -96,12 +96,11 @@ func (k sys) Exists(id string) (bool, error) {
 }
 
 func (k sys) Reset() error {
-	return resetDefault(k)
+	return reset(k)
 }
 
-func (k sys) IDs(opts ...IDsOption) ([]string, error) {
-	options := NewIDsOptions(opts...)
-	prefix, showReserved := options.Prefix, options.Reserved
+func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+	opts := ds.NewDocumentsOptions(opt...)
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
@@ -117,22 +116,30 @@ func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	if err != nil {
 		return nil, err
 	} else if len(results) == 0 {
-		return []string{}, nil
+		return ds.NewDocumentIterator(), nil
 	}
 
-	ids := make([]string, 0, len(results))
+	docs := make([]*ds.Document, 0, len(results))
 	for _, r := range results {
-		id := r.Account
-		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
+		path := r.Account
+		if opts.Prefix != "" && !strings.HasPrefix(path, opts.Prefix) {
 			continue
 		}
-		if prefix != "" && !strings.HasPrefix(id, prefix) {
-			continue
+		doc := &ds.Document{Path: path}
+		if !opts.NoData {
+			// TODO: Iterator
+			b, err := k.Get(path)
+			if err != nil {
+				return nil, err
+			}
+			doc.Data = b
 		}
-		ids = append(ids, id)
+		docs = append(docs, doc)
 	}
-	sort.Strings(ids)
-	return ids, nil
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].Path < docs[j].Path
+	})
+	return ds.NewDocumentIterator(docs...), nil
 }
 
 func newPasswordItem(service string, id string, data []byte, desc string) keychain.Item {

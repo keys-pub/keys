@@ -19,13 +19,10 @@ var _ Changes = &Mem{}
 // Mem is an in memory DocumentStore implementation.
 type Mem struct {
 	sync.RWMutex
-	collections *StringSet
-	paths       *StringSet
-	values      map[string][]byte
-	metadata    map[string]*metadata
-	watch       map[string]*watch
-	watchMtx    sync.Mutex
-	nowFn       func() time.Time
+	paths    *StringSet
+	values   map[string][]byte
+	metadata map[string]*metadata
+	nowFn    func() time.Time
 }
 
 type metadata struct {
@@ -36,13 +33,10 @@ type metadata struct {
 // NewMem creates an in memory DocumentStore implementation.
 func NewMem() *Mem {
 	return &Mem{
-		collections: NewStringSet(),
-		paths:       NewStringSet(),
-		values:      map[string][]byte{},
-		metadata:    map[string]*metadata{},
-		watch:       map[string]*watch{},
-		watchMtx:    sync.Mutex{},
-		nowFn:       time.Now,
+		paths:    NewStringSet(),
+		values:   map[string][]byte{},
+		metadata: map[string]*metadata{},
+		nowFn:    time.Now,
 	}
 }
 
@@ -59,43 +53,26 @@ func (m *Mem) SetTimeNow(nowFn func() time.Time) {
 // Create at path.
 // ErrPathExists if entry already exists.
 func (m *Mem) Create(ctx context.Context, path string, b []byte) error {
-	return m.setAndWatch(ctx, path, b, true)
+	return m.set(ctx, path, b, true)
 }
 
 // Set data at path.
 func (m *Mem) Set(ctx context.Context, path string, b []byte) error {
-	return m.setAndWatch(ctx, path, b, false)
-}
-
-func (m *Mem) setAndWatch(ctx context.Context, path string, b []byte, create bool) error {
-	path = Path(path)
-	if err := m.set(ctx, path, b, create); err != nil {
-		return err
-	}
-
-	root := PathComponents(path)[0]
-	w, ok := m.watch[Path(root)]
-	if ok {
-		e := &WatchEvent{Path: path, Status: WatchStatusData}
-		w.ln(e)
-	}
-
-	return nil
+	return m.set(ctx, path, b, false)
 }
 
 func (m *Mem) set(ctx context.Context, path string, b []byte, create bool) error {
 	m.Lock()
 	defer m.Unlock()
 
+	path = Path(path)
+	if path == "/" {
+		return errors.Errorf("invalid path")
+	}
+
 	if len(PathComponents(path))%2 != 0 {
 		return errors.Errorf("invalid path %s", path)
 	}
-
-	collection := FirstPathComponent(path)
-	if collection == "" {
-		return errors.Errorf("invalid path")
-	}
-	m.collections.Add(collection)
 
 	md, ok := m.metadata[path]
 
@@ -153,12 +130,19 @@ func (m *Mem) Collections(ctx context.Context, parent string) (CollectionIterato
 		// TODO: Support nested collections
 		return nil, errors.Errorf("only root collections supported")
 	}
-	parents := m.collections.Sorted()
-	col := make([]*Collection, 0, len(parents))
-	for _, p := range parents {
-		col = append(col, &Collection{Path: Path(p)})
+	collections := []*Collection{}
+	count := map[string]int{}
+	for _, path := range m.paths.Sorted() {
+		col := FirstPathComponent(path)
+		colv, ok := count[col]
+		if !ok {
+			collections = append(collections, &Collection{Path: Path(col)})
+			count[col] = 1
+		} else {
+			count[col] = colv + 1
+		}
 	}
-	return NewCollectionIterator(col), nil
+	return NewCollectionIterator(collections), nil
 }
 
 // Documents ...
@@ -167,7 +151,7 @@ func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOpti
 	if err != nil {
 		return nil, err
 	}
-	return NewDocumentIterator(docs), nil
+	return NewDocumentIterator(docs...), nil
 }
 
 func (m *Mem) list(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
@@ -239,17 +223,7 @@ func (m *Mem) DeleteAll(ctx context.Context, paths []string) error {
 	return nil
 }
 
-type watch struct {
-	ln WatchLn
-	wg *sync.WaitGroup
-}
-
-// URI ...
-func (m *Mem) URI() string {
-	return "mem://"
-}
-
-// GetAll paths
+// GetAll paths.
 func (m *Mem) GetAll(ctx context.Context, paths []string) ([]*Document, error) {
 	docs := make([]*Document, 0, len(paths))
 	for _, p := range paths {
@@ -366,49 +340,4 @@ func (m *Mem) Changes(ctx context.Context, collection string, ts time.Time, limi
 	}
 
 	return NewChangeIterator(changes), nil
-}
-
-// Watch ...
-func (m *Mem) Watch(path string, ln WatchLn) error {
-	m.watchMtx.Lock()
-	_, ok := m.watch[path]
-	if ok {
-		m.watchMtx.Unlock()
-		return errors.Errorf("already watching %s", path)
-	}
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	m.watch[path] = &watch{
-		ln: ln,
-		wg: wg,
-	}
-	ln(&WatchEvent{Path: path, Status: WatchStatusStarting})
-	m.watchMtx.Unlock()
-	wg.Wait()
-	return nil
-}
-
-// StopWatching ...
-func (m *Mem) StopWatching(path string) {
-	m.watchMtx.Lock()
-	defer m.watchMtx.Unlock()
-	m.stopWatching(path)
-}
-
-func (m *Mem) stopWatching(path string) {
-	w, ok := m.watch[path]
-	if ok {
-		w.ln(&WatchEvent{Path: path, Status: WatchStatusStopping})
-		w.wg.Done()
-		delete(m.watch, path)
-	}
-}
-
-// StopWatchingAll ...
-func (m *Mem) StopWatchingAll() {
-	m.watchMtx.Lock()
-	defer m.watchMtx.Unlock()
-	for p := range m.watch {
-		m.stopWatching(p)
-	}
 }

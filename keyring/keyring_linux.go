@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus"
+	"github.com/keys-pub/keys/ds"
 	gokeyring "github.com/keys-pub/secretservice"
 	ss "github.com/keys-pub/secretservice/secret_service"
 	"github.com/pkg/errors"
 )
 
-func system(service string) Store {
+func newSystem(service string) Store {
 	return sys{service: service}
 }
 
@@ -30,7 +31,7 @@ func CheckSystem() error {
 		return errors.Errorf("no dbus")
 	}
 
-	if _, err := gokeyring.Get("keys.pub", "test-key"); err != nil {
+	if _, err := gokeyring.Get("keys.pub", "test"); err != nil {
 		if err == gokeyring.ErrNotFound {
 			return nil
 		}
@@ -83,9 +84,9 @@ func (k sys) Reset() error {
 	return nil
 }
 
-func (k sys) IDs(opts ...IDsOption) ([]string, error) {
-	options := NewIDsOptions(opts...)
-	prefix, showReserved := options.Prefix, options.Reserved
+func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+	opts := ds.NewDocumentsOptions(opt...)
+	prefix := opts.Prefix
 
 	svc, err := ss.NewSecretService()
 	if err != nil {
@@ -95,17 +96,28 @@ func (k sys) IDs(opts ...IDsOption) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, len(ids))
+
+	docs := make([]*ds.Document, 0, len(ids))
 	for _, id := range ids {
-		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
 			continue
 		}
-		out = append(out, id)
+		doc := &ds.Document{Path: id}
+		if !opts.NoData {
+			// TODO: Iterator
+			b, err := k.Get(id)
+			if err != nil {
+				return nil, err
+			}
+			doc.Data = b
+		}
+		docs = append(docs, doc)
 	}
-	return out, nil
+
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].Path < docs[j].Path
+	})
+	return ds.NewDocumentIterator(docs...), nil
 }
 
 func (k sys) Exists(id string) (bool, error) {
