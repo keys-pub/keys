@@ -11,7 +11,7 @@ type DocumentIterator interface {
 }
 
 // NewDocumentIterator returns an iterator for a Document slice.
-func NewDocumentIterator(docs []*Document) DocumentIterator {
+func NewDocumentIterator(docs ...*Document) DocumentIterator {
 	return &docsIterator{docs: docs}
 }
 

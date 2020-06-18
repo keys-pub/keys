@@ -11,7 +11,7 @@ func TestSpew(t *testing.T) {
 		NewDocument("/test/1", []byte("value1")),
 		NewDocument("/test/2", []byte{0xFF, 0x02, 0x03}),
 	}
-	iter := NewDocumentIterator(docs)
+	iter := NewDocumentIterator(docs...)
 
 	spew, err := Spew(iter)
 	require.NoError(t, err)

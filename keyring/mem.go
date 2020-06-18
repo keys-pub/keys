@@ -4,79 +4,82 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/keys-pub/keys/ds"
 	"github.com/pkg/errors"
 )
 
-// Mem Store option.
-func Mem() Option {
-	return func(o *Options) error {
-		st := NewMem()
-		o.st = st
-		return nil
-	}
-}
-
-// NewMem returns an in memory Keyring useful for testing or ephemeral keys.
+// NewMem returns an in memory Store useful for testing or ephemeral keys.
 func NewMem() Store {
-	return &mem{map[string][]byte{}}
+	return &mem{
+		items: map[string][]byte{},
+	}
 }
 
 type mem struct {
 	items map[string][]byte
 }
 
-func (k mem) Name() string {
+func (k *mem) Name() string {
 	return "mem"
 }
 
-func (k mem) Get(id string) ([]byte, error) {
+func (k *mem) Get(id string) ([]byte, error) {
+	if id == "" {
+		return nil, errors.Errorf("invalid id")
+	}
 	if b, ok := k.items[id]; ok {
 		return b, nil
 	}
 	return nil, nil
 }
 
-func (k mem) Set(id string, data []byte) error {
+func (k *mem) Set(id string, data []byte) error {
 	if id == "" {
-		return errors.Errorf("no id set")
+		return errors.Errorf("invalid id")
 	}
 	k.items[id] = data
 	return nil
 }
 
-func (k mem) Reset() error {
-	return resetDefault(k)
+func (k *mem) Reset() error {
+	k.items = map[string][]byte{}
+	return nil
 }
 
-func (k mem) IDs(opts ...IDsOption) ([]string, error) {
-	options := NewIDsOptions(opts...)
-	prefix, showReserved := options.Prefix, options.Reserved
-
-	ids := make([]string, 0, len(k.items))
-	for id := range k.items {
-		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if prefix != "" && !strings.HasPrefix(id, prefix) {
-			continue
-		}
-		ids = append(ids, id)
+func (k *mem) Exists(id string) (bool, error) {
+	if id == "" {
+		return false, errors.Errorf("invalid id")
 	}
-	sort.Slice(ids, func(i, j int) bool {
-		return ids[i] < ids[j]
-	})
-	return ids, nil
-}
-
-func (k mem) Exists(id string) (bool, error) {
 	_, ok := k.items[id]
 	return ok, nil
 }
 
-func (k mem) Delete(id string) (bool, error) {
+func (k *mem) Delete(id string) (bool, error) {
+	if id == "" {
+		return false, errors.Errorf("invalid id")
+	}
 	if _, ok := k.items[id]; ok {
 		delete(k.items, id)
 		return true, nil
 	}
 	return false, nil
+}
+
+func (k *mem) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+	opts := ds.NewDocumentsOptions(opt...)
+	prefix := opts.Prefix
+	docs := make([]*ds.Document, 0, len(k.items))
+	for path, b := range k.items {
+		if strings.HasPrefix(path, prefix) {
+			doc := &ds.Document{Path: path}
+			if !opts.NoData {
+				doc.Data = b
+			}
+			docs = append(docs, doc)
+		}
+	}
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].Path < docs[j].Path
+	})
+	return ds.NewDocumentIterator(docs...), nil
 }

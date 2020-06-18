@@ -2,56 +2,43 @@ package keyring_test
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
 
-func testFS(t *testing.T) *keyring.Keyring {
-	dir, err := ioutil.TempDir("", "KeysTest.keyring")
+func testFS(t *testing.T) (keyring.Store, func()) {
+	dir, err := ioutil.TempDir("", "KeysTest.")
 	require.NoError(t, err)
-	kr, err := keyring.New(keyring.FS(dir, false))
+	fs, err := keyring.NewFS(dir)
 	require.NoError(t, err)
-	return kr
+	closeFn := func() {
+		os.RemoveAll(dir)
+	}
+	return fs, closeFn
 }
 
-func TestFSKeyring(t *testing.T) {
-	kr := testFS(t)
-	defer func() { _ = kr.Reset() }()
+func TestFSStore(t *testing.T) {
+	st, closeFn := testFS(t)
+	defer closeFn()
+	testStore(t, st)
 
-	testKeyring(t, kr)
-
-	_, err := kr.Get(".")
-	require.EqualError(t, err, `failed to get keyring item: invalid id "."`)
-	_, err = kr.Get("..")
-	require.EqualError(t, err, `failed to get keyring item: invalid id ".."`)
-	_, err = kr.Get("foo/bar")
-	require.EqualError(t, err, `failed to get keyring item: invalid id "foo/bar"`)
-	_, err = kr.Get(`\foo`)
-	require.EqualError(t, err, `failed to get keyring item: invalid id "\\foo"`)
+	_, err := st.Get(".")
+	require.EqualError(t, err, "invalid id .")
+	_, err = st.Get("..")
+	require.EqualError(t, err, "invalid id ..")
 }
 
 func TestFSReset(t *testing.T) {
-	kr := testFS(t)
-	defer func() { _ = kr.Reset() }()
-	testReset(t, kr)
+	st, closeFn := testFS(t)
+	defer closeFn()
+	testReset(t, st)
 }
 
-func TestFSSetupUnlock(t *testing.T) {
-	kr := testFS(t)
-	defer func() { _ = kr.Reset() }()
-	testSetupUnlock(t, kr)
-}
-
-func TestFSAuth(t *testing.T) {
-	kr := testFS(t)
-	defer func() { _ = kr.Reset() }()
-	testAuth(t, kr)
-}
-
-func TestFSIDs(t *testing.T) {
-	kr := testFS(t)
-	defer func() { _ = kr.Reset() }()
-	testIDs(t, kr)
+func TestFSDocuments(t *testing.T) {
+	st, closeFn := testFS(t)
+	defer closeFn()
+	testDocuments(t, st)
 }

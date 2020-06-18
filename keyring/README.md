@@ -1,52 +1,9 @@
 # Keyring
 
-Securely store secrets.
-
 This package provides a cross platform keyring using system APIs (macOS/keychain,
-Windows/wincred, Linux/libsecret) or filesystem, encrypted by a password or
-FIDO2 hmac-secret key.
+Windows/wincred, Linux/libsecret).
 
 For more details visit **[keys.pub](https://keys.pub)**.
-
-## Example
-
-```go
-// Initialize Keyring.
-// You can use keyring.System, keyring.FS, or keyring.Mem.
-dir := env.MustAppPath(env.Dir("MyApp", "keyring"))
-kr, err := keyring.New(keyring.FS(dir, true))
-if err != nil {
-    log.Fatal(err)
-}
-
-// Setup keyring auth.
-if err := kr.UnlockWithPassword("mypassword", true); err != nil {
-    log.Fatal(err)
-}
-
-// Create item.
-// Item IDs are NOT encrypted.
-item := keyring.NewItem("id1", []byte("mysecret"), "", time.Now())
-if err := kr.Create(item); err != nil {
-    log.Fatal(err)
-}
-
-// Get item.
-out, err := kr.Get("id1")
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Printf("secret: %s\n", string(out.Data))
-
-// List items.
-items, err := kr.List()
-if err != nil {
-    log.Fatal(err)
-}
-for _, item := range items {
-    fmt.Printf("%s: %v\n", item.ID, string(item.Data))
-}
-```
 
 ## macOS
 
@@ -66,8 +23,7 @@ In the meantime, you can fall back to the FS based keyring.
 
 ## FS
 
-There is a filesystem based keyring, with a "versioned" option which can be used
-to backup/sync to a remote bucket, git, etc.
+There is a filesystem based keyring.
 
 ## Mem
 

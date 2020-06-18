@@ -6,33 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/keys-pub/keys/ds"
 	"github.com/pkg/errors"
 )
 
-// FS Store option.
-func FS(dir string, versioned bool) Option {
-	return func(o *Options) error {
-		st, err := NewFS(dir, versioned)
-		if err != nil {
-			return err
-		}
-		o.st = st
-		return nil
-	}
-}
-
 // NewFS returns keyring.Store backed by the filesystem.
-//
-// If versioned is true, it returns a filesystem that is create (append) only,
-// which means any update or delete creates a new file (version).
-// TODO: Link to version filesystem spec.
-//
-// A versioned filesystem is also necessary if you want to use backup/sync to
-// a remote bucket/git etc.
-func NewFS(dir string, versioned bool) (Store, error) {
-	if versioned {
-		return newFSV(dir)
-	}
+func NewFS(dir string) (Store, error) {
 	return newFS(dir)
 }
 
@@ -53,66 +32,42 @@ func (k fs) Name() string {
 
 func (k fs) Get(id string) ([]byte, error) {
 	if id == "" {
-		return nil, errors.Errorf("failed to get keyring item: no id specified")
+		return nil, errors.Errorf("invalid id")
 	}
-	if id == "." || id == ".." || strings.Contains(id, "/") || strings.Contains(id, "\\") {
-		return nil, errors.Errorf("failed to get keyring item: invalid id %q", id)
+	if id == "." || strings.Contains(id, "..") {
+		return nil, errors.Errorf("invalid id %s", id)
 	}
 
-	path := filepath.Join(k.dir, id)
-	exists, err := pathExists(path)
+	fpath := filepath.Join(k.dir, id)
+	exists, err := pathExists(fpath)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, nil
 	}
-	return ioutil.ReadFile(path) // #nosec
+	return ioutil.ReadFile(fpath) // #nosec
 }
 
 func (k fs) Set(id string, data []byte) error {
 	if id == "" {
-		return errors.Errorf("no id specified")
+		return errors.Errorf("invalid path")
 	}
 	if err := os.MkdirAll(k.dir, 0700); err != nil {
 		return err
 	}
-	path := filepath.Join(k.dir, id)
-	if err := ioutil.WriteFile(path, data, 0600); err != nil {
+	fpath := filepath.Join(k.dir, id)
+
+	// Ensure directories if
+	fdir, _ := filepath.Split(fpath)
+	if err := os.MkdirAll(fdir, 0700); err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(fpath, data, 0600); err != nil {
 		return errors.Wrapf(err, "failed to write file")
 	}
 	return nil
-}
-
-func (k fs) IDs(opts ...IDsOption) ([]string, error) {
-	options := NewIDsOptions(opts...)
-	prefix, showReserved := options.Prefix, options.Reserved
-
-	exists, err := pathExists(k.dir)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return []string{}, nil
-	}
-
-	files, err := ioutil.ReadDir(k.dir)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]string, 0, len(files))
-	for _, f := range files {
-		id := f.Name()
-		if !showReserved && strings.HasPrefix(id, ReservedPrefix) {
-			continue
-		}
-		if prefix != "" && !strings.HasPrefix(id, prefix) {
-			continue
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
 }
 
 func (k fs) Reset() error {
@@ -123,32 +78,64 @@ func (k fs) Reset() error {
 }
 
 func (k fs) Exists(id string) (bool, error) {
-	path := filepath.Join(k.dir, id)
-	return pathExists(path)
+	fpath := filepath.Join(k.dir, id)
+	return pathExists(fpath)
 }
 
 func (k fs) Delete(id string) (bool, error) {
-	path := filepath.Join(k.dir, id)
+	fpath := filepath.Join(k.dir, id)
 
-	exists, err := pathExists(path)
+	exists, err := pathExists(fpath)
 	if err != nil {
 		return false, err
 	}
 	if !exists {
 		return false, nil
 	}
-	if err := os.Remove(path); err != nil {
+	if err := os.Remove(fpath); err != nil {
 		return true, err
 	}
 	return true, nil
 }
 
-func pathExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err == nil {
+func pathExists(id string) (bool, error) {
+	if _, err := os.Stat(id); err == nil {
 		return true, nil
 	} else if os.IsNotExist(err) {
 		return false, nil
 	} else {
 		return false, err
 	}
+}
+
+func (k fs) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+	opts := ds.NewDocumentsOptions(opt...)
+	prefix := opts.Prefix
+
+	files, err := ioutil.ReadDir(k.dir)
+	if err != nil {
+		return nil, err
+	}
+
+	docs := make([]*ds.Document, 0, len(files))
+	for _, f := range files {
+		name := f.Name()
+		if strings.HasPrefix(name, prefix) {
+			// TODO: Iterator
+			doc := &ds.Document{Path: name}
+			if !opts.NoData {
+				b, err := ioutil.ReadFile(filepath.Join(k.dir, name)) // #nosec
+				if err != nil {
+					return nil, err
+				}
+				doc.Data = b
+			}
+			docs = append(docs, doc)
+		}
+	}
+	// sort.Slice(docs, func(i, j int) bool {
+	// 	return docs[i].Path < docs[j].Path
+	// })
+
+	return ds.NewDocumentIterator(docs...), nil
 }

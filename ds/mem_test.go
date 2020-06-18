@@ -24,7 +24,6 @@ func TestClock(t *testing.T) {
 func TestMem(t *testing.T) {
 	mem := ds.NewMem()
 	mem.SetTimeNow(tsutil.NewClock().Now)
-	require.Equal(t, "mem://", mem.URI())
 	testDocumentStore(t, mem)
 }
 

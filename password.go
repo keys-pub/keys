@@ -4,6 +4,9 @@ import (
 	"crypto/rand"
 	"math/big"
 	mathRand "math/rand" // Only for shuffle
+
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/argon2"
 )
 
 const lower = "abcdefghijklmnopqrstuvwxyz"
@@ -65,4 +68,17 @@ func hasByte(ba []byte, b byte) bool {
 		}
 	}
 	return false
+}
+
+// KeyForPassword generates a key from a password and salt.
+func KeyForPassword(password string, salt []byte) (*[32]byte, error) {
+	if len(salt) < 16 {
+		return nil, errors.Errorf("not enough salt")
+	}
+	if password == "" {
+		return nil, errors.Errorf("empty password")
+	}
+
+	akey := argon2.IDKey([]byte(password), salt[:], 1, 64*1024, 4, 32)
+	return Bytes32(akey), nil
 }
