@@ -7,23 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// func TestNewPath(t *testing.T) {
-// 	p := keys.newPath("/")
-// 	require.Equal(t, "/", p.String())
-// 	p = p.Append("a")
-// 	require.Equal(t, "/a", p.String())
-// 	p = p.Append("b/")
-// 	require.Equal(t, "/a/b", p.String())
-// 	p = p.Append("/")
-// 	require.Equal(t, "/a/b", p.String())
-// 	p = p.Append("")
-// 	require.Equal(t, "/a/b", p.String())
-// }
-
 func TestPath(t *testing.T) {
 	require.Equal(t, "/a/b", ds.Path("a", "b"))
 	require.Equal(t, "/a/b/1", ds.Path("a", "b", 1))
 	require.Equal(t, "/a", ds.Path("", "a"))
+	require.Equal(t, "/a", ds.Path("a", ""))
 
 	require.Equal(t, "/", ds.Path(""))
 	require.Equal(t, "/", ds.Path("/"))
