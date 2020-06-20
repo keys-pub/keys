@@ -3,6 +3,7 @@ package tsutil
 import "time"
 
 // Clock for time increments on each access.
+// This is for testing.
 type Clock struct {
 	t    time.Time
 	tick time.Duration

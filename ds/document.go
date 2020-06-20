@@ -12,7 +12,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// Document is a data at a path with metadata.
+// Document is data at a path.
 type Document struct {
 	// Path of document.
 	Path string `json:"path" msgpack:"p"`
@@ -27,11 +27,6 @@ type Document struct {
 
 func (d Document) String() string {
 	return fmt.Sprintf("%s %s", d.Path, spew.Sdump(d.Data))
-}
-
-// Name for document (last path component).
-func (d Document) Name() string {
-	return LastPathComponent(d.Path)
 }
 
 // NewDocument creates a datastore document.

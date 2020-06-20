@@ -38,7 +38,6 @@ func TestDocument(t *testing.T) {
 	require.Equal(t, "/test/0", out[0].Path)
 	require.Equal(t, []byte("value0"), out[0].Data)
 	require.Equal(t, int64(1234567890001), tsutil.Millis(out[0].CreatedAt))
-	require.Equal(t, "0", out[0].Name())
 
 	pathsOut := ds.DocumentPaths(out)
 	require.Equal(t, paths, pathsOut)
@@ -47,11 +46,6 @@ func TestDocument(t *testing.T) {
 	require.Equal(t, "/test/6", doc.Path)
 	doc = ds.NewDocument("//test//6", []byte("value6"))
 	require.Equal(t, "/test/6", doc.Path)
-
-	doc = ds.NewDocument("/test/key1", nil)
-	require.Equal(t, "key1", doc.Name())
-	doc = ds.NewDocument("/test/sub/key1", nil)
-	require.Equal(t, "key1", doc.Name())
 }
 
 func TestDocumentMarshal(t *testing.T) {
