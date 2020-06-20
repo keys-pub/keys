@@ -1,3 +1,4 @@
+// Package env provides paths on different platforms.
 package env
 
 import (
@@ -151,7 +152,7 @@ func logsDir(dirs ...string) (string, error) {
 }
 
 // HomeDir returns current user home directory.
-// On linux, when running an AppImage, HomeDir can be empty.
+// On linux, when running an AppImage, HomeDir can be empty string.
 func HomeDir() (string, error) {
 	// TODO: Switch to UserHomeDir in go 1.12
 	usr, err := user.Current()

@@ -1,4 +1,4 @@
-// Package ds provides a Document store.
+// Package ds describes documents and document stores.
 package ds
 
 import (
