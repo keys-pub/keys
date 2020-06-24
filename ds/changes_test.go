@@ -12,6 +12,8 @@ import (
 )
 
 func TestMemChanges(t *testing.T) {
+	var err error
+
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 	changes := ds.NewMem()
 	clock := tsutil.NewClock()
@@ -32,7 +34,7 @@ func TestMemChanges(t *testing.T) {
 		values = append(values, []byte(str))
 		strs = append(strs, str)
 	}
-	_, err := changes.ChangeAdd(ctx, col, values)
+	err = changes.ChangesAdd(ctx, col, values)
 	require.NoError(t, err)
 
 	// Changes (limit=10, asc)

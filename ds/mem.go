@@ -259,16 +259,15 @@ func randBytes(length int) []byte {
 	return buf
 }
 
-// ChangeAdd ...
-func (m *Mem) ChangeAdd(ctx context.Context, collection string, data [][]byte) ([]string, error) {
+// ChangesAdd ...
+func (m *Mem) ChangesAdd(ctx context.Context, collection string, data [][]byte) error {
 	if m.incrementFn == nil {
-		return nil, errors.Errorf("no increment fn set")
+		return errors.Errorf("no increment fn set")
 	}
-	paths := make([]string, 0, len(data))
 	for _, b := range data {
 		version, err := m.incrementFn(ctx)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		b, err := json.Marshal(Change{
 			Data:      b,
@@ -276,16 +275,15 @@ func (m *Mem) ChangeAdd(ctx context.Context, collection string, data [][]byte) (
 			Timestamp: m.nowFn(),
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
 		path := Path(collection, id)
 		if err := m.Create(ctx, path, b); err != nil {
-			return nil, err
+			return err
 		}
-		paths = append(paths, path)
 	}
-	return paths, nil
+	return nil
 }
 
 func min(n1 int, n2 int) int {
