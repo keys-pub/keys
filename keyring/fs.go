@@ -112,6 +112,14 @@ func (k fs) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 	opts := ds.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 
+	exists, err := pathExists(k.dir)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return ds.NewDocumentIterator(), nil
+	}
+
 	files, err := ioutil.ReadDir(k.dir)
 	if err != nil {
 		return nil, err
