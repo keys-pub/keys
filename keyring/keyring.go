@@ -17,7 +17,7 @@ func NewSystem(service string) (Keyring, error) {
 // Keyring is the interface used to store data.
 // This can be used as a vault.Store.
 type Keyring interface {
-	// Name of the Store implementation.
+	// Name of the keyring implementation.
 	Name() string
 
 	// Get bytes.

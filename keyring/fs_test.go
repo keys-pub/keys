@@ -20,10 +20,10 @@ func testFS(t *testing.T) (keyring.Keyring, func()) {
 	return fs, closeFn
 }
 
-func TestFSStore(t *testing.T) {
+func TestFS(t *testing.T) {
 	st, closeFn := testFS(t)
 	defer closeFn()
-	testStore(t, st)
+	testKeyring(t, st)
 
 	_, err := st.Get(".")
 	require.EqualError(t, err, "invalid id .")

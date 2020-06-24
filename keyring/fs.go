@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewFS returns keyring.Store backed by the filesystem.
+// NewFS returns Keyring backed by the filesystem.
 func NewFS(dir string) (Keyring, error) {
 	return newFS(dir)
 }

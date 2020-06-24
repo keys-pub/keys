@@ -19,17 +19,17 @@ func skipSystem(t *testing.T) bool {
 	return false
 }
 
-func TestStore(t *testing.T) {
+func TestKeyring(t *testing.T) {
 	if skipSystem(t) {
 		return
 	}
 	sys, err := keyring.NewSystem("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = sys.Reset() }()
-	testStore(t, sys)
+	testKeyring(t, sys)
 }
 
-func testStore(t *testing.T, st keyring.Keyring) {
+func testKeyring(t *testing.T, st keyring.Keyring) {
 	paths, err := keyring.Paths(st, "")
 	require.NoError(t, err)
 	require.Equal(t, 0, len(paths))

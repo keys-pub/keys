@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func newSystem(service string) Store {
+func newSystem(service string) Keyring {
 	return sys{service: service}
 }
 
