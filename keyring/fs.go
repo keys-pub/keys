@@ -11,11 +11,11 @@ import (
 )
 
 // NewFS returns keyring.Store backed by the filesystem.
-func NewFS(dir string) (Store, error) {
+func NewFS(dir string) (Keyring, error) {
 	return newFS(dir)
 }
 
-func newFS(dir string) (Store, error) {
+func newFS(dir string) (Keyring, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}

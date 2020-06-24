@@ -73,7 +73,7 @@ func (s sigchainStore) KIDs() ([]ID, error) {
 		if doc == nil {
 			break
 		}
-		pc := ds.LastPathComponent(doc.Path)
+		pc := ds.PathLast(doc.Path)
 		str := strings.Split(pc, "-")[0]
 		id, err := ParseID(str)
 		if err != nil {

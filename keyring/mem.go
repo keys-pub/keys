@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewMem returns an in memory Store useful for testing or ephemeral keys.
-func NewMem() Store {
+// NewMem returns an in memory keyring useful for testing or ephemeral keys.
+func NewMem() Keyring {
 	return &mem{
 		items: map[string][]byte{},
 	}

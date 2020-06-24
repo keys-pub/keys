@@ -1,7 +1,5 @@
 package ds
 
-import "time"
-
 // DocumentIterator is an iterator for Document's.
 type DocumentIterator interface {
 	// Next document, or nil.
@@ -128,12 +126,12 @@ func (i *changesIterator) Release() {
 }
 
 // ChangesFromIterator returns Change's from ChangeIterator.
-func ChangesFromIterator(iter ChangeIterator, from time.Time) ([]*Change, time.Time, error) {
+func ChangesFromIterator(iter ChangeIterator, from int64) ([]*Change, int64, error) {
 	changes := []*Change{}
 	for {
 		change, err := iter.Next()
 		if err != nil {
-			return nil, time.Time{}, err
+			return nil, 0, err
 		}
 		if change == nil {
 			break
@@ -142,7 +140,7 @@ func ChangesFromIterator(iter ChangeIterator, from time.Time) ([]*Change, time.T
 	}
 	to := from
 	if len(changes) > 0 {
-		to = changes[len(changes)-1].Timestamp
+		to = changes[len(changes)-1].Version
 	}
 	return changes, to, nil
 }

@@ -10,6 +10,7 @@ import (
 // backends that don't directly use this struct on set.
 type Change struct {
 	Data      []byte    `json:"data" firestore:"data"`
+	Version   int64     `json:"v" firestore:"v"`
 	Timestamp time.Time `json:"ts" firestore:"ts"`
 }
 
@@ -25,6 +26,6 @@ const (
 
 // Changes describes changes to a path.
 type Changes interface {
-	ChangeAdd(ctx context.Context, collection string, data []byte) (string, error)
-	Changes(ctx context.Context, collection string, from time.Time, limit int, direction Direction) (ChangeIterator, error)
+	ChangeAdd(ctx context.Context, collection string, data [][]byte) ([]string, error)
+	Changes(ctx context.Context, collection string, version int64, limit int, direction Direction) (ChangeIterator, error)
 }

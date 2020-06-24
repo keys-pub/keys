@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Statement signed.
+// Statement in a sigchain.
 type Statement struct {
 	// Sig is the signature bytes.
 	Sig []byte

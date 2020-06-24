@@ -1,6 +1,7 @@
 package ds
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -34,6 +35,8 @@ func toStrings(is ...interface{}) []string {
 			strs = append(strs, v...)
 		case int:
 			strs = append(strs, strconv.Itoa(v))
+		case int64:
+			strs = append(strs, fmt.Sprintf("%d", v))
 		case stringify:
 			strs = append(strs, v.String())
 		default:
@@ -102,22 +105,21 @@ func PathComponents(path string) []string {
 	return newPath(path).Components()
 }
 
-// FirstPathComponent returns first path component.
-func FirstPathComponent(path string) string {
+// PathFirst returns first path component.
+func PathFirst(path string) string {
 	return newPath(path).First()
 }
 
-// LastPathComponent returns last path component.
-func LastPathComponent(path string) string {
+// PathLast returns last path component.
+func PathLast(path string) string {
 	return newPath(path).Last()
 }
 
-// PathType denotes the type of path.
-type PathType string
-
-// KeyPathType is a path with 2 components, meant for a syncable key/value
-// store, like Firebase or leveldb.
-const KeyPathType PathType = "key"
-
-// URLPathType is a path with more than 2 components for web APIs.
-const URLPathType PathType = "url"
+// PathFrom skips first n components.
+func PathFrom(path string, n int) string {
+	pc := newPath(path).Components()
+	if len(pc) > n {
+		return Path(pc[n:])
+	}
+	return path
+}
