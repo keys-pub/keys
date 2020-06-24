@@ -152,7 +152,7 @@ func (i ID) Type() KeyType {
 	}
 }
 
-// Bytes are key data.
+// Bytes are public key data (for Key interface).
 func (i ID) Bytes() []byte {
 	_, b, err := i.Decode()
 	if err != nil {

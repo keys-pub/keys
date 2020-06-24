@@ -19,10 +19,11 @@ var _ Changes = &Mem{}
 // Mem is an in memory DocumentStore implementation.
 type Mem struct {
 	sync.RWMutex
-	paths    *StringSet
-	values   map[string][]byte
-	metadata map[string]*metadata
-	nowFn    func() time.Time
+	paths       *StringSet
+	values      map[string][]byte
+	metadata    map[string]*metadata
+	nowFn       func() time.Time
+	incrementFn IncrementFn
 }
 
 type metadata struct {
@@ -48,6 +49,14 @@ func (m *Mem) Now() time.Time {
 // SetTimeNow to use a custom time.Now.
 func (m *Mem) SetTimeNow(nowFn func() time.Time) {
 	m.nowFn = nowFn
+}
+
+// IncrementFn describes an auto increment function.
+type IncrementFn func(ctx context.Context) (int64, error)
+
+// SetIncrementFn sets an auto increment function.
+func (m *Mem) SetIncrementFn(incrementFn IncrementFn) {
+	m.incrementFn = incrementFn
 }
 
 // Create at path.
@@ -133,7 +142,7 @@ func (m *Mem) Collections(ctx context.Context, parent string) (CollectionIterato
 	collections := []*Collection{}
 	count := map[string]int{}
 	for _, path := range m.paths.Sorted() {
-		col := FirstPathComponent(path)
+		col := PathFirst(path)
 		colv, ok := count[col]
 		if !ok {
 			collections = append(collections, &Collection{Path: Path(col)})
@@ -250,21 +259,31 @@ func randBytes(length int) []byte {
 	return buf
 }
 
-// ChangeAdd ...
-func (m *Mem) ChangeAdd(ctx context.Context, collection string, data []byte) (string, error) {
-	b, err := json.Marshal(Change{
-		Data:      data,
-		Timestamp: m.nowFn(),
-	})
-	if err != nil {
-		return "", err
+// ChangesAdd ...
+func (m *Mem) ChangesAdd(ctx context.Context, collection string, data [][]byte) error {
+	if m.incrementFn == nil {
+		return errors.Errorf("no increment fn set")
 	}
-	id := encoding.MustEncode(randBytes(32), encoding.Base62)
-	path := Path(collection, id)
-	if err := m.Create(ctx, path, b); err != nil {
-		return "", err
+	for _, b := range data {
+		version, err := m.incrementFn(ctx)
+		if err != nil {
+			return err
+		}
+		b, err := json.Marshal(Change{
+			Data:      b,
+			Version:   version,
+			Timestamp: m.nowFn(),
+		})
+		if err != nil {
+			return err
+		}
+		id := encoding.MustEncode(randBytes(32), encoding.Base62)
+		path := Path(collection, id)
+		if err := m.Create(ctx, path, b); err != nil {
+			return err
+		}
 	}
-	return path, nil
+	return nil
 }
 
 func min(n1 int, n2 int) int {
@@ -275,7 +294,7 @@ func min(n1 int, n2 int) int {
 }
 
 // Changes ...
-func (m *Mem) Changes(ctx context.Context, collection string, ts time.Time, limit int, direction Direction) (ChangeIterator, error) {
+func (m *Mem) Changes(ctx context.Context, collection string, version int64, limit int, direction Direction) (ChangeIterator, error) {
 	changes := make([]*Change, 0, m.paths.Size())
 
 	for _, p := range m.paths.Strings() {
@@ -298,30 +317,30 @@ func (m *Mem) Changes(ctx context.Context, collection string, ts time.Time, limi
 	switch direction {
 	case Ascending:
 		sort.Slice(changes, func(i, j int) bool {
-			return changes[i].Timestamp.Before(changes[j].Timestamp)
+			return changes[i].Version < changes[j].Version
 		})
 	case Descending:
 		sort.Slice(changes, func(i, j int) bool {
-			return changes[i].Timestamp.After(changes[j].Timestamp)
+			return changes[i].Version > changes[j].Version
 		})
 	}
 
-	if !ts.IsZero() {
-		logger.Debugf("Finding index for %s", ts)
+	if version != 0 {
+		logger.Debugf("Finding index for %d", version)
 		index := -1
 		switch direction {
 		case Ascending:
 			for i, c := range changes {
-				if c.Timestamp == ts || c.Timestamp.After(ts) {
-					logger.Infof("Found index %d", i)
+				if c.Version > version {
+					logger.Infof("Found version index %d", i)
 					index = i
 					break
 				}
 			}
 		case Descending:
 			for i, c := range changes {
-				if c.Timestamp == ts || c.Timestamp.Before(ts) {
-					logger.Infof("Found index %d", i)
+				if c.Version < version {
+					logger.Infof("Found version index %d", i)
 					index = i
 					break
 				}

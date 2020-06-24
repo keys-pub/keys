@@ -10,12 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewFS returns keyring.Store backed by the filesystem.
-func NewFS(dir string) (Store, error) {
+// NewFS returns Keyring backed by the filesystem.
+func NewFS(dir string) (Keyring, error) {
 	return newFS(dir)
 }
 
-func newFS(dir string) (Store, error) {
+func newFS(dir string) (Keyring, error) {
 	if dir == "" || dir == "/" {
 		return nil, errors.Errorf("invalid directory")
 	}

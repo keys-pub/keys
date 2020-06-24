@@ -19,17 +19,17 @@ func skipSystem(t *testing.T) bool {
 	return false
 }
 
-func TestStore(t *testing.T) {
+func TestKeyring(t *testing.T) {
 	if skipSystem(t) {
 		return
 	}
 	sys, err := keyring.NewSystem("KeysTest")
 	require.NoError(t, err)
 	defer func() { _ = sys.Reset() }()
-	testStore(t, sys)
+	testKeyring(t, sys)
 }
 
-func testStore(t *testing.T, st keyring.Store) {
+func testKeyring(t *testing.T, st keyring.Keyring) {
 	paths, err := keyring.Paths(st, "")
 	require.NoError(t, err)
 	require.Equal(t, 0, len(paths))
@@ -111,7 +111,7 @@ func TestReset(t *testing.T) {
 	testReset(t, sys)
 }
 
-func testReset(t *testing.T, st keyring.Store) {
+func testReset(t *testing.T, st keyring.Keyring) {
 	var err error
 	err = st.Set("key1", []byte("password"))
 	require.NoError(t, err)
@@ -134,7 +134,7 @@ func TestDocuments(t *testing.T) {
 	testDocuments(t, sys)
 }
 
-func testDocuments(t *testing.T, st keyring.Store) {
+func testDocuments(t *testing.T, st keyring.Keyring) {
 	var err error
 
 	// TODO: Implement index/limit options
@@ -162,7 +162,7 @@ func testDocuments(t *testing.T, st keyring.Store) {
 	require.Equal(t, []byte("bval1"), docs[0].Data)
 }
 
-func testDocumentsFromIterator(t *testing.T, st keyring.Store, opt ...ds.DocumentsOption) []*ds.Document {
+func testDocumentsFromIterator(t *testing.T, st keyring.Keyring, opt ...ds.DocumentsOption) []*ds.Document {
 	iter, err := st.Documents(opt...)
 	require.NoError(t, err)
 	defer iter.Release()

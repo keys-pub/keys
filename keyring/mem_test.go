@@ -6,8 +6,8 @@ import (
 	"github.com/keys-pub/keys/keyring"
 )
 
-func TestMemStore(t *testing.T) {
-	testStore(t, keyring.NewMem())
+func TestMemKeyring(t *testing.T) {
+	testKeyring(t, keyring.NewMem())
 }
 
 func TestMemReset(t *testing.T) {

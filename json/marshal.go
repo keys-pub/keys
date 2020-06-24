@@ -1,4 +1,4 @@
-// Package json provides a simpler JSON marshaller.
+// Package json provides a simpler JSON marshaller for strings and ints only.
 package json
 
 import (
@@ -72,6 +72,7 @@ func Marshal(es []Value) ([]byte, error) {
 	return []byte("{" + strings.Join(out, ",") + "}"), nil
 }
 
+// Unmarshal bytes.
 func Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }

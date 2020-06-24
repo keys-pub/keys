@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testFS(t *testing.T) (keyring.Store, func()) {
+func testFS(t *testing.T) (keyring.Keyring, func()) {
 	dir, err := ioutil.TempDir("", "KeysTest.")
 	require.NoError(t, err)
 	fs, err := keyring.NewFS(dir)
@@ -20,10 +20,10 @@ func testFS(t *testing.T) (keyring.Store, func()) {
 	return fs, closeFn
 }
 
-func TestFSStore(t *testing.T) {
+func TestFS(t *testing.T) {
 	st, closeFn := testFS(t)
 	defer closeFn()
-	testStore(t, st)
+	testKeyring(t, st)
 
 	_, err := st.Get(".")
 	require.EqualError(t, err, "invalid id .")

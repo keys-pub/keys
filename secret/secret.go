@@ -1,4 +1,4 @@
-// Package secret defines secret types for storing in a keyring.
+// Package secret defines secret types.
 package secret
 
 import (
@@ -79,11 +79,21 @@ func RandID() string {
 	return encoding.MustEncode(keys.RandBytes(32), encoding.Base62)
 }
 
-// NewSecret creates a new Secret.
-func NewSecret() *Secret {
+// New creates a new Secret.
+func New() *Secret {
 	return &Secret{
 		ID:        RandID(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
+}
+
+// NewPassword creates a new password secret.
+func NewPassword(username string, password string, url string) *Secret {
+	secret := New()
+	secret.Type = PasswordType
+	secret.Username = username
+	secret.Password = password
+	secret.URL = url
+	return secret
 }
