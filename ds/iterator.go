@@ -94,53 +94,53 @@ func DocumentsFromIterator(iter DocumentIterator) ([]*Document, error) {
 	return docs, nil
 }
 
-// ChangeIterator is an iterator for Change's.
-type ChangeIterator interface {
+// EventIterator is an iterator for Event's.
+type EventIterator interface {
 	// Next document, or nil.
-	Next() (*Change, error)
+	Next() (*Event, error)
 	// Release resources associated with the iterator.
 	Release()
 }
 
-// NewChangeIterator returns an iterator for a Change slice.
-func NewChangeIterator(changes []*Change) ChangeIterator {
-	return &changesIterator{changes: changes}
+// NewEventIterator returns an iterator for a Event slice.
+func NewEventIterator(events []*Event) EventIterator {
+	return &eventsIterator{events: events}
 }
 
-type changesIterator struct {
-	changes []*Change
-	index   int
+type eventsIterator struct {
+	events []*Event
+	index  int
 }
 
-func (i *changesIterator) Next() (*Change, error) {
-	if i.index >= len(i.changes) {
+func (i *eventsIterator) Next() (*Event, error) {
+	if i.index >= len(i.events) {
 		return nil, nil
 	}
-	d := i.changes[i.index]
+	d := i.events[i.index]
 	i.index++
 	return d, nil
 }
 
-func (i *changesIterator) Release() {
-	i.changes = nil
+func (i *eventsIterator) Release() {
+	i.events = nil
 }
 
-// ChangesFromIterator returns Change's from ChangeIterator.
-func ChangesFromIterator(iter ChangeIterator, from int64) ([]*Change, int64, error) {
-	changes := []*Change{}
+// EventsFromIterator returns Event's from EventIterator.
+func EventsFromIterator(iter EventIterator, from int64) ([]*Event, int64, error) {
+	events := []*Event{}
 	for {
-		change, err := iter.Next()
+		event, err := iter.Next()
 		if err != nil {
 			return nil, 0, err
 		}
-		if change == nil {
+		if event == nil {
 			break
 		}
-		changes = append(changes, change)
+		events = append(events, event)
 	}
 	to := from
-	if len(changes) > 0 {
-		to = changes[len(changes)-1].Version
+	if len(events) > 0 {
+		to = events[len(events)-1].Index
 	}
-	return changes, to, nil
+	return events, to, nil
 }

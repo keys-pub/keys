@@ -14,16 +14,16 @@ import (
 )
 
 var _ DocumentStore = &Mem{}
-var _ Changes = &Mem{}
+var _ Events = &Mem{}
 
 // Mem is an in memory DocumentStore implementation.
 type Mem struct {
 	sync.RWMutex
-	paths       *StringSet
-	values      map[string][]byte
-	metadata    map[string]*metadata
-	nowFn       func() time.Time
-	incrementFn IncrementFn
+	paths    *StringSet
+	values   map[string][]byte
+	metadata map[string]*metadata
+	nowFn    func() time.Time
+	inc      int64
 }
 
 type metadata struct {
@@ -49,14 +49,6 @@ func (m *Mem) Now() time.Time {
 // SetTimeNow to use a custom time.Now.
 func (m *Mem) SetTimeNow(nowFn func() time.Time) {
 	m.nowFn = nowFn
-}
-
-// IncrementFn describes an auto increment function.
-type IncrementFn func(ctx context.Context) (int64, error)
-
-// SetIncrementFn sets an auto increment function.
-func (m *Mem) SetIncrementFn(incrementFn IncrementFn) {
-	m.incrementFn = incrementFn
 }
 
 // Create at path.
@@ -259,31 +251,28 @@ func randBytes(length int) []byte {
 	return buf
 }
 
-// ChangesAdd ...
-func (m *Mem) ChangesAdd(ctx context.Context, collection string, data [][]byte) error {
-	if m.incrementFn == nil {
-		return errors.Errorf("no increment fn set")
-	}
+// EventsAdd ...
+func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, error) {
+	events := make([]*Event, 0, len(data))
 	for _, b := range data {
-		version, err := m.incrementFn(ctx)
-		if err != nil {
-			return err
-		}
-		b, err := json.Marshal(Change{
-			Data:      b,
-			Version:   version,
-			Timestamp: m.nowFn(),
-		})
-		if err != nil {
-			return err
-		}
+		m.inc++
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
-		path := Path(collection, id)
-		if err := m.Create(ctx, path, b); err != nil {
-			return err
+		event := &Event{
+			Data:      b,
+			Index:     m.inc,
+			Timestamp: m.nowFn(),
 		}
+		b, err := json.Marshal(event)
+		if err != nil {
+			return nil, err
+		}
+		path := Path(path, "log", id)
+		if err := m.Create(ctx, path, b); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
 	}
-	return nil
+	return events, nil
 }
 
 func min(n1 int, n2 int) int {
@@ -293,12 +282,12 @@ func min(n1 int, n2 int) int {
 	return n2
 }
 
-// Changes ...
-func (m *Mem) Changes(ctx context.Context, collection string, version int64, limit int, direction Direction) (ChangeIterator, error) {
-	changes := make([]*Change, 0, m.paths.Size())
+// Events ...
+func (m *Mem) Events(ctx context.Context, path string, index int64, limit int, direction Direction) (EventIterator, error) {
+	events := make([]*Event, 0, m.paths.Size())
 
 	for _, p := range m.paths.Strings() {
-		if !strings.HasPrefix(p, Path(collection)+"/") {
+		if !strings.HasPrefix(p, Path(path, "log")+"/") {
 			continue
 		}
 		doc, err := m.Get(ctx, p)
@@ -308,55 +297,55 @@ func (m *Mem) Changes(ctx context.Context, collection string, version int64, lim
 		if doc == nil {
 			return nil, errors.Errorf("path not found %s", p)
 		}
-		var change Change
-		if err := json.Unmarshal(doc.Data, &change); err != nil {
+		var event Event
+		if err := json.Unmarshal(doc.Data, &event); err != nil {
 			return nil, err
 		}
-		changes = append(changes, &change)
+		events = append(events, &event)
 	}
 	switch direction {
 	case Ascending:
-		sort.Slice(changes, func(i, j int) bool {
-			return changes[i].Version < changes[j].Version
+		sort.Slice(events, func(i, j int) bool {
+			return events[i].Index < events[j].Index
 		})
 	case Descending:
-		sort.Slice(changes, func(i, j int) bool {
-			return changes[i].Version > changes[j].Version
+		sort.Slice(events, func(i, j int) bool {
+			return events[i].Index > events[j].Index
 		})
 	}
 
-	if version != 0 {
-		logger.Debugf("Finding index for %d", version)
-		index := -1
+	if index != 0 {
+		logger.Debugf("Finding index for %d", index)
+		found := -1
 		switch direction {
 		case Ascending:
-			for i, c := range changes {
-				if c.Version > version {
+			for i, c := range events {
+				if c.Index > index {
 					logger.Infof("Found version index %d", i)
-					index = i
+					found = i
 					break
 				}
 			}
 		case Descending:
-			for i, c := range changes {
-				if c.Version < version {
+			for i, c := range events {
+				if c.Index < index {
 					logger.Infof("Found version index %d", i)
-					index = i
+					found = i
 					break
 				}
 			}
 		}
-		if index == -1 {
-			changes = []*Change{}
+		if found == -1 {
+			events = []*Event{}
 		} else {
-			logger.Infof("Truncating from index %d", index)
-			changes = changes[index:]
+			logger.Infof("Truncating from index %d", found)
+			events = events[found:]
 		}
 	}
 
-	if limit > 0 && len(changes) > 0 {
-		changes = changes[0:min(limit, len(changes))]
+	if limit > 0 && len(events) > 0 {
+		events = events[0:min(limit, len(events))]
 	}
 
-	return NewChangeIterator(changes), nil
+	return NewEventIterator(events), nil
 }
