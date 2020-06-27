@@ -13,10 +13,14 @@ import (
 )
 
 func TestEdX25519KeySeed(t *testing.T) {
-	signKey := keys.GenerateEdX25519Key()
-	seed := signKey.Seed()
-	signKeyOut := keys.NewEdX25519KeyFromSeed(seed)
-	require.Equal(t, signKey.PrivateKey(), signKeyOut.PrivateKey())
+	sk := keys.GenerateEdX25519Key()
+	seed := sk.Seed()
+	skOut := keys.NewEdX25519KeyFromSeed(seed)
+	require.Equal(t, sk.PrivateKey(), skOut.PrivateKey())
+	require.True(t, sk.Equal(skOut))
+
+	sk2 := keys.NewEdX25519KeyFromSeed(keys.Rand32())
+	require.False(t, sk.Equal(sk2))
 }
 
 func TestEdX25519KeySignVerify(t *testing.T) {

@@ -43,41 +43,50 @@ func TestMemEventLog(t *testing.T) {
 	// Events (limit=10, asc)
 	iter, err := eds.Events(ctx, path, 0, 10, ds.Ascending)
 	require.NoError(t, err)
-	events, index, err := ds.EventsFromIterator(iter, 0)
-	require.NoError(t, err)
-	iter.Release()
-	require.Equal(t, 10, len(events))
 	eventsValues := []string{}
-	for i, event := range events {
+	index := int64(0)
+	for i := 0; ; i++ {
+		event, err := iter.Next()
+		require.NoError(t, err)
+		if event == nil {
+			break
+		}
 		require.False(t, event.Timestamp.IsZero())
 		require.Equal(t, int64(i+1), event.Index)
 		eventsValues = append(eventsValues, string(event.Data))
+		index = event.Index
 	}
+	iter.Release()
+	require.Equal(t, 10, len(eventsValues))
 	require.Equal(t, strs[0:10], eventsValues)
 
 	// Events (index, asc)
 	iter, err = eds.Events(ctx, path, index, 10, ds.Ascending)
 	require.NoError(t, err)
-	events, index, err = ds.EventsFromIterator(iter, index)
-	require.NoError(t, err)
+	eventsValues = []string{}
+	for i := 0; ; i++ {
+		event, err := iter.Next()
+		require.NoError(t, err)
+		if event == nil {
+			break
+		}
+		eventsValues = append(eventsValues, string(event.Data))
+		index = event.Index
+	}
 	iter.Release()
 	require.Equal(t, int64(20), index)
-	require.Equal(t, 10, len(events))
-	eventsValues = []string{}
-	for _, event := range events {
-		eventsValues = append(eventsValues, string(event.Data))
-	}
+	require.Equal(t, 10, len(eventsValues))
+
 	require.Equal(t, strs[10:20], eventsValues)
 
 	// Events (large index)
 	large := int64(1000000000)
 	iter, err = eds.Events(ctx, path, large, 100, ds.Ascending)
 	require.NoError(t, err)
-	events, index, err = ds.EventsFromIterator(iter, large)
+	event, err := iter.Next()
 	require.NoError(t, err)
+	require.Nil(t, event)
 	iter.Release()
-	require.Equal(t, 0, len(events))
-	require.Equal(t, large, index)
 
 	// Descending
 	revs := reverseCopy(strs)
@@ -85,29 +94,37 @@ func TestMemEventLog(t *testing.T) {
 	// Events (limit=10, desc)
 	iter, err = eds.Events(ctx, path, 0, 10, ds.Descending)
 	require.NoError(t, err)
-	events, index, err = ds.EventsFromIterator(iter, 0)
-	require.NoError(t, err)
-	iter.Release()
-	require.Equal(t, 10, len(events))
-	require.Equal(t, int64(31), index)
 	eventsValues = []string{}
-	for _, event := range events {
+	for i := 0; ; i++ {
+		event, err := iter.Next()
+		require.NoError(t, err)
+		if event == nil {
+			break
+		}
 		eventsValues = append(eventsValues, string(event.Data))
+		index = event.Index
 	}
+	iter.Release()
+	require.Equal(t, 10, len(eventsValues))
+	require.Equal(t, int64(31), index)
 	require.Equal(t, revs[0:10], eventsValues)
 
 	// Events (limit=5, index, desc)
 	iter, err = eds.Events(ctx, path, index, 5, ds.Descending)
 	require.NoError(t, err)
-	events, index, err = ds.EventsFromIterator(iter, index)
-	require.NoError(t, err)
-	iter.Release()
-	require.Equal(t, 5, len(events))
-	require.Equal(t, int64(26), index)
 	eventsValues = []string{}
-	for _, event := range events {
+	for i := 0; ; i++ {
+		event, err := iter.Next()
+		require.NoError(t, err)
+		if event == nil {
+			break
+		}
 		eventsValues = append(eventsValues, string(event.Data))
+		index = event.Index
 	}
+	iter.Release()
+	require.Equal(t, 5, len(eventsValues))
+	require.Equal(t, int64(26), index)
 	require.Equal(t, revs[10:15], eventsValues)
 }
 

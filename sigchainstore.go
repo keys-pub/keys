@@ -60,7 +60,7 @@ func (s sigchainStore) SetTimeNow(nowFn func() time.Time) {
 }
 
 func (s sigchainStore) KIDs() ([]ID, error) {
-	iter, err := s.dst.Documents(context.TODO(), "sigchain", ds.NoData())
+	iter, err := s.dst.DocumentIterator(context.TODO(), "sigchain", ds.NoData())
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func statementFromDocument(doc *ds.Document) (*Statement, error) {
 
 func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 	logger.Debugf("Loading sigchain %s", kid)
-	iter, err := s.dst.Documents(context.TODO(), "sigchain", ds.Prefix(kid.String()))
+	iter, err := s.dst.DocumentIterator(context.TODO(), "sigchain", ds.Prefix(kid.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 }
 
 func (s sigchainStore) sigchainPaths(kid ID) ([]string, error) {
-	iter, err := s.dst.Documents(context.TODO(), "sigchain", ds.Prefix(kid.String()), ds.NoData())
+	iter, err := s.dst.DocumentIterator(context.TODO(), "sigchain", ds.Prefix(kid.String()), ds.NoData())
 	if err != nil {
 		return nil, err
 	}

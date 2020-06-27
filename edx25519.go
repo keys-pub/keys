@@ -3,6 +3,7 @@ package keys
 import (
 	"crypto"
 	"crypto/ed25519"
+	"crypto/subtle"
 
 	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
@@ -106,6 +107,11 @@ func (k *EdX25519Key) UnmarshalText(s []byte) error {
 		return err
 	}
 	return nil
+}
+
+// Equal returns true if equal to key.
+func (k *EdX25519Key) Equal(o *EdX25519Key) bool {
+	return subtle.ConstantTimeCompare(k.Bytes(), o.Bytes()) == 1
 }
 
 // NewEdX25519PublicKey creates a EdX25519PublicKey.

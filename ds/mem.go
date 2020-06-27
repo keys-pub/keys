@@ -126,7 +126,7 @@ func (m *Mem) document(path string) *Document {
 }
 
 // Collections ...
-func (m *Mem) Collections(ctx context.Context, parent string) (CollectionIterator, error) {
+func (m *Mem) Collections(ctx context.Context, parent string) ([]*Collection, error) {
 	if Path(parent) != "/" {
 		// TODO: Support nested collections
 		return nil, errors.Errorf("only root collections supported")
@@ -143,16 +143,25 @@ func (m *Mem) Collections(ctx context.Context, parent string) (CollectionIterato
 			count[col] = colv + 1
 		}
 	}
-	return NewCollectionIterator(collections), nil
+	return collections, nil
 }
 
-// Documents ...
-func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error) {
+// DocumentIterator ...
+func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error) {
 	docs, err := m.list(ctx, parent, opt...)
 	if err != nil {
 		return nil, err
 	}
 	return NewDocumentIterator(docs...), nil
+}
+
+// Documents ...
+func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
+	docs, err := m.list(ctx, parent, opt...)
+	if err != nil {
+		return nil, err
+	}
+	return docs, nil
 }
 
 func (m *Mem) list(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
