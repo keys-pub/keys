@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -42,8 +43,14 @@ func client() *http.Client {
 		Transport: transport,
 		// Important not to follow redirects.
 		// Twitter may redirect invalid urls with a valid status.
-		// TODO: Write an explicit test for this.
+		// We do allow a redirect if it's just a case change.
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) == 1 {
+				if strings.ToLower(req.URL.String()) == strings.ToLower(via[0].URL.String()) {
+					return nil
+				}
+			}
+
 			return http.ErrUseLastResponse
 		},
 	}
