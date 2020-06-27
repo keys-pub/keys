@@ -53,7 +53,7 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 		require.NoError(t, err)
 	}
 
-	iter, err := dst.Documents(ctx, "test0")
+	iter, err := dst.DocumentIterator(ctx, "test0")
 	require.NoError(t, err)
 	doc, err := iter.Next()
 	require.NoError(t, err)
@@ -102,14 +102,14 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 /test0/key30 value30
 `
 	var b bytes.Buffer
-	iter, err = dst.Documents(context.TODO(), "test0")
+	iter, err = dst.DocumentIterator(context.TODO(), "test0")
 	require.NoError(t, err)
 	err = ds.SpewOut(iter, &b)
 	require.NoError(t, err)
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
-	iter, err = dst.Documents(context.TODO(), "test0")
+	iter, err = dst.DocumentIterator(context.TODO(), "test0")
 	require.NoError(t, err)
 	spew, err := ds.Spew(iter)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 	require.Equal(t, expected, spew.String())
 	iter.Release()
 
-	iter, err = dst.Documents(context.TODO(), "test0", ds.Prefix("key1"), ds.NoData())
+	iter, err = dst.DocumentIterator(context.TODO(), "test0", ds.Prefix("key1"), ds.NoData())
 	require.NoError(t, err)
 	doc, err = iter.Next()
 	require.NoError(t, err)
@@ -132,18 +132,10 @@ func testDocumentStore(t *testing.T, dst ds.DocumentStore) {
 	err = dst.Set(ctx, "", []byte{})
 	require.EqualError(t, err, "invalid path")
 
-	citer, err := dst.Collections(ctx, "")
+	cols, err := dst.Collections(ctx, "")
 	require.NoError(t, err)
-	col, err := citer.Next()
-	require.NoError(t, err)
-	require.Equal(t, "/test0", col.Path)
-	col, err = citer.Next()
-	require.NoError(t, err)
-	require.Equal(t, "/test1", col.Path)
-	col, err = citer.Next()
-	require.NoError(t, err)
-	require.Nil(t, col)
-	citer.Release()
+	require.Equal(t, "/test0", cols[0].Path)
+	require.Equal(t, "/test1", cols[1].Path)
 
 	_, err = dst.Collections(ctx, "/test0")
 	require.EqualError(t, err, "only root collections supported")
@@ -176,17 +168,9 @@ func TestDocumentStorePath(t *testing.T) {
 	require.NotNil(t, doc)
 	require.Equal(t, []byte("value3"), doc.Data)
 
-	citer, err := dst.Collections(ctx, "")
-	require.NoError(t, err)
-	cols, err := ds.CollectionsFromIterator(citer)
+	cols, err := dst.Collections(ctx, "")
 	require.NoError(t, err)
 	require.Equal(t, "/test", cols[0].Path)
-
-	// citer, err = dst.Collections(ctx, "/test/key2")
-	// require.NoError(t, err)
-	// cols, err = ds.CollectionsFromIterator(citer)
-	// require.NoError(t, err)
-	// require.Equal(t, "/test/key2/col2", cols[0].Path)
 }
 
 func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
@@ -220,7 +204,7 @@ func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
 		require.NoError(t, err)
 	}
 
-	iter, err := dst.Documents(ctx, "test")
+	iter, err := dst.DocumentIterator(ctx, "test")
 	require.NoError(t, err)
 	paths := []string{}
 	for {
@@ -234,7 +218,7 @@ func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
 	require.Equal(t, []string{"/test/1", "/test/2", "/test/3"}, paths)
 	iter.Release()
 
-	iter, err = dst.Documents(context.TODO(), "test")
+	iter, err = dst.DocumentIterator(context.TODO(), "test")
 	require.NoError(t, err)
 	b, err := ds.Spew(iter)
 	require.NoError(t, err)
@@ -245,7 +229,7 @@ func testDocumentStoreListOptions(t *testing.T, dst ds.DocumentStore) {
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
-	iter, err = dst.Documents(ctx, "b", ds.Prefix("eb"))
+	iter, err = dst.DocumentIterator(ctx, "b", ds.Prefix("eb"))
 	require.NoError(t, err)
 	paths = []string{}
 	for {

@@ -48,11 +48,14 @@ type DocumentStore interface {
 	// If a path is not found, it is ignored.
 	DeleteAll(ctx context.Context, paths []string) error
 
-	// Documents iterator.
-	Documents(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error)
+	// DocumentIterator.
+	DocumentIterator(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error)
+
+	// Documents ...
+	Documents(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error)
 
 	// Collections are parents of Documents.
-	Collections(ctx context.Context, parent string) (CollectionIterator, error)
+	Collections(ctx context.Context, parent string) ([]*Collection, error)
 }
 
 // ErrPathExists is trying to set value that already exists.

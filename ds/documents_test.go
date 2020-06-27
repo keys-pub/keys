@@ -15,7 +15,7 @@ func ExampleDocumentStore_Documents() {
 		log.Fatal(err)
 	}
 
-	iter, err := d.Documents(context.TODO(), ds.Path("tests"), ds.NoData())
+	iter, err := d.DocumentIterator(context.TODO(), ds.Path("tests"), ds.NoData())
 	if err != nil {
 		log.Fatal(err)
 	}

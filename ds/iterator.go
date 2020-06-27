@@ -62,38 +62,6 @@ func (i *colsIterator) Release() {
 	i.cols = nil
 }
 
-// CollectionsFromIterator returns Collection's from CollectionIterator.
-func CollectionsFromIterator(iter CollectionIterator) ([]*Collection, error) {
-	cols := []*Collection{}
-	for {
-		col, err := iter.Next()
-		if err != nil {
-			return nil, err
-		}
-		if col == nil {
-			break
-		}
-		cols = append(cols, col)
-	}
-	return cols, nil
-}
-
-// DocumentsFromIterator returns Document's from DocumentIterator.
-func DocumentsFromIterator(iter DocumentIterator) ([]*Document, error) {
-	docs := []*Document{}
-	for {
-		doc, err := iter.Next()
-		if err != nil {
-			return nil, err
-		}
-		if doc == nil {
-			break
-		}
-		docs = append(docs, doc)
-	}
-	return docs, nil
-}
-
 // EventIterator is an iterator for Event's.
 type EventIterator interface {
 	// Next document, or nil.
@@ -123,24 +91,4 @@ func (i *eventsIterator) Next() (*Event, error) {
 
 func (i *eventsIterator) Release() {
 	i.events = nil
-}
-
-// EventsFromIterator returns Event's from EventIterator.
-func EventsFromIterator(iter EventIterator, from int64) ([]*Event, int64, error) {
-	events := []*Event{}
-	for {
-		event, err := iter.Next()
-		if err != nil {
-			return nil, 0, err
-		}
-		if event == nil {
-			break
-		}
-		events = append(events, event)
-	}
-	to := from
-	if len(events) > 0 {
-		to = events[len(events)-1].Index
-	}
-	return events, to, nil
 }

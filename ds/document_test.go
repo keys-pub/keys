@@ -30,17 +30,22 @@ func TestDocument(t *testing.T) {
 	}
 	sort.Strings(paths)
 
-	iter, err := db.Documents(ctx, "test")
+	iter, err := db.DocumentIterator(ctx, "test")
 	require.NoError(t, err)
-	out, err := ds.DocumentsFromIterator(iter)
+	out1, err := iter.Next()
 	require.NoError(t, err)
-	require.Equal(t, 4, len(out))
-	require.Equal(t, "/test/0", out[0].Path)
-	require.Equal(t, []byte("value0"), out[0].Data)
-	require.Equal(t, int64(1234567890001), tsutil.Millis(out[0].CreatedAt))
+	require.Equal(t, "/test/0", out1.Path)
+	require.Equal(t, []byte("value0"), out1.Data)
+	require.Equal(t, int64(1234567890001), tsutil.Millis(out1.CreatedAt))
 
-	pathsOut := ds.DocumentPaths(out)
-	require.Equal(t, paths, pathsOut)
+	out2, err := iter.Next()
+	require.NoError(t, err)
+	out3, err := iter.Next()
+	require.NoError(t, err)
+	out4, err := iter.Next()
+	require.NoError(t, err)
+
+	require.Equal(t, paths, []string{out1.Path, out2.Path, out3.Path, out4.Path})
 
 	doc := ds.NewDocument("test/6", []byte("value6"))
 	require.Equal(t, "/test/6", doc.Path)
