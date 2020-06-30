@@ -65,7 +65,7 @@ func (k *mem) Delete(id string) (bool, error) {
 	return false, nil
 }
 
-func (k *mem) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+func (k *mem) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 	opts := ds.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 	docs := make([]*ds.Document, 0, len(k.items))
@@ -81,5 +81,5 @@ func (k *mem) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) 
 	sort.Slice(docs, func(i, j int) bool {
 		return docs[i].Path < docs[j].Path
 	})
-	return ds.NewDocumentIterator(docs...), nil
+	return docs, nil
 }

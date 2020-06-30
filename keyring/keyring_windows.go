@@ -86,7 +86,7 @@ func (k sys) Exists(id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+func (k sys) Documents(opt ...ds.DocumentsOption) ([](ds.Document, error) {
 	opts := ds.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 
@@ -118,7 +118,7 @@ func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 	sort.Slice(docs, func(i, j int) bool {
 		return docs[i].Path < docs[j].Path
 	})
-	return ds.NewDocumentIterator(docs...), nil
+	return docs, nil
 }
 
 func (k sys) Reset() error {

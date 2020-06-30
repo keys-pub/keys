@@ -33,50 +33,20 @@ type Keyring interface {
 	// Reset removes all data.
 	Reset() error
 
-	Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error)
+	Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error)
 }
 
 // Paths from Keyring.
 func Paths(kr Keyring, prefix string) ([]string, error) {
-	iter, err := kr.Documents(ds.Prefix(prefix), ds.NoData())
+	docs, err := kr.Documents(ds.Prefix(prefix), ds.NoData())
 	if err != nil {
 		return nil, err
 	}
-	defer iter.Release()
 	paths := []string{}
-	for {
-		doc, err := iter.Next()
-		if err != nil {
-			return nil, err
-		}
-		if doc == nil {
-			break
-		}
+	for _, doc := range docs {
 		paths = append(paths, doc.Path)
 	}
 	return paths, nil
-}
-
-// Documents from Keyring.
-func Documents(kr Keyring, prefix string) ([]*ds.Document, error) {
-	iter, err := kr.Documents(ds.Prefix(prefix))
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Release()
-	docs := []*ds.Document{}
-	for {
-		doc, err := iter.Next()
-		if err != nil {
-			return nil, err
-		}
-		if doc == nil {
-			break
-		}
-
-		docs = append(docs, &ds.Document{Path: doc.Path, Data: copyBytes(doc.Data)})
-	}
-	return docs, nil
 }
 
 var _ = reset

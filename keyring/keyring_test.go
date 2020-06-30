@@ -29,73 +29,73 @@ func TestKeyring(t *testing.T) {
 	testKeyring(t, sys)
 }
 
-func testKeyring(t *testing.T, st keyring.Keyring) {
-	paths, err := keyring.Paths(st, "")
+func testKeyring(t *testing.T, kr keyring.Keyring) {
+	paths, err := keyring.Paths(kr, "")
 	require.NoError(t, err)
 	require.Equal(t, 0, len(paths))
 
-	exists, err := st.Exists("key1")
+	exists, err := kr.Exists("key1")
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	data, err := st.Get("key1")
+	data, err := kr.Get("key1")
 	require.NoError(t, err)
 	require.Nil(t, data)
 
-	err = st.Set("key1", []byte("val1"))
+	err = kr.Set("key1", []byte("val1"))
 	require.NoError(t, err)
 
-	out, err := st.Get("key1")
+	out, err := kr.Get("key1")
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	require.Equal(t, []byte("val1"), out)
 
-	exists, err = st.Exists("key1")
+	exists, err = kr.Exists("key1")
 	require.NoError(t, err)
 	require.True(t, exists)
 
-	err = st.Set("key1", []byte("val1.new"))
+	err = kr.Set("key1", []byte("val1.new"))
 	require.NoError(t, err)
 
-	out, err = st.Get("key1")
+	out, err = kr.Get("key1")
 	require.NoError(t, err)
 	require.Equal(t, []byte("val1.new"), out)
 
-	docs, err := keyring.Documents(st, "")
+	docs, err := kr.Documents()
 	require.NoError(t, err)
 	require.Equal(t, 1, len(docs))
 	require.Equal(t, []byte("val1.new"), docs[0].Data)
 
-	paths, err = keyring.Paths(st, "")
+	paths, err = keyring.Paths(kr, "")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(paths))
 	require.Equal(t, paths[0], "key1")
 
-	ok, err := st.Delete("key1")
+	ok, err := kr.Delete("key1")
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	out, err = st.Get("key1")
+	out, err = kr.Get("key1")
 	require.NoError(t, err)
 	require.Nil(t, out)
 
-	exists, err = st.Exists("key1")
+	exists, err = kr.Exists("key1")
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	ok, err = st.Delete("key1")
+	ok, err = kr.Delete("key1")
 	require.NoError(t, err)
 	require.False(t, ok)
 
-	docs, err = keyring.Documents(st, "")
+	docs, err = kr.Documents()
 	require.NoError(t, err)
 	require.Equal(t, 0, len(docs))
 
 	// Test paths
-	err = st.Set("/collection/key1", []byte("val1"))
+	err = kr.Set("/collection/key1", []byte("val1"))
 	require.NoError(t, err)
 
-	out, err = st.Get("/collection/key1")
+	out, err = kr.Get("/collection/key1")
 	require.NoError(t, err)
 	require.NotNil(t, out)
 	require.Equal(t, []byte("val1"), out)
@@ -111,15 +111,15 @@ func TestReset(t *testing.T) {
 	testReset(t, sys)
 }
 
-func testReset(t *testing.T, st keyring.Keyring) {
+func testReset(t *testing.T, kr keyring.Keyring) {
 	var err error
-	err = st.Set("key1", []byte("password"))
+	err = kr.Set("key1", []byte("password"))
 	require.NoError(t, err)
 
-	err = st.Reset()
+	err = kr.Reset()
 	require.NoError(t, err)
 
-	out, err := st.Get("key1")
+	out, err := kr.Get("key1")
 	require.NoError(t, err)
 	require.Nil(t, out)
 }
@@ -134,49 +134,33 @@ func TestDocuments(t *testing.T) {
 	testDocuments(t, sys)
 }
 
-func testDocuments(t *testing.T, st keyring.Keyring) {
+func testDocuments(t *testing.T, kr keyring.Keyring) {
 	var err error
 
 	// TODO: Implement index/limit options
 
-	err = st.Set("akey1", []byte("aval1"))
+	err = kr.Set("akey1", []byte("aval1"))
 	require.NoError(t, err)
-	err = st.Set("akey2", []byte("aval2"))
+	err = kr.Set("akey2", []byte("aval2"))
 	require.NoError(t, err)
-	err = st.Set("bkey1", []byte("bval1"))
+	err = kr.Set("bkey1", []byte("bval1"))
 	require.NoError(t, err)
 
-	docs := testDocumentsFromIterator(t, st, ds.NoData())
+	docs, err := kr.Documents(ds.NoData())
+	require.NoError(t, err)
 	require.Equal(t, 3, len(docs))
 	require.Equal(t, "akey1", docs[0].Path)
 	require.Nil(t, docs[0].Data)
 
-	docs = testDocumentsFromIterator(t, st)
+	docs, err = kr.Documents()
+	require.NoError(t, err)
 	require.Equal(t, 3, len(docs))
 	require.Equal(t, "akey1", docs[0].Path)
 	require.Equal(t, []byte("aval1"), docs[0].Data)
 
-	docs = testDocumentsFromIterator(t, st, ds.Prefix("b"))
+	docs, err = kr.Documents(ds.Prefix("b"))
+	require.NoError(t, err)
 	require.Equal(t, 1, len(docs))
 	require.Equal(t, "bkey1", docs[0].Path)
 	require.Equal(t, []byte("bval1"), docs[0].Data)
-}
-
-func testDocumentsFromIterator(t *testing.T, st keyring.Keyring, opt ...ds.DocumentsOption) []*ds.Document {
-	iter, err := st.Documents(opt...)
-	require.NoError(t, err)
-	defer iter.Release()
-	docs := []*ds.Document{}
-	for {
-		doc, err := iter.Next()
-		if err != nil {
-			require.NoError(t, err)
-		}
-		if doc == nil {
-			break
-		}
-		docs = append(docs, doc)
-	}
-	return docs
-
 }
