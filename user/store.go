@@ -121,10 +121,10 @@ func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 		return nil, err
 	}
 	if result == nil {
-		result = &Result{
-			User: usr,
-		}
+		result = &Result{}
 	}
+	// Update result user (in case user changed)
+	result.User = usr
 
 	if usr.KID != sc.KID() {
 		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())

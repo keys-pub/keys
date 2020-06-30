@@ -69,7 +69,6 @@ func TestNewUserMarshal(t *testing.T) {
 }
 
 func TestResultGithub(t *testing.T) {
-	// SetLogger(NewLogger(DebugLevel))
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewClock()
@@ -442,5 +441,65 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 
 	result, err := ust.Update(context.TODO(), kid)
 	require.NoError(t, err)
+	require.Equal(t, user.StatusOK, result.Status)
+}
+
+func TestSigchainRevokeUpdate(t *testing.T) {
+	// user.SetLogger(user.NewLogger(user.DebugLevel))
+	clock := tsutil.NewClock()
+	dst := ds.NewMem()
+	scs := keys.NewSigchainStore(dst)
+	req := request.NewMockRequestor()
+	ust := testStore(t, dst, scs, req, clock)
+
+	sk := keys.GenerateEdX25519Key()
+	kid := sk.ID()
+	sc := keys.NewSigchain(kid)
+
+	// Update
+	usr, err := user.NewForSigning(kid, "twitter", "gabriel")
+	require.NoError(t, err)
+	msg, err := usr.Sign(sk)
+	require.NoError(t, err)
+
+	stu, err := user.New(kid, "twitter", "gabriel", "https://mobile.twitter.com/gabriel/status/1", 1)
+	require.NoError(t, err)
+	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st)
+	require.NoError(t, err)
+
+	req.SetResponse("https://mobile.twitter.com/gabriel/status/1", []byte(msg))
+
+	err = scs.SaveSigchain(sc)
+	require.NoError(t, err)
+
+	result, err := ust.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, user.StatusOK, result.Status)
+
+	// Revoke
+	_, err = sc.Revoke(1, sk)
+	require.NoError(t, err)
+	err = scs.SaveSigchain(sc)
+	require.NoError(t, err)
+	// Don't update here to test revoke + new statement updates correctly
+
+	// Update #2
+	stu2, err := user.New(kid, "twitter", "gabriel", "https://mobile.twitter.com/gabriel/status/2", 3)
+	require.NoError(t, err)
+	st2, err := user.NewSigchainStatement(sc, stu2, sk, clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st2)
+	require.NoError(t, err)
+
+	req.SetResponse("https://mobile.twitter.com/gabriel/status/2", []byte(msg))
+
+	err = scs.SaveSigchain(sc)
+	require.NoError(t, err)
+
+	result, err = ust.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
 }
