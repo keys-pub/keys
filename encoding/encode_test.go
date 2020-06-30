@@ -77,3 +77,18 @@ func TestEncodeBase64(t *testing.T) {
 	_, err = encoding.Encode(b, encoding.Base64, encoding.NoPadding(), encoding.Lowercase())
 	require.EqualError(t, err, "invalid option: lowercase")
 }
+
+func TestMustEncodeDecode(t *testing.T) {
+	in := bytes.Repeat([]byte{0x01}, 32)
+	out := encoding.DecodeBase32(encoding.EncodeBase32(in))
+	require.Equal(t, in, out)
+
+	out = encoding.DecodeBase62(encoding.EncodeBase62(in))
+	require.Equal(t, in, out)
+
+	out = encoding.DecodeBase64(encoding.EncodeBase64(in))
+	require.Equal(t, in, out)
+
+	out = encoding.DecodeHex(encoding.EncodeHex(in))
+	require.Equal(t, in, out)
+}

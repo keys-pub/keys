@@ -157,17 +157,42 @@ func MustDecode(s string, encoding Encoding) []byte {
 	return b
 }
 
-// MustBase32 encode base32.
-func MustBase32(b []byte) string {
+// DecodeHex decode base16 (hex).
+func DecodeHex(s string) []byte {
+	return MustDecode(s, Hex)
+}
+
+// EncodeHex encode base16 (hex).
+func EncodeHex(b []byte) string {
+	return MustEncode(b, Hex)
+}
+
+// DecodeBase32 decode base32.
+func DecodeBase32(s string) []byte {
+	return MustDecode(s, Base32)
+}
+
+// EncodeBase32 encode base32.
+func EncodeBase32(b []byte) string {
 	return MustEncode(b, Base32)
 }
 
-// MustBase62 encode base62.
-func MustBase62(b []byte) string {
+// DecodeBase62 decode base62.
+func DecodeBase62(s string) []byte {
+	return MustDecode(s, Base62)
+}
+
+// EncodeBase62 encode base62.
+func EncodeBase62(b []byte) string {
 	return MustEncode(b, Base62)
 }
 
-// MustBase64 encode base64.
-func MustBase64(b []byte) string {
+// DecodeBase64 decode base64.
+func DecodeBase64(s string) []byte {
+	return MustDecode(s, Base64)
+}
+
+// EncodeBase64 encode base64.
+func EncodeBase64(b []byte) string {
 	return MustEncode(b, Base64)
 }
