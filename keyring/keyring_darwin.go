@@ -99,7 +99,7 @@ func (k sys) Reset() error {
 	return reset(k)
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 	opts := ds.NewDocumentsOptions(opt...)
 
 	query := keychain.NewItem()
@@ -116,7 +116,7 @@ func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 	if err != nil {
 		return nil, err
 	} else if len(results) == 0 {
-		return ds.NewDocumentIterator(), nil
+		return []*ds.Document{}, nil
 	}
 
 	docs := make([]*ds.Document, 0, len(results))
@@ -139,7 +139,7 @@ func (k sys) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 	sort.Slice(docs, func(i, j int) bool {
 		return docs[i].Path < docs[j].Path
 	})
-	return ds.NewDocumentIterator(docs...), nil
+	return docs, nil
 }
 
 func newPasswordItem(service string, id string, data []byte, desc string) keychain.Item {

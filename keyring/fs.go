@@ -108,7 +108,7 @@ func pathExists(id string) (bool, error) {
 	}
 }
 
-func (k fs) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
+func (k fs) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 	opts := ds.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 
@@ -117,7 +117,7 @@ func (k fs) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 		return nil, err
 	}
 	if !exists {
-		return ds.NewDocumentIterator(), nil
+		return []*ds.Document{}, nil
 	}
 
 	files, err := ioutil.ReadDir(k.dir)
@@ -145,5 +145,5 @@ func (k fs) Documents(opt ...ds.DocumentsOption) (ds.DocumentIterator, error) {
 	// 	return docs[i].Path < docs[j].Path
 	// })
 
-	return ds.NewDocumentIterator(docs...), nil
+	return docs, nil
 }
