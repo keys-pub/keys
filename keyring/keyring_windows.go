@@ -86,7 +86,7 @@ func (k sys) Exists(id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) ([](ds.Document, error) {
+func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 	opts := ds.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 
@@ -104,7 +104,6 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([](ds.Document, error) {
 			}
 			doc := &ds.Document{Path: id}
 			if !opts.NoData {
-				// TODO: Iterator
 				b, err := k.Get(id)
 				if err != nil {
 					return nil, err

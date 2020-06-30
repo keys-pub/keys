@@ -63,9 +63,3 @@ func reset(kr Keyring) error {
 	}
 	return nil
 }
-
-func copyBytes(source []byte) []byte {
-	dest := make([]byte, len(source))
-	copy(dest, source)
-	return dest
-}
