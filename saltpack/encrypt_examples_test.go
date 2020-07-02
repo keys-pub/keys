@@ -36,12 +36,12 @@ func ExampleDecryptArmored() {
 	END SALTPACK ENCRYPTED MESSAGE.
 	`
 
-	// bobID := keys.ID("kbx18x22l7nemmxcj76f9l3aaflc5487lp5u5q778gpe3t3wzhlqvu8qxa9z07")
+	// Bob is keys.ID("kbx18x22l7nemmxcj76f9l3aaflc5487lp5u5q778gpe3t3wzhlqvu8qxa9z07")
 	key := `BEGIN X25519 KEY MESSAGE.
 	umCRo9iHIudLWoz 4Ugt0hUXQVJ7lhV p7A9mb3kOTg6PeV fhqetAc9ZOUjagi
 	91gENEkp0xfjF2E Tyakwe90kzo1FNT gRacWRL5B59strN OoZYHQooqvlMKM.
 	END X25519 KEY MESSAGE.`
-	bob, err := keys.DecodeKeyFromSaltpack(key, "", true)
+	bob, err := keys.DecodeSaltpackKey(key, "", true)
 	if err != nil {
 		log.Fatal(err)
 	}
