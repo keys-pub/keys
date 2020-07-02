@@ -1,25 +1,25 @@
 package keys
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 // ParseKey tries to determine what key type and parses the key bytes.
 func ParseKey(b []byte, password string) (Key, error) {
-	b, typ := DetectDataType(b)
-	logger.Debugf("Data type: %s", typ)
+	b, typ := DetectEncoding(b)
+	logger.Debugf("Encoding: %s", typ)
 	switch typ {
-	case IDType:
+	case IDEncoding:
 		logger.Debugf("Parsing ID: %s", string(b))
 		id, err := ParseID(string(b))
 		if err != nil {
 			return nil, err
 		}
 		return id, nil
-	case SaltpackArmoredType:
-		return DecodeKeyFromSaltpack(string(b), password, false)
-	case SSHPublicType:
-		return ParseSSHPublicKey(string(b))
-	case SSHType:
-		return ParseSSHKey(b, []byte(password), true)
+	case SaltpackEncoding:
+		return DecodeKey(string(b), SaltpackEncoding, password)
+	case SSHEncoding:
+		return DecodeKey(string(b), SSHEncoding, password)
 	default:
 		return nil, errors.Errorf("unknown key format")
 	}
