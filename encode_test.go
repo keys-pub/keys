@@ -42,7 +42,7 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	require.Equal(t, sk.Bytes(), out.Bytes())
 
 	// Saltpack (public)
-	msg, err = keys.EncodeKey(sk.PublicKey(), keys.SaltpackEncoding, "")
+	_, err = keys.EncodeKey(sk.PublicKey(), keys.SaltpackEncoding, "")
 	require.EqualError(t, err, "failed to encode to saltpack: unsupported key ed25519-public")
 
 	// SSH (public)
