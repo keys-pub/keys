@@ -86,8 +86,8 @@ func (k sys) Exists(id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
-	opts := docs.NewDocumentsOptions(opt...)
+func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
+	opts := docs.NewOptions(opt...)
 	prefix := opts.Prefix
 
 	creds, err := wincred.List()
@@ -95,14 +95,14 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 		return nil, err
 	}
 
-	docs := make([]*ds.Document, 0, len(creds))
+	docs := make([]*docs.Document, 0, len(creds))
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, k.service+"/") {
 			id := cred.TargetName[len(k.service+"/"):]
 			if prefix != "" && !strings.HasPrefix(id, prefix) {
 				continue
 			}
-			doc := &ds.Document{Path: id}
+			doc := &docs.Document{Path: id}
 			if !opts.NoData {
 				b, err := k.Get(id)
 				if err != nil {
