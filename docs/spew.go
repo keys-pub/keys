@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -28,16 +29,20 @@ func SpewOut(iter Iterator, out io.Writer) error {
 		if doc == nil {
 			break
 		}
-		key := doc.Path
-		value := spew.Sdump(doc.Data)
-		if _, err := out.Write([]byte(fmt.Sprintf("%s\n", key))); err != nil {
-			return err
-		}
-		if _, err := out.Write([]byte(fmt.Sprintf("%s", value))); err != nil {
-			return err
-		}
-		if _, err := out.Write([]byte("\n")); err != nil {
-			return err
+		if !utf8.Valid(doc.Data) {
+			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", doc.Path))); err != nil {
+				return err
+			}
+			if _, err := out.Write([]byte(fmt.Sprintf("%s", spew.Sdump(doc.Data)))); err != nil {
+				return err
+			}
+		} else {
+			if _, err := out.Write([]byte(fmt.Sprintf("%s ", doc.Path))); err != nil {
+				return err
+			}
+			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", doc.Data))); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
