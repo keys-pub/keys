@@ -97,7 +97,7 @@ func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
 		return nil, err
 	}
 
-	docs := make([]*docs.Document, 0, len(ids))
+	out := make([]*docs.Document, 0, len(ids))
 	for _, id := range ids {
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
 			continue
@@ -111,13 +111,13 @@ func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
 			}
 			doc.Data = b
 		}
-		docs = append(docs, doc)
+		out = append(out, doc)
 	}
 
-	sort.Slice(docs, func(i, j int) bool {
-		return docs[i].Path < docs[j].Path
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Path < out[j].Path
 	})
-	return docs, nil
+	return out, nil
 }
 
 func (k sys) Exists(id string) (bool, error) {
