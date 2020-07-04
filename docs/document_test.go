@@ -1,4 +1,4 @@
-package ds_test
+package docs_test
 
 import (
 	"context"
@@ -9,21 +9,21 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v4"
 )
 
 func TestDocument(t *testing.T) {
-	db := ds.NewMem()
+	db := docs.NewMem()
 	clock := tsutil.NewClock()
 	db.SetTimeNow(clock.Now)
 	ctx := context.TODO()
 
 	paths := []string{}
 	for i := 0; i < 4; i++ {
-		p := ds.Path("test", strconv.Itoa(i))
+		p := docs.Path("test", strconv.Itoa(i))
 		err := db.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 		paths = append(paths, p)
@@ -47,15 +47,15 @@ func TestDocument(t *testing.T) {
 
 	require.Equal(t, paths, []string{out1.Path, out2.Path, out3.Path, out4.Path})
 
-	doc := ds.NewDocument("test/6", []byte("value6"))
+	doc := docs.NewDocument("test/6", []byte("value6"))
 	require.Equal(t, "/test/6", doc.Path)
-	doc = ds.NewDocument("//test//6", []byte("value6"))
+	doc = docs.NewDocument("//test//6", []byte("value6"))
 	require.Equal(t, "/test/6", doc.Path)
 }
 
 func TestDocumentMarshal(t *testing.T) {
 	clock := tsutil.NewClock()
-	doc := ds.NewDocument("/test/key1", []byte("value"))
+	doc := docs.NewDocument("/test/key1", []byte("value"))
 	doc.CreatedAt = clock.Now()
 	doc.UpdatedAt = clock.Now()
 	out, err := msgpack.Marshal(doc)

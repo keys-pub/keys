@@ -2,7 +2,7 @@
 package keyring
 
 import (
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -33,12 +33,12 @@ type Keyring interface {
 	// Reset removes all data.
 	Reset() error
 
-	Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error)
+	Documents(opt ...docs.Option) ([]*docs.Document, error)
 }
 
 // Paths from Keyring.
 func Paths(kr Keyring, prefix string) ([]string, error) {
-	docs, err := kr.Documents(ds.Prefix(prefix), ds.NoData())
+	docs, err := kr.Documents(docs.Prefix(prefix), docs.NoData())
 	if err != nil {
 		return nil, err
 	}

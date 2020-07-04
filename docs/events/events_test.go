@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/keys-pub/keys/ds"
-	"github.com/keys-pub/keys/ds/events"
+	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/docs/events"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v4"
@@ -18,12 +18,12 @@ func TestEvents(t *testing.T) {
 	var err error
 
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
-	eds := ds.NewMem()
+	eds := docs.NewMem()
 	clock := tsutil.NewClock()
 	eds.SetTimeNow(clock.Now)
 
 	ctx := context.TODO()
-	path := ds.Path("test", "eds")
+	path := docs.Path("test", "eds")
 
 	length := 40
 	values := [][]byte{}
@@ -129,8 +129,9 @@ func TestEvents(t *testing.T) {
 	require.Equal(t, revs[10:15], eventsValues)
 
 	// Delete
-	err = eds.EventsDelete(ctx, path)
+	ok, err := eds.EventsDelete(ctx, path)
 	require.NoError(t, err)
+	require.True(t, ok)
 
 	iter, err = eds.Events(ctx, path)
 	require.NoError(t, err)
@@ -139,8 +140,9 @@ func TestEvents(t *testing.T) {
 	require.Nil(t, event)
 	iter.Release()
 
-	err = eds.EventsDelete(ctx, path)
-	require.EqualError(t, err, "not found /test/eds")
+	ok, err = eds.EventsDelete(ctx, path)
+	require.NoError(t, err)
+	require.False(t, ok)
 }
 
 func reverseCopy(s []string) []string {

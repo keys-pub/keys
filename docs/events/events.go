@@ -28,7 +28,7 @@ type Events interface {
 	Events(ctx context.Context, path string, opt ...Option) (Iterator, error)
 
 	// EventsDelete deletes all events at path.
-	EventsDelete(ctx context.Context, path string) error
+	EventsDelete(ctx context.Context, path string) (bool, error)
 }
 
 // Direction is ascending or descending.

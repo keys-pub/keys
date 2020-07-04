@@ -1,4 +1,4 @@
-package ds
+package docs
 
 import (
 	"sort"
@@ -7,8 +7,8 @@ import (
 
 // StringSet is a set of strings.
 type StringSet struct {
-	keysMap map[string]bool
-	keys    []string
+	strsMap map[string]bool
+	strs    []string
 }
 
 // NewStringSet creates StringSet.
@@ -22,15 +22,15 @@ func NewStringSetWithCapacity(capacity int) *StringSet {
 }
 
 func newStringSet(capacity int, s ...string) *StringSet {
-	keysMap := make(map[string]bool, capacity)
-	keys := make([]string, 0, capacity)
+	strsMap := make(map[string]bool, capacity)
+	strs := make([]string, 0, capacity)
 	for _, v := range s {
-		keysMap[v] = true
-		keys = append(keys, v)
+		strsMap[v] = true
+		strs = append(strs, v)
 	}
 	return &StringSet{
-		keysMap: keysMap,
-		keys:    keys,
+		strsMap: strsMap,
+		strs:    strs,
 	}
 }
 
@@ -45,7 +45,7 @@ func NewStringSetSplit(s string, delim string) *StringSet {
 
 // Contains returns true if set contains string.
 func (s *StringSet) Contains(str string) bool {
-	return s.keysMap[str]
+	return s.strsMap[str]
 }
 
 // Add to set.
@@ -53,8 +53,8 @@ func (s *StringSet) Add(str string) {
 	if s.Contains(str) {
 		return
 	}
-	s.keysMap[str] = true
-	s.keys = append(s.keys, str)
+	s.strsMap[str] = true
+	s.strs = append(s.strs, str)
 }
 
 // AddAll to set.
@@ -66,32 +66,32 @@ func (s *StringSet) AddAll(strs []string) {
 
 // Remove from set.
 func (s *StringSet) Remove(str string) {
-	delete(s.keysMap, str)
-	keys := make([]string, 0, len(s.keys))
-	for _, k := range s.keys {
+	delete(s.strsMap, str)
+	keys := make([]string, 0, len(s.strs))
+	for _, k := range s.strs {
 		if k != str {
 			keys = append(keys, k)
 		}
 	}
-	s.keys = keys
+	s.strs = keys
 }
 
 // Size for set.
 func (s *StringSet) Size() int {
-	return len(s.keys)
+	return len(s.strs)
 }
 
 // Clear set.
 func (s *StringSet) Clear() {
-	s.keysMap = map[string]bool{}
-	s.keys = []string{}
+	s.strsMap = map[string]bool{}
+	s.strs = []string{}
 }
 
 // Strings returns strings in set.
 func (s *StringSet) Strings() []string {
-	// Copy to prevent caller changing s.keys
-	keys := make([]string, 0, len(s.keys))
-	keys = append(keys, s.keys...)
+	// Copy to prevent caller changing s.strs
+	keys := make([]string, 0, len(s.strs))
+	keys = append(keys, s.strs...)
 	return keys
 }
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	gokeyring "github.com/keys-pub/secretservice"
 	ss "github.com/keys-pub/secretservice/secret_service"
 	"github.com/pkg/errors"
@@ -85,7 +85,7 @@ func (k sys) Reset() error {
 }
 
 func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
-	opts := ds.NewDocumentsOptions(opt...)
+	opts := docs.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 
 	svc, err := ss.NewSecretService()

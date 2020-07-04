@@ -1,15 +1,15 @@
-package ds
+package docs
 
-// DocumentIterator is an iterator for Document's.
-type DocumentIterator interface {
+// Iterator is an iterator for Document's.
+type Iterator interface {
 	// Next document, or nil.
 	Next() (*Document, error)
 	// Release resources associated with the iterator.
 	Release()
 }
 
-// NewDocumentIterator returns an iterator for a Document slice.
-func NewDocumentIterator(docs ...*Document) DocumentIterator {
+// NewIterator returns an iterator for a Document slice.
+func NewIterator(docs ...*Document) Iterator {
 	return &docsIterator{docs: docs}
 }
 

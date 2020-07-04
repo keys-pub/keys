@@ -1,4 +1,4 @@
-package ds
+package docs
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/keys-pub/keys/ds/events"
+	"github.com/keys-pub/keys/docs/events"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
-var _ DocumentStore = &Mem{}
+var _ Documents = &Mem{}
 var _ events.Events = &Mem{}
 
 // Mem is an in memory DocumentStore implementation.
@@ -148,7 +148,7 @@ func (m *Mem) Collections(ctx context.Context, parent string) ([]*Collection, er
 }
 
 // DocumentIterator ...
-func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error) {
+func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...Option) (Iterator, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -156,11 +156,11 @@ func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...Docume
 	if err != nil {
 		return nil, err
 	}
-	return NewDocumentIterator(docs...), nil
+	return NewIterator(docs...), nil
 }
 
 // Documents ...
-func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
+func (m *Mem) Documents(ctx context.Context, parent string, opt ...Option) ([]*Document, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -171,8 +171,8 @@ func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOpti
 	return docs, nil
 }
 
-func (m *Mem) list(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
-	opts := NewDocumentsOptions(opt...)
+func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Document, error) {
+	opts := NewOptions(opt...)
 
 	path := Path(parent)
 	if path == "/" {
@@ -314,15 +314,15 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 }
 
 // EventsDelete removes events at path.
-func (m *Mem) EventsDelete(ctx context.Context, path string) error {
+func (m *Mem) EventsDelete(ctx context.Context, path string) (bool, error) {
 	ok, err := m.Delete(ctx, path)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !ok {
-		return errors.Errorf("not found %s", path)
+		return false, nil
 	}
-	return nil
+	return true, nil
 }
 
 func min(n1 int, n2 int) int {

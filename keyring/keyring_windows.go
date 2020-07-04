@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/danieljoos/wincred"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -87,7 +87,7 @@ func (k sys) Exists(id string) (bool, error) {
 }
 
 func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
-	opts := ds.NewDocumentsOptions(opt...)
+	opts := docs.NewDocumentsOptions(opt...)
 	prefix := opts.Prefix
 
 	creds, err := wincred.List()

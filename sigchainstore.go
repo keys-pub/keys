@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -33,18 +33,18 @@ type SigchainStore interface {
 }
 
 type sigchainStore struct {
-	dst   ds.DocumentStore
+	ds    docs.Documents
 	nowFn func() time.Time
 }
 
 // NewSigchainStore creates a SigchainStore from a DocumentStore.
-func NewSigchainStore(dst ds.DocumentStore) SigchainStore {
-	return newSigchainStore(dst)
+func NewSigchainStore(ds docs.Documents) SigchainStore {
+	return newSigchainStore(ds)
 }
 
-func newSigchainStore(dst ds.DocumentStore) *sigchainStore {
+func newSigchainStore(ds docs.Documents) *sigchainStore {
 	return &sigchainStore{
-		dst:   dst,
+		ds:    ds,
 		nowFn: time.Now,
 	}
 }
@@ -60,7 +60,7 @@ func (s sigchainStore) SetTimeNow(nowFn func() time.Time) {
 }
 
 func (s sigchainStore) KIDs() ([]ID, error) {
-	iter, err := s.dst.DocumentIterator(context.TODO(), "sigchain", ds.NoData())
+	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.NoData())
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (s sigchainStore) KIDs() ([]ID, error) {
 		if doc == nil {
 			break
 		}
-		pc := ds.PathLast(doc.Path)
+		pc := docs.PathLast(doc.Path)
 		str := strings.Split(pc, "-")[0]
 		id, err := ParseID(str)
 		if err != nil {
@@ -94,14 +94,14 @@ func (s sigchainStore) SaveSigchain(sc *Sigchain) error {
 		if err != nil {
 			return err
 		}
-		if err := s.dst.Set(context.TODO(), ds.Path("sigchain", st.Key()), b); err != nil {
+		if err := s.ds.Set(context.TODO(), docs.Path("sigchain", st.Key()), b); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func statementFromDocument(doc *ds.Document) (*Statement, error) {
+func statementFromDocument(doc *docs.Document) (*Statement, error) {
 	var st Statement
 	if err := json.Unmarshal(doc.Data, &st); err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func statementFromDocument(doc *ds.Document) (*Statement, error) {
 
 func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 	logger.Debugf("Loading sigchain %s", kid)
-	iter, err := s.dst.DocumentIterator(context.TODO(), "sigchain", ds.Prefix(kid.String()))
+	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.Prefix(kid.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 }
 
 func (s sigchainStore) sigchainPaths(kid ID) ([]string, error) {
-	iter, err := s.dst.DocumentIterator(context.TODO(), "sigchain", ds.Prefix(kid.String()), ds.NoData())
+	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.Prefix(kid.String()), docs.NoData())
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s sigchainStore) DeleteSigchain(kid ID) (bool, error) {
 	}
 
 	for _, path := range paths {
-		if _, err := s.dst.Delete(context.TODO(), path); err != nil {
+		if _, err := s.ds.Delete(context.TODO(), path); err != nil {
 			return false, err
 		}
 	}
@@ -178,5 +178,5 @@ func (s sigchainStore) DeleteSigchain(kid ID) (bool, error) {
 }
 
 func (s sigchainStore) SigchainExists(kid ID) (bool, error) {
-	return s.dst.Exists(context.TODO(), ds.Path("sigchain", StatementKey(kid, 1)))
+	return s.ds.Exists(context.TODO(), docs.Path("sigchain", StatementKey(kid, 1)))
 }
