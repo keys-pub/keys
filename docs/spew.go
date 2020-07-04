@@ -33,7 +33,7 @@ func SpewOut(iter Iterator, out io.Writer) error {
 			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", doc.Path))); err != nil {
 				return err
 			}
-			if _, err := out.Write([]byte(fmt.Sprintf("%s", spew.Sdump(doc.Data)))); err != nil {
+			if _, err := out.Write([]byte(spew.Sdump(doc.Data))); err != nil {
 				return err
 			}
 		} else {
