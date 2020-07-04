@@ -1,4 +1,4 @@
-package ds_test
+package events_test
 
 import (
 	"context"
@@ -8,12 +8,13 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/ds/events"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v4"
 )
 
-func TestMemEventLog(t *testing.T) {
+func TestEvents(t *testing.T) {
 	var err error
 
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
@@ -40,8 +41,8 @@ func TestMemEventLog(t *testing.T) {
 		require.Equal(t, int64(i+1), event.Index)
 	}
 
-	// Events (limit=10, asc)
-	iter, err := eds.Events(ctx, path, 0, 10, ds.Ascending)
+	// Events (limit=10)
+	iter, err := eds.Events(ctx, path, events.Limit(10))
 	require.NoError(t, err)
 	eventsValues := []string{}
 	index := int64(0)
@@ -60,8 +61,8 @@ func TestMemEventLog(t *testing.T) {
 	require.Equal(t, 10, len(eventsValues))
 	require.Equal(t, strs[0:10], eventsValues)
 
-	// Events (index, asc)
-	iter, err = eds.Events(ctx, path, index, 10, ds.Ascending)
+	// Events (index, limit=10)
+	iter, err = eds.Events(ctx, path, events.Index(index), events.Limit(10))
 	require.NoError(t, err)
 	eventsValues = []string{}
 	for i := 0; ; i++ {
@@ -81,7 +82,7 @@ func TestMemEventLog(t *testing.T) {
 
 	// Events (large index)
 	large := int64(1000000000)
-	iter, err = eds.Events(ctx, path, large, 100, ds.Ascending)
+	iter, err = eds.Events(ctx, path, events.Index(large))
 	require.NoError(t, err)
 	event, err := iter.Next()
 	require.NoError(t, err)
@@ -92,7 +93,7 @@ func TestMemEventLog(t *testing.T) {
 	revs := reverseCopy(strs)
 
 	// Events (limit=10, desc)
-	iter, err = eds.Events(ctx, path, 0, 10, ds.Descending)
+	iter, err = eds.Events(ctx, path, events.Limit(10), events.WithDirection(events.Descending))
 	require.NoError(t, err)
 	eventsValues = []string{}
 	for i := 0; ; i++ {
@@ -110,7 +111,7 @@ func TestMemEventLog(t *testing.T) {
 	require.Equal(t, revs[0:10], eventsValues)
 
 	// Events (limit=5, index, desc)
-	iter, err = eds.Events(ctx, path, index, 5, ds.Descending)
+	iter, err = eds.Events(ctx, path, events.Index(index), events.Limit(5), events.WithDirection(events.Descending))
 	require.NoError(t, err)
 	eventsValues = []string{}
 	for i := 0; ; i++ {
@@ -126,6 +127,20 @@ func TestMemEventLog(t *testing.T) {
 	require.Equal(t, 5, len(eventsValues))
 	require.Equal(t, int64(26), index)
 	require.Equal(t, revs[10:15], eventsValues)
+
+	// Delete
+	err = eds.EventsDelete(ctx, path)
+	require.NoError(t, err)
+
+	iter, err = eds.Events(ctx, path)
+	require.NoError(t, err)
+	event, err = iter.Next()
+	require.NoError(t, err)
+	require.Nil(t, event)
+	iter.Release()
+
+	err = eds.EventsDelete(ctx, path)
+	require.EqualError(t, err, "not found /test/eds")
 }
 
 func reverseCopy(s []string) []string {
@@ -139,7 +154,7 @@ func reverseCopy(s []string) []string {
 
 func TestEventMarshal(t *testing.T) {
 	clock := tsutil.NewClock()
-	event := ds.Event{
+	event := events.Event{
 		Data:      []byte{0x01, 0x02, 0x03},
 		Index:     123,
 		Timestamp: clock.Now(),
