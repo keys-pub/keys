@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
@@ -18,7 +18,7 @@ func TestBackupRestore(t *testing.T) {
 
 	kr := keyring.NewMem()
 	for i := 0; i < 10; i++ {
-		err := kr.Set(ds.Path("item", i), []byte(fmt.Sprintf("value%d", i)))
+		err := kr.Set(docs.Path("item", i), []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 	}
 

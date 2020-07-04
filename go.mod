@@ -12,6 +12,7 @@ require (
 	github.com/keybase/go-keychain v0.0.0-20200502122510-cda31fe0c86d
 	github.com/keybase/saltpack v0.0.0-20200430135328-e19b1910c0c5
 	github.com/keys-pub/secretservice v0.0.0-20200519003656-26e44b8df47f
+	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.5.1
 	github.com/tyler-smith/go-bip39 v1.0.2

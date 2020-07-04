@@ -1,15 +1,15 @@
-package ds
+package docs
 
-// DocumentIterator is an iterator for Document's.
-type DocumentIterator interface {
+// Iterator is an iterator for Document's.
+type Iterator interface {
 	// Next document, or nil.
 	Next() (*Document, error)
 	// Release resources associated with the iterator.
 	Release()
 }
 
-// NewDocumentIterator returns an iterator for a Document slice.
-func NewDocumentIterator(docs ...*Document) DocumentIterator {
+// NewIterator returns an iterator for a Document slice.
+func NewIterator(docs ...*Document) Iterator {
 	return &docsIterator{docs: docs}
 }
 
@@ -60,35 +60,4 @@ func (i *colsIterator) Next() (*Collection, error) {
 
 func (i *colsIterator) Release() {
 	i.cols = nil
-}
-
-// EventIterator is an iterator for Event's.
-type EventIterator interface {
-	// Next document, or nil.
-	Next() (*Event, error)
-	// Release resources associated with the iterator.
-	Release()
-}
-
-// NewEventIterator returns an iterator for a Event slice.
-func NewEventIterator(events []*Event) EventIterator {
-	return &eventsIterator{events: events}
-}
-
-type eventsIterator struct {
-	events []*Event
-	index  int
-}
-
-func (i *eventsIterator) Next() (*Event, error) {
-	if i.index >= len(i.events) {
-		return nil, nil
-	}
-	d := i.events[i.index]
-	i.index++
-	return d, nil
-}
-
-func (i *eventsIterator) Release() {
-	i.events = nil
 }

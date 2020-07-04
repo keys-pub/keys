@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
@@ -146,21 +146,21 @@ func testDocuments(t *testing.T, kr keyring.Keyring) {
 	err = kr.Set("bkey1", []byte("bval1"))
 	require.NoError(t, err)
 
-	docs, err := kr.Documents(ds.NoData())
+	out, err := kr.Documents(docs.NoData())
 	require.NoError(t, err)
-	require.Equal(t, 3, len(docs))
-	require.Equal(t, "akey1", docs[0].Path)
-	require.Nil(t, docs[0].Data)
+	require.Equal(t, 3, len(out))
+	require.Equal(t, "akey1", out[0].Path)
+	require.Nil(t, out[0].Data)
 
-	docs, err = kr.Documents()
+	out, err = kr.Documents()
 	require.NoError(t, err)
-	require.Equal(t, 3, len(docs))
-	require.Equal(t, "akey1", docs[0].Path)
-	require.Equal(t, []byte("aval1"), docs[0].Data)
+	require.Equal(t, 3, len(out))
+	require.Equal(t, "akey1", out[0].Path)
+	require.Equal(t, []byte("aval1"), out[0].Data)
 
-	docs, err = kr.Documents(ds.Prefix("b"))
+	out, err = kr.Documents(docs.Prefix("b"))
 	require.NoError(t, err)
-	require.Equal(t, 1, len(docs))
-	require.Equal(t, "bkey1", docs[0].Path)
-	require.Equal(t, []byte("bval1"), docs[0].Data)
+	require.Equal(t, 1, len(out))
+	require.Equal(t, "bkey1", out[0].Path)
+	require.Equal(t, []byte("bval1"), out[0].Data)
 }

@@ -1,14 +1,14 @@
-package ds_test
+package docs_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStringSet(t *testing.T) {
-	s := ds.NewStringSet("a", "b", "c")
+	s := docs.NewStringSet("a", "b", "c")
 	require.True(t, s.Contains("a"))
 	require.False(t, s.Contains("z"))
 	s.Add("z")
@@ -27,14 +27,14 @@ func TestStringSet(t *testing.T) {
 }
 
 func TestStringSetSplit(t *testing.T) {
-	s := ds.NewStringSetSplit("a,b,c", ",")
+	s := docs.NewStringSetSplit("a,b,c", ",")
 	require.Equal(t, 3, s.Size())
 	require.True(t, s.Contains("a"))
 
-	s = ds.NewStringSetSplit("a", ",")
+	s = docs.NewStringSetSplit("a", ",")
 	require.Equal(t, 1, s.Size())
 	require.True(t, s.Contains("a"))
 
-	s = ds.NewStringSetSplit("", ",")
+	s = docs.NewStringSetSplit("", ",")
 	require.Equal(t, 0, s.Size())
 }

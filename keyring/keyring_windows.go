@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/danieljoos/wincred"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -86,8 +86,8 @@ func (k sys) Exists(id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
-	opts := ds.NewDocumentsOptions(opt...)
+func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
+	opts := docs.NewOptions(opt...)
 	prefix := opts.Prefix
 
 	creds, err := wincred.List()
@@ -95,14 +95,14 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 		return nil, err
 	}
 
-	docs := make([]*ds.Document, 0, len(creds))
+	out := make([]*docs.Document, 0, len(creds))
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, k.service+"/") {
 			id := cred.TargetName[len(k.service+"/"):]
 			if prefix != "" && !strings.HasPrefix(id, prefix) {
 				continue
 			}
-			doc := &ds.Document{Path: id}
+			doc := &docs.Document{Path: id}
 			if !opts.NoData {
 				b, err := k.Get(id)
 				if err != nil {
@@ -110,14 +110,14 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 				}
 				doc.Data = b
 			}
-			docs = append(docs, doc)
+			out = append(out, doc)
 		}
 	}
 
-	sort.Slice(docs, func(i, j int) bool {
-		return docs[i].Path < docs[j].Path
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Path < out[j].Path
 	})
-	return docs, nil
+	return out, nil
 }
 
 func (k sys) Reset() error {

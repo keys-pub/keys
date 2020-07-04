@@ -1,12 +1,12 @@
-package ds
+package docs
 
 import (
 	"context"
 	"fmt"
 )
 
-// DocumentStore is a place for Documents.
-type DocumentStore interface {
+// Documents describes a Document store.
+type Documents interface {
 	// Create data at path.
 	// ErrPathExists if path already exists.
 	//
@@ -49,10 +49,10 @@ type DocumentStore interface {
 	DeleteAll(ctx context.Context, paths []string) error
 
 	// DocumentIterator.
-	DocumentIterator(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error)
+	DocumentIterator(ctx context.Context, parent string, opt ...Option) (Iterator, error)
 
 	// Documents ...
-	Documents(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error)
+	Documents(ctx context.Context, parent string, opt ...Option) ([]*Document, error)
 
 	// Collections are parents of Documents.
 	Collections(ctx context.Context, parent string) ([]*Collection, error)

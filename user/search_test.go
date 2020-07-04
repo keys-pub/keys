@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -21,13 +21,13 @@ func TestSearchUsers(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	dst.SetTimeNow(clock.Now)
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	ds.SetTimeNow(clock.Now)
+	scs := keys.NewSigchainStore(ds)
 	scs.SetTimeNow(clock.Now)
 
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 	ctx := context.TODO()
 
 	results, err := ust.Search(ctx, &user.SearchRequest{})
@@ -136,28 +136,28 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "twitter", results[0].Result.User.Service)
 
 	// Check Documents
-	iter, err := dst.DocumentIterator(context.TODO(), "kid")
+	iter, err := ds.DocumentIterator(context.TODO(), "kid")
 	require.NoError(t, err)
-	spew, err := ds.Spew(iter)
+	spew, err := docs.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/kid.spew"), spew.String())
 
-	iter, err = dst.DocumentIterator(context.TODO(), "user")
+	iter, err = ds.DocumentIterator(context.TODO(), "user")
 	require.NoError(t, err)
-	spew, err = ds.Spew(iter)
+	spew, err = docs.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/user.spew"), spew.String())
 }
 
 func TestUserStoreEmpty(t *testing.T) {
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	dst.SetTimeNow(clock.Now)
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	ds.SetTimeNow(clock.Now)
+	scs := keys.NewSigchainStore(ds)
 	scs.SetTimeNow(clock.Now)
 
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -174,13 +174,13 @@ func TestUserStoreEmpty(t *testing.T) {
 
 func TestUserValidateName(t *testing.T) {
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	dst.SetTimeNow(clock.Now)
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	ds.SetTimeNow(clock.Now)
+	scs := keys.NewSigchainStore(ds)
 	scs.SetTimeNow(clock.Now)
 
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x20}, 32)))
 
@@ -203,13 +203,13 @@ func TestUserValidateName(t *testing.T) {
 
 func TestUserValidateUpdateInvalid(t *testing.T) {
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	dst.SetTimeNow(clock.Now)
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	ds.SetTimeNow(clock.Now)
+	scs := keys.NewSigchainStore(ds)
 	scs.SetTimeNow(clock.Now)
 
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 
 	// Unvalidated user to sigchain
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x021}, 32)))
@@ -253,13 +253,13 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 
 func TestReddit(t *testing.T) {
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	dst.SetTimeNow(clock.Now)
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	ds.SetTimeNow(clock.Now)
+	scs := keys.NewSigchainStore(ds)
 	scs.SetTimeNow(clock.Now)
 
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
@@ -308,13 +308,13 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	dst.SetTimeNow(clock.Now)
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	ds.SetTimeNow(clock.Now)
+	scs := keys.NewSigchainStore(ds)
 	scs.SetTimeNow(clock.Now)
 
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 	ctx := context.TODO()
 
 	results, err := ust.Search(ctx, &user.SearchRequest{})
@@ -368,15 +368,15 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, 0, len(results))
 
 	// Check Documents
-	iter, err := dst.DocumentIterator(context.TODO(), "kid")
+	iter, err := ds.DocumentIterator(context.TODO(), "kid")
 	require.NoError(t, err)
-	spew, err := ds.Spew(iter)
+	spew, err := docs.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, testdataString(t, "testdata/kid2.spew"), spew.String())
 
-	iter, err = dst.DocumentIterator(context.TODO(), "user")
+	iter, err = ds.DocumentIterator(context.TODO(), "user")
 	require.NoError(t, err)
-	spew, err = ds.Spew(iter)
+	spew, err = docs.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, "", spew.String())
 
@@ -392,12 +392,12 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 }
 
 func TestExpired(t *testing.T) {
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	scs := keys.NewSigchainStore(ds)
 
 	clock := tsutil.NewClock()
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 	ctx := context.TODO()
 
 	ids, err := ust.Expired(ctx, time.Hour)
@@ -514,10 +514,10 @@ func TestNewSigchainUserStatement(t *testing.T) {
 func TestSearch(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	clock := tsutil.NewClock()
-	dst := ds.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	ds := docs.NewMem()
+	scs := keys.NewSigchainStore(ds)
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	ust := testStore(t, ds, scs, req, clock)
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {

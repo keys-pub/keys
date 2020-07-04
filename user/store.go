@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
@@ -51,16 +51,16 @@ type keyDocument struct {
 
 // Store is the environment for user results.
 type Store struct {
-	dst   ds.DocumentStore
+	ds    docs.Documents
 	scs   keys.SigchainStore
 	req   request.Requestor
 	nowFn func() time.Time
 }
 
 // NewStore creates Store.
-func NewStore(dst ds.DocumentStore, scs keys.SigchainStore, req request.Requestor, nowFn func() time.Time) (*Store, error) {
+func NewStore(ds docs.Documents, scs keys.SigchainStore, req request.Requestor, nowFn func() time.Time) (*Store, error) {
 	return &Store{
-		dst:   dst,
+		ds:    ds,
 		scs:   scs,
 		nowFn: nowFn,
 		req:   req,
@@ -187,8 +187,8 @@ func (u *Store) get(ctx context.Context, index string, val string) (*keyDocument
 	if val == "" {
 		return nil, errors.Errorf("empty value")
 	}
-	path := ds.Path(index, val)
-	doc, err := u.dst.Get(ctx, path)
+	path := docs.Path(index, val)
+	doc, err := u.ds.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -214,9 +214,9 @@ func (u *Store) result(ctx context.Context, kid keys.ID) (*Result, error) {
 }
 
 func (u *Store) removeUser(ctx context.Context, user *User) error {
-	namePath := ds.Path(indexUser, indexName(user))
+	namePath := docs.Path(indexUser, indexName(user))
 	logger.Infof("Removing user %s: %s", user.KID, namePath)
-	if _, err := u.dst.Delete(ctx, namePath); err != nil {
+	if _, err := u.ds.Delete(ctx, namePath); err != nil {
 		return err
 	}
 	return nil
@@ -247,9 +247,9 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	}
 	logger.Debugf("Data to index: %s", string(data))
 
-	kidPath := ds.Path(indexKID, keyDoc.KID.String())
+	kidPath := docs.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
-	if err := u.dst.Set(ctx, kidPath, data); err != nil {
+	if err := u.ds.Set(ctx, kidPath, data); err != nil {
 		return err
 	}
 
@@ -266,9 +266,9 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 		}
 
 		if index {
-			namePath := ds.Path(indexUser, indexName(keyDoc.Result.User))
+			namePath := docs.Path(indexUser, indexName(keyDoc.Result.User))
 			logger.Infof("Indexing user result %s %s", namePath, keyDoc.Result.User.KID)
-			if err := u.dst.Set(ctx, namePath, data); err != nil {
+			if err := u.ds.Set(ctx, namePath, data); err != nil {
 				return err
 			}
 		} else {
@@ -288,7 +288,7 @@ func indexName(user *User) string {
 
 // Status returns KIDs that match a status.
 func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
-	iter, err := u.dst.DocumentIterator(context.TODO(), indexKID)
+	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 
 // Expired returns KIDs that haven't been checked in a duration.
 func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error) {
-	iter, err := u.dst.DocumentIterator(context.TODO(), indexKID)
+	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.I
 
 // KIDs returns all key ids in the user store.
 func (u *Store) KIDs(ctx context.Context) ([]keys.ID, error) {
-	iter, err := u.dst.DocumentIterator(context.TODO(), indexKID)
+	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}

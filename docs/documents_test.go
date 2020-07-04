@@ -1,21 +1,21 @@
-package ds_test
+package docs_test
 
 import (
 	"context"
 	"fmt"
 	"log"
 
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 )
 
-func ExampleDocumentStore_Documents() {
-	d := ds.NewMem()
+func ExampleDocuments_DocumentIterator() {
+	d := docs.NewMem()
 
-	if err := d.Set(context.TODO(), ds.Path("tests", 1), []byte("testdata")); err != nil {
+	if err := d.Set(context.TODO(), docs.Path("tests", 1), []byte("testdata")); err != nil {
 		log.Fatal(err)
 	}
 
-	iter, err := d.DocumentIterator(context.TODO(), ds.Path("tests"), ds.NoData())
+	iter, err := d.DocumentIterator(context.TODO(), docs.Path("tests"), docs.NoData())
 	if err != nil {
 		log.Fatal(err)
 	}

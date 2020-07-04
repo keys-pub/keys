@@ -1,5 +1,5 @@
-// Package ds describes documents and document stores.
-package ds
+// Package docs provides a document store.
+package docs
 
 import (
 	"bytes"

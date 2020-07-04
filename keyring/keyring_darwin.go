@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/keybase/go-keychain"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -99,8 +99,8 @@ func (k sys) Reset() error {
 	return reset(k)
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
-	opts := ds.NewDocumentsOptions(opt...)
+func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
+	opts := docs.NewOptions(opt...)
 
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
@@ -116,16 +116,16 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 	if err != nil {
 		return nil, err
 	} else if len(results) == 0 {
-		return []*ds.Document{}, nil
+		return []*docs.Document{}, nil
 	}
 
-	docs := make([]*ds.Document, 0, len(results))
+	out := make([]*docs.Document, 0, len(results))
 	for _, r := range results {
 		path := r.Account
 		if opts.Prefix != "" && !strings.HasPrefix(path, opts.Prefix) {
 			continue
 		}
-		doc := &ds.Document{Path: path}
+		doc := &docs.Document{Path: path}
 		if !opts.NoData {
 			// TODO: Iterator
 			b, err := k.Get(path)
@@ -134,12 +134,12 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 			}
 			doc.Data = b
 		}
-		docs = append(docs, doc)
+		out = append(out, doc)
 	}
-	sort.Slice(docs, func(i, j int) bool {
-		return docs[i].Path < docs[j].Path
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Path < out[j].Path
 	})
-	return docs, nil
+	return out, nil
 }
 
 func newPasswordItem(service string, id string, data []byte, desc string) keychain.Item {

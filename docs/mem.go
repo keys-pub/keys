@@ -1,4 +1,4 @@
-package ds
+package docs
 
 import (
 	"context"
@@ -9,12 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/keys-pub/keys/docs/events"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/pkg/errors"
 )
 
-var _ DocumentStore = &Mem{}
-var _ Events = &Mem{}
+var _ Documents = &Mem{}
+var _ events.Events = &Mem{}
 
 // Mem is an in memory DocumentStore implementation.
 type Mem struct {
@@ -147,16 +148,22 @@ func (m *Mem) Collections(ctx context.Context, parent string) ([]*Collection, er
 }
 
 // DocumentIterator ...
-func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...DocumentsOption) (DocumentIterator, error) {
+func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...Option) (Iterator, error) {
+	m.RLock()
+	defer m.RUnlock()
+
 	docs, err := m.list(ctx, parent, opt...)
 	if err != nil {
 		return nil, err
 	}
-	return NewDocumentIterator(docs...), nil
+	return NewIterator(docs...), nil
 }
 
 // Documents ...
-func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
+func (m *Mem) Documents(ctx context.Context, parent string, opt ...Option) ([]*Document, error) {
+	m.RLock()
+	defer m.RUnlock()
+
 	docs, err := m.list(ctx, parent, opt...)
 	if err != nil {
 		return nil, err
@@ -164,10 +171,8 @@ func (m *Mem) Documents(ctx context.Context, parent string, opt ...DocumentsOpti
 	return docs, nil
 }
 
-func (m *Mem) list(ctx context.Context, parent string, opt ...DocumentsOption) ([]*Document, error) {
-	m.RLock()
-	defer m.RUnlock()
-	opts := NewDocumentsOptions(opt...)
+func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Document, error) {
+	opts := NewOptions(opt...)
 
 	path := Path(parent)
 	if path == "/" {
@@ -212,6 +217,30 @@ func (m *Mem) Delete(ctx context.Context, path string) (bool, error) {
 	defer m.Unlock()
 	path = Path(path)
 
+	docs, err := m.list(ctx, path)
+	if err != nil {
+		return false, err
+	}
+	if len(docs) == 0 {
+		return m.delete(ctx, path)
+	}
+	for _, doc := range docs {
+		ok, err := m.delete(ctx, doc.Path)
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, errors.Errorf("failed to delete: missing %s", path)
+		}
+	}
+	if _, err := m.delete(ctx, path); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+func (m *Mem) delete(ctx context.Context, path string) (bool, error) {
+	path = Path(path)
+
 	_, ok := m.values[path]
 	if !ok {
 		return false, nil
@@ -225,7 +254,7 @@ func (m *Mem) Delete(ctx context.Context, path string) (bool, error) {
 // DeleteAll ...
 func (m *Mem) DeleteAll(ctx context.Context, paths []string) error {
 	for _, p := range paths {
-		_, err := m.Delete(ctx, p)
+		_, err := m.delete(ctx, p)
 		if err != nil {
 			return err
 		}
@@ -260,13 +289,13 @@ func randBytes(length int) []byte {
 	return buf
 }
 
-// EventsAdd ...
-func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, error) {
-	events := make([]*Event, 0, len(data))
+// EventsAdd adds events to path.
+func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*events.Event, error) {
+	out := make([]*events.Event, 0, len(data))
 	for _, b := range data {
 		m.inc++
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
-		event := &Event{
+		event := &events.Event{
 			Data:      b,
 			Index:     m.inc,
 			Timestamp: m.nowFn(),
@@ -279,9 +308,21 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Eve
 		if err := m.Create(ctx, path, b); err != nil {
 			return nil, err
 		}
-		events = append(events, event)
+		out = append(out, event)
 	}
-	return events, nil
+	return out, nil
+}
+
+// EventsDelete removes events at path.
+func (m *Mem) EventsDelete(ctx context.Context, path string) (bool, error) {
+	ok, err := m.Delete(ctx, path)
+	if err != nil {
+		return false, err
+	}
+	if !ok {
+		return false, nil
+	}
+	return true, nil
 }
 
 func min(n1 int, n2 int) int {
@@ -292,8 +333,10 @@ func min(n1 int, n2 int) int {
 }
 
 // Events ...
-func (m *Mem) Events(ctx context.Context, path string, index int64, limit int, direction Direction) (EventIterator, error) {
-	events := make([]*Event, 0, m.paths.Size())
+func (m *Mem) Events(ctx context.Context, path string, opt ...events.Option) (events.Iterator, error) {
+	opts := events.NewOptions(opt...)
+
+	out := make([]*events.Event, 0, m.paths.Size())
 
 	for _, p := range m.paths.Strings() {
 		if !strings.HasPrefix(p, Path(path, "log")+"/") {
@@ -306,38 +349,38 @@ func (m *Mem) Events(ctx context.Context, path string, index int64, limit int, d
 		if doc == nil {
 			return nil, errors.Errorf("path not found %s", p)
 		}
-		var event Event
+		var event events.Event
 		if err := json.Unmarshal(doc.Data, &event); err != nil {
 			return nil, err
 		}
-		events = append(events, &event)
+		out = append(out, &event)
 	}
-	switch direction {
-	case Ascending:
-		sort.Slice(events, func(i, j int) bool {
-			return events[i].Index < events[j].Index
+	switch opts.Direction {
+	case events.Ascending:
+		sort.Slice(out, func(i, j int) bool {
+			return out[i].Index < out[j].Index
 		})
-	case Descending:
-		sort.Slice(events, func(i, j int) bool {
-			return events[i].Index > events[j].Index
+	case events.Descending:
+		sort.Slice(out, func(i, j int) bool {
+			return out[i].Index > out[j].Index
 		})
 	}
 
-	if index != 0 {
-		logger.Debugf("Finding index for %d", index)
+	if opts.Index != 0 {
+		logger.Debugf("Finding index for %d", opts.Index)
 		found := -1
-		switch direction {
-		case Ascending:
-			for i, c := range events {
-				if c.Index > index {
+		switch opts.Direction {
+		case events.Ascending:
+			for i, c := range out {
+				if c.Index > opts.Index {
 					logger.Infof("Found version index %d", i)
 					found = i
 					break
 				}
 			}
-		case Descending:
-			for i, c := range events {
-				if c.Index < index {
+		case events.Descending:
+			for i, c := range out {
+				if c.Index < opts.Index {
 					logger.Infof("Found version index %d", i)
 					found = i
 					break
@@ -345,16 +388,16 @@ func (m *Mem) Events(ctx context.Context, path string, index int64, limit int, d
 			}
 		}
 		if found == -1 {
-			events = []*Event{}
+			out = []*events.Event{}
 		} else {
 			logger.Infof("Truncating from index %d", found)
-			events = events[found:]
+			out = out[found:]
 		}
 	}
 
-	if limit > 0 && len(events) > 0 {
-		events = events[0:min(limit, len(events))]
+	if opts.Limit > 0 && len(out) > 0 {
+		out = out[0:min(int(opts.Limit), len(out))]
 	}
 
-	return NewEventIterator(events), nil
+	return events.NewIterator(out), nil
 }

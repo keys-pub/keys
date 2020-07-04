@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus"
-	"github.com/keys-pub/keys/ds"
+	"github.com/keys-pub/keys/docs"
 	gokeyring "github.com/keys-pub/secretservice"
 	ss "github.com/keys-pub/secretservice/secret_service"
 	"github.com/pkg/errors"
@@ -84,8 +84,8 @@ func (k sys) Reset() error {
 	return nil
 }
 
-func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
-	opts := ds.NewDocumentsOptions(opt...)
+func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
+	opts := docs.NewOptions(opt...)
 	prefix := opts.Prefix
 
 	svc, err := ss.NewSecretService()
@@ -97,12 +97,12 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 		return nil, err
 	}
 
-	docs := make([]*ds.Document, 0, len(ids))
+	out := make([]*docs.Document, 0, len(ids))
 	for _, id := range ids {
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
 			continue
 		}
-		doc := &ds.Document{Path: id}
+		doc := &docs.Document{Path: id}
 		if !opts.NoData {
 			// TODO: Iterator
 			b, err := k.Get(id)
@@ -111,13 +111,13 @@ func (k sys) Documents(opt ...ds.DocumentsOption) ([]*ds.Document, error) {
 			}
 			doc.Data = b
 		}
-		docs = append(docs, doc)
+		out = append(out, doc)
 	}
 
-	sort.Slice(docs, func(i, j int) bool {
-		return docs[i].Path < docs[j].Path
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Path < out[j].Path
 	})
-	return docs, nil
+	return out, nil
 }
 
 func (k sys) Exists(id string) (bool, error) {
