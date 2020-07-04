@@ -19,7 +19,6 @@ func Spew(iter Iterator) (*bytes.Buffer, error) {
 }
 
 // SpewOut writes Iterator to io.Writer.
-// You need to specify a path or prefix, since listing root is not supported.
 func SpewOut(iter Iterator, out io.Writer) error {
 	for {
 		doc, err := iter.Next()
