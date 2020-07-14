@@ -99,7 +99,9 @@ func TestSign(t *testing.T) {
 }
 
 func TestEdX25519JSON(t *testing.T) {
-	key := keys.GenerateEdX25519Key()
+	seed := keys.Bytes32(bytes.Repeat([]byte{0x01}, 32))
+
+	key := keys.NewEdX25519KeyFromSeed(seed)
 
 	type test struct {
 		Key *keys.EdX25519Key `json:"key"`
@@ -107,10 +109,36 @@ func TestEdX25519JSON(t *testing.T) {
 
 	b, err := json.Marshal(test{Key: key})
 	require.NoError(t, err)
+	expected := `{"key":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="}`
 
+	require.Equal(t, expected, string(b))
 	var out test
 	err = json.Unmarshal(b, &out)
 	require.NoError(t, err)
+	require.Equal(t, key.Bytes(), out.Key.Bytes())
 
+	// 64 byte private key
+	old := `{"key":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXA=="}`
+	err = json.Unmarshal([]byte(old), &out)
+	require.NoError(t, err)
 	require.Equal(t, key.Bytes(), out.Key.Bytes())
 }
+
+// func TestEdX25519Msgpack(t *testing.T) {
+// 	seed := keys.Bytes32(bytes.Repeat([]byte{0x01}, 32))
+// 	key := keys.NewEdX25519KeyFromSeed(seed)
+
+// 	type test struct {
+// 		Key *keys.EdX25519Key `msgpack:"key"`
+// 	}
+
+// 	b, err := msgpack.Marshal(test{Key: key})
+// 	require.NoError(t, err)
+// 	expected := "81a36b65790101010101010101010101010101010101010101010101010101010101010101"
+
+// 	require.Equal(t, expected, hex.EncodeToString(b))
+// 	var out test
+// 	err = msgpack.Unmarshal(b, &out)
+// 	require.NoError(t, err)
+// 	require.Equal(t, key.Bytes(), out.Key.Bytes())
+// }
