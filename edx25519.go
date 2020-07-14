@@ -40,6 +40,9 @@ func NewEdX25519KeyFromPrivateKey(privateKey *[ed25519.PrivateKeySize]byte) *EdX
 }
 
 func (k *EdX25519Key) setPrivateKey(b []byte) error {
+	if len(b) != ed25519.PrivateKeySize {
+		return errors.Errorf("invalid private key length %d", len(b))
+	}
 	// Derive public key from private key
 	edpk := ed25519.PrivateKey(b)
 	publicKey := edpk.Public().(ed25519.PublicKey)
@@ -94,7 +97,7 @@ func (k *EdX25519Key) Signer() crypto.Signer {
 
 // MarshalText for encoding.TextMarshaler interface.
 func (k *EdX25519Key) MarshalText() ([]byte, error) {
-	return []byte(encoding.MustEncode(k.Bytes(), encoding.Base64)), nil
+	return []byte(encoding.MustEncode(k.Seed()[:], encoding.Base64)), nil
 }
 
 // UnmarshalText for encoding.TextUnmarshaler interface.
@@ -103,7 +106,13 @@ func (k *EdX25519Key) UnmarshalText(s []byte) error {
 	if err != nil {
 		return err
 	}
-	if err := k.setPrivateKey(b); err != nil {
+	var privateKey []byte
+	if len(b) == 32 {
+		privateKey = ed25519.NewKeyFromSeed(b)
+	} else {
+		privateKey = b
+	}
+	if err := k.setPrivateKey(privateKey); err != nil {
 		return err
 	}
 	return nil

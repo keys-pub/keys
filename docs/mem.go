@@ -24,7 +24,7 @@ type Mem struct {
 	values   map[string][]byte
 	metadata map[string]*metadata
 	nowFn    func() time.Time
-	inc      int64
+	inc      map[string]int64
 }
 
 type metadata struct {
@@ -38,6 +38,7 @@ func NewMem() *Mem {
 		paths:    NewStringSet(),
 		values:   map[string][]byte{},
 		metadata: map[string]*metadata{},
+		inc:      map[string]int64{},
 		nowFn:    time.Now,
 	}
 }
@@ -293,11 +294,13 @@ func randBytes(length int) []byte {
 func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*events.Event, error) {
 	out := make([]*events.Event, 0, len(data))
 	for _, b := range data {
-		m.inc++
+		inc := m.inc[path]
+		inc++
+		m.inc[path] = inc
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
 		event := &events.Event{
 			Data:      b,
-			Index:     m.inc,
+			Index:     inc,
 			Timestamp: m.nowFn(),
 		}
 		b, err := json.Marshal(event)
@@ -313,7 +316,7 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 	return out, nil
 }
 
-// EventsDelete removes events at path.
+// EventsDelete removes all events at path.
 func (m *Mem) EventsDelete(ctx context.Context, path string) (bool, error) {
 	ok, err := m.Delete(ctx, path)
 	if err != nil {
