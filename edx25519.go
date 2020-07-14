@@ -118,23 +118,6 @@ func (k *EdX25519Key) UnmarshalText(s []byte) error {
 	return nil
 }
 
-// // MarshalMsgpack for msgpack.
-// func (k *EdX25519Key) MarshalMsgpack() ([]byte, error) {
-// 	return k.Seed()[:], nil
-// }
-
-// // UnmarshalMsgpack for msgpack.
-// func (k *EdX25519Key) UnmarshalMsgpack(b []byte) error {
-// 	if len(b) != 32 {
-// 		return errors.Errorf("invalid edx25519 bytes for msgpack %d", len(b))
-// 	}
-// 	privateKey := ed25519.NewKeyFromSeed(b)
-// 	if err := k.setPrivateKey(privateKey); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
 // Equal returns true if equal to key.
 func (k *EdX25519Key) Equal(o *EdX25519Key) bool {
 	return subtle.ConstantTimeCompare(k.Bytes(), o.Bytes()) == 1

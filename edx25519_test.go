@@ -123,22 +123,3 @@ func TestEdX25519JSON(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, key.Bytes(), out.Key.Bytes())
 }
-
-// func TestEdX25519Msgpack(t *testing.T) {
-// 	seed := keys.Bytes32(bytes.Repeat([]byte{0x01}, 32))
-// 	key := keys.NewEdX25519KeyFromSeed(seed)
-
-// 	type test struct {
-// 		Key *keys.EdX25519Key `msgpack:"key"`
-// 	}
-
-// 	b, err := msgpack.Marshal(test{Key: key})
-// 	require.NoError(t, err)
-// 	expected := "81a36b65790101010101010101010101010101010101010101010101010101010101010101"
-
-// 	require.Equal(t, expected, hex.EncodeToString(b))
-// 	var out test
-// 	err = msgpack.Unmarshal(b, &out)
-// 	require.NoError(t, err)
-// 	require.Equal(t, key.Bytes(), out.Key.Bytes())
-// }
