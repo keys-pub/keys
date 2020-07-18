@@ -12,7 +12,7 @@ const (
 )
 
 // Millis returns milliseconds since epoch from time.Time.
-// If t.IsZero() we return 0.
+// Returns 0 if t.IsZero().
 func Millis(t time.Time) int64 {
 	if t.IsZero() {
 		return 0
@@ -20,27 +20,20 @@ func Millis(t time.Time) int64 {
 	return int64(t.UnixNano() / int64(time.Millisecond))
 }
 
-// ParseMillis returns time.Time from milliseconds since epoch.
-func ParseMillis(i interface{}) time.Time {
-	switch v := i.(type) {
-	case int64:
-		return parseInt64(v)
-	case int:
-		return parseInt64(int64(v))
-	case string:
-		n, err := strconv.Atoi(v)
-		if err != nil {
-			return time.Time{}
-		}
-		return parseInt64(int64(n))
-	default:
+// ParseMillis returns time.Time from milliseconds since epoch as string.
+func ParseMillis(s string) time.Time {
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
 		return time.Time{}
 	}
+	return ConvertMillis(n)
+
 }
 
-func parseInt64(m int64) time.Time {
-	if m == 0 {
+// ConvertMillis returns time.Time from milliseconds since epoch.
+func ConvertMillis(n int64) time.Time {
+	if n == 0 {
 		return time.Time{}
 	}
-	return time.Unix(0, m*int64(time.Millisecond)).UTC()
+	return time.Unix(0, n*int64(time.Millisecond)).UTC()
 }

@@ -20,7 +20,7 @@ import (
 func TestSearchUsers(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(ds)
@@ -150,7 +150,7 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestUserStoreEmpty(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(ds)
@@ -173,7 +173,7 @@ func TestUserStoreEmpty(t *testing.T) {
 }
 
 func TestUserValidateName(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(ds)
@@ -202,7 +202,7 @@ func TestUserValidateName(t *testing.T) {
 }
 
 func TestUserValidateUpdateInvalid(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(ds)
@@ -252,7 +252,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 }
 
 func TestReddit(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(ds)
@@ -307,7 +307,7 @@ func TestReddit(t *testing.T) {
 func TestSearchUsersRequestErrors(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(ds)
@@ -395,7 +395,7 @@ func TestExpired(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchainStore(ds)
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
 	ctx := context.TODO()
@@ -438,13 +438,13 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, []keys.ID{alice.ID()}, ids)
 }
 
-func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
+func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
 	st, err := saveUser(ust, scs, key, name, service, clock, mock)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock *tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
+func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
 	murl := ""
 	switch service {
@@ -496,7 +496,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 }
 
 func TestNewSigchainUserStatement(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(key.ID())
 	usr, err := user.New(key.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
@@ -513,7 +513,7 @@ func TestNewSigchainUserStatement(t *testing.T) {
 
 func TestSearch(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	scs := keys.NewSigchainStore(ds)
 	req := request.NewMockRequestor()

@@ -17,7 +17,7 @@ import (
 
 func TestDocument(t *testing.T) {
 	db := docs.NewMem()
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	db.SetTimeNow(clock.Now)
 	ctx := context.TODO()
 
@@ -54,7 +54,7 @@ func TestDocument(t *testing.T) {
 }
 
 func TestDocumentMarshal(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	doc := docs.NewDocument("/test/key1", []byte("value"))
 	doc.CreatedAt = clock.Now()
 	doc.UpdatedAt = clock.Now()

@@ -34,13 +34,13 @@ func (r Result) String() string {
 
 // IsTimestampExpired returns true if result Timestamp is older than dt.
 func (r Result) IsTimestampExpired(now time.Time, dt time.Duration) bool {
-	ts := tsutil.ParseMillis(r.Timestamp)
+	ts := tsutil.ConvertMillis(r.Timestamp)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
 // IsVerifyExpired returns true if result VerifiedAt is older than dt.
 func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
-	ts := tsutil.ParseMillis(r.VerifiedAt)
+	ts := tsutil.ConvertMillis(r.VerifiedAt)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
@@ -336,7 +336,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 			return nil, err
 		}
 		if keyDoc.Result != nil {
-			ts := tsutil.ParseMillis(keyDoc.Result.Timestamp)
+			ts := tsutil.ConvertMillis(keyDoc.Result.Timestamp)
 
 			if ts.IsZero() || u.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)

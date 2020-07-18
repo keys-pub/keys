@@ -257,7 +257,7 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts := tsutil.ParseMillis(int64(stf.Timestamp))
+	ts := tsutil.ConvertMillis(stf.Timestamp)
 
 	st, err := NewUnverifiedStatement(sigBytes, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
 	if err != nil {

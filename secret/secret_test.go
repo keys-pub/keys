@@ -15,7 +15,7 @@ func TestSecretID(t *testing.T) {
 }
 
 func TestSecretMarshal(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 
 	secret := &secret.Secret{
 		ID:        "Ibgoe3sXvdpxFUeR1hSUriTRdxvcoWjou80WnPiFcPC",

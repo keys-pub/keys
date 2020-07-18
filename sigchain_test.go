@@ -21,7 +21,7 @@ func testdataString(t *testing.T, path string) string {
 }
 
 func TestSigchain(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(alice.ID())
@@ -99,7 +99,7 @@ func TestSigchain(t *testing.T) {
 }
 
 func TestSigchainJSON(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	sc := keys.NewSigchain(sk.ID())
@@ -149,7 +149,7 @@ func TestSigchainJSON(t *testing.T) {
 }
 
 func ExampleNewSigchain() {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	alice := keys.GenerateEdX25519Key()
 	sc := keys.NewSigchain(alice.ID())
 

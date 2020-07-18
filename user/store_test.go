@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testStore(t *testing.T, dst docs.Documents, scs keys.SigchainStore, req *request.MockRequestor, clock *tsutil.Clock) *user.Store {
+func testStore(t *testing.T, dst docs.Documents, scs keys.SigchainStore, req *request.MockRequestor, clock tsutil.Clock) *user.Store {
 	ust, err := user.NewStore(dst, scs, req, clock.Now)
 	require.NoError(t, err)
 	return ust
@@ -71,7 +71,7 @@ func TestNewUserMarshal(t *testing.T) {
 func TestResultGithub(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -128,7 +128,7 @@ func TestResultGithub(t *testing.T) {
 func TestResultGithubWrongName(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -162,7 +162,7 @@ func TestResultGithubWrongName(t *testing.T) {
 func TestResultGithubWrongService(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -194,7 +194,7 @@ func TestResultGithubWrongService(t *testing.T) {
 func TestResultTwitter(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -238,7 +238,7 @@ func TestResultReddit(t *testing.T) {
 
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
@@ -279,7 +279,7 @@ func TestResultReddit(t *testing.T) {
 func TestUserUnverified(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 
 	sc := keys.NewSigchain(sk.ID())
@@ -304,7 +304,7 @@ func TestCheckNoUsers(t *testing.T) {
 	sc := keys.NewSigchain(sk.ID())
 
 	req := request.NewMockRequestor()
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -321,7 +321,7 @@ func TestCheckNoUsers(t *testing.T) {
 
 func TestCheckFailure(t *testing.T) {
 	req := request.NewMockRequestor()
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	ust := testStore(t, dst, scs, req, clock)
@@ -427,7 +427,7 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 	err = sc.Add(&st)
 	require.NoError(t, err)
 
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	req := request.NewMockRequestor()
@@ -446,7 +446,7 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 
 func TestSigchainRevokeUpdate(t *testing.T) {
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
 	scs := keys.NewSigchainStore(dst)
 	req := request.NewMockRequestor()

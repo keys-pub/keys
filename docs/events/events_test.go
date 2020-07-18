@@ -19,7 +19,7 @@ func TestEvents(t *testing.T) {
 
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 	eds := docs.NewMem()
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	eds.SetTimeNow(clock.Now)
 
 	ctx := context.TODO()
@@ -155,7 +155,7 @@ func reverseCopy(s []string) []string {
 }
 
 func TestEventMarshal(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	event := events.Event{
 		Data:      []byte{0x01, 0x02, 0x03},
 		Index:     123,
