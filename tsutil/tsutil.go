@@ -26,7 +26,7 @@ func ParseMillis(s string) time.Time {
 	if err != nil {
 		return time.Time{}
 	}
-	return ConvertMillis(int64(n))
+	return ConvertMillis(n)
 
 }
 

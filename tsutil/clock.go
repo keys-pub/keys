@@ -21,7 +21,7 @@ type Clock interface {
 // NewTestClock returns a test Clock starting at 1234567890000 millseconds since
 // epoch. Each access to Now() increases time by 1 millisecond.
 func NewTestClock() Clock {
-	t := ConvertMillis(int64(1234567890000))
+	t := ConvertMillis(1234567890000)
 	return &clock{
 		t:    t,
 		tick: time.Millisecond,

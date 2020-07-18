@@ -29,7 +29,7 @@ func TestParseMillis(t *testing.T) {
 	require.Equal(t, "2009-02-13T23:31:30.001Z", tf4)
 	require.Equal(t, int64(1234567890001), tsutil.Millis(t4))
 
-	t5 := tsutil.ConvertMillis(int64(1234567890001))
+	t5 := tsutil.ConvertMillis(1234567890001)
 	tf5 := t5.Format(tsutil.RFC3339Milli)
 	require.Equal(t, "2009-02-13T23:31:30.001Z", tf5)
 }
