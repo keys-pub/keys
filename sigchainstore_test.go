@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testSigchainStore(t *testing.T, clock *tsutil.Clock) keys.SigchainStore {
+func testSigchainStore(t *testing.T, clock tsutil.Clock) keys.SigchainStore {
 	mem := docs.NewMem()
 	mem.SetTimeNow(clock.Now)
 	scs := keys.NewSigchainStore(mem)
@@ -18,7 +18,7 @@ func testSigchainStore(t *testing.T, clock *tsutil.Clock) keys.SigchainStore {
 }
 
 func TestSigchainStore(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	scs := testSigchainStore(t, clock)
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
@@ -98,7 +98,7 @@ func TestSigchainStore(t *testing.T) {
 }
 
 func TestSigchainStoreSpew(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 	scs := testSigchainStore(t, clock)
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))

@@ -14,7 +14,7 @@ import (
 
 func TestBackupRestore(t *testing.T) {
 	var err error
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 
 	kr := keyring.NewMem()
 	for i := 0; i < 10; i++ {

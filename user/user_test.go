@@ -47,7 +47,7 @@ func TestNewValidate(t *testing.T) {
 }
 
 func TestSigchainUsers(t *testing.T) {
-	clock := tsutil.NewClock()
+	clock := tsutil.NewTestClock()
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
