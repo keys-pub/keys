@@ -11,10 +11,15 @@ type clock struct {
 
 // Clock returns time.Time.
 type Clock interface {
+	// Now returns current clock time.
 	Now() time.Time
+
+	// Add time to clock.
+	Add(dt time.Duration)
 }
 
-// NewTestClock returns a test Clock starting at 1234567890000 millseconds since epoch.
+// NewTestClock returns a test Clock starting at 1234567890000 millseconds since
+// epoch. Each access to Now() increases time by 1 millisecond.
 func NewTestClock() Clock {
 	t := ConvertMillis(int64(1234567890000))
 	return &clock{
