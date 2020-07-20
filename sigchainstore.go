@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	"time"
 
 	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
@@ -26,18 +26,16 @@ type SigchainStore interface {
 	// SigchainExists if true, has sigchain.
 	SigchainExists(kid ID) (bool, error)
 
-	// Now is current time.
-	Now() time.Time
-	// SetTimeNow sets clock.
-	SetTimeNow(nowFn func() time.Time)
+	// SetClock sets custom Clock.
+	SetClock(clock tsutil.Clock)
 }
 
 type sigchainStore struct {
 	ds    docs.Documents
-	nowFn func() time.Time
+	clock tsutil.Clock
 }
 
-// NewSigchainStore creates a SigchainStore from a DocumentStore.
+// NewSigchainStore creates a SigchainStore from Documents.
 func NewSigchainStore(ds docs.Documents) SigchainStore {
 	return newSigchainStore(ds)
 }
@@ -45,18 +43,13 @@ func NewSigchainStore(ds docs.Documents) SigchainStore {
 func newSigchainStore(ds docs.Documents) *sigchainStore {
 	return &sigchainStore{
 		ds:    ds,
-		nowFn: time.Now,
+		clock: tsutil.NewClock(),
 	}
 }
 
-// Now returns current time.
-func (s sigchainStore) Now() time.Time {
-	return s.nowFn()
-}
-
 // SetTimeNow to use a custom time.Now.
-func (s sigchainStore) SetTimeNow(nowFn func() time.Time) {
-	s.nowFn = nowFn
+func (s sigchainStore) SetClock(clock tsutil.Clock) {
+	s.clock = clock
 }
 
 func (s sigchainStore) KIDs() ([]ID, error) {

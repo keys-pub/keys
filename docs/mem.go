@@ -11,6 +11,7 @@ import (
 
 	"github.com/keys-pub/keys/docs/events"
 	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +24,7 @@ type Mem struct {
 	paths    *StringSet
 	values   map[string][]byte
 	metadata map[string]*metadata
-	nowFn    func() time.Time
+	clock    tsutil.Clock
 	inc      map[string]int64
 }
 
@@ -39,18 +40,18 @@ func NewMem() *Mem {
 		values:   map[string][]byte{},
 		metadata: map[string]*metadata{},
 		inc:      map[string]int64{},
-		nowFn:    time.Now,
+		clock:    tsutil.NewClock(),
 	}
 }
 
 // Now returns current time.
 func (m *Mem) Now() time.Time {
-	return m.nowFn()
+	return m.clock.Now()
 }
 
-// SetTimeNow to use a custom time.Now.
-func (m *Mem) SetTimeNow(nowFn func() time.Time) {
-	m.nowFn = nowFn
+// SetClock to use a custom Clock (for testing).
+func (m *Mem) SetClock(clock tsutil.Clock) {
+	m.clock = clock
 }
 
 // Create at path.
@@ -301,7 +302,7 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 		event := &events.Event{
 			Data:      b,
 			Index:     inc,
-			Timestamp: m.nowFn(),
+			Timestamp: tsutil.Millis(m.clock.Now()),
 		}
 		b, err := json.Marshal(event)
 		if err != nil {

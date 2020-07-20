@@ -11,9 +11,9 @@ import (
 
 func testSigchainStore(t *testing.T, clock tsutil.Clock) keys.SigchainStore {
 	mem := docs.NewMem()
-	mem.SetTimeNow(clock.Now)
+	mem.SetClock(clock)
 	scs := keys.NewSigchainStore(mem)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 	return scs
 }
 

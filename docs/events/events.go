@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"time"
 )
 
 // Event in an event log.
@@ -16,7 +15,7 @@ type Event struct {
 	Index int64 `json:"idx" msgpack:"idx" firestore:"idx"`
 	// Timestamp (read only). The time at which the event was created.
 	// Firestore sets this to the document create time.
-	Timestamp time.Time `json:"ts" msgpack:"ts" firestore:"-"`
+	Timestamp int64 `json:"ts" msgpack:"ts" firestore:"-"`
 }
 
 // Events describes an append only event log.

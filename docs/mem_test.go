@@ -23,19 +23,19 @@ func TestClock(t *testing.T) {
 
 func TestMem(t *testing.T) {
 	mem := docs.NewMem()
-	mem.SetTimeNow(tsutil.NewTestClock().Now)
+	mem.SetClock(tsutil.NewTestClock())
 	testDocumentStore(t, mem)
 }
 
 func TestMemListOptions(t *testing.T) {
 	mem := docs.NewMem()
-	mem.SetTimeNow(tsutil.NewTestClock().Now)
+	mem.SetClock(tsutil.NewTestClock())
 	testDocumentStoreListOptions(t, mem)
 }
 
 func TestMemMetadata(t *testing.T) {
 	mem := docs.NewMem()
-	mem.SetTimeNow(tsutil.NewTestClock().Now)
+	mem.SetClock(tsutil.NewTestClock())
 	testMetadata(t, mem)
 }
 
@@ -143,7 +143,7 @@ func testDocumentStore(t *testing.T, ds docs.Documents) {
 
 func TestDocumentStorePath(t *testing.T) {
 	ds := docs.NewMem()
-	ds.SetTimeNow(tsutil.NewTestClock().Now)
+	ds.SetClock(tsutil.NewTestClock())
 	ctx := context.TODO()
 
 	err := ds.Create(ctx, "test/1", []byte("value1"))

@@ -16,21 +16,21 @@ import (
 )
 
 func TestDocument(t *testing.T) {
-	db := docs.NewMem()
+	mem := docs.NewMem()
 	clock := tsutil.NewTestClock()
-	db.SetTimeNow(clock.Now)
+	mem.SetClock(clock)
 	ctx := context.TODO()
 
 	paths := []string{}
 	for i := 0; i < 4; i++ {
 		p := docs.Path("test", strconv.Itoa(i))
-		err := db.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
+		err := mem.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
 		require.NoError(t, err)
 		paths = append(paths, p)
 	}
 	sort.Strings(paths)
 
-	iter, err := db.DocumentIterator(ctx, "test")
+	iter, err := mem.DocumentIterator(ctx, "test")
 	require.NoError(t, err)
 	out1, err := iter.Next()
 	require.NoError(t, err)
