@@ -15,7 +15,7 @@ import (
 )
 
 func testStore(t *testing.T, dst docs.Documents, scs keys.SigchainStore, req *request.MockRequestor, clock tsutil.Clock) *user.Store {
-	ust, err := user.NewStore(dst, scs, req, clock.Now)
+	ust, err := user.NewStore(dst, scs, req, clock)
 	require.NoError(t, err)
 	return ust
 }
