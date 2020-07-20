@@ -54,22 +54,17 @@ type Store struct {
 	ds    docs.Documents
 	scs   keys.SigchainStore
 	req   request.Requestor
-	nowFn func() time.Time
+	clock tsutil.Clock
 }
 
 // NewStore creates Store.
-func NewStore(ds docs.Documents, scs keys.SigchainStore, req request.Requestor, nowFn func() time.Time) (*Store, error) {
+func NewStore(ds docs.Documents, scs keys.SigchainStore, req request.Requestor, clock tsutil.Clock) (*Store, error) {
 	return &Store{
 		ds:    ds,
 		scs:   scs,
-		nowFn: nowFn,
 		req:   req,
+		clock: clock,
 	}, nil
-}
-
-// Now returns current time.
-func (u *Store) Now() time.Time {
-	return u.nowFn()
 }
 
 // Requestor ...
@@ -130,14 +125,14 @@ func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
 	}
 
-	updateResult(ctx, u.req, usr, result, u.Now())
+	updateResult(ctx, u.req, usr, result, u.clock.Now())
 
 	return result, nil
 }
 
 // RequestVerify a user. Doesn't index result.
 func (u *Store) RequestVerify(ctx context.Context, usr *User) *Result {
-	return RequestVerify(ctx, u.req, usr, u.Now())
+	return RequestVerify(ctx, u.req, usr, u.clock.Now())
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.
@@ -338,7 +333,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 		if keyDoc.Result != nil {
 			ts := tsutil.ConvertMillis(keyDoc.Result.Timestamp)
 
-			if ts.IsZero() || u.Now().Sub(ts) > dt {
+			if ts.IsZero() || u.clock.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)
 			}
 		}
