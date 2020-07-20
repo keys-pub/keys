@@ -22,9 +22,9 @@ func TestSearchUsers(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	ds.SetTimeNow(clock.Now)
+	ds.SetClock(clock)
 	scs := keys.NewSigchainStore(ds)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
@@ -152,9 +152,9 @@ func TestSearchUsers(t *testing.T) {
 func TestUserStoreEmpty(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	ds.SetTimeNow(clock.Now)
+	ds.SetClock(clock)
 	scs := keys.NewSigchainStore(ds)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
@@ -175,9 +175,9 @@ func TestUserStoreEmpty(t *testing.T) {
 func TestUserValidateName(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	ds.SetTimeNow(clock.Now)
+	ds.SetClock(clock)
 	scs := keys.NewSigchainStore(ds)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
@@ -204,9 +204,9 @@ func TestUserValidateName(t *testing.T) {
 func TestUserValidateUpdateInvalid(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	ds.SetTimeNow(clock.Now)
+	ds.SetClock(clock)
 	scs := keys.NewSigchainStore(ds)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
@@ -254,9 +254,9 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 func TestReddit(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	ds.SetTimeNow(clock.Now)
+	ds.SetClock(clock)
 	scs := keys.NewSigchainStore(ds)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
@@ -309,9 +309,9 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	ds.SetTimeNow(clock.Now)
+	ds.SetClock(clock)
 	scs := keys.NewSigchainStore(ds)
-	scs.SetTimeNow(clock.Now)
+	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)

@@ -20,7 +20,7 @@ func TestEvents(t *testing.T) {
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
 	eds := docs.NewMem()
 	clock := tsutil.NewTestClock()
-	eds.SetTimeNow(clock.Now)
+	eds.SetClock(clock)
 
 	ctx := context.TODO()
 	path := docs.Path("test", "eds")
@@ -37,7 +37,7 @@ func TestEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 40, len(out))
 	for i, event := range out {
-		require.False(t, event.Timestamp.IsZero())
+		require.NotEmpty(t, event.Timestamp)
 		require.Equal(t, int64(i+1), event.Index)
 	}
 
@@ -52,7 +52,7 @@ func TestEvents(t *testing.T) {
 		if event == nil {
 			break
 		}
-		require.False(t, event.Timestamp.IsZero())
+		require.NotEmpty(t, event.Timestamp)
 		require.Equal(t, int64(i+1), event.Index)
 		eventsValues = append(eventsValues, string(event.Data))
 		index = event.Index
@@ -159,25 +159,24 @@ func TestEventMarshal(t *testing.T) {
 	event := events.Event{
 		Data:      []byte{0x01, 0x02, 0x03},
 		Index:     123,
-		Timestamp: clock.Now(),
+		Timestamp: tsutil.Millis(clock.Now()),
 	}
 	out, err := msgpack.Marshal(event)
 	require.NoError(t, err)
-	expected := `([]uint8) (len=36 cap=64) {
+	expected := `([]uint8) (len=35 cap=64) {
  00000000  83 a3 64 61 74 c4 03 01  02 03 a3 69 64 78 d3 00  |..dat......idx..|
- 00000010  00 00 00 00 00 00 7b a2  74 73 d7 ff 00 3d 09 00  |......{.ts...=..|
- 00000020  49 96 02 d2                                       |I...|
+ 00000010  00 00 00 00 00 00 7b a2  74 73 d3 00 00 01 1f 71  |......{.ts.....q|
+ 00000020  fb 04 51                                          |..Q|
 }
 `
 	require.Equal(t, expected, spew.Sdump(out))
 
 	out, err = json.Marshal(event)
 	require.NoError(t, err)
-	expected = `([]uint8) (len=57 cap=64) {
+	expected = `([]uint8) (len=44 cap=48) {
  00000000  7b 22 64 61 74 61 22 3a  22 41 51 49 44 22 2c 22  |{"data":"AQID","|
- 00000010  69 64 78 22 3a 31 32 33  2c 22 74 73 22 3a 22 32  |idx":123,"ts":"2|
- 00000020  30 30 39 2d 30 32 2d 31  33 54 32 33 3a 33 31 3a  |009-02-13T23:31:|
- 00000030  33 30 2e 30 30 31 5a 22  7d                       |30.001Z"}|
+ 00000010  69 64 78 22 3a 31 32 33  2c 22 74 73 22 3a 31 32  |idx":123,"ts":12|
+ 00000020  33 34 35 36 37 38 39 30  30 30 31 7d              |34567890001}|
 }
 `
 	require.Equal(t, expected, spew.Sdump(out))
