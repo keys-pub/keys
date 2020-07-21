@@ -80,15 +80,19 @@ func TestEncodeBase64(t *testing.T) {
 
 func TestMustEncodeDecode(t *testing.T) {
 	in := bytes.Repeat([]byte{0x01}, 32)
-	out := encoding.DecodeBase32(encoding.EncodeBase32(in))
+	out, err := encoding.DecodeBase32(encoding.EncodeBase32(in))
+	require.NoError(t, err)
 	require.Equal(t, in, out)
 
-	out = encoding.DecodeBase62(encoding.EncodeBase62(in))
+	out, err = encoding.DecodeBase62(encoding.EncodeBase62(in))
+	require.NoError(t, err)
 	require.Equal(t, in, out)
 
-	out = encoding.DecodeBase64(encoding.EncodeBase64(in))
+	out, err = encoding.DecodeBase64(encoding.EncodeBase64(in))
+	require.NoError(t, err)
 	require.Equal(t, in, out)
 
-	out = encoding.DecodeHex(encoding.EncodeHex(in))
+	out, err = encoding.DecodeHex(encoding.EncodeHex(in))
+	require.NoError(t, err)
 	require.Equal(t, in, out)
 }
