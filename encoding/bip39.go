@@ -12,8 +12,8 @@ type ErrInvalidPhrase struct {
 	cause error
 }
 
-// ErrInvalidNumBytesForBIP39 if invalid number of bytes for encoding.
-var ErrInvalidNumBytesForBIP39 = errors.New("bip39 only accepts 16, 20, 24, 28, 32 bytes")
+// ErrInvalidBIP39Input if invalid number of bytes for encoding.
+var ErrInvalidBIP39Input = errors.New("bip39 only accepts 16, 20, 24, 28, 32 bytes")
 
 func (e ErrInvalidPhrase) Error() string {
 	return "invalid phrase"
@@ -29,7 +29,7 @@ func BytesToPhrase(b []byte) (string, error) {
 	out, err := bip39.NewMnemonic(b)
 	if err != nil {
 		if err == bip39.ErrEntropyLengthInvalid {
-			return "", ErrInvalidNumBytesForBIP39
+			return "", ErrInvalidBIP39Input
 		}
 		return "", err
 	}
