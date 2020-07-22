@@ -109,15 +109,15 @@ func TestEncodeBIP39(t *testing.T) {
 	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice comic", out)
 
 	b = bytes.Repeat([]byte{0x01}, 8)
-	out, err = encoding.Encode(b, encoding.BIP39)
+	_, err = encoding.Encode(b, encoding.BIP39)
 	require.Equal(t, err, encoding.ErrInvalidNumBytesForBIP39)
 
 	b = bytes.Repeat([]byte{0x01}, 40)
-	out, err = encoding.Encode(b, encoding.BIP39)
+	_, err = encoding.Encode(b, encoding.BIP39)
 	require.Equal(t, err, encoding.ErrInvalidNumBytesForBIP39)
 
 	b = bytes.Repeat([]byte{0x01}, 64)
-	out, err = encoding.Encode(b, encoding.BIP39)
+	_, err = encoding.Encode(b, encoding.BIP39)
 	require.Equal(t, err, encoding.ErrInvalidNumBytesForBIP39)
 }
 
