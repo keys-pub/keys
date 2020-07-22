@@ -78,6 +78,49 @@ func TestEncodeBase64(t *testing.T) {
 	require.EqualError(t, err, "invalid option: lowercase")
 }
 
+func TestEncodeBIP39(t *testing.T) {
+	var b []byte
+	var out string
+	var err error
+
+	b = bytes.Repeat([]byte{0x01}, 16)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.NoError(t, err)
+	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor adjust", out)
+
+	b = bytes.Repeat([]byte{0x01}, 20)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.NoError(t, err)
+	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter all", out)
+
+	b = bytes.Repeat([]byte{0x01}, 24)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.NoError(t, err)
+	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd approve", out)
+
+	b = bytes.Repeat([]byte{0x01}, 28)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.NoError(t, err)
+	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic banana", out)
+
+	b = bytes.Repeat([]byte{0x01}, 32)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.NoError(t, err)
+	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice comic", out)
+
+	b = bytes.Repeat([]byte{0x01}, 8)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.Equal(t, err, encoding.ErrInvalidNumBytesForBIP39)
+
+	b = bytes.Repeat([]byte{0x01}, 40)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.Equal(t, err, encoding.ErrInvalidNumBytesForBIP39)
+
+	b = bytes.Repeat([]byte{0x01}, 64)
+	out, err = encoding.Encode(b, encoding.BIP39)
+	require.Equal(t, err, encoding.ErrInvalidNumBytesForBIP39)
+}
+
 func TestMustEncodeDecode(t *testing.T) {
 	in := bytes.Repeat([]byte{0x01}, 32)
 	out, err := encoding.DecodeBase32(encoding.EncodeBase32(in))
