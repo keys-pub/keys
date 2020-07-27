@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -152,6 +153,9 @@ func testSignVerifyFile(t *testing.T, armored bool) {
 }
 
 func TestSignFileErrors(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip()
+	}
 	var err error
 	alice := keys.GenerateEdX25519Key()
 	err = saltpack.SignFile("notfound", "notfound.sig", alice, true, true)
@@ -159,6 +163,9 @@ func TestSignFileErrors(t *testing.T) {
 }
 
 func TestVerifyFileErrors(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip()
+	}
 	var err error
 	_, err = saltpack.VerifyFile("notfound.signed", "notfound")
 	require.EqualError(t, err, "open notfound.signed: no such file or directory")
