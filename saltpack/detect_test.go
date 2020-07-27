@@ -31,7 +31,7 @@ func TestDetectEncrypt(t *testing.T) {
 	require.NoError(t, err)
 	enc, armored = detectEncrypt([]byte(signcrypted))
 	require.Equal(t, SigncryptEncoding, enc)
-	require.True(t, armored)
+	require.False(t, armored)
 
 	out, err = Signcrypt(message, true, alice, bob.ID())
 	require.NoError(t, err)
