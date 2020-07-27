@@ -151,6 +151,9 @@ func VerifyDetachedReader(sig []byte, r io.Reader) (keys.ID, error) {
 	default:
 		return "", errors.Errorf("invalid data")
 	}
+	if err != nil {
+		return "", convertSignKeyErr(err)
+	}
 	signer, err := edX25519KeyID(spk.ToKID())
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to verify")
