@@ -6,6 +6,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ErrVerifyFailed if key verify failed.
+var ErrVerifyFailed = errors.New("verify failed")
+
 // ErrNotFound describes a key not found error when a key is required.
 type ErrNotFound struct {
 	ID string
