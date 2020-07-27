@@ -228,7 +228,7 @@ func (s *EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
 	}
 	_, ok := sign.Open(nil, b, s.publicKey)
 	if !ok {
-		return nil, errors.Errorf("verify failed")
+		return nil, ErrVerifyFailed
 	}
 	return b[sign.Overhead:], nil
 }

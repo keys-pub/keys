@@ -3,6 +3,9 @@ package saltpack_test
 import (
 	"bytes"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -15,7 +18,7 @@ func TestSignVerify(t *testing.T) {
 
 	message := []byte("hi")
 
-	sig, err := saltpack.Sign(message, alice)
+	sig, err := saltpack.Sign(message, false, alice)
 	require.NoError(t, err)
 
 	out, signer, err := saltpack.Verify(sig)
@@ -23,7 +26,7 @@ func TestSignVerify(t *testing.T) {
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 
-	sig, err = saltpack.SignDetached(message, alice)
+	sig, err = saltpack.SignDetached(message, false, alice)
 	require.NoError(t, err)
 
 	signer, err = saltpack.VerifyDetached(sig, message)
@@ -37,12 +40,20 @@ func TestSignVerifyArmored(t *testing.T) {
 
 	message := []byte("hi")
 
-	sig, err := saltpack.SignArmored(message, alice)
+	sig, err := saltpack.Sign(message, true, alice)
 	require.NoError(t, err)
 
-	messageOut, signer, err := saltpack.VerifyArmored(sig)
+	out, signer, err := saltpack.Verify(sig)
 	require.NoError(t, err)
-	require.Equal(t, message, messageOut)
+	require.Equal(t, message, out)
+	require.Equal(t, alice.PublicKey().ID(), signer)
+
+	sig, err = saltpack.SignDetached(message, true, alice)
+	require.NoError(t, err)
+
+	signer, err = saltpack.VerifyDetached(sig, message)
+	require.NoError(t, err)
+	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 }
 
@@ -52,7 +63,7 @@ func TestSignVerifyStream(t *testing.T) {
 	message := []byte("I'm alice")
 
 	var buf bytes.Buffer
-	signed, err := saltpack.NewSignStream(&buf, alice)
+	signed, err := saltpack.NewSignStream(&buf, false, false, alice)
 	require.NoError(t, err)
 	n, err := signed.Write(message)
 	require.NoError(t, err)
@@ -68,7 +79,7 @@ func TestSignVerifyStream(t *testing.T) {
 	require.Equal(t, message, out)
 
 	var buf2 bytes.Buffer
-	signed2, err := saltpack.NewSignArmoredStream(&buf2, alice)
+	signed2, err := saltpack.NewSignStream(&buf2, true, false, alice)
 	require.NoError(t, err)
 	n, err = signed2.Write(message)
 	require.NoError(t, err)
@@ -76,7 +87,7 @@ func TestSignVerifyStream(t *testing.T) {
 	signed2.Close()
 
 	reader = bytes.NewReader(buf2.Bytes())
-	stream, signer, err = saltpack.NewVerifyArmoredStream(reader)
+	stream, signer, err = saltpack.NewVerifyStream(reader)
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
 	out, err = ioutil.ReadAll(stream)
@@ -85,7 +96,7 @@ func TestSignVerifyStream(t *testing.T) {
 
 	// Sign detached
 	var buf3 bytes.Buffer
-	signed3, err := saltpack.NewSignDetachedStream(&buf3, alice)
+	signed3, err := saltpack.NewSignStream(&buf3, false, true, alice)
 	require.NoError(t, err)
 	_, err = signed3.Write(message)
 	require.NoError(t, err)
@@ -98,16 +109,95 @@ func TestSignVerifyStream(t *testing.T) {
 
 	// Sign armored/detached
 	var buf4 bytes.Buffer
-	signed4, err := saltpack.NewSignArmoredDetachedStream(&buf4, alice)
+	signed4, err := saltpack.NewSignStream(&buf4, true, true, alice)
 	require.NoError(t, err)
 	_, err = signed4.Write(message)
 	require.NoError(t, err)
 	require.Equal(t, len(message), n)
 	signed4.Close()
 
-	signer, err = saltpack.VerifyArmoredDetachedReader(buf4.String(), bytes.NewBuffer(message))
+	signer, err = saltpack.VerifyDetachedReader(buf4.Bytes(), bytes.NewBuffer(message))
 	require.NoError(t, err)
 	require.Equal(t, alice.PublicKey().ID(), signer)
+}
+
+func TestSignVerifyFile(t *testing.T) {
+	testSignVerifyFile(t, false)
+	testSignVerifyFile(t, true)
+}
+
+func testSignVerifyFile(t *testing.T, armored bool) {
+	var err error
+	alice := keys.GenerateEdX25519Key()
+	in := filepath.Join(os.TempDir(), keys.RandFileName())
+	data := bytes.Repeat([]byte{0x01}, 16*1024)
+	err = ioutil.WriteFile(in, data, 0600)
+	require.NoError(t, err)
+	out := in + ".signed"
+	outVerified := in + ".verified"
+	defer func() {
+		_ = os.Remove(in)
+		_ = os.Remove(out)
+		_ = os.Remove(outVerified)
+	}()
+
+	err = saltpack.SignFile(in, out, alice, armored, false)
+	require.NoError(t, err)
+
+	kid, err := saltpack.VerifyFile(out, outVerified)
+	require.NoError(t, err)
+	require.Equal(t, alice.ID(), kid)
+	b, err := ioutil.ReadFile(outVerified)
+	require.NoError(t, err)
+	require.Equal(t, data, b)
+}
+
+func TestSignFileErrors(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip()
+	}
+	var err error
+	alice := keys.GenerateEdX25519Key()
+	err = saltpack.SignFile("notfound", "notfound.sig", alice, true, true)
+	require.EqualError(t, err, "open notfound: no such file or directory")
+}
+
+func TestVerifyFileErrors(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip()
+	}
+	var err error
+	_, err = saltpack.VerifyFile("notfound.signed", "notfound")
+	require.EqualError(t, err, "open notfound.signed: no such file or directory")
+}
+
+func TestSignVerifyFileDetached(t *testing.T) {
+	testSignVerifyFileDetached(t, false)
+	testSignVerifyFileDetached(t, true)
+}
+
+func testSignVerifyFileDetached(t *testing.T, armored bool) {
+	var err error
+	alice := keys.GenerateEdX25519Key()
+	in := filepath.Join(os.TempDir(), keys.RandFileName())
+	data := bytes.Repeat([]byte{0x01}, 16*1024)
+	err = ioutil.WriteFile(in, data, 0600)
+	require.NoError(t, err)
+	out := in + ".sig"
+	defer func() {
+		_ = os.Remove(in)
+		_ = os.Remove(out)
+	}()
+
+	err = saltpack.SignFile(in, out, alice, armored, true)
+	require.NoError(t, err)
+
+	sig, err := ioutil.ReadFile(out)
+	require.NoError(t, err)
+
+	kid, err := saltpack.VerifyFileDetached(sig, in)
+	require.NoError(t, err)
+	require.Equal(t, alice.ID(), kid)
 }
 
 func TestStripBefore(t *testing.T) {

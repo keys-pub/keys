@@ -10,21 +10,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-// KeyStore for Saltpack keys.
-type KeyStore interface {
+// Keyring for Saltpack keys.
+type Keyring interface {
 	X25519Keys() ([]*keys.X25519Key, error)
 }
 
 type saltpack struct {
-	ks KeyStore
+	kr Keyring
 }
 
 func (s *saltpack) X25519Keys() ([]*keys.X25519Key, error) {
-	return s.ks.X25519Keys()
+	return s.kr.X25519Keys()
 }
 
-func newSaltpack(ks KeyStore) *saltpack {
-	return &saltpack{ks: ks}
+func newSaltpack(kr Keyring) *saltpack {
+	return &saltpack{kr: kr}
 }
 
 type store struct {
@@ -35,8 +35,8 @@ func (s *store) X25519Keys() ([]*keys.X25519Key, error) {
 	return s.keys, nil
 }
 
-// NewKeyStore creates store for keys.
-func NewKeyStore(keys ...keys.Key) KeyStore {
+// NewKeyring creates keyring for keys.
+func NewKeyring(keys ...keys.Key) Keyring {
 	return &store{keys: x25519Keys(keys)}
 }
 
@@ -76,7 +76,10 @@ func (s *saltpack) CreateEphemeralKey() (ksaltpack.BoxSecretKey, error) {
 // to one of the given Key IDs. Returns the index and the key on success,
 // or -1 and nil on failure.
 func (s *saltpack) LookupBoxSecretKey(kids [][]byte) (int, ksaltpack.BoxSecretKey) {
-	keys, err := s.ks.X25519Keys()
+	if s.kr == nil {
+		return -1, nil
+	}
+	keys, err := s.kr.X25519Keys()
 	if err != nil {
 		logger.Warningf("Failed to get x25519 keys: %v", err)
 		return -1, nil
@@ -105,7 +108,10 @@ func (s *saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 // receivers via trial and error.
 func (s *saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
 	logger.Infof("List x25519 keys...")
-	keys, err := s.ks.X25519Keys()
+	if s.kr == nil {
+		return []ksaltpack.BoxSecretKey{}
+	}
+	keys, err := s.kr.X25519Keys()
 	if err != nil {
 		logger.Warningf("Failed to get x25519 keys: %v", err)
 		return []ksaltpack.BoxSecretKey{}
