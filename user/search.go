@@ -102,6 +102,9 @@ func (u *Store) findKID(ctx context.Context, kid keys.ID) (*SearchResult, error)
 	if err != nil {
 		return nil, err
 	}
+	if rkid == "" {
+		return nil, nil
+	}
 
 	res, err = u.Get(ctx, rkid)
 	if err != nil {

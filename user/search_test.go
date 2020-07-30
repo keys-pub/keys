@@ -78,6 +78,11 @@ func TestSearchUsers(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 
+	// Search kid not found
+	results, err = ust.Search(ctx, &user.SearchRequest{Query: "kex1akxmcdxr84zk3lpexrzjznelyje4dnnq7tca25m4j6eg7dd746eq057ma9"})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(results))
+
 	// Revoke alice, update
 	sc, err := scs.Sigchain(alice.ID())
 	require.NoError(t, err)
