@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/saltpack"
@@ -144,6 +145,12 @@ func testSignVerifyFile(t *testing.T, armored bool) {
 	err = saltpack.SignFile(in, out, alice, armored, false)
 	require.NoError(t, err)
 
+	if armored {
+		signed, err := ioutil.ReadFile(out)
+		require.NoError(t, err)
+		require.True(t, utf8.Valid(signed))
+	}
+
 	kid, err := saltpack.VerifyFile(out, outVerified)
 	require.NoError(t, err)
 	require.Equal(t, alice.ID(), kid)
@@ -194,6 +201,10 @@ func testSignVerifyFileDetached(t *testing.T, armored bool) {
 
 	sig, err := ioutil.ReadFile(out)
 	require.NoError(t, err)
+
+	if armored {
+		require.True(t, utf8.Valid(sig))
+	}
 
 	kid, err := saltpack.VerifyFileDetached(sig, in)
 	require.NoError(t, err)
