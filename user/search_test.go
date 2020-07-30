@@ -50,6 +50,8 @@ func TestSearchUsers(t *testing.T) {
 
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
+
+	// Search "alic"
 	results, err = ust.Search(ctx, &user.SearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
@@ -61,6 +63,20 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 1, results[0].Result.User.Seq)
 	require.Equal(t, int64(1234567890028), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890028), results[0].Result.Timestamp)
+
+	// Search "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
+	results, err = ust.Search(ctx, &user.SearchRequest{Query: "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	require.NotNil(t, results[0].Result)
+	require.Equal(t, alice.ID(), results[0].Result.User.KID)
+
+	// Search "kex132yw8h"
+	results, err = ust.Search(ctx, &user.SearchRequest{Query: "kex132yw8h"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	require.NotNil(t, results[0].Result)
+	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 
 	// Revoke alice, update
 	sc, err := scs.Sigchain(alice.ID())
