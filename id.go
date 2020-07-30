@@ -116,19 +116,24 @@ func (i ID) IsX25519() bool {
 	return hrp == x25519KeyHRP
 }
 
+func hrpToKeyType(hrp string) KeyType {
+	switch hrp {
+	case edx25519KeyHRP:
+		return EdX25519Public
+	case x25519KeyHRP:
+		return X25519Public
+	default:
+		return ""
+	}
+}
+
 // PublicKeyType returns public key type that ID represents or empty string if unknown.
 func (i ID) PublicKeyType() KeyType {
 	hrp, _, err := i.Decode()
 	if err != nil {
 		return ""
 	}
-	switch hrp {
-	case edx25519KeyHRP:
-		return EdX25519Public
-	case x25519KeyHRP:
-		return X25519Public
-	}
-	return ""
+	return hrpToKeyType(hrp)
 }
 
 // ID for Keys interface.

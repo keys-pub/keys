@@ -217,8 +217,16 @@ func (u *Store) removeUser(ctx context.Context, user *User) error {
 	return nil
 }
 
+// indexKID is collection for key identifiers.
 const indexKID = "kid"
+
+// indexUser is collection for user@service.
 const indexUser = "user"
+
+// indexRKL is collection for reverse key lookups.
+const indexRKL = "rkl"
+
+// TODO: Remove document from indexes if failed for a long time?
 
 func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	// Remove existing if different
@@ -242,12 +250,24 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	}
 	logger.Debugf("Data to index: %s", string(data))
 
+	// Index for kid
 	kidPath := docs.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
 	if err := u.ds.Set(ctx, kidPath, data); err != nil {
 		return err
 	}
 
+	// Index for rkl
+	rk, err := keys.Convert(keyDoc.KID, keys.X25519Public)
+	if err != nil {
+		return err
+	}
+	rklPath := docs.Path(indexRKL, rk.ID())
+	if err := u.ds.Set(ctx, rklPath, []byte(keyDoc.KID.String())); err != nil {
+		return err
+	}
+
+	// Index for user
 	if keyDoc.Result != nil {
 		index := false
 		if keyDoc.Result.VerifiedAt == 0 {
@@ -281,6 +301,22 @@ func indexName(user *User) string {
 	return fmt.Sprintf("%s@%s", user.Name, user.Service)
 }
 
+func (u *Store) lookupRelated(ctx context.Context, kid keys.ID) (keys.ID, error) {
+	path := docs.Path(indexRKL, kid.String())
+	doc, err := u.ds.Get(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	if doc == nil {
+		return "", nil
+	}
+	rkid, err := keys.ParseID(string(doc.Data))
+	if err != nil {
+		return "", err
+	}
+	return rkid, nil
+}
+
 // Status returns KIDs that match a status.
 func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
@@ -312,7 +348,7 @@ func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 }
 
 // Expired returns KIDs that haven't been checked in a duration.
-func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error) {
+func (u *Store) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
@@ -332,6 +368,12 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration) ([]keys.ID, error
 		}
 		if keyDoc.Result != nil {
 			ts := tsutil.ConvertMillis(keyDoc.Result.Timestamp)
+
+			// If verifiedAt age is too old skip it
+			vts := tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)
+			if !vts.IsZero() && u.clock.Now().Sub(vts) > maxAge {
+				continue
+			}
 
 			if ts.IsZero() || u.clock.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)
