@@ -66,15 +66,19 @@ func (u *Store) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult
 		limit = 100
 	}
 
-	// Check if query is for key identifier
+	// Check if query is for a key identifier.
 	kid, err := keys.ParseID(req.Query)
 	if err == nil {
-		res, err := u.findKID(ctx, kid)
+		res, err := u.Find(ctx, kid)
 		if err != nil {
 			return nil, err
 		}
 		if res != nil {
-			return []*SearchResult{res}, nil
+			return []*SearchResult{&SearchResult{
+				KID:    kid,
+				Result: res,
+				Field:  "kid",
+			}}, nil
 		}
 	}
 
@@ -83,39 +87,4 @@ func (u *Store) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult
 		return nil, err
 	}
 	return res, nil
-}
-
-func (u *Store) findKID(ctx context.Context, kid keys.ID) (*SearchResult, error) {
-	res, err := u.Get(ctx, kid)
-	if err != nil {
-		return nil, err
-	}
-	if res != nil {
-		return &SearchResult{
-			KID:    kid,
-			Result: res,
-			Field:  "kid",
-		}, nil
-	}
-
-	rkid, err := u.lookupRelated(ctx, kid)
-	if err != nil {
-		return nil, err
-	}
-	if rkid == "" {
-		return nil, nil
-	}
-
-	res, err = u.Get(ctx, rkid)
-	if err != nil {
-		return nil, err
-	}
-	if res != nil {
-		return &SearchResult{
-			KID:    kid,
-			Result: res,
-			Field:  "kid",
-		}, nil
-	}
-	return nil, nil
 }

@@ -301,7 +301,27 @@ func indexName(user *User) string {
 	return fmt.Sprintf("%s@%s", user.Name, user.Service)
 }
 
-func (u *Store) lookupRelated(ctx context.Context, kid keys.ID) (keys.ID, error) {
+// Find user result for KID.
+// Will also search for related keys.
+func (u *Store) Find(ctx context.Context, kid keys.ID) (*Result, error) {
+	res, err := u.Get(ctx, kid)
+	if err != nil {
+		return nil, err
+	}
+	if res != nil {
+		return res, nil
+	}
+	rkid, err := u.reverseLookup(ctx, kid)
+	if err != nil {
+		return nil, err
+	}
+	if rkid == "" {
+		return nil, nil
+	}
+	return u.Get(ctx, rkid)
+}
+
+func (u *Store) reverseLookup(ctx context.Context, kid keys.ID) (keys.ID, error) {
 	path := docs.Path(indexRKL, kid.String())
 	doc, err := u.ds.Get(ctx, path)
 	if err != nil {

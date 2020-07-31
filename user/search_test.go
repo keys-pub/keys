@@ -170,6 +170,47 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, testdataString(t, "testdata/user.spew"), spew.String())
 }
 
+func TestFind(t *testing.T) {
+	// SetLogger(NewLogger(DebugLevel))
+	var err error
+	clock := tsutil.NewTestClock()
+	ds := docs.NewMem()
+	ds.SetClock(clock)
+	scs := keys.NewSigchainStore(ds)
+	scs.SetClock(clock)
+
+	req := request.NewMockRequestor()
+	ust := testStore(t, ds, scs, req, clock)
+	ctx := context.TODO()
+
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	require.NoError(t, err)
+
+	// Add alice@github
+	testSaveUser(t, ust, scs, alice, "alice", "github", clock, req)
+
+	_, err = ust.Update(ctx, alice.ID())
+	require.NoError(t, err)
+
+	// Find "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
+	res, err := ust.Find(ctx, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"))
+	require.NoError(t, err)
+	require.NotNil(t, res)
+	require.Equal(t, alice.ID(), res.User.KID)
+
+	// Find "kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"
+	res, err = ust.Find(ctx, keys.ID("kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"))
+	require.NoError(t, err)
+	require.NotNil(t, res)
+	require.Equal(t, alice.ID(), res.User.KID)
+
+	// Find (not found)
+	rand := keys.GenerateEdX25519Key()
+	res, err = ust.Find(ctx, rand.ID())
+	require.NoError(t, err)
+	require.Nil(t, res)
+}
+
 func TestUserStoreEmpty(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
