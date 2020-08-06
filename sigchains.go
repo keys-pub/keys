@@ -70,6 +70,9 @@ func (s *Sigchains) Save(sc *Sigchain) error {
 			return err
 		}
 	}
+	if err := s.Index(sc.KID()); err != nil {
+		return err
+	}
 	return nil
 }
 
