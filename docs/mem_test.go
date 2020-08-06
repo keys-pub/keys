@@ -24,13 +24,13 @@ func TestClock(t *testing.T) {
 func TestMem(t *testing.T) {
 	mem := docs.NewMem()
 	mem.SetClock(tsutil.NewTestClock())
-	testDocumentStore(t, mem)
+	testDocuments(t, mem)
 }
 
 func TestMemListOptions(t *testing.T) {
 	mem := docs.NewMem()
 	mem.SetClock(tsutil.NewTestClock())
-	testDocumentStoreListOptions(t, mem)
+	testDocumentsListOptions(t, mem)
 }
 
 func TestMemMetadata(t *testing.T) {
@@ -39,7 +39,7 @@ func TestMemMetadata(t *testing.T) {
 	testMetadata(t, mem)
 }
 
-func testDocumentStore(t *testing.T, ds docs.Documents) {
+func testDocuments(t *testing.T, ds docs.Documents) {
 	ctx := context.TODO()
 
 	for i := 10; i <= 30; i = i + 10 {
@@ -141,7 +141,7 @@ func testDocumentStore(t *testing.T, ds docs.Documents) {
 	require.EqualError(t, err, "only root collections supported")
 }
 
-func TestDocumentStorePath(t *testing.T) {
+func TestDocumentsPath(t *testing.T) {
 	ds := docs.NewMem()
 	ds.SetClock(tsutil.NewTestClock())
 	ctx := context.TODO()
@@ -173,7 +173,7 @@ func TestDocumentStorePath(t *testing.T) {
 	require.Equal(t, "/test", cols[0].Path)
 }
 
-func testDocumentStoreListOptions(t *testing.T, ds docs.Documents) {
+func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
 	ctx := context.TODO()
 
 	err := ds.Create(ctx, "/test/1", []byte("val1"))

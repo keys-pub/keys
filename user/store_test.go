@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testStore(t *testing.T, dst docs.Documents, scs keys.SigchainStore, req *request.MockRequestor, clock tsutil.Clock) *user.Store {
+func testStore(t *testing.T, dst docs.Documents, scs *keys.Sigchains, req *request.MockRequestor, clock tsutil.Clock) *user.Store {
 	ust, err := user.NewStore(dst, scs, req, clock)
 	require.NoError(t, err)
 	return ust
@@ -74,7 +74,7 @@ func TestResultGithub(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
 	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdataBytes(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
@@ -94,7 +94,7 @@ func TestResultGithub(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
@@ -131,7 +131,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice2")
@@ -165,7 +165,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 	sc := keys.NewSigchain(sk.ID())
 
@@ -197,7 +197,7 @@ func TestResultTwitter(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
 	usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
@@ -213,7 +213,7 @@ func TestResultTwitter(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
@@ -241,7 +241,7 @@ func TestResultReddit(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
 	usr, err := user.NewForSigning(sk.ID(), "reddit", "charlie")
@@ -257,7 +257,7 @@ func TestResultReddit(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
@@ -306,7 +306,7 @@ func TestCheckNoUsers(t *testing.T) {
 	req := request.NewMockRequestor()
 	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
 	result, err := ust.CheckSigchain(context.TODO(), sc)
@@ -323,7 +323,7 @@ func TestCheckFailure(t *testing.T) {
 	req := request.NewMockRequestor()
 	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	ust := testStore(t, dst, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
@@ -429,14 +429,14 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/gabriel/status/1259188857846632448", []byte(msg))
 
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	result, err := ust.Update(context.TODO(), kid)
@@ -448,7 +448,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	clock := tsutil.NewTestClock()
 	dst := docs.NewMem()
-	scs := keys.NewSigchainStore(dst)
+	scs := keys.NewSigchains(dst)
 	req := request.NewMockRequestor()
 	ust := testStore(t, dst, scs, req, clock)
 
@@ -471,7 +471,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 
 	req.SetResponse("https://mobile.twitter.com/gabriel/status/1", []byte(msg))
 
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	result, err := ust.Update(context.TODO(), kid)
@@ -481,7 +481,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	// Revoke
 	_, err = sc.Revoke(1, sk)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 	// Don't update here to test revoke + new statement updates correctly
 
@@ -495,7 +495,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 
 	req.SetResponse("https://mobile.twitter.com/gabriel/status/2", []byte(msg))
 
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	result, err = ust.Update(context.TODO(), kid)

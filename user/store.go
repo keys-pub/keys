@@ -52,13 +52,13 @@ type keyDocument struct {
 // Store is the environment for user results.
 type Store struct {
 	ds    docs.Documents
-	scs   keys.SigchainStore
+	scs   *keys.Sigchains
 	req   request.Requestor
 	clock tsutil.Clock
 }
 
 // NewStore creates Store.
-func NewStore(ds docs.Documents, scs keys.SigchainStore, req request.Requestor, clock tsutil.Clock) (*Store, error) {
+func NewStore(ds docs.Documents, scs *keys.Sigchains, req request.Requestor, clock tsutil.Clock) (*Store, error) {
 	return &Store{
 		ds:    ds,
 		scs:   scs,
@@ -223,9 +223,6 @@ const indexKID = "kid"
 // indexUser is collection for user@service.
 const indexUser = "user"
 
-// indexRKL is collection for reverse key lookups.
-const indexRKL = "rkl"
-
 // TODO: Remove document from indexes if failed for a long time?
 
 func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
@@ -254,16 +251,6 @@ func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
 	kidPath := docs.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
 	if err := u.ds.Set(ctx, kidPath, data); err != nil {
-		return err
-	}
-
-	// Index for rkl
-	rk, err := keys.Convert(keyDoc.KID, keys.X25519Public)
-	if err != nil {
-		return err
-	}
-	rklPath := docs.Path(indexRKL, rk.ID())
-	if err := u.ds.Set(ctx, rklPath, []byte(keyDoc.KID.String())); err != nil {
 		return err
 	}
 
@@ -311,7 +298,7 @@ func (u *Store) Find(ctx context.Context, kid keys.ID) (*Result, error) {
 	if res != nil {
 		return res, nil
 	}
-	rkid, err := u.reverseLookup(ctx, kid)
+	rkid, err := u.scs.Lookup(kid)
 	if err != nil {
 		return nil, err
 	}
@@ -319,22 +306,6 @@ func (u *Store) Find(ctx context.Context, kid keys.ID) (*Result, error) {
 		return nil, nil
 	}
 	return u.Get(ctx, rkid)
-}
-
-func (u *Store) reverseLookup(ctx context.Context, kid keys.ID) (keys.ID, error) {
-	path := docs.Path(indexRKL, kid.String())
-	doc, err := u.ds.Get(ctx, path)
-	if err != nil {
-		return "", err
-	}
-	if doc == nil {
-		return "", nil
-	}
-	rkid, err := keys.ParseID(string(doc.Data))
-	if err != nil {
-		return "", err
-	}
-	return rkid, nil
 }
 
 // Status returns KIDs that match a status.

@@ -23,7 +23,7 @@ func TestSearchUsers(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -61,8 +61,8 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "github", results[0].Result.User.Service)
 	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
-	require.Equal(t, int64(1234567890033), results[0].Result.VerifiedAt)
-	require.Equal(t, int64(1234567890033), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890034), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890034), results[0].Result.Timestamp)
 
 	// Search "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
 	results, err = ust.Search(ctx, &user.SearchRequest{Query: "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"})
@@ -88,7 +88,7 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	_, err = sc.Revoke(1, alice)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	_, err = sc.Revoke(aliceNewSt.Seq, alice)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 	_, err = ust.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestFind(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -215,7 +215,7 @@ func TestUserStoreEmpty(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -238,7 +238,7 @@ func TestUserValidateName(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -267,7 +267,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -300,7 +300,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	ctx := context.TODO()
@@ -317,7 +317,7 @@ func TestReddit(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -337,7 +337,7 @@ func TestReddit(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	ctx := context.TODO()
@@ -372,7 +372,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	ds.SetClock(clock)
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
@@ -394,8 +394,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, alice.ID(), results[0].KID)
-	require.Equal(t, int64(1234567890003), results[0].Result.Timestamp)
-	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890004), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
 	data, err := req.Response("https://gist.github.com/alice/1")
 	require.NoError(t, err)
@@ -412,7 +412,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), results[0].Result.User.KID)
 	require.Equal(t, user.StatusConnFailure, results[0].Result.Status)
 	require.Equal(t, int64(1234567890007), results[0].Result.Timestamp)
-	require.Equal(t, int64(1234567890003), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
 	// List by status
 	fail, err := ust.Status(ctx, user.StatusConnFailure)
@@ -456,7 +456,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 func TestExpired(t *testing.T) {
 	var err error
 	ds := docs.NewMem()
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
@@ -504,13 +504,13 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, 0, len(ids))
 }
 
-func testSaveUser(t *testing.T, ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
+func testSaveUser(t *testing.T, ust *user.Store, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
 	st, err := saveUser(ust, scs, key, name, service, clock, mock)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
+func saveUser(ust *user.Store, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
 	murl := ""
 	switch service {
@@ -548,7 +548,7 @@ func saveUser(ust *user.Store, scs keys.SigchainStore, key *keys.EdX25519Key, na
 		return nil, err
 	}
 
-	if err = scs.SaveSigchain(sc); err != nil {
+	if err = scs.Save(sc); err != nil {
 		return nil, err
 	}
 
@@ -581,7 +581,7 @@ func TestSearch(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
-	scs := keys.NewSigchainStore(ds)
+	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
 	ust := testStore(t, ds, scs, req, clock)
 	ctx := context.TODO()

@@ -9,21 +9,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testSigchainStore(t *testing.T, clock tsutil.Clock) keys.SigchainStore {
+func testSigchains(t *testing.T, clock tsutil.Clock) *keys.Sigchains {
 	mem := docs.NewMem()
 	mem.SetClock(clock)
-	scs := keys.NewSigchainStore(mem)
+	scs := keys.NewSigchains(mem)
 	scs.SetClock(clock)
 	return scs
 }
 
-func TestSigchainStore(t *testing.T) {
+func TestSigchains(t *testing.T) {
 	clock := tsutil.NewTestClock()
-	scs := testSigchainStore(t, clock)
+	scs := testSigchains(t, clock)
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	ok, err := scs.SigchainExists(alice.ID())
+	ok, err := scs.Exists(alice.ID())
 	require.NoError(t, err)
 	require.False(t, ok)
 
@@ -38,11 +38,11 @@ func TestSigchainStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Save
-	err = scs.SaveSigchain(sca)
+	err = scs.Save(sca)
 	require.NoError(t, err)
 
 	// Exists
-	ok, err = scs.SigchainExists(alice.ID())
+	ok, err = scs.Exists(alice.ID())
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -52,7 +52,7 @@ func TestSigchainStore(t *testing.T) {
 	require.NoError(t, err)
 
 	// Save (update)
-	err = scs.SaveSigchain(sca)
+	err = scs.Save(sca)
 	require.NoError(t, err)
 
 	sc, err = scs.Sigchain(alice.ID())
@@ -66,7 +66,7 @@ func TestSigchainStore(t *testing.T) {
 	require.NoError(t, err)
 	err = scb.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(scb)
+	err = scs.Save(scb)
 	require.NoError(t, err)
 
 	kids, err := scs.KIDs()
@@ -77,7 +77,7 @@ func TestSigchainStore(t *testing.T) {
 	}
 	require.Equal(t, expected, kids)
 
-	ok, err = scs.DeleteSigchain(alice.ID())
+	ok, err = scs.Delete(alice.ID())
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -88,18 +88,18 @@ func TestSigchainStore(t *testing.T) {
 	}
 	require.Equal(t, expected, kids)
 
-	ok, err = scs.SigchainExists(alice.ID())
+	ok, err = scs.Exists(alice.ID())
 	require.NoError(t, err)
 	require.False(t, ok)
 
-	ok, err = scs.DeleteSigchain(alice.ID())
+	ok, err = scs.Delete(alice.ID())
 	require.NoError(t, err)
 	require.False(t, ok)
 }
 
-func TestSigchainStoreSpew(t *testing.T) {
+func TestSigchainsSpew(t *testing.T) {
 	clock := tsutil.NewTestClock()
-	scs := testSigchainStore(t, clock)
+	scs := testSigchains(t, clock)
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(alice.ID())
@@ -108,7 +108,7 @@ func TestSigchainStoreSpew(t *testing.T) {
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	sc, err = scs.Sigchain(alice.ID())
@@ -123,7 +123,7 @@ func TestSigchainStoreSpew(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, revoke)
 
-	err = scs.SaveSigchain(sc)
+	err = scs.Save(sc)
 	require.NoError(t, err)
 
 	sc, err = scs.Sigchain(alice.ID())
