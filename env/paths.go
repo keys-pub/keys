@@ -95,14 +95,14 @@ func appDir(dirs ...string) (string, error) {
 		return filepath.Join(dir, filepath.Join(dirs...)), nil
 	case "linux":
 		dir := os.Getenv("XDG_DATA_HOME")
-		if dir == "" {
-			home, err := HomeDir()
-			if err != nil {
-				return "", err
-			}
-			dir = filepath.Join(home, ".local", "share", filepath.Join(dirs...))
+		if dir != "" {
+			return filepath.Join(dir, filepath.Join(dirs...)), nil
 		}
-		return dir, nil
+		home, err := HomeDir()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(home, ".local", "share", filepath.Join(dirs...)), nil
 	default:
 		return "", errors.Errorf("unsupported platform %s", runtime.GOOS)
 	}
@@ -162,7 +162,7 @@ func configDir(dirs ...string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return filepath.Join(home, ".config"), nil
+		return filepath.Join(home, ".config", filepath.Join(dirs...)), nil
 	default:
 		return "", errors.Errorf("unsupported platform %s", runtime.GOOS)
 	}
@@ -218,15 +218,15 @@ func logsDir(dirs ...string) (string, error) {
 		}
 		return filepath.Join(dir, filepath.Join(dirs...)), nil
 	case "linux":
-		dir := os.Getenv("XDG_DATA_HOME")
-		if dir == "" {
-			home, err := HomeDir()
-			if err != nil {
-				return "", err
-			}
-			dir = filepath.Join(home, ".cache", filepath.Join(dirs...))
+		dir := os.Getenv("XDG_CACHE_HOME")
+		if dir != "" {
+			return filepath.Join(dir, filepath.Join(dirs...)), nil
 		}
-		return dir, nil
+		home, err := HomeDir()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(home, ".cache", filepath.Join(dirs...)), nil
 	default:
 		return "", errors.Errorf("unsupported platform %s", runtime.GOOS)
 	}
@@ -241,4 +241,50 @@ func HomeDir() (string, error) {
 		return "", err
 	}
 	return usr.HomeDir, nil
+}
+
+// MustHomeDir returns current user home directory.
+func MustHomeDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return usr.HomeDir
+}
+
+// All returns all (unique) directories for the environment.
+func All(dir ...string) ([]string, error) {
+	dirs := []string{}
+	appDir, err := AppPath(Dir(dir...))
+	if err != nil {
+		return nil, err
+	}
+	dirs = append(dirs, appDir)
+
+	configDir, err := ConfigPath(Dir(dir...))
+	if err != nil {
+		return nil, err
+	}
+	if !contains(dirs, configDir) {
+		dirs = append(dirs, configDir)
+	}
+
+	logsDir, err := LogsPath(Dir(dir...))
+	if err != nil {
+		return nil, err
+	}
+	if !contains(dirs, logsDir) {
+		dirs = append(dirs, logsDir)
+	}
+
+	return dirs, nil
+}
+
+func contains(arr []string, s string) bool {
+	for _, a := range arr {
+		if s == a {
+			return true
+		}
+	}
+	return false
 }
