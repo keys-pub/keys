@@ -24,7 +24,7 @@ type SearchResult struct {
 	Field string
 }
 
-func (u *Store) searchUsers(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
+func (u *Users) searchUsers(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
 	iter, err := u.ds.DocumentIterator(ctx, indexUser, docs.Prefix(query))
 	if err != nil {
@@ -59,7 +59,7 @@ func (u *Store) searchUsers(ctx context.Context, query string, limit int) ([]*Se
 }
 
 // Search for users.
-func (u *Store) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
+func (u *Users) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
 	logger.Infof("Search users, query=%q, limit=%d", req.Query, req.Limit)
 	limit := req.Limit
 	if limit == 0 {

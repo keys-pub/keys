@@ -49,31 +49,31 @@ type keyDocument struct {
 	Result *Result `json:"result,omitempty"`
 }
 
-// Store is the environment for user results.
-type Store struct {
+// Users keeps track of sigchain user links.
+type Users struct {
 	ds    docs.Documents
 	scs   *keys.Sigchains
 	req   request.Requestor
 	clock tsutil.Clock
 }
 
-// NewStore creates Store.
-func NewStore(ds docs.Documents, scs *keys.Sigchains, req request.Requestor, clock tsutil.Clock) (*Store, error) {
-	return &Store{
+// NewUsers creates Users.
+func NewUsers(ds docs.Documents, scs *keys.Sigchains, req request.Requestor, clock tsutil.Clock) *Users {
+	return &Users{
 		ds:    ds,
 		scs:   scs,
 		req:   req,
 		clock: clock,
-	}, nil
+	}
 }
 
 // Requestor ...
-func (u *Store) Requestor() request.Requestor {
+func (u *Users) Requestor() request.Requestor {
 	return u.req
 }
 
 // Update index for sigchain KID.
-func (u *Store) Update(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
@@ -102,8 +102,8 @@ func (u *Store) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	return result, nil
 }
 
-// CheckSigchain looks for user in a Sigchain and updates the current result in the Store.
-func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
+// CheckSigchain looks for user in a Sigchain and updates the current result in the Users.
+func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
 	usr, err := FindInSigchain(sc)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (u *Store) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 }
 
 // RequestVerify a user. Doesn't index result.
-func (u *Store) RequestVerify(ctx context.Context, usr *User) *Result {
+func (u *Users) RequestVerify(ctx context.Context, usr *User) *Result {
 	return RequestVerify(ctx, u.req, usr, u.clock.Now())
 }
 
@@ -153,7 +153,7 @@ func ValidateStatement(st *keys.Statement) error {
 // Get user result for KID.
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
-func (u *Store) Get(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Get(ctx context.Context, kid keys.ID) (*Result, error) {
 	res, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (u *Store) Get(ctx context.Context, kid keys.ID) (*Result, error) {
 // User result for user name@service.
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
-func (u *Store) User(ctx context.Context, user string) (*Result, error) {
+func (u *Users) User(ctx context.Context, user string) (*Result, error) {
 	res, err := u.get(ctx, indexUser, user)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (u *Store) User(ctx context.Context, user string) (*Result, error) {
 	return res.Result, nil
 }
 
-func (u *Store) get(ctx context.Context, index string, val string) (*keyDocument, error) {
+func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument, error) {
 	if val == "" {
 		return nil, errors.Errorf("empty value")
 	}
@@ -197,7 +197,7 @@ func (u *Store) get(ctx context.Context, index string, val string) (*keyDocument
 	return &keyDoc, nil
 }
 
-func (u *Store) result(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) result(ctx context.Context, kid keys.ID) (*Result, error) {
 	doc, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func (u *Store) result(ctx context.Context, kid keys.ID) (*Result, error) {
 	return doc.Result, nil
 }
 
-func (u *Store) removeUser(ctx context.Context, user *User) error {
+func (u *Users) removeUser(ctx context.Context, user *User) error {
 	namePath := docs.Path(indexUser, indexName(user))
 	logger.Infof("Removing user %s: %s", user.KID, namePath)
 	if _, err := u.ds.Delete(ctx, namePath); err != nil {
@@ -225,7 +225,7 @@ const indexUser = "user"
 
 // TODO: Remove document from indexes if failed for a long time?
 
-func (u *Store) index(ctx context.Context, keyDoc *keyDocument) error {
+func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 	// Remove existing if different
 	existing, err := u.get(ctx, indexKID, keyDoc.KID.String())
 	if err != nil {
@@ -290,7 +290,7 @@ func indexName(user *User) string {
 
 // Find user result for KID.
 // Will also search for related keys.
-func (u *Store) Find(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Find(ctx context.Context, kid keys.ID) (*Result, error) {
 	res, err := u.Get(ctx, kid)
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (u *Store) Find(ctx context.Context, kid keys.ID) (*Result, error) {
 }
 
 // Status returns KIDs that match a status.
-func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
+func (u *Users) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
@@ -339,7 +339,7 @@ func (u *Store) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 }
 
 // Expired returns KIDs that haven't been checked in a duration.
-func (u *Store) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]keys.ID, error) {
+func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
@@ -378,7 +378,7 @@ func (u *Store) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 
 // CheckForExisting returns key ID of exsiting user in sigchain different from this
 // sigchain key.
-func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
+func (u *Users) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
 	usr, err := FindInSigchain(sc)
 	if err != nil {
 		return "", err
@@ -403,7 +403,7 @@ func (u *Store) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.I
 }
 
 // KIDs returns all key ids in the user store.
-func (u *Store) KIDs(ctx context.Context) ([]keys.ID, error) {
+func (u *Users) KIDs(ctx context.Context) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
