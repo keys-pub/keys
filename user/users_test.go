@@ -14,12 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testStore(t *testing.T, dst docs.Documents, scs *keys.Sigchains, req *request.MockRequestor, clock tsutil.Clock) *user.Store {
-	ust, err := user.NewStore(dst, scs, req, clock)
-	require.NoError(t, err)
-	return ust
-}
-
 func TestNewUserForTwitterSigning(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -73,9 +67,9 @@ func TestResultGithub(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdataBytes(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
 
@@ -100,7 +94,7 @@ func TestResultGithub(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	result, err := ust.Update(context.TODO(), sk.ID())
+	result, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
@@ -109,17 +103,17 @@ func TestResultGithub(t *testing.T) {
 	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
 
-	result, err = ust.Get(context.TODO(), sk.ID())
+	result, err = users.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
-	result, err = ust.User(context.TODO(), "alice@github")
+	result, err = users.User(context.TODO(), "alice@github")
 	require.NoError(t, err)
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
-	kids, err := ust.KIDs(context.TODO())
+	kids, err := users.KIDs(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, 1, len(kids))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
@@ -130,9 +124,9 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice2")
 	require.NoError(t, err)
@@ -152,7 +146,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	result, err := ust.CheckSigchain(context.TODO(), sc)
+	result, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
@@ -164,9 +158,9 @@ func TestResultGithubWrongService(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 	sc := keys.NewSigchain(sk.ID())
 
 	muser := &user.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}
@@ -184,7 +178,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	result, err := ust.CheckSigchain(context.TODO(), sc)
+	result, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
@@ -196,9 +190,9 @@ func TestResultTwitter(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
 	require.NoError(t, err)
@@ -221,7 +215,7 @@ func TestResultTwitter(t *testing.T) {
 
 	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
 
-	result, err := ust.Update(context.TODO(), sk.ID())
+	result, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.NotNil(t, result.User)
@@ -240,9 +234,9 @@ func TestResultReddit(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	usr, err := user.NewForSigning(sk.ID(), "reddit", "charlie")
 	require.NoError(t, err)
@@ -265,7 +259,7 @@ func TestResultReddit(t *testing.T) {
 
 	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdataBytes(t, "testdata/reddit/charlie.json"))
 
-	result, err := ust.Update(context.TODO(), sk.ID())
+	result, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.NotNil(t, result.User)
@@ -293,7 +287,7 @@ func TestUserUnverified(t *testing.T) {
 	req.SetError("https://mobile.twitter.com/bob/status/1", errors.Errorf("testing"))
 	require.NoError(t, err)
 
-	// users, err := ust.Update(context.TODO(), sk.ID())
+	// users, err := users.Update(context.TODO(), sk.ID())
 	// require.NoError(t, err)
 	// t.Logf("users: %+v", users)
 	// TODO: Finish test
@@ -305,16 +299,16 @@ func TestCheckNoUsers(t *testing.T) {
 
 	req := request.NewMockRequestor()
 	clock := tsutil.NewTestClock()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 
-	result, err := ust.CheckSigchain(context.TODO(), sc)
+	result, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.Nil(t, result)
 
 	rk := keys.GenerateEdX25519Key()
-	result, err = ust.Update(context.TODO(), rk.ID())
+	result, err = users.Update(context.TODO(), rk.ID())
 	require.NoError(t, err)
 	require.Nil(t, result)
 }
@@ -322,9 +316,9 @@ func TestCheckNoUsers(t *testing.T) {
 func TestCheckFailure(t *testing.T) {
 	req := request.NewMockRequestor()
 	clock := tsutil.NewTestClock()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
-	ust := testStore(t, dst, scs, req, clock)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
@@ -336,7 +330,7 @@ func TestCheckFailure(t *testing.T) {
 		Service: "twitter",
 		URL:     "https://twitter.com/boboloblaw/status/1259188857846632448",
 	}
-	result := ust.RequestVerify(context.TODO(), usr)
+	result := users.RequestVerify(context.TODO(), usr)
 	require.Equal(t, usr.Name, result.User.Name)
 	require.Equal(t, result.Status, user.StatusFailure)
 	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")
@@ -411,7 +405,7 @@ func TestNewUser(t *testing.T) {
 	require.Nil(t, u12)
 }
 
-func TestSigchainUserStoreUpdate(t *testing.T) {
+func TestSigchainUsersUpdate(t *testing.T) {
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	// link.SetLogger(link.NewLogger(link.DebugLevel))
 
@@ -428,10 +422,10 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	clock := tsutil.NewTestClock()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/gabriel/status/1259188857846632448", []byte(msg))
@@ -439,7 +433,7 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := ust.Update(context.TODO(), kid)
+	result, err := users.Update(context.TODO(), kid)
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, result.Status)
 }
@@ -447,10 +441,10 @@ func TestSigchainUserStoreUpdate(t *testing.T) {
 func TestSigchainRevokeUpdate(t *testing.T) {
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	clock := tsutil.NewTestClock()
-	dst := docs.NewMem()
-	scs := keys.NewSigchains(dst)
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	ust := testStore(t, dst, scs, req, clock)
+	users := user.NewUsers(ds, scs, req, clock)
 
 	sk := keys.GenerateEdX25519Key()
 	kid := sk.ID()
@@ -474,7 +468,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := ust.Update(context.TODO(), kid)
+	result, err := users.Update(context.TODO(), kid)
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, result.Status)
 
@@ -498,7 +492,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err = ust.Update(context.TODO(), kid)
+	result, err = users.Update(context.TODO(), kid)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
