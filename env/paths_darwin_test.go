@@ -37,7 +37,7 @@ func TestPaths(t *testing.T) {
 }
 
 func TestAllDirs(t *testing.T) {
-	dirs, err := env.All("KeysEnvTest")
+	dirs, err := env.AllDirs("KeysEnvTest")
 	require.NoError(t, err)
 	require.Equal(t, []string{
 		filepath.Join(env.MustHomeDir(), "/Library/Application Support/KeysEnvTest"),

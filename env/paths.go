@@ -252,8 +252,8 @@ func MustHomeDir() string {
 	return usr.HomeDir
 }
 
-// All returns all (unique) directories for the environment.
-func All(dir ...string) ([]string, error) {
+// AllDirs returns all (unique) directories for the environment.
+func AllDirs(dir ...string) ([]string, error) {
 	dirs := []string{}
 	appDir, err := AppPath(Dir(dir...))
 	if err != nil {
