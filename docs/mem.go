@@ -18,7 +18,7 @@ import (
 var _ Documents = &Mem{}
 var _ events.Events = &Mem{}
 
-// Mem is an in memory DocumentStore implementation.
+// Mem is an in memory Documents implementation.
 type Mem struct {
 	sync.RWMutex
 	paths    *StringSet
@@ -33,7 +33,7 @@ type metadata struct {
 	updateTime time.Time
 }
 
-// NewMem creates an in memory DocumentStore implementation.
+// NewMem creates an in memory Documents implementation.
 func NewMem() *Mem {
 	return &Mem{
 		paths:    NewStringSet(),

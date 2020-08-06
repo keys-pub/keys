@@ -6,6 +6,10 @@ import "github.com/pkg/errors"
 // This currently only converts a EdX25519Public key to a X25519Public key.
 func Convert(key Key, to KeyType) (Key, error) {
 	from := key.Type()
+	if from == to {
+		return nil, errors.Errorf("same key types")
+	}
+
 	switch from {
 	case EdX25519Public:
 		if to == X25519Public {

@@ -10,49 +10,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SigchainStore provides access to sigchains, usually backed by a DocumentStore, such as a local db.
-type SigchainStore interface {
-	// KIDs returns all the sigchain KIDs.
-	KIDs() ([]ID, error)
-
-	// Sigchain for kid.
-	Sigchain(kid ID) (*Sigchain, error)
-
-	// SaveSigchain saves sigchain to the store.
-	SaveSigchain(sc *Sigchain) error
-	// DeleteSigchain deletes sigchain from the store.
-	DeleteSigchain(kid ID) (bool, error)
-
-	// SigchainExists if true, has sigchain.
-	SigchainExists(kid ID) (bool, error)
-
-	// SetClock sets custom Clock.
-	SetClock(clock tsutil.Clock)
-}
-
-type sigchainStore struct {
+// Sigchains stores sigchains.
+type Sigchains struct {
 	ds    docs.Documents
 	clock tsutil.Clock
 }
 
-// NewSigchainStore creates a SigchainStore from Documents.
-func NewSigchainStore(ds docs.Documents) SigchainStore {
-	return newSigchainStore(ds)
-}
-
-func newSigchainStore(ds docs.Documents) *sigchainStore {
-	return &sigchainStore{
+// NewSigchains creates a Sigchains from Documents.
+func NewSigchains(ds docs.Documents) *Sigchains {
+	return &Sigchains{
 		ds:    ds,
 		clock: tsutil.NewClock(),
 	}
 }
 
-// SetTimeNow to use a custom time.Now.
-func (s sigchainStore) SetClock(clock tsutil.Clock) {
+// SetClock to use a custom time.Now.
+func (s *Sigchains) SetClock(clock tsutil.Clock) {
 	s.clock = clock
 }
 
-func (s sigchainStore) KIDs() ([]ID, error) {
+// KIDs returns all keys.
+func (s *Sigchains) KIDs() ([]ID, error) {
 	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.NoData())
 	if err != nil {
 		return nil, err
@@ -78,7 +56,8 @@ func (s sigchainStore) KIDs() ([]ID, error) {
 	return ids.IDs(), nil
 }
 
-func (s sigchainStore) SaveSigchain(sc *Sigchain) error {
+// Save sigchain.
+func (s *Sigchains) Save(sc *Sigchain) error {
 	if len(sc.Statements()) == 0 {
 		return errors.Errorf("failed to save sigchain: no statements")
 	}
@@ -91,6 +70,9 @@ func (s sigchainStore) SaveSigchain(sc *Sigchain) error {
 			return err
 		}
 	}
+	if err := s.Index(sc.KID()); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -102,7 +84,8 @@ func statementFromDocument(doc *docs.Document) (*Statement, error) {
 	return &st, nil
 }
 
-func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
+// Sigchain returns sigchain for key.
+func (s *Sigchains) Sigchain(kid ID) (*Sigchain, error) {
 	logger.Debugf("Loading sigchain %s", kid)
 	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.Prefix(kid.String()))
 	if err != nil {
@@ -131,7 +114,7 @@ func (s sigchainStore) Sigchain(kid ID) (*Sigchain, error) {
 	return sc, nil
 }
 
-func (s sigchainStore) sigchainPaths(kid ID) ([]string, error) {
+func (s *Sigchains) sigchainPaths(kid ID) ([]string, error) {
 	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.Prefix(kid.String()), docs.NoData())
 	if err != nil {
 		return nil, err
@@ -151,7 +134,8 @@ func (s sigchainStore) sigchainPaths(kid ID) ([]string, error) {
 	return paths, nil
 }
 
-func (s sigchainStore) DeleteSigchain(kid ID) (bool, error) {
+// Delete sigchain.
+func (s *Sigchains) Delete(kid ID) (bool, error) {
 	paths, err := s.sigchainPaths(kid)
 	if err != nil {
 		return false, err
@@ -167,9 +151,46 @@ func (s sigchainStore) DeleteSigchain(kid ID) (bool, error) {
 		}
 	}
 
+	// TODO: Delete reverse key lookup?
 	return true, nil
 }
 
-func (s sigchainStore) SigchainExists(kid ID) (bool, error) {
+// Exists returns true if sigchain exists.
+func (s *Sigchains) Exists(kid ID) (bool, error) {
 	return s.ds.Exists(context.TODO(), docs.Path("sigchain", StatementKey(kid, 1)))
+}
+
+// indexRKL is collection for reverse key lookups.
+const indexRKL = "rkl"
+
+// Lookup key identifier.
+func (s *Sigchains) Lookup(kid ID) (ID, error) {
+	path := docs.Path(indexRKL, kid.String())
+	doc, err := s.ds.Get(context.TODO(), path)
+	if err != nil {
+		return "", err
+	}
+	if doc == nil {
+		return "", nil
+	}
+	rkid, err := ParseID(string(doc.Data))
+	if err != nil {
+		return "", err
+	}
+	return rkid, nil
+}
+
+// Index key identifier.
+func (s *Sigchains) Index(key Key) error {
+	if key.Type() == EdX25519Public {
+		rk, err := Convert(key, X25519Public)
+		if err != nil {
+			return err
+		}
+		rklPath := docs.Path(indexRKL, rk.ID())
+		if err := s.ds.Set(context.TODO(), rklPath, []byte(key.ID().String())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
