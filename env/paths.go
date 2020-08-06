@@ -30,7 +30,11 @@ func MustAppPath(opt ...PathOption) string {
 	return path
 }
 
-// AppPath returns path for a files or directory in an app support directory.
+// AppPath returns where to store app (data) files.
+//
+// Darwin: ~/Library/Application Support
+// Windows: %LOCALAPPDATA% (~/AppData/Local)
+// Linux: ~/.local/share
 //
 // darwin:
 // env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
@@ -104,7 +108,84 @@ func appDir(dirs ...string) (string, error) {
 	}
 }
 
-// LogsPath returns directory for app files.
+// ConfigPath returns where to store config files.
+//
+// Darwin: ~/Library/Application Support
+// Windows: %APPDATA% (~/AppData/Roaming)
+// Linux: ~/.config
+//
+// darwin:
+// env.ConfigPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
+//   => "~/Library/Application Support/MyApp/test.txt"
+//
+// windows:
+// env.ConfigPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
+//   => "%APPDATA%/MyApp/test.txt"
+//
+// linux:
+// env.ConfigPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
+//   => "~/.config/MyApp/test.txt"
+//
+func ConfigPath(opt ...PathOption) (string, error) {
+	opts, err := newOptions(opt...)
+	if err != nil {
+		return "", err
+	}
+	dir, err := configDir(opts.Dirs...)
+	if err != nil {
+		return "", err
+	}
+	if opts.Mkdir {
+		if err := mkdir(dir); err != nil {
+			return "", err
+		}
+	}
+	return filepath.Join(dir, opts.File), nil
+}
+
+func configDir(dirs ...string) (string, error) {
+	switch runtime.GOOS {
+	case "darwin":
+		return appDir(dirs...)
+	case "windows":
+		dir := os.Getenv("APPDATA")
+		if dir == "" {
+			return "", errors.Errorf("APPDATA not set")
+		}
+		return filepath.Join(dir, filepath.Join(dirs...)), nil
+	case "linux":
+		dir := os.Getenv("XDG_CONFIG_HOME")
+		if dir != "" {
+			return filepath.Join(dir, filepath.Join(dirs...)), nil
+		}
+		home, err := HomeDir()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(home, ".config"), nil
+	default:
+		return "", errors.Errorf("unsupported platform %s", runtime.GOOS)
+	}
+}
+
+// LogsPath returns directory for log files.
+//
+// Darwin: ~/Library/Logs
+// Windows: %LOCALAPPDATA% (~/AppData/Local)
+// Linux: ~/.cache
+//
+// darwin:
+// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
+//   => "~/Library/Application Support/MyApp/test.txt"
+//
+// windows:
+// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
+//   => "%LOCALAPPDATA%/MyApp/test.txt"
+//
+// linux:
+// env.AppPath(env.Dir("MyApp"), env.File("test.txt"), env.Mkdir())
+//   => "~/.cache/MyApp/test.txt"
+//
 func LogsPath(opt ...PathOption) (string, error) {
 	opts, err := newOptions(opt...)
 	if err != nil {
