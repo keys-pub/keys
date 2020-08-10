@@ -13,7 +13,7 @@ import (
 
 func TestMkdir(t *testing.T) {
 	dir := "KeysTest-" + keys.RandFileName()
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	path, err := env.AppPath(env.Dir(dir), env.File("test.txt"))
 	require.NoError(t, err)
