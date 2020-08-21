@@ -17,6 +17,7 @@
 package bech32
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -41,7 +42,7 @@ func TestBech32(t *testing.T) {
 		{"split1a2y9w", false},      // too short data part
 		{"1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false}, // empty hrp
 		// invalid character (DEL) in hrp
-		{"spl" + string(127) + "t1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false},
+		{"spl" + fmt.Sprint(127) + "t1checkupstagehandshakeupstreamerranterredcaperred2y9e3w", false},
 		// too long
 		{"11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j", false},
 
