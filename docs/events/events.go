@@ -1,3 +1,4 @@
+// Package events provides an event log.
 package events
 
 import (
