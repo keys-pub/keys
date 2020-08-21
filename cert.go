@@ -89,6 +89,7 @@ func GenerateCertificateKey(commonName string, isCA bool, parent *x509.Certifica
 		NotAfter:    notAfter,
 		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		DNSNames:    []string{commonName},
 	}
 
 	if isCA {
