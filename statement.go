@@ -210,30 +210,30 @@ func statementBytesToSign(st *Statement) ([]byte, error) {
 }
 
 func statementBytes(st *Statement, sig []byte) ([]byte, error) {
-	mes := []json.Value{
-		json.NewString(".sig", encoding.MustEncode(sig, encoding.Base64)),
+	mes := []encoding.TextMarshaler{
+		json.String(".sig", encoding.MustEncode(sig, encoding.Base64)),
 	}
 	if len(st.Data) != 0 {
-		mes = append(mes, json.NewString("data", encoding.MustEncode(st.Data, encoding.Base64)))
+		mes = append(mes, json.String("data", encoding.MustEncode(st.Data, encoding.Base64)))
 	}
-	mes = append(mes, json.NewString("kid", st.KID.String()))
+	mes = append(mes, json.String("kid", st.KID.String()))
 	if len(st.Prev) != 0 {
-		mes = append(mes, json.NewString("prev", encoding.MustEncode(st.Prev, encoding.Base64)))
+		mes = append(mes, json.String("prev", encoding.MustEncode(st.Prev, encoding.Base64)))
 	}
 	if st.Revoke != 0 {
-		mes = append(mes, json.NewInt("revoke", st.Revoke))
+		mes = append(mes, json.Int("revoke", st.Revoke))
 	}
 	if st.Seq != 0 {
-		mes = append(mes, json.NewInt("seq", st.Seq))
+		mes = append(mes, json.Int("seq", st.Seq))
 	}
 	if !st.Timestamp.IsZero() {
-		mes = append(mes, json.NewInt("ts", int(tsutil.Millis(st.Timestamp))))
+		mes = append(mes, json.Int("ts", int(tsutil.Millis(st.Timestamp))))
 	}
 	if st.Type != "" {
-		mes = append(mes, json.NewString("type", st.Type))
+		mes = append(mes, json.String("type", st.Type))
 	}
 
-	return json.Marshal(mes)
+	return json.Marshal(mes...)
 }
 
 // unmarshalJSON returns a Statement from JSON bytes.
