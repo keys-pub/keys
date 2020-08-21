@@ -26,9 +26,6 @@ func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
 	return NewEdX25519PublicKeyFromID(id)
 }
 
-// RevokeLabel is label for revoking an earlier statement
-const RevokeLabel = "revoke"
-
 // NewSigchain returns a new Sigchain for a EdX25519PublicKey.
 func NewSigchain(kid ID) *Sigchain {
 	return &Sigchain{
