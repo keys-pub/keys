@@ -2,12 +2,13 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/keys-pub/keys/encoding"
+
 	"github.com/pkg/errors"
 )
 
@@ -21,55 +22,63 @@ type intEntry struct {
 	value int
 }
 
-// Value to string.
-type Value interface {
-	Marshal() (string, error)
-}
-
-// NewString ...
-func NewString(key string, value string) Value {
+// String ...
+func String(key string, value string) encoding.TextMarshaler {
 	return stringEntry{key: key, value: value}
 }
 
-// NewInt ...
-func NewInt(key string, value int) Value {
+// Int ...
+func Int(key string, value int) encoding.TextMarshaler {
 	return intEntry{key: key, value: value}
 }
 
 var isAlphaNumericDot = regexp.MustCompile(`^[a-zA-Z0-9.]+$`).MatchString
 var needsEscape = regexp.MustCompile(`^[\"]+$`).MatchString
 
-func (e stringEntry) Marshal() (string, error) {
+func (e stringEntry) MarshalText() ([]byte, error) {
 	if !isAlphaNumericDot(e.key) {
-		return "", errors.Errorf("invalid character in key")
+		return nil, errors.Errorf("invalid character in key")
 	}
 	if needsEscape(e.value) {
-		return "", errors.Errorf("invalid character in value")
+		return nil, errors.Errorf("invalid character in value")
 	}
 	if !encoding.IsASCII([]byte(e.value)) {
-		return "", errors.Errorf("invalid character in value")
+		return nil, errors.Errorf("invalid character in value")
 	}
-	return `"` + e.key + `":"` + e.value + `"`, nil
+	return []byte(`"` + e.key + `":"` + e.value + `"`), nil
 }
 
-func (e intEntry) Marshal() (string, error) {
+func (e intEntry) MarshalText() ([]byte, error) {
 	if !isAlphaNumericDot(e.key) {
-		return "", errors.Errorf("invalid character in key")
+		return nil, errors.Errorf("invalid character in key")
 	}
-	return `"` + e.key + `":` + strconv.Itoa(e.value), nil
+
+	b := []byte{}
+	b = append(b, '"')
+	b = append(b, []byte(e.key)...)
+	b = append(b, '"', ':')
+	b = append(b, []byte(strconv.Itoa(e.value))...)
+
+	return b, nil
 }
 
 // Marshal values.
-func Marshal(es []Value) ([]byte, error) {
-	out := make([]string, 0, len(es))
-	for _, e := range es {
-		s, err := e.Marshal()
+func Marshal(vals ...encoding.TextMarshaler) ([]byte, error) {
+	out := make([][]byte, 0, len(vals))
+	for _, val := range vals {
+		b, err := val.MarshalText()
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, s)
+		out = append(out, b)
 	}
-	return []byte("{" + strings.Join(out, ",") + "}"), nil
+
+	b := []byte{}
+	b = append(b, '{')
+	b = append(b, bytes.Join(out, []byte{','})...)
+	b = append(b, '}')
+
+	return b, nil
 }
 
 // Unmarshal bytes.

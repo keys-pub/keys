@@ -2,6 +2,7 @@
 package encoding
 
 import (
+	stdencoding "encoding"
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
@@ -10,6 +11,9 @@ import (
 	"github.com/keybase/saltpack/encoding/basex"
 	"github.com/pkg/errors"
 )
+
+// TextMarshaler alias for encoding.TextMarshaler.
+type TextMarshaler = stdencoding.TextMarshaler
 
 // Encoding is an encoding for bytes to and from a string
 type Encoding string

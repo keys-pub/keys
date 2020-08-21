@@ -45,19 +45,19 @@ func (u User) MarshalJSON() ([]byte, error) {
 
 // Bytes is a serialized User.
 func (u User) Bytes() ([]byte, error) {
-	mes := []json.Value{}
+	mes := []encoding.TextMarshaler{}
 
-	mes = append(mes, json.NewString("k", u.KID.String()))
-	mes = append(mes, json.NewString("n", u.Name))
+	mes = append(mes, json.String("k", u.KID.String()))
+	mes = append(mes, json.String("n", u.Name))
 
 	if u.Seq != 0 {
-		mes = append(mes, json.NewInt("sq", u.Seq))
+		mes = append(mes, json.Int("sq", u.Seq))
 	}
-	mes = append(mes, json.NewString("sr", u.Service))
+	mes = append(mes, json.String("sr", u.Service))
 	if u.URL != "" {
-		mes = append(mes, json.NewString("u", u.URL))
+		mes = append(mes, json.String("u", u.URL))
 	}
-	return json.Marshal(mes)
+	return json.Marshal(mes...)
 }
 
 // Status is the status of the user statement.
