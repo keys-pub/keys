@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run golangci-lint
-        uses: actions-contrib/golangci-lint@v1
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v1
         with:
-          golangci_lint_version: v1.30
+          version: v1.30
   test:
     strategy:
       matrix:
