@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run golangci-lint
         uses: actions-contrib/golangci-lint@v1
+        with:
+          golangci_lint_version: v1.30
   test:
     strategy:
       matrix:
@@ -25,8 +27,6 @@ jobs:
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
-        with:
-          go-version: ${{ matrix.go-version }}
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Test
