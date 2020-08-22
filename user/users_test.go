@@ -275,7 +275,7 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
+	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdata(t, "testdata/twitter/1205589994380783616"))
 
 	result, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
