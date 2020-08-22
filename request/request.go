@@ -65,7 +65,11 @@ func doRequest(client *http.Client, method string, urs string, body []byte, opti
 	}
 
 	req.Header.Set("User-Agent", "keys.pub")
-	req.Header.Set("Host", "reddit.com")
+
+	// Not sure if it is required anymore.
+	if strings.HasSuffix(req.URL.Host, ".reddit.com") {
+		req.Header.Set("Host", "reddit.com")
+	}
 
 	for _, opt := range options {
 		opt(req)

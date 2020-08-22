@@ -131,5 +131,5 @@ func TestSigchainsSpew(t *testing.T) {
 	require.Equal(t, 3, len(sc.Statements()))
 
 	spew := sc.Spew()
-	require.Equal(t, testdataString(t, "testdata/sc1.spew"), spew.String())
+	require.Equal(t, string(testdata(t, "testdata/sc1.spew")), spew.String())
 }

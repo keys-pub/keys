@@ -161,13 +161,13 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := docs.Spew(iter)
 	require.NoError(t, err)
-	require.Equal(t, testdataString(t, "testdata/kid.spew"), spew.String())
+	require.Equal(t, string(testdata(t, "testdata/kid.spew")), spew.String())
 
 	iter, err = ds.DocumentIterator(context.TODO(), "user")
 	require.NoError(t, err)
 	spew, err = docs.Spew(iter)
 	require.NoError(t, err)
-	require.Equal(t, testdataString(t, "testdata/user.spew"), spew.String())
+	require.Equal(t, string(testdata(t, "testdata/user.spew")), spew.String())
 }
 
 func TestFind(t *testing.T) {
@@ -434,7 +434,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	spew, err := docs.Spew(iter)
 	require.NoError(t, err)
-	require.Equal(t, testdataString(t, "testdata/kid2.spew"), spew.String())
+	require.Equal(t, string(testdata(t, "testdata/kid2.spew")), spew.String())
 
 	iter, err = ds.DocumentIterator(context.TODO(), "user")
 	require.NoError(t, err)
