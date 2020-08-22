@@ -17,7 +17,7 @@ func (s *echo) ID() string {
 }
 
 func (s *echo) NormalizeURLString(name string, urs string) (string, error) {
-	return basicURLString(strings.ToLower(urs))
+	return basicURLString(urs)
 }
 
 func (s *echo) ValidateURLString(name string, urs string) (string, error) {

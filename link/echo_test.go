@@ -37,11 +37,6 @@ func TestEchoNormalizeURL(t *testing.T) {
 		"gabriel",
 		"test://echo/gabriel?",
 		"test://echo/gabriel")
-
-	testNormalizeURL(t, link.Echo,
-		"gabriel",
-		"test://echo/Gabriel",
-		"test://echo/gabriel")
 }
 
 func TestEchoValidateURL(t *testing.T) {

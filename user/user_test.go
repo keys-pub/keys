@@ -2,6 +2,7 @@ package user_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -38,6 +39,31 @@ func TestNewValidate(t *testing.T) {
 
 	_, err = user.New(alice.ID(), "github", "Alice", "file://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", 1)
 	require.EqualError(t, err, "name has an invalid character")
+}
+
+func TestNewUserMarshal(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+
+	usr, err := user.New(sk.ID(), "twitter", "123456789012345", "https://twitter.com/123456789012345/status/1234567890", 1)
+	require.NoError(t, err)
+	b, err := json.Marshal(usr)
+	require.NoError(t, err)
+	require.Equal(t, `{"k":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","n":"123456789012345","sq":1,"sr":"twitter","u":"https://twitter.com/123456789012345/status/1234567890"}`, string(b))
+
+	var usrOut user.User
+	err = json.Unmarshal(b, &usrOut)
+	require.NoError(t, err)
+	require.Equal(t, usr.Name, usrOut.Name)
+	require.Equal(t, usr.Seq, usrOut.Seq)
+	require.Equal(t, usr.KID, usrOut.KID)
+	require.Equal(t, usr.Service, usrOut.Service)
+	require.Equal(t, usr.URL, usrOut.URL)
+
+	usr, err = user.NewForSigning(sk.ID(), "twitter", "123456789012345")
+	require.NoError(t, err)
+	b, err = json.Marshal(usr)
+	require.NoError(t, err)
+	require.Equal(t, `{"k":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","n":"123456789012345","sr":"twitter"}`, string(b))
 }
 
 func TestSigchainUsers(t *testing.T) {
@@ -154,4 +180,52 @@ func TestUserVerify(t *testing.T) {
 	}
 	err = user.Verify(msg, usr)
 	require.EqualError(t, err, "failed to user verify: verify failed")
+}
+
+func TestNewUser(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+
+	u, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	require.NoError(t, uerr)
+	require.NotNil(t, u)
+
+	u2, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.githb.com/gabriel/deadbeef", 1)
+	require.EqualError(t, uerr, "invalid host for url https://gist.githb.com/gabriel/deadbeef")
+	require.Nil(t, u2)
+
+	u3, uerr := user.New(sk.ID(), "github", "gabriel", "http://gist.github.com/gabriel/deadbeef", 1)
+	require.EqualError(t, uerr, "invalid scheme for url http://gist.github.com/gabriel/deadbeef")
+	require.Nil(t, u3)
+
+	u4, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.github.com/gabril/deadbeef", 1)
+	require.EqualError(t, uerr, "path invalid (name mismatch) gabril != gabriel")
+	require.Nil(t, u4)
+
+	u5, uerr := user.New(sk.ID(), "github", "gabriel", "https://gist.github.com/gabriel", 1)
+	require.EqualError(t, uerr, "path invalid [gabriel] for url https://gist.github.com/gabriel")
+	require.Nil(t, u5)
+
+	u6, uerr := user.New(sk.ID(), "github", "gab", "https://gist.github.com/gabriel/deadbeef", 1)
+	require.EqualError(t, uerr, "path invalid (name mismatch) gabriel != gab")
+	require.Nil(t, u6)
+
+	u7, uerr := user.New(sk.ID(), "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
+	require.EqualError(t, uerr, "invalid service git")
+	require.Nil(t, u7)
+
+	u8, uerr := user.New(sk.ID(), "github", "", "https://gist.github.com/gabriel/deadbeef", 1)
+	require.EqualError(t, uerr, "name is empty")
+	require.Nil(t, u8)
+
+	u10, uerr := user.New(sk.ID(), "twitter", "Gbrltest", "https://twitter.com/gbrltest/status/1234", 1)
+	require.EqualError(t, uerr, "name has an invalid character")
+	require.Nil(t, u10)
+
+	u11, uerr := user.New(sk.ID(), "twitter", "gbrltest🤓", "https://twitter.com/gbrltest/status/1234", 1)
+	require.EqualError(t, uerr, "name has an invalid character")
+	require.Nil(t, u11)
+
+	u12, uerr := user.New(sk.ID(), "twitter", "gbrltest", "twitter.com/gbrltest/status/1234", 1)
+	require.EqualError(t, uerr, "invalid scheme for url twitter.com/gbrltest/status/1234")
+	require.Nil(t, u12)
 }
