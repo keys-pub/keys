@@ -69,7 +69,7 @@ func TestResultGithub(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	users := user.NewUsers(ds, scs, req, clock)
 
-	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdataBytes(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
+	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdata(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice")
 	require.NoError(t, err)
@@ -134,7 +134,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdataBytes(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
+	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdata(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
 	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
 	require.NoError(t, err)
 	b2, err := json.Marshal(user2)
@@ -166,7 +166,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf(msg)
 
-	req.SetResponse("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", testdataBytes(t, "testdata/github/bd679134acba688cbcc0a65fa0890d76"))
+	req.SetResponse("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", testdata(t, "testdata/github/bd679134acba688cbcc0a65fa0890d76"))
 	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(usr)
@@ -227,7 +227,7 @@ func TestResultTwitter(t *testing.T) {
 	require.EqualError(t, err, "user set in sigchain already")
 
 	// Set valid response
-	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
+	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdata(t, "testdata/twitter/1205589994380783616"))
 
 	result, err = users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -317,7 +317,7 @@ func TestResultReddit(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdataBytes(t, "testdata/reddit/charlie.json"))
+	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdata(t, "testdata/reddit/charlie.json"))
 
 	result, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
