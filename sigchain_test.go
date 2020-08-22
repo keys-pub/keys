@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -14,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testdataString(t *testing.T, path string) string {
-	expected, err := ioutil.ReadFile(path)
+func testdata(t *testing.T, path string) []byte {
+	b, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
-	return strings.ReplaceAll(string(expected), "\r\n", "\n")
+	return b
 }
 
 func TestSigchain(t *testing.T) {
@@ -95,7 +94,7 @@ func TestSigchain(t *testing.T) {
 	require.EqualError(t, err, "invalid revoke seq 5")
 
 	spew := sc.Spew()
-	require.Equal(t, testdataString(t, "testdata/sc2.spew"), spew.String())
+	require.Equal(t, string(testdata(t, "testdata/sc2.spew")), spew.String())
 }
 
 func TestSigchainJSON(t *testing.T) {

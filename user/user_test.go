@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -17,13 +16,7 @@ func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
 }
 
-func testdataString(t *testing.T, path string) string {
-	expected, err := ioutil.ReadFile(filepath.Join("..", path))
-	require.NoError(t, err)
-	return strings.ReplaceAll(string(expected), "\r\n", "\n")
-}
-
-func testdataBytes(t *testing.T, path string) []byte {
+func testdata(t *testing.T, path string) []byte {
 	b, err := ioutil.ReadFile(filepath.Join("..", path))
 	require.NoError(t, err)
 	return b
