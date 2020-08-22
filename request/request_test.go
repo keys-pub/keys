@@ -1,6 +1,7 @@
 package request_test
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"testing"
@@ -53,5 +54,6 @@ func TestGithub(t *testing.T) {
 func testdata(t *testing.T, path string) []byte {
 	b, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
+	b = bytes.ReplaceAll(b, []byte{'\r'}, []byte{})
 	return b
 }

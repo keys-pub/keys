@@ -19,6 +19,7 @@ func testSeed(b byte) *[32]byte {
 func testdata(t *testing.T, path string) []byte {
 	b, err := ioutil.ReadFile(filepath.Join("..", path))
 	require.NoError(t, err)
+	b = bytes.ReplaceAll(b, []byte{'\r'}, []byte{})
 	return b
 }
 
