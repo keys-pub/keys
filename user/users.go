@@ -102,7 +102,8 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	return result, nil
 }
 
-// CheckSigchain looks for user in a Sigchain and updates the current result in the Users.
+// CheckSigchain looks for user in a Sigchain and creates a result or updates
+// the current result.
 func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
 	usr, err := FindInSigchain(sc)
 	if err != nil {
@@ -118,14 +119,14 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 	if result == nil {
 		result = &Result{}
 	}
-	// Update result user (in case user changed)
+	// Set or update user (in case user changed)
 	result.User = usr
 
 	if usr.KID != sc.KID() {
 		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
 	}
 
-	updateResult(ctx, u.req, usr, result, u.clock.Now())
+	updateResult(ctx, u.req, result, u.clock.Now())
 
 	return result, nil
 }

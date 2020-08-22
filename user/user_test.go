@@ -100,19 +100,64 @@ func TestSigchainUsers(t *testing.T) {
 	require.Equal(t, 3, usr.Seq)
 }
 
+func TestSignUserVerify(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+
+	u, err := user.NewForSigning(sk.ID(), "github", "gabriel")
+	require.NoError(t, err)
+	require.NotNil(t, u)
+
+	msg, err := u.Sign(sk)
+	require.NoError(t, err)
+
+	usr := &user.User{
+		Service: "github",
+		KID:     sk.ID(),
+		Name:    "gabriel",
+	}
+	err = user.Verify(msg, usr)
+	require.NoError(t, err)
+}
+
 func TestUserVerify(t *testing.T) {
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	usr := &user.User{
+		Service: "twitter",
 		Name:    "gabriel",
 		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
-		Seq:     1,
-		Service: "twitter",
-		URL:     "https://twitter.com/gabriel/status/1259188857846632448",
 	}
-	out, err := user.Verify(msg, keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"), usr)
+	err := user.Verify(msg, usr)
 	require.NoError(t, err)
 
-	require.Equal(t, usr.KID, out.KID)
-	require.Equal(t, usr.Name, out.Name)
-	require.Equal(t, usr.Service, out.Service)
+	usr = &user.User{
+		Service: "github",
+		Name:    "gabriel",
+		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
+	}
+	err = user.Verify(msg, usr)
+	require.EqualError(t, err, "failed to user verify: service mismatch github != twitter")
+
+	usr = &user.User{
+		Service: "twitter",
+		Name:    "gabriel2",
+		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
+	}
+	err = user.Verify(msg, usr)
+	require.EqualError(t, err, "failed to user verify: name mismatch gabriel2 != gabriel")
+
+	usr = &user.User{
+		Service: "twitter",
+		Name:    "gabriel",
+		KID:     keys.RandID("test"),
+	}
+	err = user.Verify(msg, usr)
+	require.EqualError(t, err, "failed to user verify: invalid key type for edx25519")
+
+	usr = &user.User{
+		Service: "twitter",
+		Name:    "gabriel",
+		KID:     keys.GenerateEdX25519Key().ID(),
+	}
+	err = user.Verify(msg, usr)
+	require.EqualError(t, err, "failed to user verify: verify failed")
 }

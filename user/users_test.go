@@ -31,10 +31,8 @@ END MESSAGE.`
 	require.False(t, len(msg) > 280)
 	require.Equal(t, 274, len(msg))
 
-	out, err := user.Verify(msg, sk.ID(), usr)
+	err = user.Verify(msg, usr)
 	require.NoError(t, err)
-	require.Equal(t, usr.Service, out.Service)
-	require.Equal(t, usr.Name, out.Name)
 }
 
 func TestNewUserMarshal(t *testing.T) {
@@ -78,7 +76,7 @@ func TestResultGithub(t *testing.T) {
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
 	t.Logf(msg)
-	_, err = user.Verify(msg, sk.ID(), usr)
+	err = user.Verify(msg, usr)
 	require.NoError(t, err)
 
 	sc := keys.NewSigchain(sk.ID())
@@ -150,7 +148,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
-	require.Equal(t, result.Err, "name mismatch alice != alice2")
+	require.Equal(t, result.Err, "failed to user verify: name mismatch alice != alice2")
 }
 
 func TestResultGithubWrongService(t *testing.T) {
@@ -182,7 +180,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
-	require.Equal(t, result.Err, "service mismatch github != github2")
+	require.Equal(t, result.Err, "failed to user verify: service mismatch github != github2")
 }
 
 func TestResultTwitter(t *testing.T) {
@@ -194,11 +192,11 @@ func TestResultTwitter(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	users := user.NewUsers(ds, scs, req, clock)
 
-	usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
-	require.NoError(t, err)
-	msg, err := usr.Sign(sk)
-	require.NoError(t, err)
-	t.Logf(msg)
+	// usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
+	// require.NoError(t, err)
+	// msg, err := usr.Sign(sk)
+	// require.NoError(t, err)
+	// t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
@@ -210,8 +208,72 @@ func TestResultTwitter(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
+	// Set error response
+	req.SetError("https://mobile.twitter.com/bob/status/1205589994380783616", errors.Errorf("testing"))
+	require.NoError(t, err)
+
+	result, err := users.Update(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.User)
+	require.Equal(t, user.StatusConnFailure, result.Status)
+	require.Equal(t, "testing", result.Err)
+	require.Equal(t, "twitter", result.User.Service)
+	require.Equal(t, "bob", result.User.Name)
+	require.Equal(t, int64(0), result.VerifiedAt)
+	require.Equal(t, int64(1234567890002), result.Timestamp)
+
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
+
+	// Set valid response
+	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
+
+	result, err = users.Update(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.User)
+	require.Equal(t, user.StatusOK, result.Status)
+	require.Equal(t, "twitter", result.User.Service)
+	require.Equal(t, "bob", result.User.Name)
+	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890004), result.Timestamp)
+
+	// Set error response again
+	req.SetError("https://mobile.twitter.com/bob/status/1205589994380783616", errors.Errorf("testing2"))
+	require.NoError(t, err)
+
+	result, err = users.Update(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.User)
+	require.Equal(t, user.StatusConnFailure, result.Status)
+	require.Equal(t, "testing2", result.Err)
+	require.Equal(t, "twitter", result.User.Service)
+	require.Equal(t, "bob", result.User.Name)
+	require.Equal(t, int64(1234567890004), result.VerifiedAt)
+	require.Equal(t, int64(1234567890005), result.Timestamp)
+}
+
+func TestResultTwitterInvalidStatement(t *testing.T) {
+	// Same as TestResultTwitter but 0x02 seed instead of 0x01
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
+
+	clock := tsutil.NewTestClock()
+	req := request.NewMockRequestor()
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, req, clock)
+
+	sc := keys.NewSigchain(sk.ID())
+	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
+	require.NoError(t, err)
+	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
 
 	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdataBytes(t, "testdata/twitter/1205589994380783616"))
 
@@ -219,17 +281,15 @@ func TestResultTwitter(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.NotNil(t, result.User)
-	require.Equal(t, user.StatusOK, result.Status)
+	require.Equal(t, user.StatusStatementInvalid, result.Status)
+	require.Equal(t, "failed to user verify: verify failed", result.Err)
 	require.Equal(t, "twitter", result.User.Service)
 	require.Equal(t, "bob", result.User.Name)
-	require.Equal(t, int64(1234567890003), result.VerifiedAt)
-	require.Equal(t, int64(1234567890003), result.Timestamp)
+	require.Equal(t, int64(0), result.VerifiedAt)
+	require.Equal(t, int64(1234567890002), result.Timestamp)
 }
 
 func TestResultReddit(t *testing.T) {
-	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
-	// services.SetLogger(keys.NewLogger(keys.DebugLevel))
-
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
@@ -268,29 +328,6 @@ func TestResultReddit(t *testing.T) {
 	require.Equal(t, "charlie", result.User.Name)
 	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
-}
-
-func TestUserUnverified(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-
-	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
-
-	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1", sc.LastSeq()+1)
-	require.NoError(t, err)
-	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
-	require.NoError(t, err)
-	err = sc.Add(st)
-	require.NoError(t, err)
-
-	req.SetError("https://mobile.twitter.com/bob/status/1", errors.Errorf("testing"))
-	require.NoError(t, err)
-
-	// users, err := users.Update(context.TODO(), sk.ID())
-	// require.NoError(t, err)
-	// t.Logf("users: %+v", users)
-	// TODO: Finish test
 }
 
 func TestCheckNoUsers(t *testing.T) {
@@ -334,27 +371,6 @@ func TestCheckFailure(t *testing.T) {
 	require.Equal(t, usr.Name, result.User.Name)
 	require.Equal(t, result.Status, user.StatusFailure)
 	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")
-}
-
-func TestVerify(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-
-	u, uerr := user.NewForSigning(sk.ID(), "github", "gabriel")
-	require.NoError(t, uerr)
-	require.NotNil(t, u)
-
-	msg, err := u.Sign(sk)
-	require.NoError(t, err)
-
-	uout, err := user.Verify(msg, sk.ID(), nil)
-	require.NoError(t, err)
-
-	require.Equal(t, "gabriel", uout.Name)
-	require.Equal(t, "github", uout.Service)
-	require.Equal(t, sk.ID(), uout.KID)
-
-	_, err = user.Verify(msg, sk.ID(), uout)
-	require.NoError(t, err)
 }
 
 func TestNewUser(t *testing.T) {

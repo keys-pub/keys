@@ -47,6 +47,8 @@ func NewService(service string) (Service, error) {
 		return Reddit, nil
 	case HTTPS.ID():
 		return HTTPS, nil
+	case Echo.ID():
+		return Echo, nil
 	default:
 		return nil, errors.Errorf("invalid service %s", service)
 	}
