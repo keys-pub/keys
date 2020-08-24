@@ -31,10 +31,7 @@ func stripTags(body string) string {
 	return re.ReplaceAllString(body, "")
 }
 
-// FindSaltpack finds saltpack message in a string starting with "BEGIN {BRAND }MESSAGE."
-// and ending with "END {BRAND }MESSAGE". {BRAND } is optional.
-// Characters not in the range a-zA-Z0-9 are ignored (expecting base62).
-// If isHTML is true, we html unescape the string first.
+// FindSaltpack finds saltpack message in a string.
 func FindSaltpack(msg string, isHTML bool) (string, string) {
 	if isHTML {
 		msg = html.UnescapeString(msg)
