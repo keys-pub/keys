@@ -72,11 +72,11 @@ func TestResultEcho(t *testing.T) {
 	require.Equal(t, 1, len(kids))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
 
-	// TODO: When we flip indexUser to indexSearch change this...
+	// Echo is hidden from search
 	res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "alice@echo"})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(res))
-	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
+	require.Equal(t, 0, len(res))
+	// require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
 }
 
 func TestRequestVerifyEcho(t *testing.T) {
