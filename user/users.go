@@ -72,6 +72,11 @@ func (u *Users) Requestor() request.Requestor {
 	return u.req
 }
 
+// Documents ...
+func (u *Users) Documents() docs.Documents {
+	return u.ds
+}
+
 // Update index for sigchain KID.
 func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	logger.Infof("Updating user index for %s", kid)
@@ -93,7 +98,6 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 		KID:    kid,
 		Result: result,
 	}
-
 	logger.Infof("Indexing %s: %+v", keyDoc.KID, keyDoc.Result)
 	if err := u.index(ctx, keyDoc); err != nil {
 		return nil, err
@@ -102,7 +106,8 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 	return result, nil
 }
 
-// CheckSigchain looks for user in a Sigchain and updates the current result in the Users.
+// CheckSigchain looks for user in a Sigchain and creates a result or updates
+// the current result.
 func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
 	usr, err := FindInSigchain(sc)
 	if err != nil {
@@ -118,14 +123,14 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 	if result == nil {
 		result = &Result{}
 	}
-	// Update result user (in case user changed)
+	// Set or update user (in case user changed)
 	result.User = usr
 
 	if usr.KID != sc.KID() {
 		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
 	}
 
-	updateResult(ctx, u.req, usr, result, u.clock.Now())
+	updateResult(ctx, u.req, result, u.clock.Now())
 
 	return result, nil
 }
@@ -168,14 +173,14 @@ func (u *Users) Get(ctx context.Context, kid keys.ID) (*Result, error) {
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
 func (u *Users) User(ctx context.Context, user string) (*Result, error) {
-	res, err := u.get(ctx, indexUser, user)
+	keyDoc, err := u.get(ctx, indexUser, user)
 	if err != nil {
 		return nil, err
 	}
-	if res == nil {
+	if keyDoc == nil {
 		return nil, nil
 	}
-	return res.Result, nil
+	return keyDoc.Result, nil
 }
 
 func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument, error) {
@@ -208,10 +213,38 @@ func (u *Users) result(ctx context.Context, kid keys.ID) (*Result, error) {
 	return doc.Result, nil
 }
 
-func (u *Users) removeUser(ctx context.Context, user *User) error {
-	namePath := docs.Path(indexUser, indexName(user))
-	logger.Infof("Removing user %s: %s", user.KID, namePath)
-	if _, err := u.ds.Delete(ctx, namePath); err != nil {
+func (u *Users) indexUser(ctx context.Context, user *User, data []byte, skipSearch bool) error {
+	logger.Infof("Indexing user %s %s", user.ID, user.KID)
+	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
+	if err := u.ds.Set(ctx, userPath, data); err != nil {
+		return err
+	}
+	servicePath := docs.Path(indexService, indexServiceKey(user.Service, user.Name))
+	if err := u.ds.Set(ctx, servicePath, data); err != nil {
+		return err
+	}
+	if !skipSearch {
+		searchPath := docs.Path(indexSearch, indexUserKey(user.Service, user.Name))
+		if err := u.ds.Set(ctx, searchPath, data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *Users) unindexUser(ctx context.Context, user *User) error {
+	logger.Infof("Removing user %s: %s", user.KID, indexUserKey(user.Service, user.Name))
+
+	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
+	if _, err := u.ds.Delete(ctx, userPath); err != nil {
+		return err
+	}
+	searchPath := docs.Path(indexSearch, indexUserKey(user.Service, user.Name))
+	if _, err := u.ds.Delete(ctx, searchPath); err != nil {
+		return err
+	}
+	servicePath := docs.Path(indexService, indexServiceKey(user.Service, user.Name))
+	if _, err := u.ds.Delete(ctx, servicePath); err != nil {
 		return err
 	}
 	return nil
@@ -222,6 +255,12 @@ const indexKID = "kid"
 
 // indexUser is collection for user@service.
 const indexUser = "user"
+
+// indexUser is collection for user@service for search.
+const indexSearch = "search"
+
+// indexService is collection for user by service.
+const indexService = "service"
 
 // TODO: Remove document from indexes if failed for a long time?
 
@@ -235,7 +274,7 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 		if keyDoc.Result == nil || keyDoc.Result.User == nil ||
 			(existing.Result.User.Name != keyDoc.Result.User.Name &&
 				existing.Result.User.Service != keyDoc.Result.User.Service) {
-			if err := u.removeUser(ctx, existing.Result.User); err != nil {
+			if err := u.unindexUser(ctx, existing.Result.User); err != nil {
 				return err
 			}
 		}
@@ -268,14 +307,16 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 		}
 
 		if index {
-			namePath := docs.Path(indexUser, indexName(keyDoc.Result.User))
-			logger.Infof("Indexing user result %s %s", namePath, keyDoc.Result.User.KID)
-			if err := u.ds.Set(ctx, namePath, data); err != nil {
+			skipSearch := false
+			switch keyDoc.Result.User.Service {
+			case "echo":
+				skipSearch = true
+			}
+			if err := u.indexUser(ctx, keyDoc.Result.User, data, skipSearch); err != nil {
 				return err
 			}
 		} else {
-			logger.Infof("Removing failed user %s", keyDoc.Result.User)
-			if err := u.removeUser(ctx, keyDoc.Result.User); err != nil {
+			if err := u.unindexUser(ctx, keyDoc.Result.User); err != nil {
 				return err
 			}
 		}
@@ -284,8 +325,12 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 	return nil
 }
 
-func indexName(user *User) string {
-	return fmt.Sprintf("%s@%s", user.Name, user.Service)
+func indexUserKey(service string, name string) string {
+	return fmt.Sprintf("%s@%s", name, service)
+}
+
+func indexServiceKey(service string, name string) string {
+	return fmt.Sprintf("%s@%s", service, name)
 }
 
 // Find user result for KID.

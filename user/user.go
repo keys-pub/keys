@@ -261,54 +261,50 @@ func (u *User) Sign(key *keys.EdX25519Key) (string, error) {
 }
 
 // Verify armored message for a user.
-// If user is specified, we will verify it matches the User in the verified
-// message.
-func Verify(msg string, kid keys.ID, user *User) (*User, error) {
+func Verify(msg string, usr *User) error {
 	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
-		return nil, err
+		return errors.Wrapf(err, "failed to user verify")
 	}
 
-	spk, err := keys.StatementPublicKeyFromID(kid)
+	spk, err := keys.StatementPublicKeyFromID(usr.KID)
 	if err != nil {
-		return nil, err
+		return errors.Wrapf(err, "failed to user verify")
 	}
 
 	logger.Debugf("Verifying msg...")
 	bout, err := spk.Verify(b)
 	if err != nil {
-		return nil, err
+		return errors.Wrapf(err, "failed to user verify")
 	}
 
 	var dec User
 	if err := json.Unmarshal(bout, &dec); err != nil {
-		return nil, err
+		return err
 	}
 	logger.Debugf("User: %v", dec)
 	if dec.Name == "" {
-		return nil, errors.Errorf("user message invalid: no name")
+		return errors.Errorf("failed to user verify: message invalid, no name")
 	}
 	if dec.KID == "" {
-		return nil, errors.Errorf("user message invalid: no kid")
+		return errors.Errorf("failed to user verify: message invalid, no kid")
 	}
 	if dec.Service == "" {
-		return nil, errors.Errorf("user message invalid: no service")
+		return errors.Errorf("failed to user verify: message invalid, no service")
 	}
 
-	if user != nil {
-		if dec.KID != user.KID {
-			return nil, errors.Errorf("kid mismatch %s != %s", user.KID, dec.KID)
-		}
-		if dec.Service != user.Service {
-			return nil, errors.Errorf("service mismatch %s != %s", user.Service, dec.Service)
-		}
-		if dec.Name != user.Name {
-			return nil, errors.Errorf("name mismatch %s != %s", user.Name, dec.Name)
-		}
+	if dec.KID != usr.KID {
+		return errors.Errorf("failed to user verify: kid mismatch %s != %s", usr.KID, dec.KID)
+	}
+	if dec.Service != usr.Service {
+		return errors.Errorf("failed to user verify: service mismatch %s != %s", usr.Service, dec.Service)
+	}
+	if dec.Name != usr.Name {
+		return errors.Errorf("failed to user verify: name mismatch %s != %s", usr.Name, dec.Name)
 	}
 
-	return &dec, nil
+	return nil
 }
 
 // FindInSigchain returns User from a Sigchain.

@@ -26,6 +26,7 @@ type SearchResult struct {
 
 func (u *Users) searchUsers(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
+	// TODO: Change to indexSearch when that index is available
 	iter, err := u.ds.DocumentIterator(ctx, indexUser, docs.Prefix(query))
 	if err != nil {
 		return nil, err
