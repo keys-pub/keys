@@ -61,8 +61,8 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, "github", results[0].Result.User.Service)
 	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
-	require.Equal(t, int64(1234567890034), results[0].Result.VerifiedAt)
-	require.Equal(t, int64(1234567890034), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890044), results[0].Result.VerifiedAt)
+	require.Equal(t, int64(1234567890044), results[0].Result.Timestamp)
 
 	// Search "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
 	results, err = users.Search(ctx, &user.SearchRequest{Query: "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"})
@@ -411,7 +411,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), results[0].Result.User.KID)
 	require.Equal(t, user.StatusConnFailure, results[0].Result.Status)
-	require.Equal(t, int64(1234567890007), results[0].Result.Timestamp)
+	require.Equal(t, int64(1234567890009), results[0].Result.Timestamp)
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
 	// List by status

@@ -57,11 +57,13 @@ func TestResultEcho(t *testing.T) {
 
 	result, err = users.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
+	require.NotNil(t, result)
 	require.Equal(t, "echo", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
 	result, err = users.User(context.TODO(), "alice@echo")
 	require.NoError(t, err)
+	require.NotNil(t, result)
 	require.Equal(t, "echo", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
@@ -69,6 +71,11 @@ func TestResultEcho(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(kids))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
+
+	// TODO: When we flip indexUser to indexSearch, uncomment this...
+	// res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "alice@echo"})
+	// require.NoError(t, err)
+	// require.Equal(t, 0, len(res))
 }
 
 func TestRequestVerifyEcho(t *testing.T) {
