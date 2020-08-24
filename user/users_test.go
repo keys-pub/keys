@@ -148,3 +148,30 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
 }
+
+func TestCheckForExisting(t *testing.T) {
+	var err error
+
+	clock := tsutil.NewTestClock()
+	req := request.NewMockRequestor()
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+
+	sk1 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	sc1 := testEchoSigchain(t, sk1, "alice", clock)
+	kid, err := users.CheckForExisting(context.TODO(), sc1)
+	require.NoError(t, err)
+	require.Empty(t, kid)
+	err = scs.Save(sc1)
+	require.NoError(t, err)
+	_, err = users.Update(context.TODO(), sk1.ID())
+	require.NoError(t, err)
+
+	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
+	sc2 := testEchoSigchain(t, sk2, "alice", clock)
+	kid, err = users.CheckForExisting(context.TODO(), sc2)
+	require.NoError(t, err)
+	require.Equal(t, kid, sk1.ID())
+
+}
