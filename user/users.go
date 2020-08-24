@@ -398,17 +398,14 @@ func (u *Users) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.I
 	}
 	if usr != nil {
 		logger.Debugf("Checking for existing user %s...", usr.ID())
-		q := usr.ID()
-		results, err := u.Search(ctx, &SearchRequest{Query: q})
+		res, err := u.User(ctx, usr.ID())
 		if err != nil {
 			return "", err
 		}
-		if len(results) > 0 {
-			for _, res := range results {
-				logger.Debugf("Found user %s with %s", usr.ID(), res.KID)
-				if res.KID != sc.KID() {
-					return res.KID, nil
-				}
+		if res != nil {
+			logger.Debugf("Found user %s with %s", usr.ID(), res.User.KID)
+			if res.User.KID != sc.KID() {
+				return res.User.KID, nil
 			}
 		}
 	}
