@@ -20,7 +20,7 @@ func TestResultGithub(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdata(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
 
@@ -68,6 +68,11 @@ func TestResultGithub(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(kids))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
+
+	res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "alice"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
 }
 
 func TestResultGithubWrongName(t *testing.T) {
@@ -77,7 +82,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice2")
 	require.NoError(t, err)
@@ -111,7 +116,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 	sc := keys.NewSigchain(sk.ID())
 
 	muser := &user.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}

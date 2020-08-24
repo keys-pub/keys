@@ -21,7 +21,7 @@ func TestCheckNoUsers(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	result, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestCheckFailure(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
@@ -76,7 +76,7 @@ func TestSigchainUsersUpdate(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/gabriel/status/1259188857846632448", []byte(msg))
@@ -95,7 +95,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	sk := keys.GenerateEdX25519Key()
 	kid := sk.ID()

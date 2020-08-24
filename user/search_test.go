@@ -27,7 +27,7 @@ func TestSearchUsers(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 	ctx := context.TODO()
 
 	results, err := users.Search(ctx, &user.SearchRequest{})
@@ -180,7 +180,7 @@ func TestFind(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 	ctx := context.TODO()
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
@@ -219,7 +219,7 @@ func TestUsersEmpty(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -242,7 +242,7 @@ func TestUserValidateName(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x20}, 32)))
 
@@ -271,7 +271,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	// Unvalidated user to sigchain
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x021}, 32)))
@@ -321,7 +321,7 @@ func TestReddit(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
@@ -376,7 +376,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 	ctx := context.TODO()
 
 	results, err := users.Search(ctx, &user.SearchRequest{})
@@ -460,7 +460,7 @@ func TestExpired(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 	ctx := context.TODO()
 
 	ids, err := users.Expired(ctx, time.Hour, time.Hour*24*60)
@@ -583,7 +583,7 @@ func TestSearch(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {
