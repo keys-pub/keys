@@ -22,7 +22,7 @@ func TestResultEcho(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
@@ -72,10 +72,11 @@ func TestResultEcho(t *testing.T) {
 	require.Equal(t, 1, len(kids))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
 
-	// TODO: When we flip indexUser to indexSearch, uncomment this...
-	// res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "alice@echo"})
-	// require.NoError(t, err)
-	// require.Equal(t, 0, len(res))
+	// Echo is hidden from search
+	res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "alice@echo"})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(res))
+	// require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
 }
 
 func TestRequestVerifyEcho(t *testing.T) {
@@ -85,7 +86,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	usrSign, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)

@@ -13,42 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Result describes the status of a User.
-// TODO: Make Err/Status more explicit, it can be confusing.
-type Result struct {
-	Err    string `json:"err,omitempty"`
-	Status Status `json:"status"`
-	// Timestamp is the when the status was last updated.
-	Timestamp int64 `json:"ts"`
-	User      *User `json:"user"`
-	// VerifiedAt is when the status was last OK.
-	VerifiedAt int64 `json:"vts"`
-}
-
-func (r Result) String() string {
-	if r.Status == StatusOK {
-		return fmt.Sprintf("%s:%s(%d)", r.Status, r.User, r.VerifiedAt)
-	}
-	return fmt.Sprintf("%s:%s;err=%s", r.Status, r.User, r.Err)
-}
-
-// IsTimestampExpired returns true if result Timestamp is older than dt.
-func (r Result) IsTimestampExpired(now time.Time, dt time.Duration) bool {
-	ts := tsutil.ConvertMillis(r.Timestamp)
-	return (ts.IsZero() || now.Sub(ts) > dt)
-}
-
-// IsVerifyExpired returns true if result VerifiedAt is older than dt.
-func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
-	ts := tsutil.ConvertMillis(r.VerifiedAt)
-	return (ts.IsZero() || now.Sub(ts) > dt)
-}
-
-type keyDocument struct {
-	KID    keys.ID `json:"kid"`
-	Result *Result `json:"result,omitempty"`
-}
-
 // Users keeps track of sigchain user links.
 type Users struct {
 	ds    docs.Documents
@@ -58,7 +22,16 @@ type Users struct {
 }
 
 // NewUsers creates Users.
-func NewUsers(ds docs.Documents, scs *keys.Sigchains, req request.Requestor, clock tsutil.Clock) *Users {
+func NewUsers(ds docs.Documents, scs *keys.Sigchains, opt ...UsersOption) *Users {
+	opts := newUserOptions(opt...)
+	req := opts.Req
+	if req == nil {
+		req = request.NewHTTPRequestor()
+	}
+	clock := opts.Clock
+	if clock == nil {
+		clock = tsutil.NewClock()
+	}
 	return &Users{
 		ds:    ds,
 		scs:   scs,
@@ -70,11 +43,6 @@ func NewUsers(ds docs.Documents, scs *keys.Sigchains, req request.Requestor, clo
 // Requestor ...
 func (u *Users) Requestor() request.Requestor {
 	return u.req
-}
-
-// Documents ...
-func (u *Users) Documents() docs.Documents {
-	return u.ds
 }
 
 // Update index for sigchain KID.
@@ -239,12 +207,12 @@ func (u *Users) unindexUser(ctx context.Context, user *User) error {
 	if _, err := u.ds.Delete(ctx, userPath); err != nil {
 		return err
 	}
-	searchPath := docs.Path(indexSearch, indexUserKey(user.Service, user.Name))
-	if _, err := u.ds.Delete(ctx, searchPath); err != nil {
-		return err
-	}
 	servicePath := docs.Path(indexService, indexServiceKey(user.Service, user.Name))
 	if _, err := u.ds.Delete(ctx, servicePath); err != nil {
+		return err
+	}
+	searchPath := docs.Path(indexSearch, indexUserKey(user.Service, user.Name))
+	if _, err := u.ds.Delete(ctx, searchPath); err != nil {
 		return err
 	}
 	return nil

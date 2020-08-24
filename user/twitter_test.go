@@ -41,7 +41,7 @@ func TestResultTwitter(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	// usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
 	// require.NoError(t, err)
@@ -104,6 +104,28 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, "bob", result.User.Name)
 	require.Equal(t, int64(1234567890004), result.VerifiedAt)
 	require.Equal(t, int64(1234567890005), result.Timestamp)
+
+	result, err = users.Get(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "twitter", result.User.Service)
+	require.Equal(t, "bob", result.User.Name)
+
+	result, err = users.User(context.TODO(), "bob@twitter")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "twitter", result.User.Service)
+	require.Equal(t, "bob", result.User.Name)
+
+	kids, err := users.KIDs(context.TODO())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(kids))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
+
+	res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "bob"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
 }
 
 func TestResultTwitterInvalidStatement(t *testing.T) {
@@ -114,7 +136,7 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)

@@ -19,7 +19,7 @@ func TestResultReddit(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, req, clock)
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "reddit", "charlie")
 	require.NoError(t, err)
@@ -51,4 +51,26 @@ func TestResultReddit(t *testing.T) {
 	require.Equal(t, "charlie", result.User.Name)
 	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
+
+	result, err = users.Get(context.TODO(), sk.ID())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "reddit", result.User.Service)
+	require.Equal(t, "charlie", result.User.Name)
+
+	result, err = users.User(context.TODO(), "charlie@reddit")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "reddit", result.User.Service)
+	require.Equal(t, "charlie", result.User.Name)
+
+	kids, err := users.KIDs(context.TODO())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(kids))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
+
+	res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "charlie"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
 }
