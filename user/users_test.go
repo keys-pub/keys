@@ -23,14 +23,14 @@ func TestCheckNoUsers(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
-	result, err := users.CheckSigchain(context.TODO(), sc)
+	res, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
-	require.Nil(t, result)
+	require.Equal(t, 0, len(res))
 
 	rk := keys.GenerateEdX25519Key()
-	result, err = users.Update(context.TODO(), rk.ID())
+	res, err = users.Update(context.TODO(), rk.ID())
 	require.NoError(t, err)
-	require.Nil(t, result)
+	require.Equal(t, 0, len(res))
 }
 
 func TestCheckFailure(t *testing.T) {
@@ -84,9 +84,10 @@ func TestSigchainUsersUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := users.Update(context.TODO(), kid)
+	res, err := users.Update(context.TODO(), kid)
 	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, result.Status)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
 }
 
 func TestSigchainRevokeUpdate(t *testing.T) {
@@ -101,27 +102,13 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	kid := sk.ID()
 	sc := keys.NewSigchain(kid)
 
-	// Update
-	usr, err := user.NewForSigning(kid, "twitter", "gabriel")
-	require.NoError(t, err)
-	msg, err := usr.Sign(sk)
-	require.NoError(t, err)
+	// User #1
+	testTwitterSigchain(t, sk, "gabriel", sc, scs, req, clock)
 
-	stu, err := user.New(kid, "twitter", "gabriel", "https://mobile.twitter.com/gabriel/status/1", 1)
+	res, err := users.Update(context.TODO(), kid)
 	require.NoError(t, err)
-	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
-	require.NoError(t, err)
-	err = sc.Add(st)
-	require.NoError(t, err)
-
-	req.SetResponse("https://mobile.twitter.com/gabriel/status/1", []byte(msg))
-
-	err = scs.Save(sc)
-	require.NoError(t, err)
-
-	result, err := users.Update(context.TODO(), kid)
-	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, result.Status)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
 
 	// Revoke
 	_, err = sc.Revoke(1, sk)
@@ -130,23 +117,28 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	require.NoError(t, err)
 	// Don't update here to test revoke + new statement updates correctly
 
-	// Update #2
-	stu2, err := user.New(kid, "twitter", "gabriel", "https://mobile.twitter.com/gabriel/status/2", 3)
-	require.NoError(t, err)
-	st2, err := user.NewSigchainStatement(sc, stu2, sk, clock.Now())
-	require.NoError(t, err)
-	err = sc.Add(st2)
-	require.NoError(t, err)
+	// Re-add user
+	testTwitterSigchain(t, sk, "gabriel", sc, scs, req, clock)
 
-	req.SetResponse("https://mobile.twitter.com/gabriel/status/2", []byte(msg))
-
-	err = scs.Save(sc)
+	res, err = users.Update(context.TODO(), kid)
 	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "gabriel", res[0].User.Name)
+	require.Equal(t, "twitter", res[0].User.Service)
 
-	result, err = users.Update(context.TODO(), kid)
+	// User #2 (echo)
+	testEchoSigchain(t, sk, "g", sc, scs, clock)
+
+	res, err = users.Update(context.TODO(), kid)
 	require.NoError(t, err)
-	require.NotNil(t, result)
-	require.Equal(t, user.StatusOK, result.Status)
+	require.Equal(t, 2, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "gabriel", res[0].User.Name)
+	require.Equal(t, "twitter", res[0].User.Service)
+	require.Equal(t, user.StatusOK, res[1].Status)
+	require.Equal(t, "g", res[1].User.Name)
+	require.Equal(t, "echo", res[1].User.Service)
 }
 
 func TestCheckForExisting(t *testing.T) {
@@ -159,7 +151,8 @@ func TestCheckForExisting(t *testing.T) {
 	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	sk1 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	sc1 := testEchoSigchain(t, sk1, "alice", clock)
+	sc1 := keys.NewSigchain(sk1.ID())
+	testEchoSigchain(t, sk1, "alice", sc1, scs, clock)
 	kid, err := users.CheckForExisting(context.TODO(), sc1)
 	require.NoError(t, err)
 	require.Empty(t, kid)
@@ -169,7 +162,8 @@ func TestCheckForExisting(t *testing.T) {
 	require.NoError(t, err)
 
 	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
-	sc2 := testEchoSigchain(t, sk2, "alice", clock)
+	sc2 := keys.NewSigchain(sk2.ID())
+	testEchoSigchain(t, sk2, "alice", sc2, scs, clock)
 	kid, err = users.CheckForExisting(context.TODO(), sc2)
 	require.NoError(t, err)
 	require.Equal(t, kid, sk1.ID())

@@ -42,9 +42,10 @@ func TestResultReddit(t *testing.T) {
 
 	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdata(t, "testdata/reddit/charlie.json"))
 
-	result, err := users.Update(context.TODO(), sk.ID())
+	results, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.NotNil(t, result)
+	require.Equal(t, 1, len(results))
+	result := results[0]
 	require.NotNil(t, result.User)
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "reddit", result.User.Service)
@@ -52,9 +53,10 @@ func TestResultReddit(t *testing.T) {
 	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
 
-	result, err = users.Get(context.TODO(), sk.ID())
+	results, err = users.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.NotNil(t, result)
+	require.Equal(t, 1, len(results))
+	result = results[0]
 	require.Equal(t, "reddit", result.User.Service)
 	require.Equal(t, "charlie", result.User.Name)
 

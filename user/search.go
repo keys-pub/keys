@@ -43,14 +43,14 @@ func (u *Users) searchUsers(ctx context.Context, query string, limit int) ([]*Se
 		if len(results) >= limit {
 			break
 		}
-		var keyDoc keyDocument
-		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+		var userDoc userDocument
+		if err := json.Unmarshal(doc.Data, &userDoc); err != nil {
 			return nil, err
 		}
 
 		results = append(results, &SearchResult{
-			KID:    keyDoc.KID,
-			Result: keyDoc.Result,
+			KID:    userDoc.KID,
+			Result: userDoc.Result,
 		})
 	}
 	iter.Release()
@@ -73,13 +73,15 @@ func (u *Users) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult
 		if err != nil {
 			return nil, err
 		}
-		if res != nil {
-			return []*SearchResult{&SearchResult{
+		out := []*SearchResult{}
+		for _, r := range res {
+			out = append(out, &SearchResult{
 				KID:    kid,
-				Result: res,
+				Result: r,
 				Field:  "kid",
-			}}, nil
+			})
 		}
+		return out, nil
 	}
 
 	res, err := u.searchUsers(ctx, req.Query, limit)

@@ -45,17 +45,20 @@ func TestResultGithub(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	result, err := users.Update(context.TODO(), sk.ID())
+	results, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.NotNil(t, result)
+	require.Equal(t, 1, len(results))
+	result := results[0]
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 	require.Equal(t, int64(1234567890003), result.VerifiedAt)
 	require.Equal(t, int64(1234567890003), result.Timestamp)
 
-	result, err = users.Get(context.TODO(), sk.ID())
+	results, err = users.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	result = results[0]
 	require.Equal(t, "github", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
@@ -102,9 +105,10 @@ func TestResultGithubWrongName(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	result, err := users.CheckSigchain(context.TODO(), sc)
+	results, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
-	require.NotNil(t, result)
+	require.Equal(t, 1, len(results))
+	result := results[0]
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
 	require.Equal(t, result.Err, "failed to user verify: name mismatch alice != alice2")
 }
@@ -134,9 +138,10 @@ func TestResultGithubWrongService(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	result, err := users.CheckSigchain(context.TODO(), sc)
+	results, err := users.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
-	require.NotNil(t, result)
+	require.Equal(t, 1, len(results))
+	result := results[0]
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
 	require.Equal(t, result.Err, "failed to user verify: service mismatch github != github2")
 }

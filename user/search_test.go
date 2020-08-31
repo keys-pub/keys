@@ -195,14 +195,14 @@ func TestFind(t *testing.T) {
 	// Find "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
 	res, err := users.Find(ctx, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"))
 	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, alice.ID(), res.User.KID)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, alice.ID(), res[0].User.KID)
 
 	// Find "kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"
 	res, err = users.Find(ctx, keys.ID("kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"))
 	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, alice.ID(), res.User.KID)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, alice.ID(), res[0].User.KID)
 
 	// Find (not found)
 	rand := keys.GenerateEdX25519Key()
@@ -225,13 +225,13 @@ func TestUsersEmpty(t *testing.T) {
 
 	// Test empty
 	ctx := context.TODO()
-	result, err := users.Update(ctx, key.ID())
+	res, err := users.Update(ctx, key.ID())
+	require.NoError(t, err)
+	require.Equal(t, 0, len(res))
+
+	result, err := users.Get(ctx, key.ID())
 	require.NoError(t, err)
 	require.Nil(t, result)
-
-	res, err := users.Get(ctx, key.ID())
-	require.NoError(t, err)
-	require.Nil(t, res)
 }
 
 func TestUserValidateName(t *testing.T) {
@@ -304,13 +304,13 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.TODO()
-	result, err := users.Update(ctx, key.ID())
+	res, err := users.Update(ctx, key.ID())
+	require.NoError(t, err)
+	require.Equal(t, 0, len(res))
+
+	result, err := users.Get(ctx, key.ID())
 	require.NoError(t, err)
 	require.Nil(t, result)
-
-	res, err := users.Get(ctx, key.ID())
-	require.NoError(t, err)
-	require.Nil(t, res)
 }
 
 func TestReddit(t *testing.T) {
@@ -347,23 +347,26 @@ func TestReddit(t *testing.T) {
 	msg := mockRedditMessage("alice", smsg, "keyspubmsgs")
 	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 
-	result, err := users.Update(ctx, key.ID())
+	res, err := users.Update(ctx, key.ID())
 	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, result.Status)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
 
 	// Different name
 	msg = mockRedditMessage("alice2", smsg, "keyspubmsgs")
 	req.SetResponse(mockRedditURL("alice"), []byte(msg))
-	result, err = users.Update(ctx, key.ID())
+	res, err = users.Update(ctx, key.ID())
 	require.NoError(t, err)
-	require.Equal(t, user.StatusContentInvalid, result.Status)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusContentInvalid, res[0].Status)
 
 	// Different subreddit
 	msg = mockRedditMessage("alice", smsg, "keyspubmsgs2")
 	req.SetResponse(mockRedditURL("alice"), []byte(msg))
-	result, err = users.Update(ctx, key.ID())
+	res, err = users.Update(ctx, key.ID())
 	require.NoError(t, err)
-	require.Equal(t, user.StatusContentInvalid, result.Status)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusContentInvalid, res[0].Status)
 }
 
 func TestSearchUsersRequestErrors(t *testing.T) {
@@ -418,7 +421,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	fail, err := users.Status(ctx, user.StatusConnFailure)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(fail))
-	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0].User.KID)
 
 	// Set 404 error for alice@github
 	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 404})
@@ -491,17 +494,17 @@ func TestExpired(t *testing.T) {
 	// Test expired
 	clock.Add(time.Hour * 2)
 
-	ids, err = users.Expired(ctx, time.Hour, time.Hour*24*60)
+	res, err := users.Expired(ctx, time.Hour, time.Hour*24*60)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(ids))
-	require.Equal(t, []keys.ID{alice.ID()}, ids)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, alice.ID(), res[0].User.KID)
 
 	// Test max age
 	clock.Add(time.Hour * 24 * 30)
 
-	ids, err = users.Expired(ctx, time.Hour, time.Hour*24*7)
+	res, err = users.Expired(ctx, time.Hour, time.Hour*24*7)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(ids))
+	require.Equal(t, 0, len(res))
 }
 
 func testSaveUser(t *testing.T, users *user.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {

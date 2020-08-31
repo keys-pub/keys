@@ -45,19 +45,22 @@ func TestResultEcho(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := users.Update(context.TODO(), sk.ID())
+	results, err := users.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.NotNil(t, result)
-	t.Logf("Result: %+v", result)
+	require.Equal(t, 1, len(results))
+	result := results[0]
+	t.Logf("Results: %+v", results)
+	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, user.StatusOK, result.Status)
 	require.Equal(t, "echo", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 	require.Equal(t, int64(1234567890002), result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), result.Timestamp)
 
-	result, err = users.Get(context.TODO(), sk.ID())
+	results, err = users.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
-	require.NotNil(t, result)
+	require.Equal(t, 1, len(results))
+	result = results[0]
 	require.Equal(t, "echo", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
@@ -111,21 +114,19 @@ func TestRequestVerifyEcho(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 }
 
-func testEchoSigchain(t *testing.T, sk *keys.EdX25519Key, name string, clock tsutil.Clock) *keys.Sigchain {
+func testEchoSigchain(t *testing.T, sk *keys.EdX25519Key, name string, sc *keys.Sigchain, scs *keys.Sigchains, clock tsutil.Clock) {
 	usr, err := user.NewForSigning(sk.ID(), "echo", name)
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
-	err = user.Verify(msg, usr)
-	require.NoError(t, err)
 
 	urs := "test://echo/" + name + "/" + sk.ID().String() + "/" + url.QueryEscape(strings.ReplaceAll(msg, "\n", " "))
-	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(sk.ID(), "echo", "alice", urs, sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "echo", name, urs, sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
 	err = sc.Add(st)
 	require.NoError(t, err)
-	return sc
+	err = scs.Save(sc)
+	require.NoError(t, err)
 }

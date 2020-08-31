@@ -211,30 +211,30 @@ func (u *User) Validate() error {
 	return nil
 }
 
-// ErrUserAlreadySet is user already set in sigchain.
+// ErrUserAlreadySet if user with name@service is already set in the sigchain.
 var ErrUserAlreadySet = errors.New("user set in sigchain already")
 
 // NewSigchainStatement for a user to add to a Sigchain.
 // Returns ErrUserAlreadySet is user already exists in the Sigchain.
-func NewSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, ts time.Time) (*keys.Statement, error) {
-	if user == nil {
+func NewSigchainStatement(sc *keys.Sigchain, usr *User, sk *keys.EdX25519Key, ts time.Time) (*keys.Statement, error) {
+	if usr == nil {
 		return nil, errors.Errorf("no user specified")
 	}
 
-	if err := Validate(user); err != nil {
+	if err := Validate(usr); err != nil {
 		return nil, err
 	}
 
 	// Check if we have an existing user set.
-	existing, err := FindInSigchain(sc)
+	exists, err := ExistsInSigchain(sc, usr)
 	if err != nil {
 		return nil, err
 	}
-	if existing != nil {
+	if exists {
 		return nil, ErrUserAlreadySet
 	}
 
-	b, err := user.MarshalJSON()
+	b, err := usr.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func NewSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, t
 	if err != nil {
 		return nil, err
 	}
-	if st.Seq != user.Seq {
+	if st.Seq != usr.Seq {
 		return nil, errors.Errorf("user seq mismatch")
 	}
 	return st, nil
@@ -307,21 +307,36 @@ func Verify(msg string, usr *User) error {
 	return nil
 }
 
-// FindInSigchain returns User from a Sigchain.
-// If user is invalid returns nil.
-func FindInSigchain(sc *keys.Sigchain) (*User, error) {
-	st := sc.FindLast("user")
-	if st == nil {
-		return nil, nil
+// FindInSigchain returns valid Users from a Sigchain.
+func FindInSigchain(sc *keys.Sigchain) ([]*User, error) {
+	sts := sc.FindAll("user")
+	users := []*User{}
+	for _, st := range sts {
+		var usr User
+		if err := json.Unmarshal(st.Data, &usr); err != nil {
+			return nil, err
+		}
+		if err := Validate(&usr); err != nil {
+			return nil, nil
+		}
+		if sc.KID() != usr.KID {
+			return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
+		}
+		users = append(users, &usr)
 	}
-	var user User
-	if err := json.Unmarshal(st.Data, &user); err != nil {
-		return nil, err
-	}
+	return users, nil
+}
 
-	if err := Validate(&user); err != nil {
-		return nil, nil
+// ExistsInSigchain returns true if user@service already exists in sigchain.
+func ExistsInSigchain(sc *keys.Sigchain, user *User) (bool, error) {
+	users, err := FindInSigchain(sc)
+	if err != nil {
+		return false, err
 	}
-
-	return &user, nil
+	for _, u := range users {
+		if u.ID() == user.ID() {
+			return true, nil
+		}
+	}
+	return false, nil
 }

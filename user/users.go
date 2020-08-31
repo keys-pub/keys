@@ -46,7 +46,7 @@ func (u *Users) Requestor() request.Requestor {
 }
 
 // Update index for sigchain KID.
-func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Update(ctx context.Context, kid keys.ID) ([]*Result, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
@@ -56,51 +56,63 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 		return nil, nil
 	}
 
-	logger.Infof("Checking users %s", kid)
-	result, err := u.CheckSigchain(ctx, sc)
+	logger.Infof("Checking users for %s", kid)
+	results, err := u.CheckSigchain(ctx, sc)
 	if err != nil {
 		return nil, err
 	}
 
 	keyDoc := &keyDocument{
-		KID:    kid,
-		Result: result,
+		KID:     kid,
+		Results: results,
 	}
-	logger.Infof("Indexing %s: %+v", keyDoc.KID, keyDoc.Result)
+	logger.Infof("Indexing %s: %+v", keyDoc.KID, keyDoc.Results)
 	if err := u.index(ctx, keyDoc); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return results, nil
 }
 
-// CheckSigchain looks for user in a Sigchain and creates a result or updates
-// the current result.
-func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
-	usr, err := FindInSigchain(sc)
+func findResult(usr *User, results []*Result) *Result {
+	for _, res := range results {
+		if res.User.ID() == usr.ID() {
+			return res
+		}
+	}
+	return nil
+}
+
+func fillResult(usr *User, results []*Result) *Result {
+	res := findResult(usr, results)
+	if res != nil {
+		res.User = usr
+		return res
+	}
+	return &Result{
+		User: usr,
+	}
+}
+
+// CheckSigchain looks for users in a Sigchain and updates results.
+func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) ([]*Result, error) {
+	users, err := FindInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
-	if usr == nil {
-		return nil, nil
-	}
-	result, err := u.result(ctx, sc.KID())
+	results, err := u.results(ctx, sc.KID())
 	if err != nil {
 		return nil, err
 	}
-	if result == nil {
-		result = &Result{}
-	}
-	// Set or update user (in case user changed)
-	result.User = usr
 
-	if usr.KID != sc.KID() {
-		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
+	out := []*Result{}
+	for _, usr := range users {
+		result := fillResult(usr, results)
+		updateResult(ctx, u.req, result, u.clock.Now())
+		out = append(out, result)
 	}
 
-	updateResult(ctx, u.req, result, u.clock.Now())
-
-	return result, nil
+	return out, nil
 }
 
 // RequestVerify a user. Doesn't index result.
@@ -123,35 +135,33 @@ func ValidateStatement(st *keys.Statement) error {
 	return nil
 }
 
-// Get user result for KID.
-// Retrieves cached result. If Update(kid) has not been called or there is no
-// user statement, this will return nil.
-func (u *Users) Get(ctx context.Context, kid keys.ID) (*Result, error) {
-	res, err := u.get(ctx, indexKID, kid.String())
+// Get user results for KID.
+// Retrieves cached results, if Update(kid) has not been called will return no results.
+func (u *Users) Get(ctx context.Context, kid keys.ID) ([]*Result, error) {
+	res, err := u.getKey(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
 	}
 	if res == nil {
 		return nil, nil
 	}
-	return res.Result, nil
+	return res.Results, nil
 }
 
 // User result for user name@service.
-// Retrieves cached result. If Update(kid) has not been called or there is no
-// user statement, this will return nil.
+// Retrieves cached results, if Update(kid) has not been called it will return no results.
 func (u *Users) User(ctx context.Context, user string) (*Result, error) {
-	keyDoc, err := u.get(ctx, indexUser, user)
+	userDoc, err := u.getUser(ctx, indexUser, user)
 	if err != nil {
 		return nil, err
 	}
-	if keyDoc == nil {
+	if userDoc == nil {
 		return nil, nil
 	}
-	return keyDoc.Result, nil
+	return userDoc.Result, nil
 }
 
-func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument, error) {
+func (u *Users) getKey(ctx context.Context, index string, val string) (*keyDocument, error) {
 	if val == "" {
 		return nil, errors.Errorf("empty value")
 	}
@@ -170,18 +180,42 @@ func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument
 	return &keyDoc, nil
 }
 
-func (u *Users) result(ctx context.Context, kid keys.ID) (*Result, error) {
-	doc, err := u.get(ctx, indexKID, kid.String())
+func (u *Users) getUser(ctx context.Context, index string, val string) (*userDocument, error) {
+	if val == "" {
+		return nil, errors.Errorf("empty value")
+	}
+	path := docs.Path(index, val)
+	doc, err := u.ds.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 	if doc == nil {
 		return nil, nil
 	}
-	return doc.Result, nil
+	var userDoc userDocument
+	if err := json.Unmarshal(doc.Data, &userDoc); err != nil {
+		return nil, err
+	}
+	return &userDoc, nil
 }
 
-func (u *Users) indexUser(ctx context.Context, user *User, data []byte, skipSearch bool) error {
+func (u *Users) results(ctx context.Context, kid keys.ID) ([]*Result, error) {
+	doc, err := u.getKey(ctx, indexKID, kid.String())
+	if err != nil {
+		return nil, err
+	}
+	if doc == nil {
+		return nil, nil
+	}
+	return doc.Results, nil
+}
+
+func (u *Users) indexUser(ctx context.Context, result *Result, skipSearch bool) error {
+	user := result.User
+	data, err := json.Marshal(&userDocument{KID: user.KID, Result: result})
+	if err != nil {
+		return err
+	}
 	logger.Infof("Indexing user %s %s", user.ID, user.KID)
 	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
 	if err := u.ds.Set(ctx, userPath, data); err != nil {
@@ -230,44 +264,48 @@ const indexSearch = "search"
 // indexService is collection for user by service.
 const indexService = "service"
 
-// TODO: Remove document from indexes if failed for a long time?
-
-func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
-	// Remove existing if different
-	existing, err := u.get(ctx, indexKID, keyDoc.KID.String())
+func (u *Users) unindexRemoved(ctx context.Context, keyDoc *keyDocument) error {
+	existing, err := u.getKey(ctx, indexKID, keyDoc.KID.String())
 	if err != nil {
 		return err
 	}
-	if existing != nil && existing.Result != nil && existing.Result.User != nil {
-		if keyDoc.Result == nil || keyDoc.Result.User == nil ||
-			(existing.Result.User.Name != keyDoc.Result.User.Name &&
-				existing.Result.User.Service != keyDoc.Result.User.Service) {
-			if err := u.unindexUser(ctx, existing.Result.User); err != nil {
+	if existing == nil {
+		return nil
+	}
+	for _, e := range existing.Results {
+		found := findResult(e.User, keyDoc.Results)
+		if found == nil {
+			if err := u.unindexUser(ctx, e.User); err != nil {
 				return err
 			}
 		}
 	}
+	return nil
+}
 
-	data, err := json.Marshal(keyDoc)
-	if err != nil {
+func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
+	if err := u.unindexRemoved(ctx, keyDoc); err != nil {
 		return err
 	}
-	logger.Debugf("Data to index: %s", string(data))
 
 	// Index for kid
 	kidPath := docs.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
+	data, err := json.Marshal(keyDoc)
+	if err != nil {
+		return err
+	}
 	if err := u.ds.Set(ctx, kidPath, data); err != nil {
 		return err
 	}
 
 	// Index for user
-	if keyDoc.Result != nil {
+	for _, result := range keyDoc.Results {
 		index := false
-		if keyDoc.Result.VerifiedAt == 0 {
-			logger.Warningf("Never verified user result in indexing: %v", keyDoc.Result)
+		if result.VerifiedAt == 0 {
+			logger.Warningf("Never verified user result in indexing: %v", result)
 		} else {
-			switch keyDoc.Result.Status {
+			switch result.Status {
 			// Index result if status ok, or a transient error
 			case StatusOK, StatusConnFailure:
 				index = true
@@ -276,15 +314,15 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 
 		if index {
 			skipSearch := false
-			switch keyDoc.Result.User.Service {
+			switch result.User.Service {
 			case "echo":
 				skipSearch = true
 			}
-			if err := u.indexUser(ctx, keyDoc.Result.User, data, skipSearch); err != nil {
+			if err := u.indexUser(ctx, result, skipSearch); err != nil {
 				return err
 			}
 		} else {
-			if err := u.unindexUser(ctx, keyDoc.Result.User); err != nil {
+			if err := u.unindexUser(ctx, result.User); err != nil {
 				return err
 			}
 		}
@@ -301,9 +339,9 @@ func indexServiceKey(service string, name string) string {
 	return fmt.Sprintf("%s@%s", service, name)
 }
 
-// Find user result for KID.
+// Find user results for KID.
 // Will also search for related keys.
-func (u *Users) Find(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Find(ctx context.Context, kid keys.ID) ([]*Result, error) {
 	res, err := u.Get(ctx, kid)
 	if err != nil {
 		return nil, err
@@ -322,12 +360,12 @@ func (u *Users) Find(ctx context.Context, kid keys.ID) (*Result, error) {
 }
 
 // Status returns KIDs that match a status.
-func (u *Users) Status(ctx context.Context, st Status) ([]keys.ID, error) {
+func (u *Users) Status(ctx context.Context, st Status) ([]*Result, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
-	kids := make([]keys.ID, 0, 100)
+	out := make([]*Result, 0, 100)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -340,24 +378,24 @@ func (u *Users) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		if keyDoc.Result != nil {
-			if keyDoc.Result.Status == st {
-				kids = append(kids, keyDoc.Result.User.KID)
+		for _, res := range keyDoc.Results {
+			if res.Status == st {
+				out = append(out, res)
 			}
 		}
 	}
 	iter.Release()
 
-	return kids, nil
+	return out, nil
 }
 
 // Expired returns KIDs that haven't been checked in a duration.
-func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]keys.ID, error) {
+func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]*Result, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
-	kids := make([]keys.ID, 0, 100)
+	out := make([]*Result, 0, 100)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -370,33 +408,32 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		if keyDoc.Result != nil {
-			ts := tsutil.ConvertMillis(keyDoc.Result.Timestamp)
+		for _, res := range keyDoc.Results {
+			ts := tsutil.ConvertMillis(res.Timestamp)
 
 			// If verifiedAt age is too old skip it
-			vts := tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)
+			vts := tsutil.ConvertMillis(res.VerifiedAt)
 			if !vts.IsZero() && u.clock.Now().Sub(vts) > maxAge {
 				continue
 			}
 
 			if ts.IsZero() || u.clock.Now().Sub(ts) > dt {
-				kids = append(kids, keyDoc.Result.User.KID)
+				out = append(out, res)
 			}
 		}
 	}
 	iter.Release()
 
-	return kids, nil
+	return out, nil
 }
 
-// CheckForExisting returns key ID of exsiting user in sigchain different from this
-// sigchain key.
+// CheckForExisting returns key ID of user different from this sigchain key.
 func (u *Users) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
-	usr, err := FindInSigchain(sc)
+	users, err := FindInSigchain(sc)
 	if err != nil {
 		return "", err
 	}
-	if usr != nil {
+	for _, usr := range users {
 		logger.Debugf("Checking for existing user %s...", usr.ID())
 		res, err := u.User(ctx, usr.ID())
 		if err != nil {
@@ -433,9 +470,7 @@ func (u *Users) KIDs(ctx context.Context) ([]keys.ID, error) {
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		if keyDoc.Result != nil {
-			kids = append(kids, keyDoc.Result.User.KID)
-		}
+		kids = append(kids, keyDoc.KID)
 	}
 	iter.Release()
 

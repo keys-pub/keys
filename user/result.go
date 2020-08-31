@@ -21,6 +21,11 @@ type Result struct {
 }
 
 type keyDocument struct {
+	KID     keys.ID   `json:"kid"`
+	Results []*Result `json:"results,omitempty"`
+}
+
+type userDocument struct {
 	KID    keys.ID `json:"kid"`
 	Result *Result `json:"result,omitempty"`
 }
