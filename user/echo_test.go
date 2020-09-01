@@ -113,20 +113,3 @@ func TestRequestVerifyEcho(t *testing.T) {
 	t.Logf("result: %+v", result)
 	require.Equal(t, user.StatusOK, result.Status)
 }
-
-func testEchoSigchain(t *testing.T, sk *keys.EdX25519Key, name string, sc *keys.Sigchain, scs *keys.Sigchains, clock tsutil.Clock) {
-	usr, err := user.NewForSigning(sk.ID(), "echo", name)
-	require.NoError(t, err)
-	msg, err := usr.Sign(sk)
-	require.NoError(t, err)
-
-	urs := "test://echo/" + name + "/" + sk.ID().String() + "/" + url.QueryEscape(strings.ReplaceAll(msg, "\n", " "))
-	stu, err := user.New(sk.ID(), "echo", name, urs, sc.LastSeq()+1)
-	require.NoError(t, err)
-	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
-	require.NoError(t, err)
-	err = sc.Add(st)
-	require.NoError(t, err)
-	err = scs.Save(sc)
-	require.NoError(t, err)
-}

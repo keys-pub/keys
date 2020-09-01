@@ -421,7 +421,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	fail, err := users.Status(ctx, user.StatusConnFailure)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(fail))
-	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0].User.KID)
+	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
 	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 404})
@@ -494,17 +494,17 @@ func TestExpired(t *testing.T) {
 	// Test expired
 	clock.Add(time.Hour * 2)
 
-	res, err := users.Expired(ctx, time.Hour, time.Hour*24*60)
+	kids, err := users.Expired(ctx, time.Hour, time.Hour*24*60)
 	require.NoError(t, err)
-	require.Equal(t, 1, len(res))
-	require.Equal(t, alice.ID(), res[0].User.KID)
+	require.Equal(t, 1, len(kids))
+	require.Equal(t, alice.ID(), kids[0])
 
 	// Test max age
 	clock.Add(time.Hour * 24 * 30)
 
-	res, err = users.Expired(ctx, time.Hour, time.Hour*24*7)
+	kids, err = users.Expired(ctx, time.Hour, time.Hour*24*7)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(res))
+	require.Equal(t, 0, len(kids))
 }
 
 func testSaveUser(t *testing.T, users *user.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {

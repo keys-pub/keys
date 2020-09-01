@@ -273,7 +273,8 @@ func (u *Users) unindexRemoved(ctx context.Context, keyDoc *keyDocument) error {
 		return nil
 	}
 	for _, e := range existing.Results {
-		found := findResult(e.User, keyDoc.Results)
+		// TODO: Change to keyDoc.Results after re-index
+		found := findResult(e.User, keyDoc.resultsForCompatibility())
 		if found == nil {
 			if err := u.unindexUser(ctx, e.User); err != nil {
 				return err
@@ -359,13 +360,14 @@ func (u *Users) Find(ctx context.Context, kid keys.ID) ([]*Result, error) {
 	return u.Get(ctx, rkid)
 }
 
-// Status returns KIDs that match a status.
-func (u *Users) Status(ctx context.Context, st Status) ([]*Result, error) {
+// Status returns keys that have a result status.
+// For example, if you want to get all keys that have a StatusConnFailure.
+func (u *Users) Status(ctx context.Context, st Status) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]*Result, 0, 100)
+	out := make([]keys.ID, 0, 100)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -378,9 +380,11 @@ func (u *Users) Status(ctx context.Context, st Status) ([]*Result, error) {
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		for _, res := range keyDoc.Results {
+		// TODO: Change to keyDoc.Results after re-index
+		for _, res := range keyDoc.resultsForCompatibility() {
 			if res.Status == st {
-				out = append(out, res)
+				out = append(out, keyDoc.KID)
+				break
 			}
 		}
 	}
@@ -389,13 +393,13 @@ func (u *Users) Status(ctx context.Context, st Status) ([]*Result, error) {
 	return out, nil
 }
 
-// Expired returns KIDs that haven't been checked in a duration.
-func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]*Result, error) {
+// Expired returns keys that have a result that hasn't been checked in a duration.
+func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Duration) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]*Result, 0, 100)
+	out := make([]keys.ID, 0, 100)
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -408,7 +412,8 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
 			return nil, err
 		}
-		for _, res := range keyDoc.Results {
+		// TODO: Change to keyDoc.Results after re-index
+		for _, res := range keyDoc.resultsForCompatibility() {
 			ts := tsutil.ConvertMillis(res.Timestamp)
 
 			// If verifiedAt age is too old skip it
@@ -418,7 +423,8 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 			}
 
 			if ts.IsZero() || u.clock.Now().Sub(ts) > dt {
-				out = append(out, res)
+				out = append(out, keyDoc.KID)
+				break
 			}
 		}
 	}
@@ -475,4 +481,38 @@ func (u *Users) KIDs(ctx context.Context) ([]keys.ID, error) {
 	iter.Release()
 
 	return kids, nil
+}
+
+// updateForTestingCompatibility is for testing backwards compatibility only.
+// TODO: Remove after full re-index.
+func (u *Users) updateForTestingCompatibility(ctx context.Context, kid keys.ID) (*Result, error) {
+	sc, err := u.scs.Sigchain(kid)
+	if err != nil {
+		return nil, err
+	}
+	if sc == nil {
+		return nil, nil
+	}
+
+	results, err := u.CheckSigchain(ctx, sc)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) > 1 {
+		return nil, errors.Errorf("too many results for update")
+	}
+	var result *Result
+	if len(results) == 1 {
+		result = results[0]
+	}
+
+	keyDoc := &keyDocument{
+		KID:    kid,
+		Result: result,
+	}
+	if err := u.index(ctx, keyDoc); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

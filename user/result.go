@@ -23,6 +23,19 @@ type Result struct {
 type keyDocument struct {
 	KID     keys.ID   `json:"kid"`
 	Results []*Result `json:"results,omitempty"`
+
+	// Result for backwards compatibility.
+	// TODO: Remove after full re-index.
+	Result *Result `json:"result,omitempty"`
+}
+
+// existingResults for backwards compatibility.
+// TODO: Remove after full re-index.
+func (k *keyDocument) resultsForCompatibility() []*Result {
+	if k.Result != nil {
+		return []*Result{k.Result}
+	}
+	return k.Results
 }
 
 type userDocument struct {

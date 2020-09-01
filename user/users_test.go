@@ -128,7 +128,10 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	require.Equal(t, "twitter", res[0].User.Service)
 
 	// User #2 (echo)
-	testEchoSigchain(t, sk, "g", sc, scs, clock)
+	_, err = user.MockStatement(sk, sc, "g", "echo", req, clock)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
 
 	res, err = users.Update(context.TODO(), kid)
 	require.NoError(t, err)
@@ -139,6 +142,102 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	require.Equal(t, user.StatusOK, res[1].Status)
 	require.Equal(t, "g", res[1].User.Name)
 	require.Equal(t, "echo", res[1].User.Service)
+}
+
+func TestSigchainRevoke(t *testing.T) {
+	clock := tsutil.NewTestClock()
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	req := request.NewMockRequestor()
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+
+	sk := keys.GenerateEdX25519Key()
+	kid := sk.ID()
+	sc := keys.NewSigchain(kid)
+
+	// User #1
+	testTwitterSigchain(t, sk, "gabriel", sc, scs, req, clock)
+
+	res, err := users.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "gabriel@twitter", res[0].User.ID())
+
+	// Revoke
+	_, err = sc.Revoke(1, sk)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	// User #2
+	_, err = user.MockStatement(sk, sc, "g", "echo", req, clock)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	res, err = users.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "g@echo", res[0].User.ID())
+}
+
+func TestSigchainMultipleRevoke(t *testing.T) {
+	clock := tsutil.NewTestClock()
+	ds := docs.NewMem()
+	scs := keys.NewSigchains(ds)
+	req := request.NewMockRequestor()
+	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+
+	sk := keys.GenerateEdX25519Key()
+	kid := sk.ID()
+	sc := keys.NewSigchain(kid)
+
+	// User #1
+	testTwitterSigchain(t, sk, "gabriel", sc, scs, req, clock)
+
+	res, err := users.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "gabriel@twitter", res[0].User.ID())
+
+	// User #2
+	_, err = user.MockStatement(sk, sc, "g", "echo", req, clock)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	res, err = users.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "gabriel@twitter", res[0].User.ID())
+	require.Equal(t, user.StatusOK, res[1].Status)
+	require.Equal(t, "g@echo", res[1].User.ID())
+
+	// Revoke #1
+	_, err = sc.Revoke(1, sk)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	res, err = users.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(res))
+	require.Equal(t, user.StatusOK, res[0].Status)
+	require.Equal(t, "g@echo", res[0].User.ID())
+
+	// Revoke #2
+	_, err = sc.Revoke(2, sk)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	res, err = users.Update(context.TODO(), kid)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(res))
 }
 
 func TestCheckForExisting(t *testing.T) {
@@ -152,7 +251,10 @@ func TestCheckForExisting(t *testing.T) {
 
 	sk1 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc1 := keys.NewSigchain(sk1.ID())
-	testEchoSigchain(t, sk1, "alice", sc1, scs, clock)
+	_, err = user.MockStatement(sk1, sc1, "alice", "echo", req, clock)
+	require.NoError(t, err)
+	err = scs.Save(sc1)
+	require.NoError(t, err)
 	kid, err := users.CheckForExisting(context.TODO(), sc1)
 	require.NoError(t, err)
 	require.Empty(t, kid)
@@ -163,9 +265,11 @@ func TestCheckForExisting(t *testing.T) {
 
 	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 	sc2 := keys.NewSigchain(sk2.ID())
-	testEchoSigchain(t, sk2, "alice", sc2, scs, clock)
+	_, err = user.MockStatement(sk2, sc2, "alice", "echo", req, clock)
+	require.NoError(t, err)
+	err = scs.Save(sc2)
+	require.NoError(t, err)
 	kid, err = users.CheckForExisting(context.TODO(), sc2)
 	require.NoError(t, err)
 	require.Equal(t, kid, sk1.ID())
-
 }
