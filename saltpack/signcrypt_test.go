@@ -37,12 +37,24 @@ func TestSigncrypt(t *testing.T) {
 	_, err = saltpack.Signcrypt(message, false, alice, keys.ID(""))
 	require.EqualError(t, err, "invalid recipient: empty id")
 
-	_, err = saltpack.Signcrypt(message, false, nil, bob.ID())
-	require.EqualError(t, err, "no sender specified")
-
 	// Duplicate recipient
 	_, err = saltpack.Signcrypt(message, false, alice, bob.ID(), bob.ID())
 	require.NoError(t, err)
+}
+
+func TestSigncryptAnonymous(t *testing.T) {
+	//alice := keys.GenerateEdX25519Key()
+	bob := keys.GenerateEdX25519Key()
+
+	message := []byte("hi bob")
+
+	encrypted, err := saltpack.Signcrypt(message, false, nil, bob.ID())
+	require.NoError(t, err)
+
+	out, sender, err := saltpack.SigncryptOpen(encrypted, false, saltpack.NewKeyring(bob))
+	require.NoError(t, err)
+	require.Equal(t, message, out)
+	require.Nil(t, sender)
 }
 
 func TestSigncryptStream(t *testing.T) {
