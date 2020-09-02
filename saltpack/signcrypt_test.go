@@ -43,7 +43,6 @@ func TestSigncrypt(t *testing.T) {
 }
 
 func TestSigncryptAnonymous(t *testing.T) {
-	//alice := keys.GenerateEdX25519Key()
 	bob := keys.GenerateEdX25519Key()
 
 	message := []byte("hi bob")
