@@ -75,23 +75,6 @@ func (s *reddit) ValidateName(name string) error {
 }
 
 func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
-	type childData struct {
-		Author    string `json:"author"`
-		Selftext  string `json:"selftext"`
-		Subreddit string `json:"subreddit"`
-	}
-	type child struct {
-		Kind string     `json:"kind"`
-		Data *childData `json:"data"`
-	}
-	type data struct {
-		Children []child `json:"children"`
-	}
-	type listing struct {
-		Kind string `json:"kind"`
-		Data data   `json:"data"`
-	}
-
 	var posts redditPosts
 
 	if err := json.Unmarshal(b, &posts); err != nil {
