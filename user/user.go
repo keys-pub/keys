@@ -353,7 +353,7 @@ func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, servic
 	case "https":
 		urs = "https://" + name
 	default:
-		errors.Errorf("unsupported service for mock")
+		return nil, errors.Errorf("unsupported service for mock")
 	}
 
 	usr, err := New(key.ID(), service, name, urs, sc.LastSeq()+1)
