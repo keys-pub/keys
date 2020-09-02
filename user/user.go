@@ -2,13 +2,18 @@
 package user
 
 import (
+	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/json"
 	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
@@ -324,4 +329,47 @@ func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+// MockStatement for testing.
+func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, service string, req *request.MockRequestor, clock tsutil.Clock) (*keys.Statement, error) {
+	us, err := NewForSigning(key.ID(), service, name)
+	if err != nil {
+		return nil, err
+	}
+	msg, err := us.Sign(key)
+	if err != nil {
+		return nil, err
+	}
+
+	urs := ""
+	switch service {
+	case "github":
+		urs = fmt.Sprintf("https://gist.github.com/%s/1", name)
+	case "twitter":
+		urs = fmt.Sprintf("https://mobile.twitter.com/%s/status/1", name)
+	case "echo":
+		urs = "test://echo/" + name + "/" + key.ID().String() + "/" + url.QueryEscape(strings.ReplaceAll(msg, "\n", " "))
+	case "https":
+		urs = "https://" + name
+	default:
+		return nil, errors.Errorf("unsupported service for mock")
+	}
+
+	usr, err := New(key.ID(), service, name, urs, sc.LastSeq()+1)
+	if err != nil {
+		return nil, err
+	}
+	st, err := NewSigchainStatement(sc, usr, key, clock.Now())
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetResponse(urs, []byte(msg))
+
+	if err := sc.Add(st); err != nil {
+		return nil, err
+	}
+
+	return st, nil
 }

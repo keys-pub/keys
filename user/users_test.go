@@ -159,7 +159,9 @@ func TestCheckForExisting(t *testing.T) {
 	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
 
 	sk1 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	sc1 := testEchoSigchain(t, sk1, "alice", clock)
+	sc1 := keys.NewSigchain(sk1.ID())
+	_, err = user.MockStatement(sk1, sc1, "alice", "echo", req, clock)
+	require.NoError(t, err)
 	kid, err := users.CheckForExisting(context.TODO(), sc1)
 	require.NoError(t, err)
 	require.Empty(t, kid)
@@ -169,7 +171,9 @@ func TestCheckForExisting(t *testing.T) {
 	require.NoError(t, err)
 
 	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
-	sc2 := testEchoSigchain(t, sk2, "alice", clock)
+	sc2 := keys.NewSigchain(sk2.ID())
+	_, err = user.MockStatement(sk2, sc2, "alice", "echo", req, clock)
+	require.NoError(t, err)
 	kid, err = users.CheckForExisting(context.TODO(), sc2)
 	require.NoError(t, err)
 	require.Equal(t, kid, sk1.ID())
