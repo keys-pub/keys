@@ -16,10 +16,10 @@ func Signcrypt(b []byte, armored bool, sender *keys.EdX25519Key, recipients ...k
 	if err != nil {
 		return nil, err
 	}
-	if sender == nil {
-		return nil, errors.Errorf("no sender specified")
+	var sk ksaltpack.SigningSecretKey
+	if sender != nil {
+		sk = newSignKey(sender)
 	}
-	sk := newSignKey(sender)
 	if armored {
 		s, err := ksaltpack.SigncryptArmor62Seal(b, ephemeralKeyCreator{}, sk, recs, nil, "")
 		if err != nil {
@@ -39,7 +39,6 @@ func edx25519SenderKey(senderPub ksaltpack.SigningPublicKey) (*keys.EdX25519Publ
 		return nil, errors.Errorf("invalid edx25519 sender key")
 	}
 	return keys.NewEdX25519PublicKey(keys.Bytes32(b)), nil
-
 }
 
 // SigncryptOpen ...
