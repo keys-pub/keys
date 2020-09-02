@@ -1,124 +1,30 @@
-package link
+package request_test
 
 import (
+	"context"
 	"encoding/json"
-	"net/url"
-	"strings"
+	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/keys-pub/keys/request"
+	"github.com/stretchr/testify/require"
 )
 
-// TODO Normalize spaces, check a-zA-Z0-9 instead of ASCII
+func TestReddit(t *testing.T) {
+	req := request.NewHTTPRequestor()
+	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
+	res, err := req.RequestURLString(context.TODO(), urs)
+	require.NoError(t, err)
 
-type reddit struct{}
+	var red reddit
+	err = json.Unmarshal(res, &red)
+	require.NoError(t, err)
 
-// Reddit service.
-var Reddit = &reddit{}
-
-func (s *reddit) ID() string {
-	return "reddit"
+	require.Equal(t, "gabrlh", red[0].Data.Children[0].Data.Author)
+	require.Equal(t, "keyspubmsgs", red[0].Data.Children[0].Data.Subreddit)
+	require.Equal(t, "BEGIN MESSAGE.tm8882H30GKybLj cOvOw3ezalNCV4z HIeF7ZIDa53DM5l m43v3AdpuM5xtqTZDGIhyQbA863bYk fiIRdpUYVzMTCKq 6Xr2MZHgg4bh2Wj m5fbDX2FnO9rt6TWzS6zMQo6Pf4PXS De2cdyxT0J3mPah X4cThM1A4yFIFaF lo99DSnDd3LOLwUrP9mdKCnNdvKkl1 WLZZaBlQZWXAisM CCwny21.END MESSAGE.", red[0].Data.Children[0].Data.Selftext)
 }
 
-func (s *reddit) NormalizeURLString(name string, urs string) (string, error) {
-	return basicURLString(strings.ToLower(urs))
-}
-
-func (s *reddit) ValidateURLString(name string, urs string) (string, error) {
-	u, err := url.Parse(urs)
-	if err != nil {
-		return "", err
-	}
-	if u.Scheme != "https" {
-		return "", errors.Errorf("invalid scheme for url %s", u)
-	}
-	switch u.Host {
-	case "reddit.com", "old.reddit.com", "www.reddit.com":
-		// OK
-	default:
-		return "", errors.Errorf("invalid host for url %s", u)
-	}
-	path := u.Path
-	path = strings.TrimPrefix(path, "/")
-	paths := strings.Split(path, "/")
-
-	// URL from https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/ to
-	//          https://www.reddit.com/r/keyspubmsgs/comments/{id}/{username}.json
-
-	prunedName := strings.ReplaceAll(name, "-", "")
-
-	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == prunedName {
-		// Request json
-		ursj, err := url.Parse("https://www.reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
-		if err != nil {
-			return "", err
-		}
-		return ursj.String(), nil
-	}
-
-	return "", errors.Errorf("invalid path %s", u.Path)
-}
-
-func (s *reddit) NormalizeName(name string) string {
-	name = strings.ToLower(name)
-	return name
-}
-
-func (s *reddit) ValidateName(name string) error {
-	ok := isAlphaNumericWithDashUnderscore(name)
-	if !ok {
-		return errors.Errorf("name has an invalid character")
-	}
-	if len(name) > 20 {
-		return errors.Errorf("reddit name is too long, it must be less than 21 characters")
-	}
-	return nil
-}
-
-func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
-	type childData struct {
-		Author    string `json:"author"`
-		Selftext  string `json:"selftext"`
-		Subreddit string `json:"subreddit"`
-	}
-	type child struct {
-		Kind string     `json:"kind"`
-		Data *childData `json:"data"`
-	}
-	type data struct {
-		Children []child `json:"children"`
-	}
-	type listing struct {
-		Kind string `json:"kind"`
-		Data data   `json:"data"`
-	}
-
-	var posts redditPosts
-
-	if err := json.Unmarshal(b, &posts); err != nil {
-		return nil, err
-	}
-	logger.Debugf("Umarshal posts: %+v", posts)
-	if len(posts) == 0 {
-		return nil, errors.Errorf("no posts")
-	}
-
-	if len(posts[0].Data.Children) == 0 {
-		return nil, errors.Errorf("no listing children")
-	}
-
-	author := posts[0].Data.Children[0].Data.Author
-	if name != strings.ToLower(author) {
-		return nil, errors.Errorf("invalid author %s", author)
-	}
-	subreddit := posts[0].Data.Children[0].Data.Subreddit
-	if "keyspubmsgs" != subreddit {
-		return nil, errors.Errorf("invalid subreddit %s", subreddit)
-	}
-	selftext := posts[0].Data.Children[0].Data.Selftext
-	return []byte(selftext), nil
-}
-
-type redditPosts []struct {
+type reddit []struct {
 	Kind string `json:"kind"`
 	Data struct {
 		Modhash  string `json:"modhash"`

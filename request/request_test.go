@@ -10,16 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestReddit(t *testing.T) {
-	expected := testdata(t, "testdata/gabrlh.json")
-
-	req := request.NewHTTPRequestor()
-	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
-	res, err := req.RequestURLString(context.TODO(), urs)
-	require.NoError(t, err)
-	require.Equal(t, string(expected), string(res)+"\n")
-}
-
 func TestTwitter(t *testing.T) {
 	req := request.NewHTTPRequestor()
 	urs := "https://mobile.twitter.com/gabrlh/status/1222706272849391616"
