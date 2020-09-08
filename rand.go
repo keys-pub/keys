@@ -2,7 +2,6 @@ package keys
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -62,15 +61,6 @@ func Rand32() *[32]byte {
 	var b32 [32]byte
 	copy(b32[:], b[:32])
 	return &b32
-}
-
-// Rand32P4 is random 32 bytes with 4 byte prefix.
-func Rand32P4(n uint32) *[32]byte {
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, n)
-	r := Rand32()
-	copy(r[0:4], b[0:4])
-	return r
 }
 
 // RandUsername returns random lowercase string of length.

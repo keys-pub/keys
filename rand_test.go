@@ -2,8 +2,6 @@ package keys_test
 
 import (
 	"bytes"
-	"encoding/hex"
-	"sort"
 	"strings"
 	"testing"
 
@@ -38,15 +36,6 @@ func TestRandWords(t *testing.T) {
 		p2 := keys.RandWords(24)
 		require.NotEqual(t, p1, p2)
 	}
-}
-
-func TestRand32P4(t *testing.T) {
-	rs := make([]string, 0, 100)
-	for i := uint32(1); i < 100; i++ {
-		b := keys.Rand32P4(i)
-		rs = append(rs, hex.EncodeToString(b[:]))
-	}
-	require.True(t, sort.StringsAreSorted(rs))
 }
 
 func TestRandUsername(t *testing.T) {
