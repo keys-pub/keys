@@ -9,40 +9,36 @@ import (
 )
 
 func ExampleEncrypt() {
-	alice := keys.GenerateX25519Key()
-	bob := keys.GenerateX25519Key()
+	alice := keys.NewX25519KeyFromSeed(testSeed(0x01))
+	bobID := keys.ID("kbx1e6xn45wvkce7c7msc9upffw8dmxs9959q5xng369hgzcwrjc04vs8u82mj")
 
 	message := []byte("hi bob")
 
+	fmt.Printf("alice: %s\n", alice.ID())
+	fmt.Printf("bob: %s\n", bobID)
+
 	// Encrypt from alice to bob
-	encrypted, err := saltpack.Encrypt(message, true, alice, bob.ID())
+	encrypted, err := saltpack.Encrypt(message, true, alice, bobID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%d", len(encrypted))
-	// Output: 375
+	fmt.Printf("%s...\n", encrypted[0:30])
+	// Output:
+	// alice: kbx15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gys57cytk
+	// bob: kbx1e6xn45wvkce7c7msc9upffw8dmxs9959q5xng369hgzcwrjc04vs8u82mj
+	// BEGIN SALTPACK ENCRYPTED MESSA...
 }
 
 func ExampleDecrypt() {
-	// Message from ExampleEncrypt
-	aliceID := keys.ID("kbx17jhqvdrgdyruyseuaat0rerj7ep4n63n4klufzxtzmk9p3d944gs4fg39g")
-	encrypted := []byte(`BEGIN SALTPACK ENCRYPTED MESSAGE.
-	kcJn5brvybfNjz6 D5ll2Nk0YiiGFCz I2xgcLXuPzYNBe3 OboFDA8Gh0TxosH yo82IRf2OZzteqO
-	GaPWlm7t0lC0M0U vNnOvsussLf1nMw Oo1Llf9oAbA7qxa GjupUEWnTgyjjUn GKb3WvtjSgRsJS2
-	Y92GMEx8cHvbGrJ zvLGlbqAhEIDNZ2 SE15aoV6ahVxeVH 1inHyghv3H1oTAC K86mBl4fg9FY1QK
-	4n0gLOmSHbD8UYH V3HAPS0yaBC4xJB g3y04Xcqiij36Nb WmJgvSFdGugXd7O yfU.
-	END SALTPACK ENCRYPTED MESSAGE.
-	`)
+	aliceID := keys.ID("kbx15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gys57cytk")
+	encrypted := []byte(`BEGIN SALTPACK ENCRYPTED MESSAGE. 
+	kcJn5brvybfNjz6 D5ll2Nk0YnkdsxV g8EmizCg7a8zpHt Wh3GEuw5BrCUP2u N00ZdO6tTiw5NAl 
+	M2M9M0ErPX1xAmK Cfh7IG2sQfbxIH3 OmQwZxc13hjpoG4 1NWwphYm2HR7i1Z LOdCpf8kbf5UFSC 
+	eEUlInuYgfWLJdT 7y3iBbCvlejdmJW aSRZAgrmiEqYfTL a0NzUyir4lT4h9G DUYEGWA8JD3cuCh 
+	Xfi0TNH5BlgOnBm 65o53Xaztwpv6Q4 BMM6AoTyMYk9iR3 5ybluVFI5DJq0YP N6t. 
+	END SALTPACK ENCRYPTED MESSAGE.`)
 
-	// Bob is keys.ID("kbx18x22l7nemmxcj76f9l3aaflc5487lp5u5q778gpe3t3wzhlqvu8qxa9z07")
-	key := `BEGIN X25519 KEY MESSAGE.
-	umCRo9iHIudLWoz 4Ugt0hUXQVJ7lhV p7A9mb3kOTg6PeV fhqetAc9ZOUjagi
-	91gENEkp0xfjF2E Tyakwe90kzo1FNT gRacWRL5B59strN OoZYHQooqvlMKM.
-	END X25519 KEY MESSAGE.`
-	bob, err := keys.DecodeSaltpackKey(key, "", true)
-	if err != nil {
-		log.Fatal(err)
-	}
+	bob := keys.NewX25519KeyFromSeed(testSeed(0x02))
 
 	// Bob decrypts
 	out, sender, err := saltpack.Decrypt(encrypted, true, saltpack.NewKeyring(bob))

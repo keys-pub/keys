@@ -14,7 +14,7 @@ type Cipher interface {
 	Decrypt(out, ad, ciphertext []byte) ([]byte, error)
 }
 
-// Noise protocol for keys.pub.
+// Handshake using noise protocol.
 // See http://www.noiseprotocol.org/.
 type Handshake struct {
 	initiator bool
@@ -32,16 +32,16 @@ type Handshake struct {
 // Curve25519 ECDH, ChaCha20-Poly1305 AEAD, BLAKE2b hash.
 //
 // The handshake uses the KK pattern:
-// K = Static key for initiator Known to responder
-// K = Static key for responder Known to initiator
+// - K = Static key for initiator Known to responder
+// - K = Static key for responder Known to initiator
 //
 // One of the Noise participants should be the initiator.
 //
 // The order of the handshake writes/reads should be:
-// (1) Initiator: Write
-// (2) Responder: Read
-// (3) Initiator: Read
-// (4) Responder: Write
+// - (1) Initiator: Write
+// - (2) Responder: Read
+// - (3) Initiator: Read
+// - (4) Responder: Write
 //
 // When the handshake is complete, use the Cipher to Encrypt/Decrypt.
 //

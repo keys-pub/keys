@@ -6,5 +6,6 @@ This [github.com/keys-pub/keys/saltpack](https://github.com/keys-pub/keys/tree/m
 
 ## Examples
 
-- [Encrypt + Decrypt](https://github.com/keys-pub/keys/blob/master/saltpack/encrypt_examples_test.go)
+- [Encrypt/Decrypt](https://github.com/keys-pub/keys/blob/master/saltpack/encrypt_examples_test.go)
+- [Signcrypt/Open](https://github.com/keys-pub/keys/blob/master/saltpack/signcrypt_examples_test.go)
 - [Sign + Verify](https://github.com/keys-pub/keys/blob/master/saltpack/sign_examples_test.go)
