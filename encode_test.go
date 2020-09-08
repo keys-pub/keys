@@ -1,6 +1,8 @@
 package keys_test
 
 import (
+	"fmt"
+	"log"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -20,6 +22,19 @@ func TestEncodeKeyToSaltpack(t *testing.T) {
 
 	require.Equal(t, sk.Type(), skOut.Type())
 	require.Equal(t, sk.Bytes(), skOut.Bytes())
+}
+
+func ExampleDecodeSaltpackKey() {
+	key := `BEGIN X25519 KEY MESSAGE.
+	umCRo9iHIudLWoz 4Ugt0hUXQVJ7lhV p7A9mb3kOTg6PeV fhqetAc9ZOUjagi
+	91gENEkp0xfjF2E Tyakwe90kzo1FNT gRacWRL5B59strN OoZYHQooqvlMKM.
+	END X25519 KEY MESSAGE.`
+	bob, err := keys.DecodeSaltpackKey(key, "", true)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("bob: %s\n", bob.ID())
+	// Output: bob: kbx18x22l7nemmxcj76f9l3aaflc5487lp5u5q778gpe3t3wzhlqvu8qxa9z07
 }
 
 func TestEncodeKeyDecodeKey(t *testing.T) {
