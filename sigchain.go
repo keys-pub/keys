@@ -26,7 +26,7 @@ func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
 	return NewEdX25519PublicKeyFromID(id)
 }
 
-// NewSigchain returns a new Sigchain for a EdX25519PublicKey.
+// NewSigchain creates an empty Sigchain.
 func NewSigchain(kid ID) *Sigchain {
 	return &Sigchain{
 		kid:        kid,
@@ -40,7 +40,7 @@ func (s *Sigchain) KID() ID {
 	return s.kid
 }
 
-// Statements are all the signed statements.
+// Statements returns all the signed statements.
 func (s *Sigchain) Statements() []*Statement {
 	return s.statements
 }
@@ -135,8 +135,7 @@ func SigchainHash(st *Statement) (*[32]byte, error) {
 	return &h, nil
 }
 
-// signStatement sets the KID and Sig fields on a Signed value (that has no Sig
-// yet).
+// signStatement sets the serialized bytes to sign and the signature.
 func signStatement(st *Statement, signKey *EdX25519Key) error {
 	if st.Sig != nil {
 		return errors.Errorf("signature already set")
