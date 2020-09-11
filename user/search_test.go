@@ -405,6 +405,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	_, err = users.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
+	// Search still includes (connection failure)
 	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
@@ -413,6 +414,14 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, user.StatusConnFailure, results[0].Result.Status)
 	require.Equal(t, int64(1234567890009), results[0].Result.Timestamp)
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
+
+	// If connection failure persists, should remove from search
+	clock.Add(time.Hour * 24 * 3)
+	_, err = users.Update(ctx, alice.ID())
+	require.NoError(t, err)
+	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(results))
 
 	// List by status
 	fail, err := users.Status(ctx, user.StatusConnFailure)
