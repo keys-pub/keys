@@ -232,19 +232,25 @@ const indexService = "service"
 
 // TODO: Remove document from indexes if failed for a long time?
 
+func isNewResultDifferent(new *Result, old *Result) bool {
+	if old != nil && (new == nil || new.User == nil) {
+		return true
+	}
+	if old != nil && new != nil && new.User != nil && old.User != nil && new.User.ID() != old.User.ID() {
+		return true
+	}
+	return false
+}
+
 func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
-	// Remove existing if different
+	// Remove existing if different.
 	existing, err := u.get(ctx, indexKID, keyDoc.KID.String())
 	if err != nil {
 		return err
 	}
-	if existing != nil && existing.Result != nil && existing.Result.User != nil {
-		if keyDoc.Result == nil || keyDoc.Result.User == nil ||
-			(existing.Result.User.Name != keyDoc.Result.User.Name &&
-				existing.Result.User.Service != keyDoc.Result.User.Service) {
-			if err := u.unindexUser(ctx, existing.Result.User); err != nil {
-				return err
-			}
+	if existing != nil && isNewResultDifferent(keyDoc.Result, existing.Result) {
+		if err := u.unindexUser(ctx, existing.Result.User); err != nil {
+			return err
 		}
 	}
 
@@ -268,9 +274,14 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 			logger.Warningf("Never verified user result in indexing: %v", keyDoc.Result)
 		} else {
 			switch keyDoc.Result.Status {
-			// Index result if status ok, or a transient error
-			case StatusOK, StatusConnFailure:
+			// Index if status ok, or a recent connection failure (< 2 days).
+			case StatusOK:
 				index = true
+			case StatusConnFailure:
+				// If connection failure is recent, still index.
+				if u.clock.Now().Sub(tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)) < time.Hour*24*2 {
+					index = true
+				}
 			}
 		}
 
