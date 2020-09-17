@@ -30,7 +30,7 @@ func TestResultGithub(t *testing.T) {
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
 	t.Logf(msg)
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.NoError(t, err)
 
 	sc := keys.NewSigchain(sk.ID())

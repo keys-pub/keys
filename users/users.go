@@ -111,7 +111,7 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 
 // Verify a user. Doesn't index result.
 func (u *Users) Verify(ctx context.Context, usr *user.User) *user.Result {
-	return usr.Verify(ctx, u.req, u.clock.Now())
+	return usr.RequestVerify(ctx, user.Requestor(u.req), user.Clock(u.clock))
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.

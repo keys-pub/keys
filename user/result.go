@@ -107,7 +107,7 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 		return
 	}
 
-	st, err := FindVerify(b, r.User)
+	st, err := findVerify(r.User, b)
 	if err != nil {
 		logger.Warningf("Failed to find and verify: %s", err)
 		r.Err = err.Error()

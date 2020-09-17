@@ -126,7 +126,7 @@ func TestSignUserVerify(t *testing.T) {
 		KID:     sk.ID(),
 		Name:    "gabriel",
 	}
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.NoError(t, err)
 }
 
@@ -137,7 +137,7 @@ func TestUserVerify(t *testing.T) {
 		Name:    "gabriel",
 		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
 	}
-	err := user.Verify(msg, usr)
+	err := usr.Verify(msg)
 	require.NoError(t, err)
 
 	usr = &user.User{
@@ -145,7 +145,7 @@ func TestUserVerify(t *testing.T) {
 		Name:    "gabriel",
 		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
 	}
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.EqualError(t, err, "failed to user verify: service mismatch github != twitter")
 
 	usr = &user.User{
@@ -153,7 +153,7 @@ func TestUserVerify(t *testing.T) {
 		Name:    "gabriel2",
 		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
 	}
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.EqualError(t, err, "failed to user verify: name mismatch gabriel2 != gabriel")
 
 	usr = &user.User{
@@ -161,7 +161,7 @@ func TestUserVerify(t *testing.T) {
 		Name:    "gabriel",
 		KID:     keys.RandID("test"),
 	}
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.EqualError(t, err, "failed to user verify: invalid key type for edx25519")
 
 	usr = &user.User{
@@ -169,7 +169,7 @@ func TestUserVerify(t *testing.T) {
 		Name:    "gabriel",
 		KID:     keys.GenerateEdX25519Key().ID(),
 	}
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.EqualError(t, err, "failed to user verify: verify failed")
 }
 

@@ -54,7 +54,7 @@ func echoRequest(ur *url.URL) ([]byte, error) {
 		Name:    username,
 	}
 
-	if err := Verify(msg, usr); err != nil {
+	if err := usr.Verify(msg); err != nil {
 		return nil, err
 	}
 

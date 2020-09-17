@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: more tests are in users package
+
 func TestNewUserForTwitterSigning(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -25,6 +27,6 @@ END MESSAGE.`
 	require.False(t, len(msg) > 280)
 	require.Equal(t, 274, len(msg))
 
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.NoError(t, err)
 }

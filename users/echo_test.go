@@ -29,7 +29,7 @@ func TestResultEcho(t *testing.T) {
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.NoError(t, err)
 
 	urs := "test://echo/alice/" + sk.ID().String() + "/" + url.QueryEscape(strings.ReplaceAll(msg, "\n", " "))

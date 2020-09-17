@@ -247,15 +247,17 @@ func (u *User) Sign(key *keys.EdX25519Key) (string, error) {
 	return msg, nil
 }
 
-// Verify armored message for a user.
-func Verify(msg string, usr *User) error {
+// Verify verifies a saltpack armored message for a user.
+// The message should have come from the User URL and part of a verified sigchain
+// statement with matching sequence number.
+func (u *User) Verify(msg string) error {
 	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to user verify")
 	}
 
-	spk, err := keys.StatementPublicKeyFromID(usr.KID)
+	spk, err := keys.StatementPublicKeyFromID(u.KID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to user verify")
 	}
@@ -281,14 +283,14 @@ func Verify(msg string, usr *User) error {
 		return errors.Errorf("failed to user verify: message invalid, no service")
 	}
 
-	if dec.KID != usr.KID {
-		return errors.Errorf("failed to user verify: kid mismatch %s != %s", usr.KID, dec.KID)
+	if dec.KID != u.KID {
+		return errors.Errorf("failed to user verify: kid mismatch %s != %s", u.KID, dec.KID)
 	}
-	if dec.Service != usr.Service {
-		return errors.Errorf("failed to user verify: service mismatch %s != %s", usr.Service, dec.Service)
+	if dec.Service != u.Service {
+		return errors.Errorf("failed to user verify: service mismatch %s != %s", u.Service, dec.Service)
 	}
-	if dec.Name != usr.Name {
-		return errors.Errorf("failed to user verify: name mismatch %s != %s", usr.Name, dec.Name)
+	if dec.Name != u.Name {
+		return errors.Errorf("failed to user verify: name mismatch %s != %s", u.Name, dec.Name)
 	}
 
 	return nil
