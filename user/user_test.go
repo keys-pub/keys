@@ -3,8 +3,6 @@ package user_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
-	"path/filepath"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -15,13 +13,6 @@ import (
 
 func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
-}
-
-func testdata(t *testing.T, path string) []byte {
-	b, err := ioutil.ReadFile(filepath.Join("..", path))
-	require.NoError(t, err)
-	b = bytes.ReplaceAll(b, []byte{'\r'}, []byte{})
-	return b
 }
 
 func TestNewValidate(t *testing.T) {
