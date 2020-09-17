@@ -1,4 +1,4 @@
-package user_test
+package users_test
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/users"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -27,10 +28,10 @@ func TestSearchUsers(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 	ctx := context.TODO()
 
-	results, err := users.Search(ctx, &user.SearchRequest{})
+	results, err := usrs.Search(ctx, &users.SearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
@@ -38,21 +39,21 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add alice@github
-	testSaveUser(t, users, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
 
 	for i := 10; i < 15; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("name%d", i)
-		testSaveUser(t, users, scs, key, name, "github", clock, req)
-		_, err = users.Update(ctx, key.ID())
+		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
+		_, err = usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
 	// Search "alic"
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alic"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
@@ -65,21 +66,21 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, int64(1234567890044), results[0].Result.Timestamp)
 
 	// Search "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 
 	// Search "kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 
 	// Search kid not found
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "kex1akxmcdxr84zk3lpexrzjznelyje4dnnq7tca25m4j6eg7dd746eq057ma9"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "kex1akxmcdxr84zk3lpexrzjznelyje4dnnq7tca25m4j6eg7dd746eq057ma9"})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
@@ -90,20 +91,20 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	err = scs.Save(sc)
 	require.NoError(t, err)
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "al"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "al"})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
 	// Add alicenew@github
-	aliceNewSt := testSaveUser(t, users, scs, alice, "alicenew", "github", clock, req)
-	_, err = users.Update(ctx, alice.ID())
+	aliceNewSt := testSaveUser(t, usrs, scs, alice, "alicenew", "github", clock, req)
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
 	// Search "al", match "alicenew".
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "al"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "al"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
@@ -114,11 +115,11 @@ func TestSearchUsers(t *testing.T) {
 
 	// Add alice@twitter
 	alice2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32)))
-	testSaveUser(t, users, scs, alice2, "alice", "twitter", clock, req)
-	_, err = users.Update(ctx, alice2.ID())
+	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, req)
+	_, err = usrs.Update(ctx, alice2.ID())
 	require.NoError(t, err)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alic"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(results))
 	require.NotNil(t, results[0].Result)
@@ -139,17 +140,17 @@ func TestSearchUsers(t *testing.T) {
 	require.NoError(t, err)
 	err = scs.Save(sc)
 	require.NoError(t, err)
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alic"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alic"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice2.ID(), results[0].Result.User.KID)
 	require.Equal(t, "alice", results[0].Result.User.Name)
 	require.Equal(t, "twitter", results[0].Result.User.Service)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@twitter"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@twitter"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice2.ID(), results[0].Result.User.KID)
@@ -180,33 +181,33 @@ func TestFind(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 	ctx := context.TODO()
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	require.NoError(t, err)
 
 	// Add alice@github
-	testSaveUser(t, users, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
 
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
 	// Find "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"
-	res, err := users.Find(ctx, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"))
+	res, err := usrs.Find(ctx, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Equal(t, alice.ID(), res.User.KID)
 
 	// Find "kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"
-	res, err = users.Find(ctx, keys.ID("kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"))
+	res, err = usrs.Find(ctx, keys.ID("kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Equal(t, alice.ID(), res.User.KID)
 
 	// Find (not found)
 	rand := keys.GenerateEdX25519Key()
-	res, err = users.Find(ctx, rand.ID())
+	res, err = usrs.Find(ctx, rand.ID())
 	require.NoError(t, err)
 	require.Nil(t, res)
 }
@@ -219,7 +220,7 @@ func TestUsersEmpty(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	users := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -242,24 +243,24 @@ func TestUserValidateName(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x20}, 32)))
 
 	// Test MixedCase
-	_, err := saveUser(users, scs, key, "MixedCase", "github", clock, req)
+	_, err := saveUser(usrs, scs, key, "MixedCase", "github", clock, req)
 	require.EqualError(t, err, "name has an invalid character")
-	_, err = saveUser(users, scs, key, "MixedCase", "twitter", clock, req)
+	_, err = saveUser(usrs, scs, key, "MixedCase", "twitter", clock, req)
 	require.EqualError(t, err, "name has an invalid character")
-	_, err = saveUser(users, scs, key, "MixedCase", "reddit", clock, req)
+	_, err = saveUser(usrs, scs, key, "MixedCase", "reddit", clock, req)
 	require.EqualError(t, err, "name has an invalid character")
 
 	// Long length
-	_, err = saveUser(users, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, req)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, req)
 	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")
-	_, err = saveUser(users, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, req)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, req)
 	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")
-	_, err = saveUser(users, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, req)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, req)
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
 }
 
@@ -271,7 +272,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	users := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	// Unvalidated user to sigchain
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x021}, 32)))
@@ -321,7 +322,7 @@ func TestReddit(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
@@ -347,21 +348,21 @@ func TestReddit(t *testing.T) {
 	msg := mockRedditMessage("alice", smsg, "keyspubmsgs")
 	req.SetResponse(mockRedditURL("alice"), []byte(msg))
 
-	result, err := users.Update(ctx, key.ID())
+	result, err := usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, result.Status)
 
 	// Different name
 	msg = mockRedditMessage("alice2", smsg, "keyspubmsgs")
 	req.SetResponse(mockRedditURL("alice"), []byte(msg))
-	result, err = users.Update(ctx, key.ID())
+	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
 	msg = mockRedditMessage("alice", smsg, "keyspubmsgs2")
 	req.SetResponse(mockRedditURL("alice"), []byte(msg))
-	result, err = users.Update(ctx, key.ID())
+	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 }
@@ -376,20 +377,20 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	scs.SetClock(clock)
 
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 	ctx := context.TODO()
 
-	results, err := users.Search(ctx, &user.SearchRequest{})
+	results, err := usrs.Search(ctx, &users.SearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	// Add alice@github
-	testSaveUser(t, users, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
 
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
@@ -402,11 +403,11 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	// Set 500 error for alice@github
 	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 500})
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
 	// Search still includes (connection failure)
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.NotNil(t, results[0].Result)
@@ -417,24 +418,24 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	// If connection failure persists, should remove from search
 	clock.Add(time.Hour * 24 * 3)
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
 	// List by status
-	fail, err := users.Status(ctx, user.StatusConnFailure)
+	fail, err := usrs.Status(ctx, user.StatusConnFailure)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(fail))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
 	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 404})
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
 
@@ -453,10 +454,10 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	// Unset error
 	req.SetResponse("https://gist.github.com/alice/1", data)
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Query: "alice@github"})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice.ID().String(), results[0].KID.String())
@@ -469,20 +470,20 @@ func TestExpired(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 	ctx := context.TODO()
 
-	ids, err := users.Expired(ctx, time.Hour, time.Hour*24*60)
+	ids, err := usrs.Expired(ctx, time.Hour, time.Hour*24*60)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 
 	// Add alice@github
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	testSaveUser(t, users, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
 
-	_, err = users.Update(ctx, alice.ID())
+	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
-	results, err := users.Search(ctx, &user.SearchRequest{})
+	results, err := usrs.Search(ctx, &users.SearchRequest{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
@@ -493,14 +494,14 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, int64(1234567890002), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), results[0].Result.Timestamp)
 
-	ids, err = users.Expired(ctx, time.Hour, time.Hour*24*60)
+	ids, err = usrs.Expired(ctx, time.Hour, time.Hour*24*60)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 
 	// Test expired
 	clock.Add(time.Hour * 2)
 
-	ids, err = users.Expired(ctx, time.Hour, time.Hour*24*60)
+	ids, err = usrs.Expired(ctx, time.Hour, time.Hour*24*60)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(ids))
 	require.Equal(t, []keys.ID{alice.ID()}, ids)
@@ -508,18 +509,18 @@ func TestExpired(t *testing.T) {
 	// Test max age
 	clock.Add(time.Hour * 24 * 30)
 
-	ids, err = users.Expired(ctx, time.Hour, time.Hour*24*7)
+	ids, err = usrs.Expired(ctx, time.Hour, time.Hour*24*7)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(ids))
 }
 
-func testSaveUser(t *testing.T, users *user.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
+func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
 	st, err := saveUser(users, scs, key, name, service, clock, mock)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(users *user.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
+func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
 	murl := ""
 	switch service {
@@ -592,32 +593,32 @@ func TestSearch(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("a%d", i)
-		testSaveUser(t, users, scs, key, name, "github", clock, req)
-		_, err := users.Update(ctx, key.ID())
+		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
+		_, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 	for i := 10; i < 20; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("b%d", i)
-		testSaveUser(t, users, scs, key, name, "github", clock, req)
-		_, err := users.Update(ctx, key.ID())
+		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
+		_, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 
-	results, err := users.Search(ctx, &user.SearchRequest{Query: "a"})
+	results, err := usrs.Search(ctx, &users.SearchRequest{Query: "a"})
 	require.NoError(t, err)
 	require.Equal(t, 10, len(results))
 	require.Equal(t, "kex18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5s0v3alm", results[0].KID.String())
 	require.NotNil(t, 1, results[0].Result)
 	require.Equal(t, "a0", results[0].Result.User.Name)
 
-	results, err = users.Search(ctx, &user.SearchRequest{Limit: 1000})
+	results, err = usrs.Search(ctx, &users.SearchRequest{Limit: 1000})
 	require.NoError(t, err)
 	require.Equal(t, 20, len(results))
 	require.Equal(t, "kex18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5s0v3alm", results[0].KID.String())

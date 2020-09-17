@@ -19,6 +19,6 @@ func TestMyTwitter(t *testing.T) {
 
 	usr, err := user.New(kid, "twitter", "gabrlh", urs, 1)
 	require.NoError(t, err)
-	result := user.RequestVerify(context.TODO(), req, usr, time.Now())
+	result := usr.Verify(context.TODO(), req, time.Now())
 	require.Equal(t, user.StatusOK, result.Status)
 }
