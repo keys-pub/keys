@@ -107,7 +107,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 		URL:     norm,
 	}
 
-	result := usrs.Verify(context.TODO(), usr)
+	result := usrs.RequestVerify(context.TODO(), usr)
 	t.Logf("result: %+v", result)
 	require.Equal(t, user.StatusOK, result.Status)
 }

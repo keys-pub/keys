@@ -109,8 +109,8 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 	return result, nil
 }
 
-// Verify a user. Doesn't index result.
-func (u *Users) Verify(ctx context.Context, usr *user.User) *user.Result {
+// RequestVerify requests and verifies a user. Doesn't index result.
+func (u *Users) RequestVerify(ctx context.Context, usr *user.User) *user.Result {
 	return usr.RequestVerify(ctx, user.Requestor(u.req), user.Clock(u.clock))
 }
 

@@ -65,7 +65,7 @@ func TestCheckFailure(t *testing.T) {
 		Service: "twitter",
 		URL:     "https://twitter.com/boboloblaw/status/1259188857846632448",
 	}
-	result := usrs.Verify(context.TODO(), usr)
+	result := usrs.RequestVerify(context.TODO(), usr)
 	require.Equal(t, usr.Name, result.User.Name)
 	require.Equal(t, result.Status, user.StatusFailure)
 	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")
