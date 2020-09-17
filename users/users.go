@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
+	"github.com/keys-pub/keys/user"
 	"github.com/pkg/errors"
 )
 
@@ -21,9 +22,14 @@ type Users struct {
 	clock tsutil.Clock
 }
 
-// NewUsers creates Users.
-func NewUsers(ds docs.Documents, scs *keys.Sigchains, opt ...UsersOption) *Users {
-	opts := newUserOptions(opt...)
+type keyDocument struct {
+	KID    keys.ID      `json:"kid"`
+	Result *user.Result `json:"result,omitempty"`
+}
+
+// New creates Users lookup.
+func New(ds docs.Documents, scs *keys.Sigchains, opt ...Option) *Users {
+	opts := newOptions(opt...)
 	req := opts.Req
 	if req == nil {
 		req = request.NewHTTPRequestor()
@@ -46,7 +52,7 @@ func (u *Users) Requestor() request.Requestor {
 }
 
 // Update index for sigchain KID.
-func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Update(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
@@ -76,8 +82,8 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*Result, error) {
 
 // CheckSigchain looks for user in a Sigchain and creates a result or updates
 // the current result.
-func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, error) {
-	usr, err := FindInSigchain(sc)
+func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Result, error) {
+	usr, err := user.FindInSigchain(sc)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +95,7 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 		return nil, err
 	}
 	if result == nil {
-		result = &Result{}
+		result = &user.Result{}
 	}
 	// Set or update user (in case user changed)
 	result.User = usr
@@ -98,14 +104,14 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*Result, 
 		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
 	}
 
-	updateResult(ctx, u.req, result, u.clock.Now())
+	result.Update(ctx, u.req, u.clock.Now())
 
 	return result, nil
 }
 
-// RequestVerify a user. Doesn't index result.
-func (u *Users) RequestVerify(ctx context.Context, usr *User) *Result {
-	return RequestVerify(ctx, u.req, usr, u.clock.Now())
+// Verify a user. Doesn't index result.
+func (u *Users) Verify(ctx context.Context, usr *user.User) *user.Result {
+	return usr.RequestVerify(ctx, user.Requestor(u.req), user.Clock(u.clock))
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.
@@ -113,11 +119,11 @@ func ValidateStatement(st *keys.Statement) error {
 	if st.Type != "user" {
 		return errors.Errorf("invalid user statement: %s != %s", st.Type, "user")
 	}
-	var user User
-	if err := json.Unmarshal(st.Data, &user); err != nil {
+	var usr user.User
+	if err := json.Unmarshal(st.Data, &usr); err != nil {
 		return err
 	}
-	if err := Validate(&user); err != nil {
+	if err := usr.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -126,7 +132,7 @@ func ValidateStatement(st *keys.Statement) error {
 // Get user result for KID.
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
-func (u *Users) Get(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Get(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	res, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
@@ -140,7 +146,7 @@ func (u *Users) Get(ctx context.Context, kid keys.ID) (*Result, error) {
 // User result for user name@service.
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
-func (u *Users) User(ctx context.Context, user string) (*Result, error) {
+func (u *Users) User(ctx context.Context, user string) (*user.Result, error) {
 	keyDoc, err := u.get(ctx, indexUser, user)
 	if err != nil {
 		return nil, err
@@ -170,7 +176,7 @@ func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument
 	return &keyDoc, nil
 }
 
-func (u *Users) result(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) result(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	doc, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
@@ -181,7 +187,7 @@ func (u *Users) result(ctx context.Context, kid keys.ID) (*Result, error) {
 	return doc.Result, nil
 }
 
-func (u *Users) indexUser(ctx context.Context, user *User, data []byte, skipSearch bool) error {
+func (u *Users) indexUser(ctx context.Context, user *user.User, data []byte, skipSearch bool) error {
 	logger.Infof("Indexing user %s %s", user.ID, user.KID)
 	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
 	if err := u.ds.Set(ctx, userPath, data); err != nil {
@@ -200,7 +206,7 @@ func (u *Users) indexUser(ctx context.Context, user *User, data []byte, skipSear
 	return nil
 }
 
-func (u *Users) unindexUser(ctx context.Context, user *User) error {
+func (u *Users) unindexUser(ctx context.Context, user *user.User) error {
 	logger.Infof("Removing user %s: %s", user.KID, indexUserKey(user.Service, user.Name))
 
 	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
@@ -232,7 +238,7 @@ const indexService = "service"
 
 // TODO: Remove document from indexes if failed for a long time?
 
-func isNewResultDifferent(new *Result, old *Result) bool {
+func isNewResultDifferent(new *user.Result, old *user.Result) bool {
 	if old != nil && (new == nil || new.User == nil) {
 		return true
 	}
@@ -275,9 +281,9 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 		} else {
 			switch keyDoc.Result.Status {
 			// Index if status ok, or a recent connection failure (< 2 days).
-			case StatusOK:
+			case user.StatusOK:
 				index = true
-			case StatusConnFailure:
+			case user.StatusConnFailure:
 				// If connection failure is recent, still index.
 				if u.clock.Now().Sub(tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)) < time.Hour*24*2 {
 					index = true
@@ -314,7 +320,7 @@ func indexServiceKey(service string, name string) string {
 
 // Find user result for KID.
 // Will also search for related keys.
-func (u *Users) Find(ctx context.Context, kid keys.ID) (*Result, error) {
+func (u *Users) Find(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	res, err := u.Get(ctx, kid)
 	if err != nil {
 		return nil, err
@@ -333,7 +339,7 @@ func (u *Users) Find(ctx context.Context, kid keys.ID) (*Result, error) {
 }
 
 // Status returns KIDs that match a status.
-func (u *Users) Status(ctx context.Context, st Status) ([]keys.ID, error) {
+func (u *Users) Status(ctx context.Context, st user.Status) ([]keys.ID, error) {
 	iter, err := u.ds.DocumentIterator(context.TODO(), indexKID)
 	if err != nil {
 		return nil, err
@@ -403,7 +409,7 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 // CheckForExisting returns key ID of exsiting user in sigchain different from this
 // sigchain key.
 func (u *Users) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
-	usr, err := FindInSigchain(sc)
+	usr, err := user.FindInSigchain(sc)
 	if err != nil {
 		return "", err
 	}

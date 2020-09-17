@@ -1,8 +1,11 @@
-package user_test
+package users_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -10,8 +13,20 @@ import (
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/users"
 	"github.com/stretchr/testify/require"
 )
+
+func testSeed(b byte) *[32]byte {
+	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
+}
+
+func testdata(t *testing.T, path string) []byte {
+	b, err := ioutil.ReadFile(filepath.Join("..", path))
+	require.NoError(t, err)
+	b = bytes.ReplaceAll(b, []byte{'\r'}, []byte{})
+	return b
+}
 
 func TestCheckNoUsers(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
@@ -21,14 +36,14 @@ func TestCheckNoUsers(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
-	result, err := users.CheckSigchain(context.TODO(), sc)
+	result, err := usrs.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
 	require.Nil(t, result)
 
 	rk := keys.GenerateEdX25519Key()
-	result, err = users.Update(context.TODO(), rk.ID())
+	result, err = usrs.Update(context.TODO(), rk.ID())
 	require.NoError(t, err)
 	require.Nil(t, result)
 }
@@ -38,7 +53,7 @@ func TestCheckFailure(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
@@ -50,7 +65,7 @@ func TestCheckFailure(t *testing.T) {
 		Service: "twitter",
 		URL:     "https://twitter.com/boboloblaw/status/1259188857846632448",
 	}
-	result := users.RequestVerify(context.TODO(), usr)
+	result := usrs.Verify(context.TODO(), usr)
 	require.Equal(t, usr.Name, result.User.Name)
 	require.Equal(t, result.Status, user.StatusFailure)
 	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")
@@ -76,7 +91,7 @@ func TestSigchainUsersUpdate(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
 	req.SetResponse("https://mobile.twitter.com/gabriel/status/1259188857846632448", []byte(msg))
@@ -84,7 +99,7 @@ func TestSigchainUsersUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := users.Update(context.TODO(), kid)
+	result, err := usrs.Update(context.TODO(), kid)
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, result.Status)
 }
@@ -95,7 +110,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	sk := keys.GenerateEdX25519Key()
 	kid := sk.ID()
@@ -119,7 +134,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := users.Update(context.TODO(), kid)
+	result, err := usrs.Update(context.TODO(), kid)
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, result.Status)
 
@@ -143,7 +158,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err = users.Update(context.TODO(), kid)
+	result, err = usrs.Update(context.TODO(), kid)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
@@ -156,25 +171,25 @@ func TestCheckForExisting(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	sk1 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc1 := keys.NewSigchain(sk1.ID())
 	_, err = user.MockStatement(sk1, sc1, "alice", "echo", req, clock)
 	require.NoError(t, err)
-	kid, err := users.CheckForExisting(context.TODO(), sc1)
+	kid, err := usrs.CheckForExisting(context.TODO(), sc1)
 	require.NoError(t, err)
 	require.Empty(t, kid)
 	err = scs.Save(sc1)
 	require.NoError(t, err)
-	_, err = users.Update(context.TODO(), sk1.ID())
+	_, err = usrs.Update(context.TODO(), sk1.ID())
 	require.NoError(t, err)
 
 	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 	sc2 := keys.NewSigchain(sk2.ID())
 	_, err = user.MockStatement(sk2, sc2, "alice", "echo", req, clock)
 	require.NoError(t, err)
-	kid, err = users.CheckForExisting(context.TODO(), sc2)
+	kid, err = usrs.CheckForExisting(context.TODO(), sc2)
 	require.NoError(t, err)
 	require.Equal(t, kid, sk1.ID())
 

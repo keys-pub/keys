@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/user"
 )
 
 // SearchRequest ...
@@ -19,7 +20,7 @@ type SearchRequest struct {
 // SearchResult ...
 type SearchResult struct {
 	KID    keys.ID
-	Result *Result
+	Result *user.Result
 	// Field we matched on (if not the user).
 	Field string
 }

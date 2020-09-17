@@ -149,7 +149,7 @@ func newUser(kid keys.ID, service link.Service, name string, urs string) (*User,
 		Name:    name,
 		URL:     urs,
 	}
-	if err := Validate(usr); err != nil {
+	if err := usr.Validate(); err != nil {
 		return nil, err
 	}
 	return usr, nil
@@ -182,24 +182,6 @@ func validateServiceAndName(service link.Service, name string) error {
 
 // Validate service and name and URL.
 // If you want to request the URL and verify the remote statement, use RequestVerify.
-func Validate(user *User) error {
-	service, err := link.NewService(user.Service)
-	if err != nil {
-		return err
-	}
-
-	if err := validateServiceAndName(service, user.Name); err != nil {
-		return err
-	}
-
-	if _, err := service.ValidateURLString(user.Name, user.URL); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Validate service and name and URL.
-// If you want to request the URL and verify the remote statement, use RequestVerify.
 func (u *User) Validate() error {
 	service, err := link.NewService(u.Service)
 	if err != nil {
@@ -226,7 +208,7 @@ func NewSigchainStatement(sc *keys.Sigchain, user *User, sk *keys.EdX25519Key, t
 		return nil, errors.Errorf("no user specified")
 	}
 
-	if err := Validate(user); err != nil {
+	if err := user.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -265,15 +247,17 @@ func (u *User) Sign(key *keys.EdX25519Key) (string, error) {
 	return msg, nil
 }
 
-// Verify armored message for a user.
-func Verify(msg string, usr *User) error {
+// Verify verifies a saltpack armored message for a user.
+// The message should have come from the User URL and part of a verified sigchain
+// statement with matching sequence number.
+func (u *User) Verify(msg string) error {
 	logger.Debugf("Decoding msg: %s", msg)
 	b, _, err := encoding.DecodeSaltpack(msg, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to user verify")
 	}
 
-	spk, err := keys.StatementPublicKeyFromID(usr.KID)
+	spk, err := keys.StatementPublicKeyFromID(u.KID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to user verify")
 	}
@@ -299,14 +283,14 @@ func Verify(msg string, usr *User) error {
 		return errors.Errorf("failed to user verify: message invalid, no service")
 	}
 
-	if dec.KID != usr.KID {
-		return errors.Errorf("failed to user verify: kid mismatch %s != %s", usr.KID, dec.KID)
+	if dec.KID != u.KID {
+		return errors.Errorf("failed to user verify: kid mismatch %s != %s", u.KID, dec.KID)
 	}
-	if dec.Service != usr.Service {
-		return errors.Errorf("failed to user verify: service mismatch %s != %s", usr.Service, dec.Service)
+	if dec.Service != u.Service {
+		return errors.Errorf("failed to user verify: service mismatch %s != %s", u.Service, dec.Service)
 	}
-	if dec.Name != usr.Name {
-		return errors.Errorf("failed to user verify: name mismatch %s != %s", usr.Name, dec.Name)
+	if dec.Name != u.Name {
+		return errors.Errorf("failed to user verify: name mismatch %s != %s", u.Name, dec.Name)
 	}
 
 	return nil
@@ -319,16 +303,16 @@ func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 	if st == nil {
 		return nil, nil
 	}
-	var user User
-	if err := json.Unmarshal(st.Data, &user); err != nil {
+	var usr User
+	if err := json.Unmarshal(st.Data, &usr); err != nil {
 		return nil, err
 	}
 
-	if err := Validate(&user); err != nil {
+	if err := usr.Validate(); err != nil {
 		return nil, nil
 	}
 
-	return &user, nil
+	return &usr, nil
 }
 
 // MockStatement for testing.

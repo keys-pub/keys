@@ -22,12 +22,12 @@ func TestTwitter(t *testing.T) {
 
 func TestTwitterRedirect(t *testing.T) {
 	req := request.NewHTTPRequestor()
-	// Redirect (from lowercase) to /Boboloblaws/status/1276948233915207680 is ok
-	urs := "https://mobile.twitter.com/boboloblaws/status/1276948233915207680"
+	// Redirect (from lowercase) to /Boboloblaws/status/1306608574257197058 is ok
+	urs := "https://mobile.twitter.com/boboloblaws/status/1306608574257197058"
 	res, err := req.RequestURLString(context.TODO(), urs)
 	require.NoError(t, err)
 	out, brand := encoding.FindSaltpack(string(res), true)
-	require.Equal(t, "fOT1ZDzPbT8yCx3eTu16VZBkcU2YuYnl5YGxpbOvSEMOc84RdH5misz4SOFDPsDKTMCerICVBF2RXcSmvRfjCZTCKq6Xr2MZHgg4N95u0vFmKKWAQGem19QxSORCCZNXsRq8v6WKe2SvFy1odL0Xm2VIeNebn4c9xjJwYTBKNKRtSmijNnmAqBjs61S48Vwrjlx67QFSowDMw9jZhAf0i992BwmNTeOh3", out)
+	require.Equal(t, "Y8Rk7O43uVYNtOFT3e1VBj8PYoopsALmaIKmY7xPlHTQLRVzZuq7T21t7gh5hkcwWzDn4tOGVbuKYg7qzIvzSQTCKq6Xr2MZHgg702h9QYi2QPylekc6hgqBIuxIzo9V4PTT6y5dakSFOgwtjBEgO3JDRSAcmA9ILQuPDUFYbmAZPti6SXkYku6v0X3IpV4aoEmdOi8RotFfpxttDvoSraB2BwmNTeOh3", out)
 	require.Equal(t, "", brand)
 
 	// Tweet ID from different user, should not redirect

@@ -1,4 +1,4 @@
-package user_test
+package users_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/users"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,13 +23,13 @@ func TestResultEcho(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
-	err = user.Verify(msg, usr)
+	err = usr.Verify(msg)
 	require.NoError(t, err)
 
 	urs := "test://echo/alice/" + sk.ID().String() + "/" + url.QueryEscape(strings.ReplaceAll(msg, "\n", " "))
@@ -45,7 +46,7 @@ func TestResultEcho(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := users.Update(context.TODO(), sk.ID())
+	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	t.Logf("Result: %+v", result)
@@ -55,25 +56,25 @@ func TestResultEcho(t *testing.T) {
 	require.Equal(t, int64(1234567890002), result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), result.Timestamp)
 
-	result, err = users.Get(context.TODO(), sk.ID())
+	result, err = usrs.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, "echo", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
-	result, err = users.User(context.TODO(), "alice@echo")
+	result, err = usrs.User(context.TODO(), "alice@echo")
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, "echo", result.User.Service)
 	require.Equal(t, "alice", result.User.Name)
 
-	kids, err := users.KIDs(context.TODO())
+	kids, err := usrs.KIDs(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, 1, len(kids))
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), kids[0])
 
 	// Echo is hidden from search
-	res, err := users.Search(context.TODO(), &user.SearchRequest{Query: "alice@echo"})
+	res, err := usrs.Search(context.TODO(), &users.SearchRequest{Query: "alice@echo"})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(res))
 	// require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), res[0].KID)
@@ -86,7 +87,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 	req := request.NewMockRequestor()
 	ds := docs.NewMem()
 	scs := keys.NewSigchains(ds)
-	users := user.NewUsers(ds, scs, user.Requestor(req), user.Clock(clock))
+	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
 	usrSign, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
@@ -106,7 +107,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 		URL:     norm,
 	}
 
-	result := users.RequestVerify(context.TODO(), usr)
+	result := usrs.Verify(context.TODO(), usr)
 	t.Logf("result: %+v", result)
 	require.Equal(t, user.StatusOK, result.Status)
 }
