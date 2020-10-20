@@ -31,8 +31,8 @@ func TestSecretMarshal(t *testing.T) {
 	require.NoError(t, err)
 	expected := `{
   "id": "Ibgoe3sXvdpxFUeR1hSUriTRdxvcoWjou80WnPiFcPC",
-  "name": "keys.pub",
   "type": "password",
+  "name": "keys.pub",
   "username": "gabriel@email.com",
   "password": "12345",
   "createdAt": "2009-02-13T23:31:30.001Z",
