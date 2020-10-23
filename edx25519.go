@@ -15,6 +15,7 @@ const EdX25519 KeyType = "edx25519"
 const edx25519KeyHRP string = "kex"
 
 // EdX25519Public public key type.
+// TODO: Public key type name should be edx25519-public?
 const EdX25519Public KeyType = "ed25519-public"
 
 // EdX25519PublicKey is the public part of EdX25519 key pair.
