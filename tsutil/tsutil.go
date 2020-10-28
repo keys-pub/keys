@@ -20,6 +20,11 @@ func Millis(t time.Time) int64 {
 	return int64(t.UnixNano() / int64(time.Millisecond))
 }
 
+// MillisNow returns now in milliseconds since epoch.
+func MillisNow() int64 {
+	return Millis(time.Now())
+}
+
 // ParseMillis returns time.Time from milliseconds since epoch as string.
 func ParseMillis(s string) time.Time {
 	n, err := strconv.ParseInt(s, 10, 64)
