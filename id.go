@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ID a bech32 encoded string.
+// ID is a bech32 encoded string.
 type ID string
 
 func (i ID) String() string {
@@ -29,8 +29,8 @@ func NewID(hrp string, b []byte) (ID, error) {
 	return ID(out), nil
 }
 
-// MustID returns ID from HRP (human readable part) and bytes, or panics if
-// invalid.
+// MustID returns a (bech32) ID with HRP (human readable part) and bytes, or
+// panics if invalid.
 func MustID(hrp string, b []byte) ID {
 	id, err := NewID(hrp, b)
 	if err != nil {
@@ -57,7 +57,7 @@ func IsValidID(s string) bool {
 	return err == nil
 }
 
-// RandID returns random ID
+// RandID returns a random (bech32) ID.
 func RandID(hrp string) ID {
 	b := Rand32()
 	return MustID(hrp, b[:])
