@@ -14,19 +14,20 @@ func TestSignedStatement(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
-	st := keys.NewSignedStatement(bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
-
-	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	st := keys.Statement{
+		KID:       sk.ID(),
+		Data:      bytes.Repeat([]byte{0x01}, 16),
+		Type:      "test",
+		Timestamp: clock.Now(),
+	}
+	err := st.Sign(sk)
 	require.NoError(t, err)
-
-	b1, err := st.Bytes()
+	err = st.Verify()
 	require.NoError(t, err)
-	b2, err := st2.Bytes()
-	require.NoError(t, err)
-	require.Equal(t, b1, b2)
 
 	rk := keys.GenerateEdX25519Key()
-	_, err = keys.NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	st.KID = rk.ID()
+	err = st.Verify()
 	require.EqualError(t, err, "verify failed")
 }
 
@@ -38,17 +39,12 @@ func TestSigchainStatement(t *testing.T) {
 	require.Equal(t, 0, sc.Length())
 	st, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x01}, 16), sk, "test", clock.Now())
 	require.NoError(t, err)
-
-	st2, err := keys.NewStatement(st.Sig, st.Data, sk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	err = st.Verify()
 	require.NoError(t, err)
-	b1, err := st.Bytes()
-	require.NoError(t, err)
-	b2, err := st2.Bytes()
-	require.NoError(t, err)
-	require.Equal(t, b1, b2)
 
 	rk := keys.GenerateEdX25519Key()
-	_, err = keys.NewStatement(st.Sig, st.Data, rk.PublicKey(), st.Seq, st.Prev, st.Revoke, st.Type, st.Timestamp)
+	st.KID = rk.ID()
+	err = st.Verify()
 	require.EqualError(t, err, "verify failed")
 }
 

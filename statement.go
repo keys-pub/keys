@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Statement in a sigchain.
+// Statement with signature.
+// Use NewSigchainStatement to create a signed Sigchain Statement.
 type Statement struct {
 	// Sig is the signature bytes.
 	Sig []byte
@@ -34,6 +35,9 @@ type Statement struct {
 	// Timestamp (optional).
 	Timestamp time.Time
 
+	// Nonce (optional).
+	Nonce []byte
+
 	// serialized the specific serialization.
 	serialized []byte
 }
@@ -45,65 +49,34 @@ type StatementPublicKey interface {
 	VerifyDetached(sig []byte, b []byte) error
 }
 
-// NewStatement creates a new statement from specified parameters.
-// Use NewSigchainStatement for a signed Sigchain Statement.
-// Use NewSignedStatement for a signed Statement outside a Sigchain.
-func NewStatement(sig []byte, data []byte, spk StatementPublicKey, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
-	st, err := NewUnverifiedStatement(sig, data, spk.ID(), seq, prev, revoke, typ, ts)
+// Sign the statement.
+// Returns an error if already signed.
+func (s *Statement) Sign(signKey *EdX25519Key) error {
+	if s.Sig != nil {
+		return errors.Errorf("signature already set")
+	}
+	if s.KID != signKey.ID() {
+		return errors.Errorf("sign failed: key id mismatch")
+	}
+	b, err := statementBytesToSign(s)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := st.Verify(); err != nil {
-		return nil, err
-	}
-	return st, nil
-}
-
-// NewUnverifiedStatement creates an unverified statement.
-func NewUnverifiedStatement(sig []byte, data []byte, kid ID, seq int, prev []byte, revoke int, typ string, ts time.Time) (*Statement, error) {
-	st := &Statement{
-		Sig:       sig,
-		Data:      data,
-		KID:       kid,
-		Seq:       seq,
-		Prev:      prev,
-		Revoke:    revoke,
-		Timestamp: ts,
-		Type:      typ,
-	}
-	b, err := statementBytesToSign(st)
-	if err != nil {
-		return nil, err
-	}
-	st.serialized = b
-	return st, nil
-}
-
-// NewSignedStatement creates a signed Statement.
-// Use NewSigchainStatement if part of a Sigchain.
-func NewSignedStatement(b []byte, sk *EdX25519Key, typ string, ts time.Time) *Statement {
-	st := &Statement{
-		Data:      b,
-		KID:       sk.ID(),
-		Timestamp: ts,
-		Type:      typ,
-	}
-	if err := signStatement(st, sk); err != nil {
-		panic(err)
-	}
-	return st
+	s.serialized = b
+	s.Sig = signKey.SignDetached(s.serialized)
+	return nil
 }
 
 // Key for a Statement.
 // If Seq is not set, then there is no key.
-// Key looks like "kpe1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
+// Key looks like "kex1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
 func (s *Statement) Key() string {
 	return StatementKey(s.KID, s.Seq)
 }
 
 // StatementKey returns key for Statement kid,seq.
 // If seq is <= 0, then there is no key.
-// Path looks like "kpe1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
+// Path looks like "kex1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
 func StatementKey(kid ID, seq int) string {
 	if seq <= 0 {
 		return ""
@@ -113,7 +86,7 @@ func StatementKey(kid ID, seq int) string {
 
 // URL returns path string for a Statement in the HTTP API.
 // If Seq is not set, then there is no path.
-// Path looks like "/ed1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn/1".
+// Path looks like "/kex1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn/1".
 func (s *Statement) URL() string {
 	if s.Seq == 0 {
 		return ""
@@ -131,6 +104,7 @@ type statementFormat struct {
 	Sig       []byte `json:".sig"`
 	Data      []byte `json:"data"`
 	KID       string `json:"kid"`
+	Nonce     []byte `json:"nonce"`
 	Prev      []byte `json:"prev"`
 	Revoke    int    `json:"revoke"`
 	Seq       int    `json:"seq"`
@@ -187,6 +161,7 @@ func (s *Statement) UnmarshalJSON(b []byte) error {
 	s.Revoke = st.Revoke
 	s.Timestamp = st.Timestamp
 	s.Type = st.Type
+	s.Nonce = st.Nonce
 	s.serialized = st.serialized
 	return nil
 }
@@ -217,6 +192,9 @@ func statementBytes(st *Statement, sig []byte) ([]byte, error) {
 		mes = append(mes, json.String("data", encoding.MustEncode(st.Data, encoding.Base64)))
 	}
 	mes = append(mes, json.String("kid", st.KID.String()))
+	if len(st.Nonce) != 0 {
+		mes = append(mes, json.String("nonce", encoding.MustEncode(st.Nonce, encoding.Base64)))
+	}
 	if len(st.Prev) != 0 {
 		mes = append(mes, json.String("prev", encoding.MustEncode(st.Prev, encoding.Base64)))
 	}
@@ -259,10 +237,22 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 	}
 	ts := tsutil.ConvertMillis(stf.Timestamp)
 
-	st, err := NewUnverifiedStatement(sigBytes, stf.Data, kid, stf.Seq, stf.Prev, stf.Revoke, stf.Type, ts)
+	st := &Statement{
+		Sig:       sigBytes,
+		Data:      stf.Data,
+		KID:       kid,
+		Nonce:     stf.Nonce,
+		Prev:      stf.Prev,
+		Revoke:    stf.Revoke,
+		Seq:       stf.Seq,
+		Timestamp: ts,
+		Type:      stf.Type,
+	}
+	serialized, err := statementBytesToSign(st)
 	if err != nil {
 		return nil, err
 	}
+	st.serialized = serialized
 
 	// It is important to verify the original bytes match the specific
 	// serialization.
