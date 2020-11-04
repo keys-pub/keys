@@ -20,12 +20,6 @@ type Sigchain struct {
 	revokes    map[int]*Statement
 }
 
-// StatementPublicKeyFromID converts ID to StatementPublicKey.
-// TODO: Support other key types.
-func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
-	return NewEdX25519PublicKeyFromID(id)
-}
-
 // NewSigchain creates an empty Sigchain.
 func NewSigchain(kid ID) *Sigchain {
 	return &Sigchain{
@@ -135,23 +129,6 @@ func SigchainHash(st *Statement) (*[32]byte, error) {
 	return &h, nil
 }
 
-// signStatement sets the serialized bytes to sign and the signature.
-func signStatement(st *Statement, signKey *EdX25519Key) error {
-	if st.Sig != nil {
-		return errors.Errorf("signature already set")
-	}
-	if st.KID != signKey.ID() {
-		return errors.Errorf("sign failed: key id mismatch")
-	}
-	b, err := statementBytesToSign(st)
-	if err != nil {
-		return err
-	}
-	st.serialized = b
-	st.Sig = signKey.SignDetached(st.serialized)
-	return nil
-}
-
 // NewSigchainStatement creates a signed Statement to be added to the Sigchain.
 func NewSigchainStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, ts time.Time) (*Statement, error) {
 	if sc == nil {
@@ -181,7 +158,7 @@ func NewSigchainStatement(sc *Sigchain, b []byte, sk *EdX25519Key, typ string, t
 		Timestamp: ts,
 		Type:      typ,
 	}
-	if err := signStatement(st, sk); err != nil {
+	if err := st.Sign(sk); err != nil {
 		return nil, err
 	}
 	return st, nil
@@ -235,7 +212,7 @@ func NewRevokeStatement(sc *Sigchain, revoke int, sk *EdX25519Key) (*Statement, 
 		Revoke: revoke,
 		Type:   "revoke",
 	}
-	if err := signStatement(&st, sk); err != nil {
+	if err := st.Sign(sk); err != nil {
 		return nil, err
 	}
 	return &st, nil

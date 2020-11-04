@@ -66,7 +66,10 @@ func (s *Sigchains) Save(sc *Sigchain) error {
 		if err != nil {
 			return err
 		}
-		if err := s.ds.Set(context.TODO(), docs.Path("sigchain", st.Key()), b); err != nil {
+		if st.Seq <= 0 {
+			return errors.Errorf("statement sequence missing")
+		}
+		if err := s.ds.Set(context.TODO(), docs.Path("sigchain", StatementID(st.KID, st.Seq)), b); err != nil {
 			return err
 		}
 	}
@@ -157,7 +160,7 @@ func (s *Sigchains) Delete(kid ID) (bool, error) {
 
 // Exists returns true if sigchain exists.
 func (s *Sigchains) Exists(kid ID) (bool, error) {
-	return s.ds.Exists(context.TODO(), docs.Path("sigchain", StatementKey(kid, 1)))
+	return s.ds.Exists(context.TODO(), docs.Path("sigchain", StatementID(kid, 1)))
 }
 
 // indexRKL is collection for reverse key lookups.

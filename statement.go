@@ -37,16 +37,19 @@ type Statement struct {
 
 	// Nonce (optional).
 	Nonce []byte
-
-	// serialized the specific serialization.
-	serialized []byte
 }
 
-// StatementPublicKey is public key for a Statement.
+// StatementPublicKey describes a public key for a Statement.
 type StatementPublicKey interface {
 	ID() ID
 	Verify(b []byte) ([]byte, error)
 	VerifyDetached(sig []byte, b []byte) error
+}
+
+// StatementPublicKeyFromID converts ID to StatementPublicKey.
+// TODO: Support other key types.
+func StatementPublicKeyFromID(id ID) (StatementPublicKey, error) {
+	return NewEdX25519PublicKeyFromID(id)
 }
 
 // Sign the statement.
@@ -58,28 +61,17 @@ func (s *Statement) Sign(signKey *EdX25519Key) error {
 	if s.KID != signKey.ID() {
 		return errors.Errorf("sign failed: key id mismatch")
 	}
-	b, err := statementBytesToSign(s)
-	if err != nil {
-		return err
-	}
-	s.serialized = b
-	s.Sig = signKey.SignDetached(s.serialized)
+	b := s.BytesToSign()
+	s.Sig = signKey.SignDetached(b)
 	return nil
 }
 
-// Key for a Statement.
-// If Seq is not set, then there is no key.
-// Key looks like "kex1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
-func (s *Statement) Key() string {
-	return StatementKey(s.KID, s.Seq)
-}
-
-// StatementKey returns key for Statement kid,seq.
-// If seq is <= 0, then there is no key.
-// Path looks like "kex1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
-func StatementKey(kid ID, seq int) string {
+// StatementID returns and identifier for a Statement as kid-seq.
+// If seq is <= 0, returns kid.
+// The idenfifier looks like "kex1a4yj333g68pvd6hfqvufqkv4vy54jfe6t33ljd3kc9rpfty8xlgsfte2sn-000000000000001".
+func StatementID(kid ID, seq int) string {
 	if seq <= 0 {
-		return ""
+		return kid.String()
 	}
 	return kid.WithSeq(seq)
 }
@@ -94,12 +86,6 @@ func (s *Statement) URL() string {
 	return "/" + s.KID.String() + "/" + fmt.Sprintf("%d", s.Seq)
 }
 
-// SpecificSerialization is the specific serialization or the bytes to sign.
-// It is the statement serialized without the sig value.
-func (s *Statement) SpecificSerialization() []byte {
-	return s.serialized
-}
-
 type statementFormat struct {
 	Sig       []byte `json:".sig"`
 	Data      []byte `json:"data"`
@@ -112,34 +98,36 @@ type statementFormat struct {
 	Type      string `json:"type"`
 }
 
-// // VerifyStatementBytes verifies statement bytes for a key.
-// func VerifyStatementBytes(b []byte, spk StatementPublicKey) error {
-// 	if len(b) < 97 {
-// 		return errors.Errorf("not enough bytes for statement")
-// 	}
-// 	// It is important to verify the bytes match the specific serialization.
-// 	// https://latacora.micro.blog/2019/07/24/how-not-to.html
-// 	sig, err := encoding.Decode(string(b[9:97]), encoding.Base64)
-// 	if err != nil {
-// 		return errors.Errorf("sig value is invalid")
-// 	}
-// 	serialized := bytesJoin(b[0:9], b[97:])
-// 	if err := spk.VerifyDetached(sig, serialized); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
 // Verify statement.
+// If you have the original bytes use VerifySpecific.
 func (s *Statement) Verify() error {
 	spk, err := StatementPublicKeyFromID(s.KID)
 	if err != nil {
 		return err
 	}
-	if err := spk.VerifyDetached(s.Sig, s.serialized); err != nil {
+	if len(s.Sig) == 0 {
+		return errors.Errorf("missing signature")
+	}
+	b := s.BytesToSign()
+	if err := spk.VerifyDetached(s.Sig, b); err != nil {
 		return err
 	}
 	return nil
+}
+
+// VerifySpecific and check that bytesToSign match the statement's
+// BytesToSign, to verify the original bytes match the specific
+// serialization.
+func (s *Statement) VerifySpecific(bytesToSign []byte) error {
+	serialized := s.BytesToSign()
+	// We want to verify the bytes we get before unmarshalling match the same
+	// bytes used to sign/verify after marshalling.
+	// https://latacora.micro.blog/2019/07/24/how-not-to.html
+	if !bytes.Equal(bytesToSign, serialized) {
+		return errors.Errorf("statement bytes failed to match specific serialization")
+	}
+
+	return s.Verify()
 }
 
 // MarshalJSON marshals statement to JSON.
@@ -162,29 +150,23 @@ func (s *Statement) UnmarshalJSON(b []byte) error {
 	s.Timestamp = st.Timestamp
 	s.Type = st.Type
 	s.Nonce = st.Nonce
-	s.serialized = st.serialized
 	return nil
 }
 
 // Bytes is the serialized Statement.
 func (s *Statement) Bytes() ([]byte, error) {
-	out, err := statementBytes(s, s.Sig)
-	if err != nil {
+	if err := s.Verify(); err != nil {
 		return nil, err
 	}
-	expected := bytesJoin(out[0:9], out[97:])
-	if !bytes.Equal(expected, s.serialized) {
-		panic(errors.Errorf("statement bytes don't match specific serialization %s != %s", string(expected), string(s.serialized)))
-	}
-
-	return out, nil
+	return statementBytes(s, s.Sig), nil
 }
 
-func statementBytesToSign(st *Statement) ([]byte, error) {
-	return statementBytes(st, nil)
+// BytesToSign returns bytes to sign.
+func (s *Statement) BytesToSign() []byte {
+	return statementBytes(s, nil)
 }
 
-func statementBytes(st *Statement, sig []byte) ([]byte, error) {
+func statementBytes(st *Statement, sig []byte) []byte {
 	mes := []encoding.TextMarshaler{
 		json.String(".sig", encoding.MustEncode(sig, encoding.Base64)),
 	}
@@ -211,7 +193,11 @@ func statementBytes(st *Statement, sig []byte) ([]byte, error) {
 		mes = append(mes, json.String("type", st.Type))
 	}
 
-	return json.Marshal(mes...)
+	b, err := json.Marshal(mes...)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 // unmarshalJSON returns a Statement from JSON bytes.
@@ -220,6 +206,7 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 		return nil, errors.Errorf("not enough bytes for statement")
 	}
 
+	// Extract sig directly from bytes.
 	sig := b[9:97]
 	bytesToSign := bytesJoin(b[0:9], b[97:])
 	sigBytes, err := encoding.Decode(string(sig), encoding.Base64)
@@ -228,7 +215,7 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 	}
 
 	var stf statementFormat
-	if err := json.Unmarshal(bytesToSign, &stf); err != nil {
+	if err := json.Unmarshal(b, &stf); err != nil {
 		return nil, errors.Errorf("statement not valid JSON")
 	}
 	kid, err := ParseID(stf.KID)
@@ -236,6 +223,10 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 		return nil, err
 	}
 	ts := tsutil.ConvertMillis(stf.Timestamp)
+
+	if !bytes.Equal(stf.Sig, sigBytes) {
+		return nil, errors.Errorf("sig bytes mismatch")
+	}
 
 	st := &Statement{
 		Sig:       sigBytes,
@@ -248,22 +239,7 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 		Timestamp: ts,
 		Type:      stf.Type,
 	}
-	serialized, err := statementBytesToSign(st)
-	if err != nil {
-		return nil, err
-	}
-	st.serialized = serialized
-
-	// It is important to verify the original bytes match the specific
-	// serialization.
-	// We want to verify the bytes we get before unmarshalling match the same
-	// bytes used to sign/verify after marshalling.
-	// https://latacora.micro.blog/2019/07/24/how-not-to.html
-	if !bytes.Equal(bytesToSign, st.serialized) {
-		return nil, errors.Errorf("statement bytes don't match specific serialization")
-	}
-
-	if err := st.Verify(); err != nil {
+	if err := st.VerifySpecific(bytesToSign); err != nil {
 		return nil, err
 	}
 

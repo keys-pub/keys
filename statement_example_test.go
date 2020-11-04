@@ -21,7 +21,7 @@ func ExampleStatement() {
 		log.Fatal(err)
 	}
 
-	data := st.SpecificSerialization()
+	data := st.BytesToSign()
 	fmt.Printf("%s\n", string(data))
 
 	b, err := st.Bytes()
