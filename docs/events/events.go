@@ -21,7 +21,7 @@ type Event struct {
 
 // Events describes an append only event log.
 type Events interface {
-	// EventsAdd appends an event.
+	// EventsAdd appends events (in a batch if multiple).
 	EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, error)
 
 	// Events from log.
