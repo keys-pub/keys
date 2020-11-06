@@ -16,14 +16,14 @@ func TestAuth(t *testing.T) {
 	clock := tsutil.NewTestClock()
 
 	tm := clock.Now()
-	nonce := keys.Bytes32(bytes.Repeat([]byte{0x01}, 32))
+	nonce := bytes.Repeat([]byte{0x01}, 32)
 	urs := "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123"
 	auth, err := newAuth("GET", urs, "", tm, nonce, alice)
 	require.NoError(t, err)
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077:K0KnYYnx+VnhpRS0lBJVfwSaYa3zweapGtc87Uh4h1pfv/VeVMaS/YRD/d+Y+U3ANFMkR+OFGRYniWirFK3sBg==", auth.Header())
 	require.Equal(t, "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123&nonce=0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29&ts=1234567890001", auth.URL.String())
 
-	req, err := newRequest(context.TODO(), "GET", urs, nil, "", tm, nonce, alice)
+	req, err := newRequest("GET", urs, nil, "", tm, nonce, []*AuthKey{&AuthKey{Key: alice, Header: "Authorization"}})
 	require.NoError(t, err)
 	require.Equal(t, "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123&nonce=0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29&ts=1234567890001", req.URL.String())
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077:K0KnYYnx+VnhpRS0lBJVfwSaYa3zweapGtc87Uh4h1pfv/VeVMaS/YRD/d+Y+U3ANFMkR+OFGRYniWirFK3sBg==", req.Header.Get("Authorization"))
