@@ -2,65 +2,86 @@
 package docs
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
-	"unicode/utf8"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // Document is data at a path.
 type Document struct {
 	// Path of document.
-	Path string `json:"path" msgpack:"p"`
-	// Data ...
-	Data []byte `json:"data" msgpack:"dat"`
+	Path string
+
+	values map[string]interface{}
 
 	// CreatedAt (read only). The time at which the document was created.
-	CreatedAt time.Time `json:"cts" msgpack:"cts"`
+	CreatedAt time.Time
 	// UpdatedAt (read only). The time at which the document was last changed.
-	UpdatedAt time.Time `json:"uts" msgpack:"uts"`
+	UpdatedAt time.Time
 }
 
-func (d Document) String() string {
-	return fmt.Sprintf("%s %s", d.Path, spew.Sdump(d.Data))
+// SetValue sets document value.
+func (d *Document) SetValue(name string, i interface{}) {
+	d.values[name] = i
 }
 
-// NewDocument creates a datastore document.
-func NewDocument(path string, data []byte) *Document {
+// Bytes returns document data.
+func (d *Document) Bytes(name string) []byte {
+	i, ok := d.values[name]
+	if !ok {
+		return nil
+	}
+	switch v := i.(type) {
+	case []byte:
+		return v
+	default:
+		return nil
+	}
+}
+
+// NewDocument creates a document with data.
+func NewDocument(path string) *Document {
 	return &Document{
-		Path: Path(path),
-		Data: data,
+		Path:      Path(path),
+		values:    map[string]interface{}{},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 
-// Contains returns true if path or value contains the string.
-func (d *Document) Contains(contains string) bool {
-	if contains == "" {
-		return true
-	}
-	if d.Path != "" && strings.Contains(d.Path, contains) {
-		return true
-	}
-	if utf8.Valid(d.Data) {
-		return strings.Contains(string(d.Data), contains)
-	}
-	return false
+// WithData adds data to document.
+func (d *Document) WithData(b []byte) *Document {
+	d.SetValue("data", b)
+	return d
 }
 
-// Pretty returns "prettified" output, if data is a format that supports it.
-func (d *Document) Pretty() []byte {
-	if len(d.Data) > 1 && string(d.Data[0]) == "{" {
-		var pretty bytes.Buffer
-		if err := json.Indent(&pretty, d.Data, "", "  "); err != nil {
-			return pretty.Bytes()
-		}
-	}
-	return nil
+// Data returns document data.
+func (d *Document) Data() []byte {
+	return d.Bytes("data")
 }
+
+// // Contains returns true if path or value contains the string.
+// func (d *Document) Contains(contains string) bool {
+// 	if contains == "" {
+// 		return true
+// 	}
+// 	if d.Path != "" && strings.Contains(d.Path, contains) {
+// 		return true
+// 	}
+// 	if utf8.Valid(d.Data) {
+// 		return strings.Contains(string(d.Data), contains)
+// 	}
+// 	return false
+// }
+
+// // Pretty returns "prettified" output, if data is a format that supports it.
+// func (d *Document) Pretty() []byte {
+// 	if len(d.Data) > 1 && string(d.Data[0]) == "{" {
+// 		var pretty bytes.Buffer
+// 		if err := json.Indent(&pretty, d.Data, "", "  "); err != nil {
+// 			return pretty.Bytes()
+// 		}
+// 	}
+// 	return nil
+// }
 
 // DocumentPaths from Document's.
 func DocumentPaths(docs []*Document) []string {

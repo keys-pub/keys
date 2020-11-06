@@ -9,10 +9,10 @@ import (
 
 func TestSpew(t *testing.T) {
 	docs := []*Document{
-		NewDocument("/test/1", []byte("value1")),
-		NewDocument("/test/2", bytes.Repeat([]byte{0xFF}, 16)),
-		NewDocument("/test/3", bytes.Repeat([]byte{0xDD}, 32)),
-		NewDocument("/test/4", []byte("value4")),
+		NewDocument("/test/1").WithData([]byte("value1")),
+		NewDocument("/test/2").WithData(bytes.Repeat([]byte{0xFF}, 16)),
+		NewDocument("/test/3").WithData(bytes.Repeat([]byte{0xDD}, 32)),
+		NewDocument("/test/4").WithData([]byte("value4")),
 	}
 	iter := NewIterator(docs...)
 

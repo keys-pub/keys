@@ -11,7 +11,7 @@ import (
 func ExampleDocuments_DocumentIterator() {
 	d := docs.NewMem()
 
-	if err := d.Set(context.TODO(), docs.Path("tests", 1), []byte("testdata")); err != nil {
+	if err := d.Set(context.TODO(), docs.Path("tests", 1), docs.NewFields("data", []byte("testdata"))); err != nil {
 		log.Fatal(err)
 	}
 
@@ -28,7 +28,7 @@ func ExampleDocuments_DocumentIterator() {
 		if doc == nil {
 			break
 		}
-		fmt.Printf("%s: %s\n", doc.Path, string(doc.Data))
+		fmt.Printf("%s: %s\n", doc.Path, string(doc.Data()))
 
 	}
 

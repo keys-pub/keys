@@ -7,7 +7,7 @@ import (
 
 // Documents describes a Document store.
 type Documents interface {
-	// Create data at path.
+	// Create document at path.
 	// ErrPathExists if path already exists.
 	//
 	// Paths can be nested as long as they are even length components.
@@ -18,9 +18,9 @@ type Documents interface {
 	//   collection1 (INVALID)
 	//   collection1/key1/collection2 (INVALID)
 	//
-	Create(ctx context.Context, path string, b []byte) error
+	Create(ctx context.Context, path string, fields []Field) error
 
-	// Create or set data at path.
+	// Set (or create) document at path.
 	//
 	// Paths can be nested as long as they are even length components.
 	// For example,
@@ -30,7 +30,7 @@ type Documents interface {
 	//   collection1 (INVALID)
 	//   collection1/key1/collection2 (INVALID)
 	//
-	Set(ctx context.Context, path string, b []byte) error
+	Set(ctx context.Context, path string, fields []Field) error
 
 	// Get path.
 	// If not found, returns nil.
@@ -56,6 +56,35 @@ type Documents interface {
 
 	// Collections are parents of Documents.
 	Collections(ctx context.Context, parent string) ([]*Collection, error)
+}
+
+// Field in document.
+type Field struct {
+	Name  string
+	Value interface{}
+}
+
+// NewFields from map.
+func NewFields(mp ...interface{}) []Field {
+	fields := []Field{}
+	if len(mp)%2 != 0 {
+		panic("invalid fields")
+	}
+	for i := 0; i < len(mp); i += 2 {
+		k, v := mp[i], mp[i+1]
+		fields = append(fields, NewField(k.(string), v))
+	}
+	return fields
+}
+
+// NewField ..
+func NewField(name string, v interface{}) Field {
+	return Field{Name: name, Value: v}
+}
+
+// Data as document fields.
+func Data(b []byte) []Field {
+	return NewFields("data", b)
 }
 
 // ErrPathExists is trying to set value that already exists.

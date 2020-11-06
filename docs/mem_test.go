@@ -44,12 +44,12 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 
 	for i := 10; i <= 30; i = i + 10 {
 		p := docs.Path("test1", fmt.Sprintf("key%d", i))
-		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
+		err := ds.Create(ctx, p, docs.Data([]byte(fmt.Sprintf("value%d", i))))
 		require.NoError(t, err)
 	}
 	for i := 10; i <= 30; i = i + 10 {
 		p := docs.Path("test0", fmt.Sprintf("key%d", i))
-		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
+		err := ds.Create(ctx, p, docs.Data([]byte(fmt.Sprintf("value%d", i))))
 		require.NoError(t, err)
 	}
 
@@ -58,7 +58,7 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	doc, err := iter.Next()
 	require.NoError(t, err)
 	require.Equal(t, "/test0/key10", doc.Path)
-	require.Equal(t, "value10", string(doc.Data))
+	require.Equal(t, "value10", string(doc.Data()))
 	iter.Release()
 
 	ok, err := ds.Exists(ctx, "/test0/key10")
@@ -67,18 +67,18 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	doc, err = ds.Get(ctx, "/test0/key10")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, "value10", string(doc.Data))
+	require.Equal(t, "value10", string(doc.Data()))
 
-	err = ds.Create(ctx, "/test0/key10", []byte{})
+	err = ds.Create(ctx, "/test0/key10", docs.Data([]byte{}))
 	require.EqualError(t, err, "path already exists /test0/key10")
-	err = ds.Set(ctx, "/test0/key10", []byte("overwrite"))
+	err = ds.Set(ctx, "/test0/key10", docs.Data([]byte("overwrite")))
 	require.NoError(t, err)
-	err = ds.Create(ctx, "/test0/key10", []byte("overwrite"))
+	err = ds.Create(ctx, "/test0/key10", docs.Data([]byte("overwrite")))
 	require.EqualError(t, err, "path already exists /test0/key10")
 	doc, err = ds.Get(ctx, "/test0/key10")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, "overwrite", string(doc.Data))
+	require.Equal(t, "overwrite", string(doc.Data()))
 
 	out, err := ds.GetAll(ctx, []string{"/test0/key10", "/test0/key20"})
 	require.NoError(t, err)
@@ -127,9 +127,9 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	require.Nil(t, doc)
 	iter.Release()
 
-	err = ds.Create(ctx, "", []byte{})
+	err = ds.Create(ctx, "", docs.Data([]byte{}))
 	require.EqualError(t, err, "invalid path")
-	err = ds.Set(ctx, "", []byte{})
+	err = ds.Set(ctx, "", docs.Data([]byte{}))
 	require.EqualError(t, err, "invalid path")
 
 	cols, err := ds.Collections(ctx, "")
@@ -146,7 +146,7 @@ func TestDocumentsPath(t *testing.T) {
 	ds.SetClock(tsutil.NewTestClock())
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "test/1", []byte("value1"))
+	err := ds.Create(ctx, "test/1", docs.Data([]byte("value1")))
 	require.NoError(t, err)
 
 	doc, err := ds.Get(ctx, "/test/1")
@@ -160,13 +160,13 @@ func TestDocumentsPath(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	err = ds.Create(ctx, docs.Path("test", "key2", "col2", "key3"), []byte("value3"))
+	err = ds.Create(ctx, docs.Path("test", "key2", "col2", "key3"), docs.Data([]byte("value3")))
 	require.NoError(t, err)
 
 	doc, err = ds.Get(ctx, docs.Path("test", "key2", "col2", "key3"))
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, []byte("value3"), doc.Data)
+	require.Equal(t, []byte("value3"), doc.Data())
 
 	cols, err := ds.Collections(ctx, "")
 	require.NoError(t, err)
@@ -176,31 +176,31 @@ func TestDocumentsPath(t *testing.T) {
 func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "/test/1", []byte("val1"))
+	err := ds.Create(ctx, "/test/1", docs.Data([]byte("val1")))
 	require.NoError(t, err)
-	err = ds.Create(ctx, "/test/2", []byte("val2"))
+	err = ds.Create(ctx, "/test/2", docs.Data([]byte("val2")))
 	require.NoError(t, err)
-	err = ds.Create(ctx, "/test/3", []byte("val3"))
+	err = ds.Create(ctx, "/test/3", docs.Data([]byte("val3")))
 	require.NoError(t, err)
 
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("a", fmt.Sprintf("e%d", i)), []byte("🤓"))
+		err := ds.Create(ctx, docs.Path("a", fmt.Sprintf("e%d", i)), docs.Data([]byte("🤓")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("ea%d", i)), []byte("😎"))
+		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("ea%d", i)), docs.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("eb%d", i)), []byte("😎"))
+		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("eb%d", i)), docs.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("ec%d", i)), []byte("😎"))
+		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("ec%d", i)), docs.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("c", fmt.Sprintf("e%d", i)), []byte("😎"))
+		err := ds.Create(ctx, docs.Path("c", fmt.Sprintf("e%d", i)), docs.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 
@@ -247,7 +247,7 @@ func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
 func testMetadata(t *testing.T, ds docs.Documents) {
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "/test/key1", []byte("value1"))
+	err := ds.Create(ctx, "/test/key1", docs.Data([]byte("value1")))
 	require.NoError(t, err)
 
 	doc, err := ds.Get(ctx, "/test/key1")
@@ -255,7 +255,7 @@ func testMetadata(t *testing.T, ds docs.Documents) {
 	require.NotNil(t, doc)
 	require.Equal(t, int64(1234567890001), tsutil.Millis(doc.CreatedAt))
 
-	err = ds.Set(ctx, "/test/key1", []byte("value1b"))
+	err = ds.Set(ctx, "/test/key1", docs.Data([]byte("value1b")))
 	require.NoError(t, err)
 
 	doc, err = ds.Get(ctx, "/test/key1")
@@ -268,9 +268,9 @@ func testMetadata(t *testing.T, ds docs.Documents) {
 func TestDeleteAll(t *testing.T) {
 	mem := docs.NewMem()
 
-	err := mem.Set(context.TODO(), "/test/key1", []byte("val1"))
+	err := mem.Set(context.TODO(), "/test/key1", docs.Data([]byte("val1")))
 	require.NoError(t, err)
-	err = mem.Set(context.TODO(), "/test/key2", []byte("val2"))
+	err = mem.Set(context.TODO(), "/test/key2", docs.Data([]byte("val2")))
 	require.NoError(t, err)
 
 	err = mem.DeleteAll(context.TODO(), []string{"/test/key1", "/test/key2", "/test/key3"})

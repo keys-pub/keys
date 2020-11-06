@@ -21,26 +21,19 @@ var _ events.Events = &Mem{}
 // Mem is an in memory Documents implementation.
 type Mem struct {
 	sync.RWMutex
-	paths    *StringSet
-	values   map[string][]byte
-	metadata map[string]*metadata
-	clock    tsutil.Clock
-	inc      map[string]int64
-}
-
-type metadata struct {
-	createTime time.Time
-	updateTime time.Time
+	paths  *StringSet
+	values map[string]*Document
+	clock  tsutil.Clock
+	inc    map[string]int64
 }
 
 // NewMem creates an in memory Documents implementation.
 func NewMem() *Mem {
 	return &Mem{
-		paths:    NewStringSet(),
-		values:   map[string][]byte{},
-		metadata: map[string]*metadata{},
-		inc:      map[string]int64{},
-		clock:    tsutil.NewClock(),
+		paths:  NewStringSet(),
+		values: map[string]*Document{},
+		inc:    map[string]int64{},
+		clock:  tsutil.NewClock(),
 	}
 }
 
@@ -56,16 +49,16 @@ func (m *Mem) SetClock(clock tsutil.Clock) {
 
 // Create at path.
 // ErrPathExists if entry already exists.
-func (m *Mem) Create(ctx context.Context, path string, b []byte) error {
-	return m.set(ctx, path, b, true)
+func (m *Mem) Create(ctx context.Context, path string, fields []Field) error {
+	return m.set(ctx, path, fields, true)
 }
 
 // Set data at path.
-func (m *Mem) Set(ctx context.Context, path string, b []byte) error {
-	return m.set(ctx, path, b, false)
+func (m *Mem) Set(ctx context.Context, path string, fields []Field) error {
+	return m.set(ctx, path, fields, false)
 }
 
-func (m *Mem) set(ctx context.Context, path string, b []byte, create bool) error {
+func (m *Mem) set(ctx context.Context, path string, fields []Field, create bool) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -78,17 +71,22 @@ func (m *Mem) set(ctx context.Context, path string, b []byte, create bool) error
 		return errors.Errorf("invalid path %s", path)
 	}
 
-	md, ok := m.metadata[path]
+	doc, ok := m.values[path]
 
 	if ok && create {
 		return NewErrPathExists(path)
 	}
 
 	now := m.Now()
-	if md == nil {
-		md = &metadata{createTime: now, updateTime: now}
+	if doc == nil {
+		doc = NewDocument(path)
+		doc.CreatedAt = now
+		doc.UpdatedAt = now
 	} else {
-		md.updateTime = now
+		doc.UpdatedAt = now
+	}
+	for _, field := range fields {
+		doc.SetValue(field.Name, field.Value)
 	}
 
 	if create {
@@ -97,8 +95,7 @@ func (m *Mem) set(ctx context.Context, path string, b []byte, create bool) error
 		logger.Debugf("Set (mem) %s", path)
 	}
 
-	m.values[path] = b
-	m.metadata[path] = md
+	m.values[path] = doc
 	m.paths.Add(path)
 	return nil
 }
@@ -115,15 +112,9 @@ func (m *Mem) Get(ctx context.Context, path string) (*Document, error) {
 }
 
 func (m *Mem) document(path string) *Document {
-	b, ok := m.values[path]
+	doc, ok := m.values[path]
 	if !ok {
 		return nil
-	}
-	doc := NewDocument(path, b)
-	md, ok := m.metadata[path]
-	if ok {
-		doc.CreatedAt = md.createTime
-		doc.UpdatedAt = md.updateTime
 	}
 	return doc
 }
@@ -248,7 +239,6 @@ func (m *Mem) delete(ctx context.Context, path string) (bool, error) {
 		return false, nil
 	}
 	delete(m.values, path)
-	delete(m.metadata, path)
 	m.paths.Remove(path)
 	return true, nil
 }
@@ -309,7 +299,7 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 			return nil, err
 		}
 		path := Path(path, "log", id)
-		if err := m.Create(ctx, path, b); err != nil {
+		if err := m.Create(ctx, path, NewFields("data", b)); err != nil {
 			return nil, err
 		}
 		out = append(out, event)
@@ -354,7 +344,7 @@ func (m *Mem) Events(ctx context.Context, path string, opt ...events.Option) (ev
 			return nil, errors.Errorf("path not found %s", p)
 		}
 		var event events.Event
-		if err := json.Unmarshal(doc.Data, &event); err != nil {
+		if err := json.Unmarshal(doc.Bytes("data"), &event); err != nil {
 			return nil, err
 		}
 		out = append(out, &event)
