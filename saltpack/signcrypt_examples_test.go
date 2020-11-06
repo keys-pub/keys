@@ -18,7 +18,7 @@ func ExampleSigncrypt() {
 	fmt.Printf("bob: %s\n", bobID)
 
 	// Signcrypt from alice to bob
-	encrypted, err := saltpack.Signcrypt(message, true, alice, bobID)
+	encrypted, err := saltpack.SigncryptArmored(message, "", alice, bobID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,18 +31,18 @@ func ExampleSigncrypt() {
 
 func ExampleSigncryptOpen() {
 	aliceID := keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077")
-	encrypted := []byte(`BEGIN SALTPACK ENCRYPTED MESSAGE. 
+	encrypted := `BEGIN SALTPACK ENCRYPTED MESSAGE. 
 	keDIDMQWYvVR58B FTfTeDQNHw4rtf4 DhnUhh7QIMs1BwB LmssBxGhQ4mlcCU qV8WjYl8IkxQJbg 
 	ONicYJ6bKt4MtL5 u1uoXQQMHpGQoxv i81G0YjJmVk3fve kTnkT7hxuNZPhL3 2gdI2jzdhgOuv2I 
 	GepiKbfYFkh9crE 1N4kuPgLFmiQoUb UxbqPeFjmNwUTf7 zGeNEy8DBW16Iyd jw64NZ1Ln4gebRP 
 	2mFMbPdyBRdxldx ugMs9cTZ2cTcyWJ mTPQ9RkdnnfPGdd k6x2hQWAdkwBOmy 4NcS7hFls2iGX4I 
 	4lh5nDtDzwGHFOn ehwbipT7iNVK9kE 388GznWBW4Vci88 43Z1Txd2cbm2dBJ y883ohi7SLL. 
-	END SALTPACK ENCRYPTED MESSAGE.`)
+	END SALTPACK ENCRYPTED MESSAGE.`
 
 	bob := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 
 	// Bob decrypts
-	out, sender, err := saltpack.SigncryptOpen(encrypted, true, saltpack.NewKeyring(bob))
+	out, sender, _, err := saltpack.SigncryptOpenArmored(encrypted, saltpack.NewKeyring(bob))
 	if err != nil {
 		log.Fatal(err)
 	}

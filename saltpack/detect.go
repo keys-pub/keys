@@ -21,20 +21,28 @@ const (
 	SignEncoding Encoding = "sign"
 )
 
-func detectEncrypt(b []byte) (Encoding, bool) {
-	if _, _, err := NewDecryptStream(bytes.NewReader(b), false, nil); err == ksaltpack.ErrNoDecryptionKey {
-		return EncryptEncoding, false
+// Detected encryption type.
+type Detected struct {
+	Encoding Encoding
+	Armored  bool
+	Brand    string
+}
+
+// TODO: Fix brand detection
+func detectEncrypt(b []byte) Detected {
+	if _, _, err := NewDecryptStream(bytes.NewReader(b), nil); err == ksaltpack.ErrNoDecryptionKey {
+		return Detected{Encoding: EncryptEncoding}
 	}
-	if _, _, err := NewDecryptStream(bytes.NewReader(b), true, nil); err == ksaltpack.ErrNoDecryptionKey {
-		return EncryptEncoding, true
+	if _, _, brand, err := NewDecryptArmoredStream(bytes.NewReader(b), nil); err == ksaltpack.ErrNoDecryptionKey {
+		return Detected{Encoding: EncryptEncoding, Brand: brand, Armored: true}
 	}
-	if _, _, err := NewSigncryptOpenStream(bytes.NewReader(b), false, nil); err == ksaltpack.ErrNoDecryptionKey {
-		return SigncryptEncoding, false
+	if _, _, err := NewSigncryptOpenStream(bytes.NewReader(b), nil); err == ksaltpack.ErrNoDecryptionKey {
+		return Detected{Encoding: SigncryptEncoding}
 	}
-	if _, _, err := NewSigncryptOpenStream(bytes.NewReader(b), true, nil); err == ksaltpack.ErrNoDecryptionKey {
-		return SigncryptEncoding, true
+	if _, _, brand, err := NewSigncryptOpenArmoredStream(bytes.NewReader(b), nil); err == ksaltpack.ErrNoDecryptionKey {
+		return Detected{Encoding: SigncryptEncoding, Brand: brand, Armored: true}
 	}
-	return UnknownEncoding, false
+	return Detected{Encoding: UnknownEncoding}
 }
 
 func detectSign(b []byte) (Encoding, bool) {

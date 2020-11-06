@@ -15,32 +15,36 @@ func TestDetectEncrypt(t *testing.T) {
 	xalice := alice.X25519Key()
 	xbob := bob.X25519Key()
 
-	encrypted, err := Encrypt(message, false, xalice, xbob.ID())
+	encrypted, err := Encrypt(message, xalice, xbob.ID())
 	require.NoError(t, err)
-	enc, armored := detectEncrypt(encrypted)
-	require.Equal(t, EncryptEncoding, enc)
-	require.False(t, armored)
+	detected := detectEncrypt(encrypted)
+	require.Equal(t, EncryptEncoding, detected.Encoding)
+	require.False(t, detected.Armored)
 
-	out, err := Encrypt(message, true, xalice, xbob.ID())
+	out, err := EncryptArmored(message, "TEST", xalice, xbob.ID())
 	require.NoError(t, err)
-	enc, armored = detectEncrypt([]byte(out))
-	require.Equal(t, EncryptEncoding, enc)
-	require.True(t, armored)
+	detected = detectEncrypt([]byte(out))
+	require.Equal(t, EncryptEncoding, detected.Encoding)
+	// TODO: Fix brand detect
+	// require.Equal(t, "TEST", detected.Brand)
+	require.True(t, detected.Armored)
 
-	signcrypted, err := Signcrypt(message, false, alice, bob.ID())
+	signcrypted, err := Signcrypt(message, alice, bob.ID())
 	require.NoError(t, err)
-	enc, armored = detectEncrypt([]byte(signcrypted))
-	require.Equal(t, SigncryptEncoding, enc)
-	require.False(t, armored)
+	detected = detectEncrypt([]byte(signcrypted))
+	require.Equal(t, SigncryptEncoding, detected.Encoding)
+	require.False(t, detected.Armored)
 
-	out, err = Signcrypt(message, true, alice, bob.ID())
+	out, err = SigncryptArmored(message, "TEST", alice, bob.ID())
 	require.NoError(t, err)
-	enc, armored = detectEncrypt([]byte(out))
-	require.Equal(t, SigncryptEncoding, enc)
-	require.True(t, armored)
+	detected = detectEncrypt([]byte(out))
+	require.Equal(t, SigncryptEncoding, detected.Encoding)
+	// TODO: Fix brand detect
+	// require.Equal(t, "TEST", detected.Brand)
+	require.True(t, detected.Armored)
 
-	enc, _ = detectEncrypt([]byte{0x01})
-	require.Equal(t, UnknownEncoding, enc)
+	detected = detectEncrypt([]byte{0x01})
+	require.Equal(t, UnknownEncoding, detected.Encoding)
 }
 
 func testSeed(b byte) *[32]byte {

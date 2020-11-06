@@ -18,7 +18,7 @@ func ExampleEncrypt() {
 	fmt.Printf("bob: %s\n", bobID)
 
 	// Encrypt from alice to bob
-	encrypted, err := saltpack.Encrypt(message, true, alice, bobID)
+	encrypted, err := saltpack.EncryptArmored(message, "", alice, bobID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,17 +31,17 @@ func ExampleEncrypt() {
 
 func ExampleDecrypt() {
 	aliceID := keys.ID("kbx15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gys57cytk")
-	encrypted := []byte(`BEGIN SALTPACK ENCRYPTED MESSAGE. 
+	encrypted := `BEGIN SALTPACK ENCRYPTED MESSAGE. 
 	kcJn5brvybfNjz6 D5ll2Nk0YnkdsxV g8EmizCg7a8zpHt Wh3GEuw5BrCUP2u N00ZdO6tTiw5NAl 
 	M2M9M0ErPX1xAmK Cfh7IG2sQfbxIH3 OmQwZxc13hjpoG4 1NWwphYm2HR7i1Z LOdCpf8kbf5UFSC 
 	eEUlInuYgfWLJdT 7y3iBbCvlejdmJW aSRZAgrmiEqYfTL a0NzUyir4lT4h9G DUYEGWA8JD3cuCh 
 	Xfi0TNH5BlgOnBm 65o53Xaztwpv6Q4 BMM6AoTyMYk9iR3 5ybluVFI5DJq0YP N6t. 
-	END SALTPACK ENCRYPTED MESSAGE.`)
+	END SALTPACK ENCRYPTED MESSAGE.`
 
 	bob := keys.NewX25519KeyFromSeed(testSeed(0x02))
 
 	// Bob decrypts
-	out, sender, err := saltpack.Decrypt(encrypted, true, saltpack.NewKeyring(bob))
+	out, sender, _, err := saltpack.DecryptArmored(encrypted, saltpack.NewKeyring(bob))
 	if err != nil {
 		log.Fatal(err)
 	}

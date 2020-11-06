@@ -14,7 +14,7 @@ import (
 // Encrypt to recipients.
 // Sender can be nil, if you want it to be anonymous.
 // https://saltpack.org/encryption-format-v2
-func Encrypt(b []byte, armored bool, sender *keys.X25519Key, recipients ...keys.ID) ([]byte, error) {
+func Encrypt(b []byte, sender *keys.X25519Key, recipients ...keys.ID) ([]byte, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -23,14 +23,24 @@ func Encrypt(b []byte, armored bool, sender *keys.X25519Key, recipients ...keys.
 	if sender != nil {
 		sbk = newBoxKey(sender)
 	}
-	if armored {
-		s, err := ksaltpack.EncryptArmor62Seal(ksaltpack.Version2(), b, sbk, recs, "")
-		if err != nil {
-			return nil, err
-		}
-		return []byte(s), nil
-	}
 	return ksaltpack.Seal(ksaltpack.Version2(), b, sbk, recs)
+}
+
+// EncryptArmored encrypts to recipients (armored).
+func EncryptArmored(b []byte, brand string, sender *keys.X25519Key, recipients ...keys.ID) (string, error) {
+	recs, err := boxPublicKeys(recipients)
+	if err != nil {
+		return "", err
+	}
+	var sbk ksaltpack.BoxSecretKey
+	if sender != nil {
+		sbk = newBoxKey(sender)
+	}
+	s, err := ksaltpack.EncryptArmor62Seal(ksaltpack.Version2(), b, sbk, recs, brand)
+	if err != nil {
+		return "", err
+	}
+	return s, nil
 }
 
 func x25519SenderKey(info *ksaltpack.MessageKeyInfo) (*keys.X25519PublicKey, error) {
@@ -46,13 +56,25 @@ func x25519SenderKey(info *ksaltpack.MessageKeyInfo) (*keys.X25519PublicKey, err
 }
 
 // Open decrypts bytes after attempting to auto detect the encoding.
-func Open(b []byte, kr Keyring) (out []byte, key keys.Key, enc Encoding, err error) {
-	enc, armored := detectEncrypt(b)
-	switch enc {
+func Open(b []byte, kr Keyring) (out []byte, key keys.Key, detected Detected, err error) {
+	detected = detectEncrypt(b)
+	switch detected.Encoding {
 	case EncryptEncoding:
-		out, key, err = Decrypt(b, armored, kr)
+		if detected.Armored {
+			var brand string
+			out, key, brand, err = DecryptArmored(string(b), kr)
+			detected.Brand = brand
+		} else {
+			out, key, err = Decrypt(b, kr)
+		}
 	case SigncryptEncoding:
-		out, key, err = SigncryptOpen(b, armored, kr)
+		if detected.Armored {
+			var brand string
+			out, key, brand, err = SigncryptOpenArmored(string(b), kr)
+			detected.Brand = brand
+		} else {
+			out, key, err = SigncryptOpen(b, kr)
+		}
 	default:
 		err = errors.Errorf("invalid data")
 	}
@@ -64,16 +86,9 @@ func Open(b []byte, kr Keyring) (out []byte, key keys.Key, enc Encoding, err err
 
 // Decrypt bytes.
 // If there was a sender, will return the X25519 public key.
-func Decrypt(b []byte, armored bool, kr Keyring) ([]byte, *keys.X25519PublicKey, error) {
-	s := newSaltpack(kr)
-	var info *ksaltpack.MessageKeyInfo
-	var out []byte
-	var err error
-	if armored {
-		info, out, _, err = ksaltpack.Dearmor62DecryptOpen(encryptVersionValidator, string(b), s)
-	} else {
-		info, out, err = ksaltpack.Open(encryptVersionValidator, b, s)
-	}
+func Decrypt(b []byte, kr Keyring) ([]byte, *keys.X25519PublicKey, error) {
+	sp := newSaltpack(kr)
+	info, out, err := ksaltpack.Open(encryptVersionValidator, b, sp)
 	if err != nil {
 		return nil, nil, convertBoxKeyErr(err)
 	}
@@ -84,9 +99,23 @@ func Decrypt(b []byte, armored bool, kr Keyring) ([]byte, *keys.X25519PublicKey,
 	return out, sender, nil
 }
 
+// DecryptArmored decrypts armored data.
+func DecryptArmored(s string, kr Keyring) ([]byte, *keys.X25519PublicKey, string, error) {
+	sp := newSaltpack(kr)
+	info, out, brand, err := ksaltpack.Dearmor62DecryptOpen(encryptVersionValidator, s, sp)
+	if err != nil {
+		return nil, nil, "", convertBoxKeyErr(err)
+	}
+	sender, err := x25519SenderKey(info)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	return out, sender, brand, nil
+}
+
 // NewEncryptStream creates an encrypted armored io.WriteCloser.
 // Sender can be nil, if you want it to be anonymous.
-func NewEncryptStream(w io.Writer, armored bool, sender *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
+func NewEncryptStream(w io.Writer, sender *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
 		return nil, err
@@ -95,15 +124,26 @@ func NewEncryptStream(w io.Writer, armored bool, sender *keys.X25519Key, recipie
 	if sender != nil {
 		sbk = newBoxKey(sender)
 	}
-	if armored {
-		return ksaltpack.NewEncryptArmor62Stream(ksaltpack.Version2(), w, sbk, recs, "")
-	}
 	return ksaltpack.NewEncryptStream(ksaltpack.Version2(), w, sbk, recs)
+}
+
+// NewEncryptArmoredStream creates an encrypted armored io.WriteCloser.
+// Sender can be nil, if you want it to be anonymous.
+func NewEncryptArmoredStream(w io.Writer, brand string, sender *keys.X25519Key, recipients ...keys.ID) (io.WriteCloser, error) {
+	recs, err := boxPublicKeys(recipients)
+	if err != nil {
+		return nil, err
+	}
+	var sbk ksaltpack.BoxSecretKey
+	if sender != nil {
+		sbk = newBoxKey(sender)
+	}
+	return ksaltpack.NewEncryptArmor62Stream(ksaltpack.Version2(), w, sbk, recs, brand)
 }
 
 // NewReader creates io.Reader for decryption after trying to detect the encoding.
 // We peek up to 512 bytes from the reader, detect the encoding and return that stream.
-func NewReader(r io.Reader, kr Keyring) (out io.Reader, key keys.Key, enc Encoding, err error) {
+func NewReader(r io.Reader, kr Keyring) (out io.Reader, key keys.Key, enc Encoding, armored bool, err error) {
 	buf := bufio.NewReader(r)
 	var peek []byte
 	peek, err = buf.Peek(512)
@@ -112,12 +152,21 @@ func NewReader(r io.Reader, kr Keyring) (out io.Reader, key keys.Key, enc Encodi
 			return
 		}
 	}
-	enc, armored := detectEncrypt(peek)
+	detected := detectEncrypt(peek)
+	enc, armored = detected.Encoding, detected.Armored
 	switch enc {
 	case EncryptEncoding:
-		out, key, err = NewDecryptStream(buf, armored, kr)
+		if armored {
+			out, key, _, err = NewDecryptArmoredStream(buf, kr)
+		} else {
+			out, key, err = NewDecryptStream(buf, kr)
+		}
 	case SigncryptEncoding:
-		out, key, err = NewSigncryptOpenStream(buf, armored, kr)
+		if armored {
+			out, key, _, err = NewSigncryptOpenArmoredStream(buf, kr)
+		} else {
+			out, key, err = NewSigncryptOpenStream(buf, kr)
+		}
 	default:
 		err = errors.Errorf("invalid data")
 	}
@@ -129,17 +178,9 @@ func NewReader(r io.Reader, kr Keyring) (out io.Reader, key keys.Key, enc Encodi
 
 // NewDecryptStream creates a decrypt stream.
 // If there was a sender, will return a X25519 key ID.
-func NewDecryptStream(r io.Reader, armored bool, kr Keyring) (io.Reader, *keys.X25519PublicKey, error) {
-	s := newSaltpack(kr)
-
-	var info *ksaltpack.MessageKeyInfo
-	var stream io.Reader
-	var err error
-	if armored {
-		info, stream, _, err = ksaltpack.NewDearmor62DecryptStream(encryptVersionValidator, r, s)
-	} else {
-		info, stream, err = ksaltpack.NewDecryptStream(encryptVersionValidator, r, s)
-	}
+func NewDecryptStream(r io.Reader, kr Keyring) (io.Reader, *keys.X25519PublicKey, error) {
+	sp := newSaltpack(kr)
+	info, stream, err := ksaltpack.NewDecryptStream(encryptVersionValidator, r, sp)
 	if err != nil {
 		return nil, nil, convertBoxKeyErr(err)
 	}
@@ -148,6 +189,20 @@ func NewDecryptStream(r io.Reader, armored bool, kr Keyring) (io.Reader, *keys.X
 		return nil, nil, err
 	}
 	return stream, sender, nil
+}
+
+// NewDecryptArmoredStream creates a armored decrypt stream.
+func NewDecryptArmoredStream(r io.Reader, kr Keyring) (io.Reader, *keys.X25519PublicKey, string, error) {
+	sp := newSaltpack(kr)
+	info, stream, brand, err := ksaltpack.NewDearmor62DecryptStream(encryptVersionValidator, r, sp)
+	if err != nil {
+		return nil, nil, "", convertBoxKeyErr(err)
+	}
+	sender, err := x25519SenderKey(info)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	return stream, sender, brand, nil
 }
 
 // isNil checks if a specified object is nil.
