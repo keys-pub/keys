@@ -7,7 +7,7 @@ import (
 	"github.com/keys-pub/keys"
 )
 
-// Encoding for saltpack (armored vs binary, encrypt vs signcrypt).
+// Encoding for saltpack (encrypt, signcrypt, sign).
 type Encoding string
 
 const (
