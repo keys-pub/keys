@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/danieljoos/wincred"
-	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -86,36 +85,31 @@ func (k sys) Exists(id string) (bool, error) {
 	return true, nil
 }
 
-func (k sys) Documents(opt ...docs.Option) ([]*docs.Document, error) {
-	opts := docs.NewOptions(opt...)
-	prefix := opts.Prefix
-
+func (k sys) Items(prefix string) ([]*Item, error) {
 	creds, err := wincred.List()
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]*docs.Document, 0, len(creds))
+	out := make([]*Item, 0, len(creds))
 	for _, cred := range creds {
 		if strings.HasPrefix(cred.TargetName, k.service+"/") {
 			id := cred.TargetName[len(k.service+"/"):]
 			if prefix != "" && !strings.HasPrefix(id, prefix) {
 				continue
 			}
-			doc := &docs.Document{Path: id}
-			if !opts.NoData {
-				b, err := k.Get(id)
-				if err != nil {
-					return nil, err
-				}
-				doc.Data = b
+			item := &Item{ID: id}
+			b, err := k.Get(id)
+			if err != nil {
+				return nil, err
 			}
-			out = append(out, doc)
+			item.Data = b
+			out = append(out, item)
 		}
 	}
 
 	sort.Slice(out, func(i, j int) bool {
-		return out[i].Path < out[j].Path
+		return out[i].ID < out[j].ID
 	})
 	return out, nil
 }

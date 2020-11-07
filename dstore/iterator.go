@@ -1,4 +1,4 @@
-package docs
+package dstore
 
 // Iterator is an iterator for Document's.
 type Iterator interface {

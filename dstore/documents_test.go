@@ -1,21 +1,21 @@
-package docs_test
+package dstore_test
 
 import (
 	"context"
 	"fmt"
 	"log"
 
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 )
 
 func ExampleDocuments_DocumentIterator() {
-	d := docs.NewMem()
+	d := dstore.NewMem()
 
-	if err := d.Set(context.TODO(), docs.Path("tests", 1), docs.NewFields("data", []byte("testdata"))); err != nil {
+	if err := d.Set(context.TODO(), dstore.Path("tests", 1), dstore.Data([]byte("testdata"))); err != nil {
 		log.Fatal(err)
 	}
 
-	iter, err := d.DocumentIterator(context.TODO(), docs.Path("tests"), docs.NoData())
+	iter, err := d.DocumentIterator(context.TODO(), dstore.Path("tests"))
 	if err != nil {
 		log.Fatal(err)
 	}

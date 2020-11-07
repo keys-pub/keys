@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +17,7 @@ func TestRandPassword(t *testing.T) {
 	pass = keys.RandPassword(16)
 	require.Equal(t, 16, len(pass))
 
-	set := docs.NewStringSet()
+	set := dstore.NewStringSet()
 	for i := 0; i < 1000; i++ {
 		check := keys.RandPassword(8)
 		require.Equal(t, 8, len(check))

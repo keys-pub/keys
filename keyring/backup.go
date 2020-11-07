@@ -42,17 +42,17 @@ func backup(file *os.File, kr Keyring, now time.Time) error {
 	gz := gzip.NewWriter(file)
 	tw := tar.NewWriter(gz)
 
-	docs, err := kr.Documents()
+	items, err := kr.Items("")
 	if err != nil {
 		_ = tw.Close()
 		_ = gz.Close()
 		return err
 	}
-	for _, doc := range docs {
-		path := doc.Path
-		b := doc.Data
+	for _, item := range items {
+		id := item.ID
+		b := item.Data
 		header := new(tar.Header)
-		header.Name = path
+		header.Name = id
 		header.Size = int64(len(b))
 		header.Mode = 0600
 		header.ModTime = now
@@ -61,7 +61,7 @@ func backup(file *os.File, kr Keyring, now time.Time) error {
 			_ = gz.Close()
 			return err
 		}
-		if _, err := io.Copy(tw, bytes.NewReader(doc.Data)); err != nil {
+		if _, err := io.Copy(tw, bytes.NewReader(item.Data)); err != nil {
 			_ = tw.Close()
 			_ = gz.Close()
 			return err

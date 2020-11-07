@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -22,7 +22,7 @@ func TestSearchUsers(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -160,13 +160,13 @@ func TestSearchUsers(t *testing.T) {
 	// Check Documents
 	iter, err := ds.DocumentIterator(context.TODO(), "kid")
 	require.NoError(t, err)
-	spew, err := docs.Spew(iter)
+	spew, err := dstore.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, string(testdata(t, "testdata/kid.spew")), spew.String())
 
 	iter, err = ds.DocumentIterator(context.TODO(), "user")
 	require.NoError(t, err)
-	spew, err = docs.Spew(iter)
+	spew, err = dstore.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, string(testdata(t, "testdata/user.spew")), spew.String())
 }
@@ -175,7 +175,7 @@ func TestFind(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	var err error
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -214,7 +214,7 @@ func TestFind(t *testing.T) {
 
 func TestUsersEmpty(t *testing.T) {
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -237,7 +237,7 @@ func TestUsersEmpty(t *testing.T) {
 
 func TestUserValidateName(t *testing.T) {
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -266,7 +266,7 @@ func TestUserValidateName(t *testing.T) {
 
 func TestUserValidateUpdateInvalid(t *testing.T) {
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -316,7 +316,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 
 func TestReddit(t *testing.T) {
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -371,7 +371,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(clock)
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
@@ -442,13 +442,13 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	// Check Documents
 	iter, err := ds.DocumentIterator(context.TODO(), "kid")
 	require.NoError(t, err)
-	spew, err := docs.Spew(iter)
+	spew, err := dstore.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, string(testdata(t, "testdata/kid2.spew")), spew.String())
 
 	iter, err = ds.DocumentIterator(context.TODO(), "user")
 	require.NoError(t, err)
-	spew, err = docs.Spew(iter)
+	spew, err = dstore.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, "", spew.String())
 
@@ -465,7 +465,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 func TestExpired(t *testing.T) {
 	var err error
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 
 	clock := tsutil.NewTestClock()
@@ -590,7 +590,7 @@ func TestNewSigchainUserStatement(t *testing.T) {
 func TestSearch(t *testing.T) {
 	// SetLogger(NewLogger(DebugLevel))
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))

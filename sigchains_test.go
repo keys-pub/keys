@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
 
 func testSigchains(t *testing.T, clock tsutil.Clock) *keys.Sigchains {
-	mem := docs.NewMem()
+	mem := dstore.NewMem()
 	mem.SetClock(clock)
 	scs := keys.NewSigchains(mem)
 	scs.SetClock(clock)

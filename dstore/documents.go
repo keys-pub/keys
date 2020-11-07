@@ -1,4 +1,4 @@
-package docs
+package dstore
 
 import (
 	"context"
@@ -18,9 +18,10 @@ type Documents interface {
 	//   collection1 (INVALID)
 	//   collection1/key1/collection2 (INVALID)
 	//
-	Create(ctx context.Context, path string, fields []Field) error
+	Create(ctx context.Context, path string, values map[string]interface{}) error
 
 	// Set (or create) document at path.
+	// This will overwrite any existing document data.
 	//
 	// Paths can be nested as long as they are even length components.
 	// For example,
@@ -30,7 +31,7 @@ type Documents interface {
 	//   collection1 (INVALID)
 	//   collection1/key1/collection2 (INVALID)
 	//
-	Set(ctx context.Context, path string, fields []Field) error
+	Set(ctx context.Context, path string, values map[string]interface{}, opt ...SetOption) error
 
 	// Get path.
 	// If not found, returns nil.
@@ -58,33 +59,11 @@ type Documents interface {
 	Collections(ctx context.Context, parent string) ([]*Collection, error)
 }
 
-// Field in document.
-type Field struct {
-	Name  string
-	Value interface{}
-}
-
-// NewFields from map.
-func NewFields(mp ...interface{}) []Field {
-	fields := []Field{}
-	if len(mp)%2 != 0 {
-		panic("invalid fields")
-	}
-	for i := 0; i < len(mp); i += 2 {
-		k, v := mp[i], mp[i+1]
-		fields = append(fields, NewField(k.(string), v))
-	}
-	return fields
-}
-
-// NewField ..
-func NewField(name string, v interface{}) Field {
-	return Field{Name: name, Value: v}
-}
-
 // Data as document fields.
-func Data(b []byte) []Field {
-	return NewFields("data", b)
+func Data(b []byte) map[string]interface{} {
+	return map[string]interface{}{
+		"data": b,
+	}
 }
 
 // ErrPathExists is trying to set value that already exists.
@@ -99,4 +78,18 @@ func (e ErrPathExists) Error() string {
 // NewErrPathExists ...
 func NewErrPathExists(path string) ErrPathExists {
 	return ErrPathExists{Path: path}
+}
+
+// ErrNotFound if path not found.
+type ErrNotFound struct {
+	Path string
+}
+
+func (e ErrNotFound) Error() string {
+	return fmt.Sprintf("path not found %s", e.Path)
+}
+
+// NewErrNotFound ...
+func NewErrNotFound(path string) ErrNotFound {
+	return ErrNotFound{Path: path}
 }

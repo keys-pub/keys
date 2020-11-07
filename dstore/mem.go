@@ -1,4 +1,4 @@
-package docs
+package dstore
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/keys-pub/keys/docs/events"
+	"github.com/keys-pub/keys/dstore/events"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
@@ -47,18 +47,19 @@ func (m *Mem) SetClock(clock tsutil.Clock) {
 	m.clock = clock
 }
 
-// Create at path.
+// Create document at path.
 // ErrPathExists if entry already exists.
-func (m *Mem) Create(ctx context.Context, path string, fields []Field) error {
-	return m.set(ctx, path, fields, true)
+func (m *Mem) Create(ctx context.Context, path string, values map[string]interface{}) error {
+	return m.set(ctx, path, values, true, false)
 }
 
-// Set data at path.
-func (m *Mem) Set(ctx context.Context, path string, fields []Field) error {
-	return m.set(ctx, path, fields, false)
+// Set document at path.
+func (m *Mem) Set(ctx context.Context, path string, values map[string]interface{}, opt ...SetOption) error {
+	opts := NewSetOptions(opt...)
+	return m.set(ctx, path, values, false, opts.MergeAll)
 }
 
-func (m *Mem) set(ctx context.Context, path string, fields []Field, create bool) error {
+func (m *Mem) set(ctx context.Context, path string, values map[string]interface{}, create bool, mergeAll bool) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -79,14 +80,18 @@ func (m *Mem) set(ctx context.Context, path string, fields []Field, create bool)
 
 	now := m.Now()
 	if doc == nil {
-		doc = NewDocument(path)
+		doc = NewDocument(path).With(values)
 		doc.CreatedAt = now
 		doc.UpdatedAt = now
 	} else {
+		if mergeAll {
+			for k, v := range values {
+				doc.Set(k, v)
+			}
+		} else {
+			doc.SetAll(values)
+		}
 		doc.UpdatedAt = now
-	}
-	for _, field := range fields {
-		doc.SetValue(field.Name, field.Value)
 	}
 
 	if create {
@@ -100,7 +105,29 @@ func (m *Mem) set(ctx context.Context, path string, fields []Field, create bool)
 	return nil
 }
 
-// Get data at path.
+// Update document.
+func (m *Mem) Update(ctx context.Context, path string, values map[string]interface{}) error {
+	m.Lock()
+	defer m.Unlock()
+
+	path = Path(path)
+	if path == "/" {
+		return errors.Errorf("invalid path")
+	}
+	if len(PathComponents(path))%2 != 0 {
+		return errors.Errorf("invalid path %s", path)
+	}
+	doc, ok := m.values[path]
+	if !ok {
+		return NewErrNotFound(path)
+	}
+	for k, v := range values {
+		doc.Set(k, v)
+	}
+	return nil
+}
+
+// Get document at path.
 func (m *Mem) Get(ctx context.Context, path string) (*Document, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -188,6 +215,9 @@ func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Docume
 		doc := m.document(p)
 		if doc == nil {
 			return nil, errors.Errorf("missing document in List")
+		}
+		if opts.NoData {
+			doc = &Document{Path: doc.Path, CreatedAt: doc.CreatedAt, UpdatedAt: doc.UpdatedAt}
 		}
 		docs = append(docs, doc)
 	}
@@ -299,7 +329,7 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 			return nil, err
 		}
 		path := Path(path, "log", id)
-		if err := m.Create(ctx, path, NewFields("data", b)); err != nil {
+		if err := m.Create(ctx, path, Data(b)); err != nil {
 			return nil, err
 		}
 		out = append(out, event)
@@ -341,7 +371,7 @@ func (m *Mem) Events(ctx context.Context, path string, opt ...events.Option) (ev
 			return nil, err
 		}
 		if doc == nil {
-			return nil, errors.Errorf("path not found %s", p)
+			return nil, NewErrNotFound(p)
 		}
 		var event events.Event
 		if err := json.Unmarshal(doc.Bytes("data"), &event); err != nil {

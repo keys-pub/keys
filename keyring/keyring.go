@@ -2,7 +2,6 @@
 package keyring
 
 import (
-	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -12,6 +11,12 @@ func NewSystem(service string) (Keyring, error) {
 		return nil, errors.Errorf("invalid service")
 	}
 	return newSystem(service), nil
+}
+
+// Item ..
+type Item struct {
+	ID   string
+	Data []byte
 }
 
 // Keyring is the interface used to store data.
@@ -32,18 +37,18 @@ type Keyring interface {
 	// Reset removes all data.
 	Reset() error
 
-	Documents(opt ...docs.Option) ([]*docs.Document, error)
+	Items(prefix string) ([]*Item, error)
 }
 
-// Paths from Keyring.
-func Paths(kr Keyring, prefix string) ([]string, error) {
-	docs, err := kr.Documents(docs.Prefix(prefix), docs.NoData())
+// IDs from Keyring.
+func IDs(kr Keyring, prefix string) ([]string, error) {
+	items, err := kr.Items(prefix)
 	if err != nil {
 		return nil, err
 	}
 	paths := []string{}
-	for _, doc := range docs {
-		paths = append(paths, doc.Path)
+	for _, item := range items {
+		paths = append(paths, item.ID)
 	}
 	return paths, nil
 }
@@ -51,12 +56,12 @@ func Paths(kr Keyring, prefix string) ([]string, error) {
 var _ = reset
 
 func reset(kr Keyring) error {
-	paths, err := Paths(kr, "")
+	ids, err := IDs(kr, "")
 	if err != nil {
 		return err
 	}
-	for _, p := range paths {
-		if _, err := kr.Delete(p); err != nil {
+	for _, id := range ids {
+		if _, err := kr.Delete(id); err != nil {
 			return err
 		}
 	}
