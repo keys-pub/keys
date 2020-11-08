@@ -98,7 +98,7 @@ func (k sys) Items(prefix string) ([]*Item, error) {
 		if prefix != "" && !strings.HasPrefix(id, prefix) {
 			continue
 		}
-		item := &docs.Item{ID: id}
+		item := &Item{ID: id}
 		// TODO: Iterator
 		b, err := k.Get(id)
 		if err != nil {
