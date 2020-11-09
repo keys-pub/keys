@@ -1,4 +1,4 @@
-package docs
+package dstore
 
 // Options ...
 type Options struct {
@@ -49,5 +49,29 @@ func Limit(limit int) Option {
 func NoData() Option {
 	return func(o *Options) {
 		o.NoData = true
+	}
+}
+
+// SetOptions ...
+type SetOptions struct {
+	MergeAll bool
+}
+
+// SetOption ...
+type SetOption func(*SetOptions)
+
+// NewSetOptions parses Options.
+func NewSetOptions(opts ...SetOption) SetOptions {
+	var options SetOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
+// MergeAll merges values.
+func MergeAll() SetOption {
+	return func(o *SetOptions) {
+		o.MergeAll = true
 	}
 }

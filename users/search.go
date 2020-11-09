@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/user"
 )
 
@@ -27,7 +27,7 @@ type SearchResult struct {
 
 func (u *Users) searchUsers(ctx context.Context, query string, limit int) ([]*SearchResult, error) {
 	logger.Infof("Searching users %q", query)
-	iter, err := u.ds.DocumentIterator(ctx, indexSearch, docs.Prefix(query))
+	iter, err := u.ds.DocumentIterator(ctx, indexSearch, dstore.Prefix(query))
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (u *Users) searchUsers(ctx context.Context, query string, limit int) ([]*Se
 			break
 		}
 		var keyDoc keyDocument
-		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+		if err := json.Unmarshal(doc.Data(), &keyDoc); err != nil {
 			return nil, err
 		}
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -19,7 +19,7 @@ func TestResultTwitter(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
@@ -114,7 +114,7 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 

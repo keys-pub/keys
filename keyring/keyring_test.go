@@ -4,7 +4,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/keys-pub/keys/docs"
 	"github.com/keys-pub/keys/keyring"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +29,7 @@ func TestKeyring(t *testing.T) {
 }
 
 func testKeyring(t *testing.T, kr keyring.Keyring) {
-	paths, err := keyring.Paths(kr, "")
+	paths, err := keyring.IDs(kr, "")
 	require.NoError(t, err)
 	require.Equal(t, 0, len(paths))
 
@@ -61,12 +60,12 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("val1.new"), out)
 
-	docs, err := kr.Documents()
+	items, err := kr.Items("")
 	require.NoError(t, err)
-	require.Equal(t, 1, len(docs))
-	require.Equal(t, []byte("val1.new"), docs[0].Data)
+	require.Equal(t, 1, len(items))
+	require.Equal(t, []byte("val1.new"), items[0].Data)
 
-	paths, err = keyring.Paths(kr, "")
+	paths, err = keyring.IDs(kr, "")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(paths))
 	require.Equal(t, paths[0], "key1")
@@ -87,9 +86,9 @@ func testKeyring(t *testing.T, kr keyring.Keyring) {
 	require.NoError(t, err)
 	require.False(t, ok)
 
-	docs, err = kr.Documents()
+	items, err = kr.Items("")
 	require.NoError(t, err)
-	require.Equal(t, 0, len(docs))
+	require.Equal(t, 0, len(items))
 
 	// Test paths
 	err = kr.Set("/collection/key1", []byte("val1"))
@@ -146,21 +145,15 @@ func testDocuments(t *testing.T, kr keyring.Keyring) {
 	err = kr.Set("bkey1", []byte("bval1"))
 	require.NoError(t, err)
 
-	out, err := kr.Documents(docs.NoData())
+	out, err := kr.Items("")
 	require.NoError(t, err)
 	require.Equal(t, 3, len(out))
-	require.Equal(t, "akey1", out[0].Path)
-	require.Nil(t, out[0].Data)
-
-	out, err = kr.Documents()
-	require.NoError(t, err)
-	require.Equal(t, 3, len(out))
-	require.Equal(t, "akey1", out[0].Path)
+	require.Equal(t, "akey1", out[0].ID)
 	require.Equal(t, []byte("aval1"), out[0].Data)
 
-	out, err = kr.Documents(docs.Prefix("b"))
+	out, err = kr.Items("b")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(out))
-	require.Equal(t, "bkey1", out[0].Path)
+	require.Equal(t, "bkey1", out[0].ID)
 	require.Equal(t, []byte("bval1"), out[0].Data)
 }

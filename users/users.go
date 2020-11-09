@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -16,7 +16,7 @@ import (
 
 // Users keeps track of sigchain user links.
 type Users struct {
-	ds    docs.Documents
+	ds    dstore.Documents
 	scs   *keys.Sigchains
 	req   request.Requestor
 	clock tsutil.Clock
@@ -28,7 +28,7 @@ type keyDocument struct {
 }
 
 // New creates Users lookup.
-func New(ds docs.Documents, scs *keys.Sigchains, opt ...Option) *Users {
+func New(ds dstore.Documents, scs *keys.Sigchains, opt ...Option) *Users {
 	opts := newOptions(opt...)
 	req := opts.Req
 	if req == nil {
@@ -161,7 +161,7 @@ func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument
 	if val == "" {
 		return nil, errors.Errorf("empty value")
 	}
-	path := docs.Path(index, val)
+	path := dstore.Path(index, val)
 	doc, err := u.ds.Get(ctx, path)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument
 		return nil, nil
 	}
 	var keyDoc keyDocument
-	if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+	if err := json.Unmarshal(doc.Data(), &keyDoc); err != nil {
 		return nil, err
 	}
 	return &keyDoc, nil
@@ -189,17 +189,17 @@ func (u *Users) result(ctx context.Context, kid keys.ID) (*user.Result, error) {
 
 func (u *Users) indexUser(ctx context.Context, user *user.User, data []byte, skipSearch bool) error {
 	logger.Infof("Indexing user %s %s", user.ID, user.KID)
-	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
-	if err := u.ds.Set(ctx, userPath, data); err != nil {
+	userPath := dstore.Path(indexUser, indexUserKey(user.Service, user.Name))
+	if err := u.ds.Set(ctx, userPath, dstore.Data(data)); err != nil {
 		return err
 	}
-	servicePath := docs.Path(indexService, indexServiceKey(user.Service, user.Name))
-	if err := u.ds.Set(ctx, servicePath, data); err != nil {
+	servicePath := dstore.Path(indexService, indexServiceKey(user.Service, user.Name))
+	if err := u.ds.Set(ctx, servicePath, dstore.Data(data)); err != nil {
 		return err
 	}
 	if !skipSearch {
-		searchPath := docs.Path(indexSearch, indexUserKey(user.Service, user.Name))
-		if err := u.ds.Set(ctx, searchPath, data); err != nil {
+		searchPath := dstore.Path(indexSearch, indexUserKey(user.Service, user.Name))
+		if err := u.ds.Set(ctx, searchPath, dstore.Data(data)); err != nil {
 			return err
 		}
 	}
@@ -209,15 +209,15 @@ func (u *Users) indexUser(ctx context.Context, user *user.User, data []byte, ski
 func (u *Users) unindexUser(ctx context.Context, user *user.User) error {
 	logger.Infof("Removing user %s: %s", user.KID, indexUserKey(user.Service, user.Name))
 
-	userPath := docs.Path(indexUser, indexUserKey(user.Service, user.Name))
+	userPath := dstore.Path(indexUser, indexUserKey(user.Service, user.Name))
 	if _, err := u.ds.Delete(ctx, userPath); err != nil {
 		return err
 	}
-	servicePath := docs.Path(indexService, indexServiceKey(user.Service, user.Name))
+	servicePath := dstore.Path(indexService, indexServiceKey(user.Service, user.Name))
 	if _, err := u.ds.Delete(ctx, servicePath); err != nil {
 		return err
 	}
-	searchPath := docs.Path(indexSearch, indexUserKey(user.Service, user.Name))
+	searchPath := dstore.Path(indexSearch, indexUserKey(user.Service, user.Name))
 	if _, err := u.ds.Delete(ctx, searchPath); err != nil {
 		return err
 	}
@@ -267,9 +267,9 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 	logger.Debugf("Data to index: %s", string(data))
 
 	// Index for kid
-	kidPath := docs.Path(indexKID, keyDoc.KID.String())
+	kidPath := dstore.Path(indexKID, keyDoc.KID.String())
 	logger.Infof("Indexing kid %s", kidPath)
-	if err := u.ds.Set(ctx, kidPath, data); err != nil {
+	if err := u.ds.Set(ctx, kidPath, dstore.Data(data)); err != nil {
 		return err
 	}
 
@@ -354,7 +354,7 @@ func (u *Users) Status(ctx context.Context, st user.Status) ([]keys.ID, error) {
 			break
 		}
 		var keyDoc keyDocument
-		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+		if err := json.Unmarshal(doc.Data(), &keyDoc); err != nil {
 			return nil, err
 		}
 		if keyDoc.Result != nil {
@@ -384,7 +384,7 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 			break
 		}
 		var keyDoc keyDocument
-		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+		if err := json.Unmarshal(doc.Data(), &keyDoc); err != nil {
 			return nil, err
 		}
 		if keyDoc.Result != nil {
@@ -447,7 +447,7 @@ func (u *Users) KIDs(ctx context.Context) ([]keys.ID, error) {
 
 		// We could parse the path for the kid instead of unmarshalling.
 		var keyDoc keyDocument
-		if err := json.Unmarshal(doc.Data, &keyDoc); err != nil {
+		if err := json.Unmarshal(doc.Data(), &keyDoc); err != nil {
 			return nil, err
 		}
 		if keyDoc.Result != nil {

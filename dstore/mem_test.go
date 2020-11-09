@@ -1,4 +1,4 @@
-package docs_test
+package dstore_test
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 )
@@ -22,34 +22,34 @@ func TestClock(t *testing.T) {
 }
 
 func TestMem(t *testing.T) {
-	mem := docs.NewMem()
+	mem := dstore.NewMem()
 	mem.SetClock(tsutil.NewTestClock())
 	testDocuments(t, mem)
 }
 
 func TestMemListOptions(t *testing.T) {
-	mem := docs.NewMem()
+	mem := dstore.NewMem()
 	mem.SetClock(tsutil.NewTestClock())
 	testDocumentsListOptions(t, mem)
 }
 
 func TestMemMetadata(t *testing.T) {
-	mem := docs.NewMem()
+	mem := dstore.NewMem()
 	mem.SetClock(tsutil.NewTestClock())
 	testMetadata(t, mem)
 }
 
-func testDocuments(t *testing.T, ds docs.Documents) {
+func testDocuments(t *testing.T, ds dstore.Documents) {
 	ctx := context.TODO()
 
 	for i := 10; i <= 30; i = i + 10 {
-		p := docs.Path("test1", fmt.Sprintf("key%d", i))
-		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
+		p := dstore.Path("test1", fmt.Sprintf("key%d", i))
+		err := ds.Create(ctx, p, dstore.Data([]byte(fmt.Sprintf("value%d", i))))
 		require.NoError(t, err)
 	}
 	for i := 10; i <= 30; i = i + 10 {
-		p := docs.Path("test0", fmt.Sprintf("key%d", i))
-		err := ds.Create(ctx, p, []byte(fmt.Sprintf("value%d", i)))
+		p := dstore.Path("test0", fmt.Sprintf("key%d", i))
+		err := ds.Create(ctx, p, dstore.Data([]byte(fmt.Sprintf("value%d", i))))
 		require.NoError(t, err)
 	}
 
@@ -58,7 +58,7 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	doc, err := iter.Next()
 	require.NoError(t, err)
 	require.Equal(t, "/test0/key10", doc.Path)
-	require.Equal(t, "value10", string(doc.Data))
+	require.Equal(t, "value10", string(doc.Data()))
 	iter.Release()
 
 	ok, err := ds.Exists(ctx, "/test0/key10")
@@ -67,18 +67,18 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	doc, err = ds.Get(ctx, "/test0/key10")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, "value10", string(doc.Data))
+	require.Equal(t, "value10", string(doc.Data()))
 
-	err = ds.Create(ctx, "/test0/key10", []byte{})
+	err = ds.Create(ctx, "/test0/key10", dstore.Data([]byte{}))
 	require.EqualError(t, err, "path already exists /test0/key10")
-	err = ds.Set(ctx, "/test0/key10", []byte("overwrite"))
+	err = ds.Set(ctx, "/test0/key10", dstore.Data([]byte("overwrite")))
 	require.NoError(t, err)
-	err = ds.Create(ctx, "/test0/key10", []byte("overwrite"))
+	err = ds.Create(ctx, "/test0/key10", dstore.Data([]byte("overwrite")))
 	require.EqualError(t, err, "path already exists /test0/key10")
 	doc, err = ds.Get(ctx, "/test0/key10")
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, "overwrite", string(doc.Data))
+	require.Equal(t, "overwrite", string(doc.Data()))
 
 	out, err := ds.GetAll(ctx, []string{"/test0/key10", "/test0/key20"})
 	require.NoError(t, err)
@@ -104,20 +104,20 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	var b bytes.Buffer
 	iter, err = ds.DocumentIterator(context.TODO(), "test0")
 	require.NoError(t, err)
-	err = docs.SpewOut(iter, &b)
+	err = dstore.SpewOut(iter, &b)
 	require.NoError(t, err)
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
 	iter, err = ds.DocumentIterator(context.TODO(), "test0")
 	require.NoError(t, err)
-	spew, err := docs.Spew(iter)
+	spew, err := dstore.Spew(iter)
 	require.NoError(t, err)
 	require.Equal(t, b.String(), spew.String())
 	require.Equal(t, expected, spew.String())
 	iter.Release()
 
-	iter, err = ds.DocumentIterator(context.TODO(), "test0", docs.Prefix("key1"), docs.NoData())
+	iter, err = ds.DocumentIterator(context.TODO(), "test0", dstore.Prefix("key1"), dstore.NoData())
 	require.NoError(t, err)
 	doc, err = iter.Next()
 	require.NoError(t, err)
@@ -127,9 +127,9 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 	require.Nil(t, doc)
 	iter.Release()
 
-	err = ds.Create(ctx, "", []byte{})
+	err = ds.Create(ctx, "", dstore.Data([]byte{}))
 	require.EqualError(t, err, "invalid path")
-	err = ds.Set(ctx, "", []byte{})
+	err = ds.Set(ctx, "", dstore.Data([]byte{}))
 	require.EqualError(t, err, "invalid path")
 
 	cols, err := ds.Collections(ctx, "")
@@ -142,11 +142,11 @@ func testDocuments(t *testing.T, ds docs.Documents) {
 }
 
 func TestDocumentsPath(t *testing.T) {
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	ds.SetClock(tsutil.NewTestClock())
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "test/1", []byte("value1"))
+	err := ds.Create(ctx, "test/1", dstore.Data([]byte("value1")))
 	require.NoError(t, err)
 
 	doc, err := ds.Get(ctx, "/test/1")
@@ -160,47 +160,47 @@ func TestDocumentsPath(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	err = ds.Create(ctx, docs.Path("test", "key2", "col2", "key3"), []byte("value3"))
+	err = ds.Create(ctx, dstore.Path("test", "key2", "col2", "key3"), dstore.Data([]byte("value3")))
 	require.NoError(t, err)
 
-	doc, err = ds.Get(ctx, docs.Path("test", "key2", "col2", "key3"))
+	doc, err = ds.Get(ctx, dstore.Path("test", "key2", "col2", "key3"))
 	require.NoError(t, err)
 	require.NotNil(t, doc)
-	require.Equal(t, []byte("value3"), doc.Data)
+	require.Equal(t, []byte("value3"), doc.Data())
 
 	cols, err := ds.Collections(ctx, "")
 	require.NoError(t, err)
 	require.Equal(t, "/test", cols[0].Path)
 }
 
-func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
+func testDocumentsListOptions(t *testing.T, ds dstore.Documents) {
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "/test/1", []byte("val1"))
+	err := ds.Create(ctx, "/test/1", dstore.Data([]byte("val1")))
 	require.NoError(t, err)
-	err = ds.Create(ctx, "/test/2", []byte("val2"))
+	err = ds.Create(ctx, "/test/2", dstore.Data([]byte("val2")))
 	require.NoError(t, err)
-	err = ds.Create(ctx, "/test/3", []byte("val3"))
+	err = ds.Create(ctx, "/test/3", dstore.Data([]byte("val3")))
 	require.NoError(t, err)
 
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("a", fmt.Sprintf("e%d", i)), []byte("🤓"))
+		err := ds.Create(ctx, dstore.Path("a", fmt.Sprintf("e%d", i)), dstore.Data([]byte("🤓")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("ea%d", i)), []byte("😎"))
+		err := ds.Create(ctx, dstore.Path("b", fmt.Sprintf("ea%d", i)), dstore.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("eb%d", i)), []byte("😎"))
+		err := ds.Create(ctx, dstore.Path("b", fmt.Sprintf("eb%d", i)), dstore.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("b", fmt.Sprintf("ec%d", i)), []byte("😎"))
+		err := ds.Create(ctx, dstore.Path("b", fmt.Sprintf("ec%d", i)), dstore.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 	for i := 1; i < 3; i++ {
-		err := ds.Create(ctx, docs.Path("c", fmt.Sprintf("e%d", i)), []byte("😎"))
+		err := ds.Create(ctx, dstore.Path("c", fmt.Sprintf("e%d", i)), dstore.Data([]byte("😎")))
 		require.NoError(t, err)
 	}
 
@@ -220,7 +220,7 @@ func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
 
 	iter, err = ds.DocumentIterator(context.TODO(), "test")
 	require.NoError(t, err)
-	b, err := docs.Spew(iter)
+	b, err := dstore.Spew(iter)
 	require.NoError(t, err)
 	expected := `/test/1 val1
 /test/2 val2
@@ -229,7 +229,7 @@ func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
 	require.Equal(t, expected, b.String())
 	iter.Release()
 
-	iter, err = ds.DocumentIterator(ctx, "b", docs.Prefix("eb"))
+	iter, err = ds.DocumentIterator(ctx, "b", dstore.Prefix("eb"))
 	require.NoError(t, err)
 	paths = []string{}
 	for {
@@ -244,10 +244,10 @@ func testDocumentsListOptions(t *testing.T, ds docs.Documents) {
 	require.Equal(t, []string{"/b/eb1", "/b/eb2"}, paths)
 }
 
-func testMetadata(t *testing.T, ds docs.Documents) {
+func testMetadata(t *testing.T, ds dstore.Documents) {
 	ctx := context.TODO()
 
-	err := ds.Create(ctx, "/test/key1", []byte("value1"))
+	err := ds.Create(ctx, "/test/key1", dstore.Data([]byte("value1")))
 	require.NoError(t, err)
 
 	doc, err := ds.Get(ctx, "/test/key1")
@@ -255,7 +255,7 @@ func testMetadata(t *testing.T, ds docs.Documents) {
 	require.NotNil(t, doc)
 	require.Equal(t, int64(1234567890001), tsutil.Millis(doc.CreatedAt))
 
-	err = ds.Set(ctx, "/test/key1", []byte("value1b"))
+	err = ds.Set(ctx, "/test/key1", dstore.Data([]byte("value1b")))
 	require.NoError(t, err)
 
 	doc, err = ds.Get(ctx, "/test/key1")
@@ -266,11 +266,11 @@ func testMetadata(t *testing.T, ds docs.Documents) {
 }
 
 func TestDeleteAll(t *testing.T) {
-	mem := docs.NewMem()
+	mem := dstore.NewMem()
 
-	err := mem.Set(context.TODO(), "/test/key1", []byte("val1"))
+	err := mem.Set(context.TODO(), "/test/key1", dstore.Data([]byte("val1")))
 	require.NoError(t, err)
-	err = mem.Set(context.TODO(), "/test/key2", []byte("val2"))
+	err = mem.Set(context.TODO(), "/test/key2", dstore.Data([]byte("val2")))
 	require.NoError(t, err)
 
 	err = mem.DeleteAll(context.TODO(), []string{"/test/key1", "/test/key2", "/test/key3"})
@@ -282,4 +282,34 @@ func TestDeleteAll(t *testing.T) {
 	doc, err = mem.Get(context.TODO(), "/test/key2")
 	require.NoError(t, err)
 	require.Nil(t, doc)
+}
+
+func testCollection() string {
+	return "test"
+}
+
+func TestUpdate(t *testing.T) {
+	ds := dstore.NewMem()
+
+	ctx := context.TODO()
+	collection := testCollection()
+
+	err := ds.Create(ctx, dstore.Path(collection, "key1"), dstore.Data([]byte("val1")))
+	require.NoError(t, err)
+
+	err = ds.Set(ctx, dstore.Path(collection, "key1"), map[string]interface{}{"index": 1, "info": "testinfo"}, dstore.MergeAll())
+	require.NoError(t, err)
+
+	doc, err := ds.Get(ctx, dstore.Path(collection, "key1"))
+	require.NoError(t, err)
+	require.NotNil(t, doc)
+
+	b := doc.Bytes("data")
+	require.Equal(t, []byte("val1"), b)
+
+	index, _ := doc.Int("index")
+	require.Equal(t, 1, index)
+
+	info, _ := doc.String("info")
+	require.Equal(t, "testinfo", info)
 }

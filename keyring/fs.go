@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -108,16 +107,13 @@ func pathExists(id string) (bool, error) {
 	}
 }
 
-func (k fs) Documents(opt ...docs.Option) ([]*docs.Document, error) {
-	opts := docs.NewOptions(opt...)
-	prefix := opts.Prefix
-
+func (k fs) Items(prefix string) ([]*Item, error) {
 	exists, err := pathExists(k.dir)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return []*docs.Document{}, nil
+		return []*Item{}, nil
 	}
 
 	files, err := ioutil.ReadDir(k.dir)
@@ -125,20 +121,18 @@ func (k fs) Documents(opt ...docs.Option) ([]*docs.Document, error) {
 		return nil, err
 	}
 
-	out := make([]*docs.Document, 0, len(files))
+	out := make([]*Item, 0, len(files))
 	for _, f := range files {
 		name := f.Name()
 		if strings.HasPrefix(name, prefix) {
 			// TODO: Iterator
-			doc := &docs.Document{Path: name}
-			if !opts.NoData {
-				b, err := ioutil.ReadFile(filepath.Join(k.dir, name)) // #nosec
-				if err != nil {
-					return nil, err
-				}
-				doc.Data = b
+			item := &Item{ID: name}
+			b, err := ioutil.ReadFile(filepath.Join(k.dir, name)) // #nosec
+			if err != nil {
+				return nil, err
 			}
-			out = append(out, doc)
+			item.Data = b
+			out = append(out, item)
 		}
 	}
 	// sort.Slice(docs, func(i, j int) bool {

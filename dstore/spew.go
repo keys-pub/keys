@@ -1,4 +1,4 @@
-package docs
+package dstore
 
 import (
 	"bytes"
@@ -28,18 +28,19 @@ func SpewOut(iter Iterator, out io.Writer) error {
 		if doc == nil {
 			break
 		}
-		if !utf8.Valid(doc.Data) {
+		data := doc.Bytes("data")
+		if !utf8.Valid(data) {
 			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", doc.Path))); err != nil {
 				return err
 			}
-			if _, err := out.Write([]byte(spew.Sdump(doc.Data))); err != nil {
+			if _, err := out.Write([]byte(spew.Sdump(data))); err != nil {
 				return err
 			}
 		} else {
 			if _, err := out.Write([]byte(fmt.Sprintf("%s ", doc.Path))); err != nil {
 				return err
 			}
-			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", doc.Data))); err != nil {
+			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", data))); err != nil {
 				return err
 			}
 		}

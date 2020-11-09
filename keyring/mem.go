@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/keys-pub/keys/docs"
 	"github.com/pkg/errors"
 )
 
@@ -65,21 +64,16 @@ func (k *mem) Delete(id string) (bool, error) {
 	return false, nil
 }
 
-func (k *mem) Documents(opt ...docs.Option) ([]*docs.Document, error) {
-	opts := docs.NewOptions(opt...)
-	prefix := opts.Prefix
-	out := make([]*docs.Document, 0, len(k.items))
-	for path, b := range k.items {
-		if strings.HasPrefix(path, prefix) {
-			doc := &docs.Document{Path: path}
-			if !opts.NoData {
-				doc.Data = b
-			}
-			out = append(out, doc)
+func (k *mem) Items(prefix string) ([]*Item, error) {
+	out := make([]*Item, 0, len(k.items))
+	for id, b := range k.items {
+		if strings.HasPrefix(id, prefix) {
+			item := &Item{ID: id, Data: b}
+			out = append(out, item)
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
-		return out[i].Path < out[j].Path
+		return out[i].ID < out[j].ID
 	})
 	return out, nil
 }

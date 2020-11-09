@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -34,7 +34,7 @@ func TestCheckNoUsers(t *testing.T) {
 
 	req := request.NewMockRequestor()
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
@@ -51,7 +51,7 @@ func TestCheckNoUsers(t *testing.T) {
 func TestCheckFailure(t *testing.T) {
 	req := request.NewMockRequestor()
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
@@ -88,7 +88,7 @@ func TestSigchainUsersUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
@@ -107,7 +107,7 @@ func TestSigchainUsersUpdate(t *testing.T) {
 func TestSigchainRevokeUpdate(t *testing.T) {
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	clock := tsutil.NewTestClock()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	req := request.NewMockRequestor()
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
@@ -169,7 +169,7 @@ func TestCheckForExisting(t *testing.T) {
 
 	clock := tsutil.NewTestClock()
 	req := request.NewMockRequestor()
-	ds := docs.NewMem()
+	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 

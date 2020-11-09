@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/keys-pub/keys/docs"
-	"github.com/keys-pub/keys/docs/events"
+	"github.com/keys-pub/keys/dstore"
+	"github.com/keys-pub/keys/dstore/events"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v4"
@@ -18,12 +18,12 @@ func TestEvents(t *testing.T) {
 	var err error
 
 	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
-	eds := docs.NewMem()
+	eds := dstore.NewMem()
 	clock := tsutil.NewTestClock()
 	eds.SetClock(clock)
 
 	ctx := context.TODO()
-	path := docs.Path("test", "eds")
+	path := dstore.Path("test", "eds")
 
 	length := 40
 	values := [][]byte{}

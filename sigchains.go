@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/keys-pub/keys/docs"
+	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
 
 // Sigchains stores sigchains.
 type Sigchains struct {
-	ds    docs.Documents
+	ds    dstore.Documents
 	clock tsutil.Clock
 }
 
 // NewSigchains creates a Sigchains from Documents.
-func NewSigchains(ds docs.Documents) *Sigchains {
+func NewSigchains(ds dstore.Documents) *Sigchains {
 	return &Sigchains{
 		ds:    ds,
 		clock: tsutil.NewClock(),
@@ -31,7 +31,7 @@ func (s *Sigchains) SetClock(clock tsutil.Clock) {
 
 // KIDs returns all keys.
 func (s *Sigchains) KIDs() ([]ID, error) {
-	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.NoData())
+	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", dstore.NoData())
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *Sigchains) KIDs() ([]ID, error) {
 		if doc == nil {
 			break
 		}
-		pc := docs.PathLast(doc.Path)
+		pc := dstore.PathLast(doc.Path)
 		str := strings.Split(pc, "-")[0]
 		id, err := ParseID(str)
 		if err != nil {
@@ -69,7 +69,7 @@ func (s *Sigchains) Save(sc *Sigchain) error {
 		if st.Seq <= 0 {
 			return errors.Errorf("statement sequence missing")
 		}
-		if err := s.ds.Set(context.TODO(), docs.Path("sigchain", StatementID(st.KID, st.Seq)), b); err != nil {
+		if err := s.ds.Set(context.TODO(), dstore.Path("sigchain", StatementID(st.KID, st.Seq)), dstore.Data(b)); err != nil {
 			return err
 		}
 	}
@@ -79,9 +79,9 @@ func (s *Sigchains) Save(sc *Sigchain) error {
 	return nil
 }
 
-func statementFromDocument(doc *docs.Document) (*Statement, error) {
+func statementFromDocument(doc *dstore.Document) (*Statement, error) {
 	var st Statement
-	if err := json.Unmarshal(doc.Data, &st); err != nil {
+	if err := json.Unmarshal(doc.Data(), &st); err != nil {
 		return nil, err
 	}
 	return &st, nil
@@ -90,7 +90,7 @@ func statementFromDocument(doc *docs.Document) (*Statement, error) {
 // Sigchain returns sigchain for key.
 func (s *Sigchains) Sigchain(kid ID) (*Sigchain, error) {
 	logger.Debugf("Loading sigchain %s", kid)
-	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.Prefix(kid.String()))
+	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", dstore.Prefix(kid.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *Sigchains) Sigchain(kid ID) (*Sigchain, error) {
 }
 
 func (s *Sigchains) sigchainPaths(kid ID) ([]string, error) {
-	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", docs.Prefix(kid.String()), docs.NoData())
+	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", dstore.Prefix(kid.String()), dstore.NoData())
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (s *Sigchains) Delete(kid ID) (bool, error) {
 
 // Exists returns true if sigchain exists.
 func (s *Sigchains) Exists(kid ID) (bool, error) {
-	return s.ds.Exists(context.TODO(), docs.Path("sigchain", StatementID(kid, 1)))
+	return s.ds.Exists(context.TODO(), dstore.Path("sigchain", StatementID(kid, 1)))
 }
 
 // indexRKL is collection for reverse key lookups.
@@ -168,7 +168,7 @@ const indexRKL = "rkl"
 
 // Lookup key identifier.
 func (s *Sigchains) Lookup(kid ID) (ID, error) {
-	path := docs.Path(indexRKL, kid.String())
+	path := dstore.Path(indexRKL, kid.String())
 	doc, err := s.ds.Get(context.TODO(), path)
 	if err != nil {
 		return "", err
@@ -176,7 +176,7 @@ func (s *Sigchains) Lookup(kid ID) (ID, error) {
 	if doc == nil {
 		return "", nil
 	}
-	rkid, err := ParseID(string(doc.Data))
+	rkid, err := ParseID(string(doc.Data()))
 	if err != nil {
 		return "", err
 	}
@@ -190,8 +190,9 @@ func (s *Sigchains) Index(key Key) error {
 		if err != nil {
 			return err
 		}
-		rklPath := docs.Path(indexRKL, rk.ID())
-		if err := s.ds.Set(context.TODO(), rklPath, []byte(key.ID().String())); err != nil {
+		rklPath := dstore.Path(indexRKL, rk.ID())
+		// TODO: Store this as a string not as data.
+		if err := s.ds.Set(context.TODO(), rklPath, dstore.Data([]byte(key.ID().String()))); err != nil {
 			return err
 		}
 	}

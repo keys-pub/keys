@@ -1,4 +1,4 @@
-package docs
+package dstore
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 // Documents describes a Document store.
 type Documents interface {
-	// Create data at path.
+	// Create document at path.
 	// ErrPathExists if path already exists.
 	//
 	// Paths can be nested as long as they are even length components.
@@ -18,9 +18,10 @@ type Documents interface {
 	//   collection1 (INVALID)
 	//   collection1/key1/collection2 (INVALID)
 	//
-	Create(ctx context.Context, path string, b []byte) error
+	Create(ctx context.Context, path string, values map[string]interface{}) error
 
-	// Create or set data at path.
+	// Set (or create) document at path.
+	// This will overwrite any existing document data.
 	//
 	// Paths can be nested as long as they are even length components.
 	// For example,
@@ -30,7 +31,7 @@ type Documents interface {
 	//   collection1 (INVALID)
 	//   collection1/key1/collection2 (INVALID)
 	//
-	Set(ctx context.Context, path string, b []byte) error
+	Set(ctx context.Context, path string, values map[string]interface{}, opt ...SetOption) error
 
 	// Get path.
 	// If not found, returns nil.
@@ -58,6 +59,13 @@ type Documents interface {
 	Collections(ctx context.Context, parent string) ([]*Collection, error)
 }
 
+// Data as document fields.
+func Data(b []byte) map[string]interface{} {
+	return map[string]interface{}{
+		"data": b,
+	}
+}
+
 // ErrPathExists is trying to set value that already exists.
 type ErrPathExists struct {
 	Path string
@@ -70,4 +78,18 @@ func (e ErrPathExists) Error() string {
 // NewErrPathExists ...
 func NewErrPathExists(path string) ErrPathExists {
 	return ErrPathExists{Path: path}
+}
+
+// ErrNotFound if path not found.
+type ErrNotFound struct {
+	Path string
+}
+
+func (e ErrNotFound) Error() string {
+	return fmt.Sprintf("path not found %s", e.Path)
+}
+
+// NewErrNotFound ...
+func NewErrNotFound(path string) ErrNotFound {
+	return ErrNotFound{Path: path}
 }
