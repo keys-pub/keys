@@ -80,37 +80,42 @@ func newAuthWithURL(method string, ur *url.URL, contentHash string, key *keys.Ed
 	return &Auth{KID: key.ID(), Method: method, URL: ur, Sig: sig, BytesToSign: bytesToSign}, nil
 }
 
-// AuthResult is the authorized result.
+// AuthRequest describes an auth request.
+type AuthRequest struct {
+	Method      string
+	URL         string
+	ContentHash string
+
+	KID  keys.ID
+	Auth string
+
+	Now        time.Time
+	NonceCheck NonceCheck
+}
+
+// AuthResult is the result of an auth check.
 type AuthResult struct {
 	KID       keys.ID
-	Method    string
 	URL       *url.URL
 	Nonce     string
 	Timestamp time.Time
 }
 
-// CheckAuthorization checks request authorization.
-func CheckAuthorization(ctx context.Context, method string, urs string, kid keys.ID, auth string, contentHash string, nonces Nonces, now time.Time) (*AuthResult, error) {
-	res, err := CheckAuthorizations(ctx, method, urs, []keys.ID{kid}, []string{auth}, contentHash, nonces, now)
-	if err != nil {
-		return nil, err
-	}
-	if len(res) != 1 {
-		return nil, errors.Errorf("invalid auth results")
-	}
-	return res[0], nil
-}
+// NonceCheck checks for nonce.
+type NonceCheck func(ctx context.Context, nonce string) error
 
-// CheckAuthorizations checks (multiple) request authorizations.
-// A request may include multiple authorizations with a single nonce and timestamp.
-func CheckAuthorizations(ctx context.Context, method string, urs string, kids []keys.ID, auths []string, contentHash string, nonces Nonces, now time.Time) ([]*AuthResult, error) {
-	if len(kids) != len(auths) {
-		return nil, errors.Errorf("kid/auth length mismatch")
-	}
-	url, err := url.Parse(urs)
+// Authorize checks request authorization.
+// Nonce check should fail if there is a collision across different requests.
+func Authorize(ctx context.Context, auth *AuthRequest) (*AuthResult, error) {
+	url, err := url.Parse(auth.URL)
 	if err != nil {
 		return nil, err
 	}
+	if url.String() != auth.URL {
+		return nil, errors.Errorf("invalid url parse")
+	}
+
+	// Parse nonce
 	nonce := url.Query().Get("nonce")
 	if nonce == "" {
 		return nil, errors.Errorf("nonce is missing")
@@ -122,6 +127,7 @@ func CheckAuthorizations(ctx context.Context, method string, urs string, kids []
 	if len(nb) < 16 {
 		return nil, errors.Errorf("nonce is invalid length")
 	}
+
 	// Check timestamp
 	ts := url.Query().Get("ts")
 	if ts == "" {
@@ -132,7 +138,7 @@ func CheckAuthorizations(ctx context.Context, method string, urs string, kids []
 		return nil, err
 	}
 	tm := tsutil.ConvertMillis(i)
-	td := now.Sub(tm)
+	td := auth.Now.Sub(tm)
 	if td < 0 {
 		td = td * -1
 	}
@@ -140,62 +146,55 @@ func CheckAuthorizations(ctx context.Context, method string, urs string, kids []
 		return nil, errors.Errorf("timestamp is invalid, diff %s", td)
 	}
 
-	results := []*AuthResult{}
-	for i := 0; i < len(kids); i++ {
-		kid := kids[i]
-		auth := auths[i]
-
-		fields := strings.Split(auth, ":")
-		if len(fields) != 2 {
-			return nil, errors.Errorf("too many fields")
-		}
-		hkid := fields[0]
-		hsig := fields[1]
-
-		akid, err := keys.ParseID(hkid)
-		if err != nil {
-			return nil, err
-		}
-		if kid != "" && akid != kid {
-			return nil, errors.Errorf("invalid kid")
-		}
-
-		spk, err := keys.StatementPublicKeyFromID(akid)
-		if err != nil {
-			return nil, errors.Errorf("not a valid sign public key")
-		}
-
-		sigBytes, err := encoding.Decode(hsig, encoding.Base64)
-		if err != nil {
-			return nil, err
-		}
-
-		bytesToSign := method + "," + url.String() + "," + contentHash
-		if err := spk.VerifyDetached(sigBytes, []byte(bytesToSign)); err != nil {
-			return nil, err
-		}
-		results = append(results, &AuthResult{
-			KID:       akid,
-			Method:    method,
-			URL:       url,
-			Nonce:     nonce,
-			Timestamp: tm,
-		})
+	fields := strings.Split(auth.Auth, ":")
+	if len(fields) != 2 {
+		return nil, errors.Errorf("too many fields")
 	}
+	hkid := fields[0]
+	hsig := fields[1]
 
-	val, err := nonces.Get(ctx, nonce)
+	akid, err := keys.ParseID(hkid)
 	if err != nil {
 		return nil, err
 	}
-	if val != "" {
-		return nil, errors.Errorf("nonce collision")
+	if auth.KID != "" && akid != auth.KID {
+		return nil, errors.Errorf("invalid kid")
 	}
-	if err := nonces.Set(ctx, nonce, "1"); err != nil {
-		return nil, err
+
+	spk, err := keys.StatementPublicKeyFromID(akid)
+	if err != nil {
+		return nil, errors.Errorf("not a valid sign public key")
 	}
-	if err := nonces.Expire(ctx, nonce, time.Hour); err != nil {
+
+	sigBytes, err := encoding.Decode(hsig, encoding.Base64)
+	if err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	bytesToSign := auth.Method + "," + url.String() + "," + auth.ContentHash
+	if err := spk.VerifyDetached(sigBytes, []byte(bytesToSign)); err != nil {
+		return nil, err
+	}
+
+	if auth.NonceCheck == nil {
+		return nil, errors.Errorf("no nonce check")
+	}
+
+	if err := auth.NonceCheck(ctx, nonce); err != nil {
+		return nil, err
+	}
+
+	return &AuthResult{
+		KID:       akid,
+		URL:       url,
+		Nonce:     nonce,
+		Timestamp: tm,
+	}, nil
 }
+
+// if err := nonces.Set(ctx, nonce, "1"); err != nil {
+// 	return nil, err
+// }
+// if err := nonces.Expire(ctx, nonce, time.Hour); err != nil {
+// 	return nil, err
+// }
