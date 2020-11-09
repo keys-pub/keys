@@ -13,8 +13,7 @@ import (
 )
 
 func TestNonces(t *testing.T) {
-	clock := tsutil.NewTestClock()
-	nonces := http.NewNoncesTest(clock)
+	nonces := http.NewMem(tsutil.NewTestClock())
 
 	n1 := encoding.MustEncode(keys.RandBytes(32), encoding.Base62)
 	val, err := nonces.Get(context.TODO(), n1)
@@ -30,8 +29,7 @@ func TestNonces(t *testing.T) {
 }
 
 func TestNoncesExpiration(t *testing.T) {
-	clock := tsutil.NewTestClock()
-	nonces := http.NewNoncesTest(clock)
+	nonces := http.NewMem(tsutil.NewTestClock())
 
 	n1 := encoding.MustEncode(keys.RandBytes(32), encoding.Base62)
 	val, err := nonces.Get(context.TODO(), n1)
@@ -60,8 +58,7 @@ func TestNoncesExpiration(t *testing.T) {
 
 // func TestNoncesIncrement(t *testing.T) {
 // 	var err error
-// 	clock := tsutil.NewTestClock()
-// 	nonces := http.NewNoncesTest(clock)
+//  nonces := http.NewMem(tsutil.NewTestClock())
 
 // 	n1 := encoding.MustEncode(keys.RandBytes(32), encoding.Base62)
 
