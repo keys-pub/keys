@@ -2,6 +2,7 @@
 package dstore
 
 import (
+	"bytes"
 	"time"
 
 	"github.com/vmihailenco/msgpack/v4"
@@ -37,27 +38,50 @@ func (d *Document) Get(name string) (interface{}, bool) {
 	return i, ok
 }
 
+// Marshal uses msgpack with fallback to json tags.
+func Marshal(v interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(&buf)
+	enc.UseJSONTag(true)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// Unmarshal uses msgpack with fallback to json tags.
+func Unmarshal(b []byte, i interface{}) error {
+	dec := msgpack.NewDecoder(bytes.NewReader(b))
+	dec.UseJSONTag(true)
+	if err := dec.Decode(i); err != nil {
+		return err
+	}
+	return nil
+}
+
 // From interface to map (for Create, Set).
 // If error, nil is returned.
+// Uses msgpack.
 func From(i interface{}) map[string]interface{} {
-	b, err := msgpack.Marshal(i)
+	b, err := Marshal(i)
 	if err != nil {
 		return nil
 	}
 	var m map[string]interface{}
-	if err := msgpack.Unmarshal(b, &m); err != nil {
+	if err := Unmarshal(b, &m); err != nil {
 		return nil
 	}
 	return m
 }
 
 // To converts document to type.
+// Uses msgpack.
 func (d *Document) To(i interface{}) error {
-	b, err := msgpack.Marshal(d.values)
+	b, err := Marshal(d.values)
 	if err != nil {
 		return err
 	}
-	return msgpack.Unmarshal(b, i)
+	return Unmarshal(b, i)
 }
 
 // SetAll values on document. Overwrites any existing values.

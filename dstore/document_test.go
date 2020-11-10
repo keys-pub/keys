@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
@@ -58,9 +59,9 @@ func TestDocumentTo(t *testing.T) {
 	ctx := context.TODO()
 
 	type testType struct {
-		Int    int
-		String string
-		Bytes  []byte
+		Int    int    `json:"n"`
+		String string `json:"s"`
+		Bytes  []byte `json:"b"`
 	}
 	test := &testType{
 		Int:    1,
@@ -78,6 +79,36 @@ func TestDocumentTo(t *testing.T) {
 	var out testType
 	err = doc.To(&out)
 	require.NoError(t, err)
+	require.Equal(t, test, &out)
+}
+
+func TestMarshal(t *testing.T) {
+	type testType struct {
+		Int    int    `json:"n"`
+		String string `json:"s"`
+		Bytes  []byte `json:"b"`
+	}
+	test := &testType{
+		Int:    1,
+		String: "teststring",
+		Bytes:  []byte("testbytes"),
+	}
+
+	b, err := dstore.Marshal(test)
+	require.NoError(t, err)
+
+	expected := `([]uint8) (len=38 cap=64) {
+ 00000000  83 a1 6e d3 00 00 00 00  00 00 00 01 a1 73 aa 74  |..n..........s.t|
+ 00000010  65 73 74 73 74 72 69 6e  67 a1 62 c4 09 74 65 73  |eststring.b..tes|
+ 00000020  74 62 79 74 65 73                                 |tbytes|
+}
+`
+	require.Equal(t, expected, spew.Sdump(b))
+
+	var out testType
+	err = dstore.Unmarshal(b, &out)
+	require.NoError(t, err)
+
 	require.Equal(t, test, &out)
 }
 
