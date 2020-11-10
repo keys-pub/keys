@@ -35,9 +35,10 @@ func NewKey(k keys.Key) *Key {
 }
 
 // AsEdX25519 returns a *EdX25519Key.
+// Returns nil if we can't convert.
 func (k *Key) AsEdX25519() (*keys.EdX25519Key, error) {
 	if k.Type != string(keys.EdX25519) {
-		return nil, errors.Errorf("type %s != %s", k.Type, keys.EdX25519)
+		return nil, nil
 	}
 	b := k.Data
 	if len(b) != 64 {
@@ -52,6 +53,7 @@ func (k *Key) AsEdX25519() (*keys.EdX25519Key, error) {
 
 // AsX25519 returns a X25519Key.
 // If key is a EdX25519Key, it's converted to a X25519Key.
+// Returns nil if we can't convert.
 func (k *Key) AsX25519() (*keys.X25519Key, error) {
 	switch k.Type {
 	case string(keys.X25519):
@@ -64,11 +66,12 @@ func (k *Key) AsX25519() (*keys.X25519Key, error) {
 		}
 		return sk.X25519Key(), nil
 	default:
-		return nil, errors.Errorf("type %s != %s (or %s)", k.Type, keys.X25519, keys.EdX25519)
+		return nil, nil
 	}
 }
 
 // AsEdX25519Public returns a *EdX25519PublicKey.
+// Returns nil if we can't convert.
 func (k *Key) AsEdX25519Public() (*keys.EdX25519PublicKey, error) {
 	switch k.Type {
 	case string(keys.EdX25519):
@@ -85,11 +88,12 @@ func (k *Key) AsEdX25519Public() (*keys.EdX25519PublicKey, error) {
 		out := keys.NewEdX25519PublicKey(keys.Bytes32(b))
 		return out, nil
 	default:
-		return nil, errors.Errorf("type %s != %s (or %s)", k.Type, keys.EdX25519Public, keys.EdX25519)
+		return nil, nil
 	}
 }
 
 // AsX25519Public returns a X25519PublicKey.
+// Returns nil if we can't convert.
 func (k *Key) AsX25519Public() (*keys.X25519PublicKey, error) {
 	switch k.Type {
 	case string(keys.X25519):
@@ -106,7 +110,7 @@ func (k *Key) AsX25519Public() (*keys.X25519PublicKey, error) {
 		out := keys.NewX25519PublicKey(keys.Bytes32(b))
 		return out, nil
 	default:
-		return nil, errors.Errorf("type %s != %s (or %s)", k.Type, keys.X25519Public, keys.X25519)
+		return nil, nil
 	}
 }
 
