@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewErrNotFound(t *testing.T) {
-	require.EqualError(t, keys.NewErrNotFound("123"), "not found 123")
+	require.EqualError(t, keys.NewErrNotFound("123"), "123 not found")
 	require.EqualError(t, keys.NewErrNotFound(""), "not found")
 }
 

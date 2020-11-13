@@ -23,7 +23,7 @@ func (e ErrNotFound) Error() string {
 	if e.ID == "" {
 		return "not found"
 	}
-	return fmt.Sprintf("not found %s", e.ID)
+	return fmt.Sprintf("%s not found", e.ID)
 }
 
 type tempError interface {
