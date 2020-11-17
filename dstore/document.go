@@ -104,7 +104,7 @@ func (d *Document) Bytes(name string) []byte {
 	}
 }
 
-// Int returns document data.
+// Int returns document value as int.
 func (d *Document) Int(name string) (int, bool) {
 	i, ok := d.Get(name)
 	if !ok {
@@ -117,6 +117,24 @@ func (d *Document) Int(name string) (int, bool) {
 		return int(v), true
 	case int64:
 		return int(v), true
+	default:
+		return 0, false
+	}
+}
+
+// Int64 returns document value as int64.
+func (d *Document) Int64(name string) (int64, bool) {
+	i, ok := d.Get(name)
+	if !ok {
+		return 0, false
+	}
+	switch v := i.(type) {
+	case int:
+		return int64(v), true
+	case int32:
+		return int64(v), true
+	case int64:
+		return v, true
 	default:
 		return 0, false
 	}
