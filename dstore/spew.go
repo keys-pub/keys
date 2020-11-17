@@ -37,10 +37,15 @@ func SpewOut(iter Iterator, out io.Writer) error {
 				return err
 			}
 		} else {
-			if _, err := out.Write([]byte(fmt.Sprintf("%s ", doc.Path))); err != nil {
+			if _, err := out.Write([]byte(fmt.Sprintf("%s", doc.Path))); err != nil {
 				return err
 			}
-			if _, err := out.Write([]byte(fmt.Sprintf("%s\n", data))); err != nil {
+			if len(data) > 0 {
+				if _, err := out.Write([]byte(fmt.Sprintf(" %s", data))); err != nil {
+					return err
+				}
+			}
+			if _, err := out.Write([]byte("\n")); err != nil {
 				return err
 			}
 		}
