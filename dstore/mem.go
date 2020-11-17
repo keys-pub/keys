@@ -24,7 +24,6 @@ type Mem struct {
 	paths  *StringSet
 	values map[string]*Document
 	clock  tsutil.Clock
-	inc    map[string]int64
 }
 
 // NewMem creates an in memory Documents implementation.
@@ -32,7 +31,6 @@ func NewMem() *Mem {
 	return &Mem{
 		paths:  NewStringSet(),
 		values: map[string]*Document{},
-		inc:    map[string]int64{},
 		clock:  tsutil.NewClock(),
 	}
 }
@@ -234,34 +232,8 @@ func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Docume
 	return docs, nil
 }
 
-// Delete ...
+// Delete document at path.
 func (m *Mem) Delete(ctx context.Context, path string) (bool, error) {
-	m.Lock()
-	defer m.Unlock()
-	path = Path(path)
-
-	docs, err := m.list(ctx, path)
-	if err != nil {
-		return false, err
-	}
-	if len(docs) == 0 {
-		return m.delete(ctx, path)
-	}
-	for _, doc := range docs {
-		ok, err := m.delete(ctx, doc.Path)
-		if err != nil {
-			return false, err
-		}
-		if !ok {
-			return false, errors.Errorf("failed to delete: missing %s", path)
-		}
-	}
-	if _, err := m.delete(ctx, path); err != nil {
-		return false, err
-	}
-	return true, nil
-}
-func (m *Mem) delete(ctx context.Context, path string) (bool, error) {
 	path = Path(path)
 
 	_, ok := m.values[path]
@@ -273,10 +245,10 @@ func (m *Mem) delete(ctx context.Context, path string) (bool, error) {
 	return true, nil
 }
 
-// DeleteAll ...
+// DeleteAll deletes all documents at path.
 func (m *Mem) DeleteAll(ctx context.Context, paths []string) error {
 	for _, p := range paths {
-		_, err := m.delete(ctx, p)
+		_, err := m.Delete(ctx, p)
 		if err != nil {
 			return err
 		}
@@ -314,15 +286,25 @@ func randBytes(length int) []byte {
 // EventsAdd adds events to path.
 func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*events.Event, error) {
 	out := make([]*events.Event, 0, len(data))
+	doc, err := m.Get(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	idx := int64(0)
+	if doc != nil {
+		idx, _ = doc.Int64("idx")
+	}
 	for _, b := range data {
-		inc := m.inc[path]
-		inc++
-		m.inc[path] = inc
+		idx++
+		if err := m.Set(ctx, path, map[string]interface{}{"idx": idx}, MergeAll()); err != nil {
+			return nil, err
+		}
+
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
 		event := &events.Event{
 			Data:      b,
-			Index:     inc,
-			Timestamp: tsutil.Millis(m.clock.Now()),
+			Index:     idx,
+			Timestamp: m.clock.NowMillis(),
 		}
 		b, err := json.Marshal(event)
 		if err != nil {
@@ -337,6 +319,27 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 	return out, nil
 }
 
+// EventPositions returns positions for event logs at the specified paths.
+func (m *Mem) EventPositions(ctx context.Context, paths []string) ([]*events.Position, error) {
+	positions := []*events.Position{}
+	for _, path := range paths {
+		doc, err := m.Get(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		if doc == nil {
+			continue
+		}
+		idx, _ := doc.Int64("idx")
+		positions = append(positions, &events.Position{
+			Path:      path,
+			Index:     idx,
+			Timestamp: tsutil.Millis(doc.CreatedAt),
+		})
+	}
+	return positions, nil
+}
+
 // EventsDelete removes all events at path.
 func (m *Mem) EventsDelete(ctx context.Context, path string) (bool, error) {
 	ok, err := m.Delete(ctx, path)
@@ -346,6 +349,17 @@ func (m *Mem) EventsDelete(ctx context.Context, path string) (bool, error) {
 	if !ok {
 		return false, nil
 	}
+
+	docs, err := m.list(ctx, Path(path, "log"))
+	if err != nil {
+		return false, err
+	}
+	for _, d := range docs {
+		if _, err := m.Delete(ctx, d.Path); err != nil {
+			return false, err
+		}
+	}
+
 	return true, nil
 }
 

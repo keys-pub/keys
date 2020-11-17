@@ -128,6 +128,11 @@ func TestEvents(t *testing.T) {
 	require.Equal(t, int64(26), index)
 	require.Equal(t, revs[10:15], eventsValues)
 
+	positions, err := eds.EventPositions(ctx, []string{path})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(positions))
+	require.Equal(t, int64(40), positions[0].Index)
+
 	// Delete
 	ok, err := eds.EventsDelete(ctx, path)
 	require.NoError(t, err)
@@ -139,6 +144,10 @@ func TestEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, event)
 	iter.Release()
+
+	positions, err = eds.EventPositions(ctx, []string{path})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(positions))
 
 	ok, err = eds.EventsDelete(ctx, path)
 	require.NoError(t, err)

@@ -19,16 +19,26 @@ type Event struct {
 	Timestamp int64 `json:"ts" msgpack:"ts" firestore:"-"`
 }
 
+// Position describes a position in an event log.
+type Position struct {
+	Path      string `json:"path" msgpack:"path"`
+	Index     int64  `json:"idx" msgpack:"idx"`
+	Timestamp int64  `json:"ts" msgpack:"ts"`
+}
+
 // Events describes an append only event log.
 type Events interface {
-	// EventsAdd appends events (in a batch if multiple).
+	// EventsAdd adds (appends) events (in a batch if multiple) to the log.
 	EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, error)
 
-	// Events from log.
+	// Events retrives events from log with the specified options.
 	Events(ctx context.Context, path string, opt ...Option) (Iterator, error)
 
-	// EventsDelete deletes all events at path.
+	// EventsDelete deletes all events at the specified path.
 	EventsDelete(ctx context.Context, path string) (bool, error)
+
+	// EventPositions returns current positions of event logs at the specified paths.
+	EventPositions(ctx context.Context, paths []string) ([]*Position, error)
 }
 
 // Direction is ascending or descending.
