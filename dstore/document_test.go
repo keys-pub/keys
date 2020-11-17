@@ -52,34 +52,73 @@ func TestDocument(t *testing.T) {
 	require.Equal(t, "/test/6", doc.Path)
 }
 
-func TestDocumentTo(t *testing.T) {
+func TestDocumentSetTo(t *testing.T) {
 	mem := dstore.NewMem()
 	clock := tsutil.NewTestClock()
 	mem.SetClock(clock)
 	ctx := context.TODO()
 
-	type testType struct {
-		Int    int    `json:"n"`
-		String string `json:"s"`
-		Bytes  []byte `json:"b"`
+	type Test struct {
+		Int    int    `json:"n,omitempty"`
+		String string `json:"s,omitempty"`
+		Bytes  []byte `json:"b,omitempty"`
 	}
-	test := &testType{
+	val := &Test{
 		Int:    1,
 		String: "teststring",
 		Bytes:  []byte("testbytes"),
 	}
 
 	path := dstore.Path("test", "key1")
-	err := mem.Create(ctx, path, dstore.From(test))
+	err := mem.Create(ctx, path, dstore.From(val))
 	require.NoError(t, err)
 
 	doc, err := mem.Get(ctx, path)
 	require.NoError(t, err)
 
-	var out testType
+	var out Test
 	err = doc.To(&out)
 	require.NoError(t, err)
-	require.Equal(t, test, &out)
+	require.Equal(t, val, &out)
+}
+
+func TestDocumentMerge(t *testing.T) {
+	mem := dstore.NewMem()
+	clock := tsutil.NewTestClock()
+	mem.SetClock(clock)
+	ctx := context.TODO()
+
+	type Test struct {
+		Int    int    `json:"n,omitempty"`
+		String string `json:"s,omitempty"`
+		Bytes  []byte `json:"b,omitempty"`
+	}
+	val := &Test{
+		Int:    1,
+		String: "teststring",
+		Bytes:  []byte("testbytes"),
+	}
+
+	path := dstore.Path("test", "key1")
+	err := mem.Set(ctx, path, dstore.From(val))
+	require.NoError(t, err)
+
+	val2 := &Test{String: "teststring-merge"}
+	err = mem.Set(ctx, path, dstore.From(val2), dstore.MergeAll())
+	require.NoError(t, err)
+
+	doc, err := mem.Get(ctx, path)
+	require.NoError(t, err)
+
+	var out Test
+	err = doc.To(&out)
+	require.NoError(t, err)
+	expected := &Test{
+		Int:    1,
+		String: "teststring-merge",
+		Bytes:  []byte("testbytes"),
+	}
+	require.Equal(t, expected, &out)
 }
 
 func TestMarshal(t *testing.T) {
@@ -115,26 +154,26 @@ func TestMarshal(t *testing.T) {
 func ExampleDocuments_Create() {
 	ds := dstore.NewMem()
 
-	type Example struct {
-		Int    int
-		String string
-		Bytes  []byte
+	type Test struct {
+		Int    int    `json:"int,omitempty"`
+		String string `json:"str,omitempty"`
+		Bytes  []byte `json:"bytes,omitempty"`
 	}
-	example := &Example{
+	val := &Test{
 		Int:    1,
 		String: "teststring",
 		Bytes:  []byte("testbytes"),
 	}
 
-	path := dstore.Path("examples", "example1")
-	if err := ds.Create(context.TODO(), path, dstore.From(example)); err != nil {
+	path := dstore.Path("test", "doc1")
+	if err := ds.Create(context.TODO(), path, dstore.From(val)); err != nil {
 		log.Fatal(err)
 	}
 	doc, err := ds.Get(context.TODO(), path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var out Example
+	var out Test
 	if err = doc.To(&out); err != nil {
 		log.Fatal(err)
 	}
@@ -145,5 +184,48 @@ func ExampleDocuments_Create() {
 	// Output:
 	// 1
 	// teststring
+	// testbytes
+}
+
+func ExampleDocuments_Set() {
+	ds := dstore.NewMem()
+
+	type Test struct {
+		Int    int    `json:"n,omitempty"`
+		String string `json:"s,omitempty"`
+		Bytes  []byte `json:"b,omitempty"`
+	}
+	val := &Test{
+		Int:    1,
+		String: "teststring",
+		Bytes:  []byte("testbytes"),
+	}
+
+	path := dstore.Path("test", "doc1")
+	if err := ds.Set(context.TODO(), path, dstore.From(val)); err != nil {
+		log.Fatal(err)
+	}
+
+	// Merge
+	val2 := Test{String: "teststring-merge"}
+	if err := ds.Set(context.TODO(), path, dstore.From(val2), dstore.MergeAll()); err != nil {
+		log.Fatal(err)
+	}
+
+	doc, err := ds.Get(context.TODO(), path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var out Test
+	if err = doc.To(&out); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%d\n", out.Int)
+	fmt.Printf("%s\n", out.String)
+	fmt.Printf("%s\n", string(out.Bytes))
+	// Output:
+	// 1
+	// teststring-merge
 	// testbytes
 }

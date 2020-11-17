@@ -10,6 +10,9 @@ type Documents interface {
 	// Create document at path.
 	// ErrPathExists if path already exists.
 	//
+	// To marshal a value, use dstore.From(v) to convert to a map (using msgpack or json tags).
+	// If merging and using dstore.From(v), fields with omitempty will no overwrite existing values.
+	//
 	// Paths can be nested as long as they are even length components.
 	// For example,
 	//
@@ -21,7 +24,10 @@ type Documents interface {
 	Create(ctx context.Context, path string, values map[string]interface{}) error
 
 	// Set (or create) document at path.
-	// This will overwrite any existing document data.
+	// This will overwrite any existing document data, unless you specify MergeAll() option.
+	//
+	// To marshal a value, use dstore.From(v) to convert to a map (using msgpack or json tags).
+	// If merging and using dstore.From(v), fields with omitempty will no overwrite existing values.
 	//
 	// Paths can be nested as long as they are even length components.
 	// For example,
@@ -36,6 +42,10 @@ type Documents interface {
 	// Get path.
 	// If not found, returns nil.
 	Get(ctx context.Context, path string) (*Document, error)
+
+	// Load path into value.
+	// This is shorthand for Get and doc.To(&val).
+	Load(ctx context.Context, path string, v interface{}) (bool, error)
 
 	// GetAll at paths.
 	// If a path is not found, it is ignored.
@@ -92,4 +102,19 @@ func (e ErrNotFound) Error() string {
 // NewErrNotFound ...
 func NewErrNotFound(path string) ErrNotFound {
 	return ErrNotFound{Path: path}
+}
+
+// Load path into value.
+func Load(ctx context.Context, d Documents, path string, v interface{}) (bool, error) {
+	doc, err := d.Get(ctx, path)
+	if err != nil {
+		return false, err
+	}
+	if doc == nil {
+		return false, nil
+	}
+	if err := doc.To(v); err != nil {
+		return false, err
+	}
+	return true, nil
 }

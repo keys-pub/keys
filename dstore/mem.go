@@ -136,6 +136,11 @@ func (m *Mem) Get(ctx context.Context, path string) (*Document, error) {
 	return m.document(path), nil
 }
 
+// Load path into value.
+func (m *Mem) Load(ctx context.Context, path string, v interface{}) (bool, error) {
+	return Load(ctx, m, path, v)
+}
+
 func (m *Mem) document(path string) *Document {
 	doc, ok := m.values[path]
 	if !ok {
