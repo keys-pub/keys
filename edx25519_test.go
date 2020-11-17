@@ -48,14 +48,22 @@ func TestNewEdX25519KeyFromPrivateKey(t *testing.T) {
 	_ = keys.NewEdX25519KeyFromPrivateKey(keys.Bytes64(bytes.Repeat([]byte{0x01}, 64)))
 }
 
-func TestPublicKeyIDEquals(t *testing.T) {
+func TestX25519Match(t *testing.T) {
 	sk := keys.GenerateEdX25519Key()
 	bid := sk.X25519Key().ID()
 
-	require.True(t, keys.PublicKeyIDEquals(sk.ID(), sk.ID()))
-	require.True(t, keys.PublicKeyIDEquals(sk.ID(), bid))
-	require.True(t, keys.PublicKeyIDEquals(bid, bid))
-	require.True(t, keys.PublicKeyIDEquals(bid, sk.ID()))
+	sk2 := keys.GenerateEdX25519Key()
+	bid2 := sk2.X25519Key().ID()
+
+	require.True(t, keys.X25519Match(sk.ID(), sk.ID()))
+	require.True(t, keys.X25519Match(sk.ID(), bid))
+	require.True(t, keys.X25519Match(bid, bid))
+	require.True(t, keys.X25519Match(bid, sk.ID()))
+
+	require.False(t, keys.X25519Match(sk.ID(), sk2.ID()))
+	require.False(t, keys.X25519Match(sk.ID(), bid2))
+	require.False(t, keys.X25519Match(bid, bid2))
+	require.False(t, keys.X25519Match(bid, sk2.ID()))
 }
 
 func ExampleGenerateEdX25519Key() {

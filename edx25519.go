@@ -153,36 +153,27 @@ func NewEdX25519PublicKeyFromID(id ID) (*EdX25519PublicKey, error) {
 	}, nil
 }
 
-// PublicKeyIDEquals returns true if public keys are equal.
-// It will also compare EdX25519 public keys and X25519 public keys.
-func PublicKeyIDEquals(expected ID, kid ID) bool {
+// X25519Match returns true if key IDs are equal or if either key matches their
+// X25519 counterpart.
+func X25519Match(expected ID, kid ID) bool {
 	if expected == kid {
 		return true
 	}
 	if expected.IsEdX25519() && kid.IsX25519() {
 		spk, err := NewEdX25519PublicKeyFromID(expected)
 		if err != nil {
-			panic(err)
+			return false
 		}
 		return kid == spk.X25519PublicKey().ID()
 	}
 	if kid.IsEdX25519() && expected.IsX25519() {
 		spk, err := NewEdX25519PublicKeyFromID(kid)
 		if err != nil {
-			panic(err)
+			return false
 		}
 		return expected == spk.X25519PublicKey().ID()
 	}
 	return false
-}
-
-// NewX25519PublicKeyFromEdX25519ID creates a X25519PublicKey from a EdX25519 ID.
-func NewX25519PublicKeyFromEdX25519ID(id ID) (*X25519PublicKey, error) {
-	spk, err := NewEdX25519PublicKeyFromID(id)
-	if err != nil {
-		return nil, err
-	}
-	return spk.X25519PublicKey(), nil
 }
 
 // ID for EdX25519Key.
