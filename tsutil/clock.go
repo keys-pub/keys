@@ -7,6 +7,9 @@ type Clock interface {
 	// Now returns current clock time.
 	Now() time.Time
 
+	// NowMillis returns current time in milliseconds.
+	NowMillis() int64
+
 	// Add time to clock.
 	Add(dt time.Duration)
 }
@@ -32,6 +35,10 @@ func NewTestClock() Clock {
 func (c *testClock) Now() time.Time {
 	c.t = c.t.Add(c.tick)
 	return c.t
+}
+
+func (c *testClock) NowMillis() int64 {
+	return Millis(c.Now())
 }
 
 // SetTick sets tick increment for clock.
@@ -66,6 +73,10 @@ type clock struct {
 
 func (c *clock) Now() time.Time {
 	return time.Now().Add(c.add)
+}
+
+func (c *clock) NowMillis() int64 {
+	return Millis(c.Now())
 }
 
 func (c *clock) Add(dt time.Duration) {
