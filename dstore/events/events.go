@@ -28,8 +28,9 @@ type Position struct {
 
 // Events describes an append only event log.
 type Events interface {
-	// EventsAdd adds (appends) events (in a batch if multiple) to the log.
-	EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, error)
+	// EventsAdd adds (appends) events (in a batch if multiple) to the log,
+	// and returns the resulting index.
+	EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, int64, error)
 
 	// Events retrives events from log with the specified options.
 	Events(ctx context.Context, path string, opt ...Option) (Iterator, error)

@@ -289,11 +289,11 @@ func randBytes(length int) []byte {
 }
 
 // EventsAdd adds events to path.
-func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*events.Event, error) {
+func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*events.Event, int64, error) {
 	out := make([]*events.Event, 0, len(data))
 	doc, err := m.Get(ctx, path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	idx := int64(0)
 	if doc != nil {
@@ -302,7 +302,7 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 	for _, b := range data {
 		idx++
 		if err := m.Set(ctx, path, map[string]interface{}{"idx": idx}, MergeAll()); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
@@ -313,15 +313,15 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 		}
 		b, err := json.Marshal(event)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		path := Path(path, "log", id)
 		if err := m.Create(ctx, path, Data(b)); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, event)
 	}
-	return out, nil
+	return out, idx, nil
 }
 
 // EventPositions returns positions for event logs at the specified paths.
