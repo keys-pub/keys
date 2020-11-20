@@ -17,14 +17,15 @@ type Statement struct {
 	// Sig is the signature bytes.
 	Sig []byte
 
-	// Data.
-	Data []byte
 	// KID is the key that signed.
 	KID ID
 
-	// Seq in a sigchain (1 is root, optional if not in sigchain).
+	// Data (optional).
+	Data []byte
+
+	// Seq in a sigchain (1 is root, optional).
 	Seq int
-	// Prev is a hash of the previous item in the sigchain (optional if root).
+	// Prev is a hash of the previous item in the sigchain (optional).
 	Prev []byte
 	// Revoke refers to a previous signed seq to revoke (optional).
 	Revoke int

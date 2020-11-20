@@ -93,7 +93,7 @@ func (s *Sigchain) IsRevoked(seq int) bool {
 // Add signed statement to the Sigchain.
 func (s *Sigchain) Add(st *Statement) error {
 	if s.kid != st.KID {
-		return errors.Errorf("invalid sigchain kid")
+		return errors.Errorf("invalid statement kid")
 	}
 	if len(st.Data) == 0 && st.Type != "revoke" {
 		return errors.Errorf("no data")
@@ -242,21 +242,24 @@ func (s *Sigchain) VerifyStatement(st *Statement, prev *Statement) error {
 
 	if prev == nil {
 		if st.Seq != 1 {
-			return errors.Errorf("invalid sigchain sequence expected %d, got %d", 1, st.Seq)
+			return errors.Errorf("invalid statement sequence expected %d, got %d", 1, st.Seq)
 		}
 		if st.Prev != nil {
-			return errors.Errorf("invalid sigchain previous, expected empty, got %s", st.Prev)
+			return errors.Errorf("invalid statement previous, expected empty, got %s", st.Prev)
 		}
 	} else {
 		if st.Seq != prev.Seq+1 {
-			return errors.Errorf("invalid sigchain sequence expected %d, got %d", prev.Seq+1, st.Seq)
+			return errors.Errorf("invalid statement sequence expected %d, got %d", prev.Seq+1, st.Seq)
+		}
+		if len(st.Prev) == 0 {
+			return errors.Errorf("invalid statement previous empty")
 		}
 		prevHash, err := SigchainHash(prev)
 		if err != nil {
 			return err
 		}
 		if !bytes.Equal(st.Prev, prevHash[:]) {
-			return errors.Errorf("invalid sigchain previous, expected %s, got %s", prevHash, st.Prev)
+			return errors.Errorf("invalid statement previous, expected %x, got %x", prevHash, st.Prev)
 		}
 	}
 

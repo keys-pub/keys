@@ -2,8 +2,8 @@ package keys_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"testing"
@@ -49,8 +49,8 @@ func TestSigchain(t *testing.T) {
 
 	st2, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x02}, 16), alice, "test", clock.Now())
 	require.NoError(t, err)
-	siErr2 := sc.Add(st2)
-	require.NoError(t, siErr2)
+	err = sc.Add(st2)
+	require.NoError(t, err)
 
 	res = sc.FindLast("test")
 	require.NotNil(t, res)
@@ -58,8 +58,8 @@ func TestSigchain(t *testing.T) {
 
 	st3, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x03}, 16), alice, "test", clock.Now())
 	require.NoError(t, err)
-	siErr3 := sc.Add(st3)
-	require.NoError(t, siErr3)
+	err = sc.Add(st3)
+	require.NoError(t, err)
 
 	res = sc.FindLast("")
 	require.NotNil(t, res)
@@ -70,11 +70,55 @@ func TestSigchain(t *testing.T) {
 
 	require.Equal(t, 4, len(sc.Statements()))
 
-	st4, err := keys.NewSigchainStatement(sc, []byte{}, alice, "", clock.Now())
+	// No data
+	stNoData, err := keys.NewSigchainStatement(sc, []byte{}, alice, "test", clock.Now())
 	require.NoError(t, err)
-	err = sc.Add(st4)
+	err = sc.Add(stNoData)
 	require.EqualError(t, err, "no data")
 
+	// Missing prev
+	stNoPrev := &keys.Statement{
+		KID:       alice.ID(),
+		Data:      []byte("test"),
+		Type:      "test",
+		Timestamp: clock.Now(),
+		Seq:       5,
+	}
+	err = stNoPrev.Sign(alice)
+	require.NoError(t, err)
+	err = sc.Add(stNoPrev)
+	require.EqualError(t, err, "invalid statement previous empty")
+
+	// Invalid prev
+	stInvalidPrev := &keys.Statement{
+		KID:       alice.ID(),
+		Data:      []byte("test"),
+		Type:      "test",
+		Timestamp: clock.Now(),
+		Seq:       5,
+		Prev:      bytes.Repeat([]byte{0x01}, 16),
+	}
+	err = stInvalidPrev.Sign(alice)
+	require.NoError(t, err)
+	err = sc.Add(stInvalidPrev)
+	require.EqualError(t, err, "invalid statement previous, expected &3e2557533edde73ec319c34994eabf7dffc419eba1aad8d152a1e83f7eae2c8d, got 01010101010101010101010101010101")
+
+	// Invalid seq
+	prev, _ := hex.DecodeString("3e2557533edde73ec319c34994eabf7dffc419eba1aad8d152a1e83f7eae2c8d")
+	stInvalidSeq := &keys.Statement{
+		KID:       alice.ID(),
+		Data:      []byte("test"),
+		Type:      "test",
+		Timestamp: clock.Now(),
+		Seq:       6,
+		Prev:      prev,
+	}
+	err = stInvalidSeq.Sign(alice)
+	require.NoError(t, err)
+	err = sc.Add(stInvalidSeq)
+	require.EqualError(t, err, "invalid statement sequence expected 5, got 6")
+
+	// Invalid public key
 	_, err = keys.NewSigchainStatement(sc, []byte{}, keys.GenerateEdX25519Key(), "", clock.Now())
 	require.EqualError(t, err, "invalid sigchain public key")
 
@@ -109,43 +153,53 @@ func TestSigchainJSON(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	st0 := sc.Statements()[0]
-	expectedStatement := `{".sig":"VV7Q1B54UZ5YBEmhTYt2tQACynfAWIZpZ+5sSwT+DJsRnvA2MAGW86hTVtso4optvXW2PvO0DACTPpMsC/SSDQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001}`
-	b, err := st0.Bytes()
+	// Bytes
+	st1 := sc.Statements()[0]
+	st1JSON := `{".sig":"VV7Q1B54UZ5YBEmhTYt2tQACynfAWIZpZ+5sSwT+DJsRnvA2MAGW86hTVtso4optvXW2PvO0DACTPpMsC/SSDQ==","data":"AQEBAQEBAQEBAQEBAQEBAQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","seq":1,"ts":1234567890001}`
+	b, err := st1.Bytes()
 	require.NoError(t, err)
-	require.Equal(t, expectedStatement, string(b))
+	require.Equal(t, st1JSON, string(b))
 
-	b, err = json.Marshal(st0)
+	// Marshal
+	b, err = json.Marshal(st)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatement, string(b))
+	require.Equal(t, st1JSON, string(b))
 
-	// err = keys.VerifyStatementBytes(b, sk.PublicKey())
-	// require.NoError(t, err)
-
-	var stb keys.Statement
-	err = json.Unmarshal(b, &stb)
+	// Unmarshal
+	var stOut keys.Statement
+	err = json.Unmarshal(b, &stOut)
 	require.NoError(t, err)
-	b, err = stb.Bytes()
+	b, err = stOut.Bytes()
 	require.NoError(t, err)
-	require.Equal(t, expectedStatement, string(b))
+	require.Equal(t, st1JSON, string(b))
 
+	// Statement #2
 	st2, err := keys.NewSigchainStatement(sc, bytes.Repeat([]byte{0x02}, 16), sk, "", clock.Now())
 	require.NoError(t, err)
-	siErr2 := sc.Add(st2)
-	require.NoError(t, siErr2)
-	entry2 := sc.Statements()[1]
-	expectedStatement2 := `{".sig":"eFHVVItCK0lwZzeeejBLdxAjqu1Fo3wFQ3U1/Q7J4HyimDp892A82jiaa8SOB+DekA3vEXkJicGkiGeuBFahDw==","data":"AgICAgICAgICAgICAgICAg==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"adAq4hsj899D6Y8T6ZnvxFG6EDtJaKcXe6Sk/D/VVLo=","seq":2,"ts":1234567890002}`
-	b, err = entry2.Bytes()
+	err = sc.Add(st2)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatement2, string(b))
+	st2JSON := `{".sig":"eFHVVItCK0lwZzeeejBLdxAjqu1Fo3wFQ3U1/Q7J4HyimDp892A82jiaa8SOB+DekA3vEXkJicGkiGeuBFahDw==","data":"AgICAgICAgICAgICAgICAg==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"adAq4hsj899D6Y8T6ZnvxFG6EDtJaKcXe6Sk/D/VVLo=","seq":2,"ts":1234567890002}`
+	b, err = sc.Statements()[1].Bytes()
+	require.NoError(t, err)
+	require.Equal(t, st2JSON, string(b))
 
-	_, siErr3 := sc.Revoke(2, sk)
-	require.NoError(t, siErr3)
-	entry3 := sc.Statements()[2]
-	expectedStatement3 := `{".sig":"Y63sL8+BsoU7LmiHCCw6IEadu463H9Gx6B9F/WTgRBDBoIZHB3kwIeFChvlO/HFpqkK0AmkrO5AzW9/rps8JCQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"6PT7dojypKdO8YldF00QiWqBfRBh1f1D9y9C2Qn6v/Y=","revoke":2,"seq":3,"type":"revoke"}`
-	b, err = entry3.Bytes()
+	// Statement #3 (revoke)
+	_, err = sc.Revoke(2, sk)
 	require.NoError(t, err)
-	require.Equal(t, expectedStatement3, string(b))
+	st3JSON := `{".sig":"Y63sL8+BsoU7LmiHCCw6IEadu463H9Gx6B9F/WTgRBDBoIZHB3kwIeFChvlO/HFpqkK0AmkrO5AzW9/rps8JCQ==","kid":"kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077","prev":"6PT7dojypKdO8YldF00QiWqBfRBh1f1D9y9C2Qn6v/Y=","revoke":2,"seq":3,"type":"revoke"}`
+	b, err = sc.Statements()[2].Bytes()
+	require.NoError(t, err)
+	require.Equal(t, st3JSON, string(b))
+
+	// Unmarshal Statement array
+	scJSON := "[" + st1JSON + "," + st2JSON + "," + st3JSON + "]"
+	var sts []*keys.Statement
+	err = json.Unmarshal([]byte(scJSON), &sts)
+	require.NoError(t, err)
+	sc2 := keys.NewSigchain(sk.ID())
+	err = sc2.AddAll(sts)
+	require.NoError(t, err)
+	require.Equal(t, sc.Statements(), sc2.Statements())
 }
 
 func ExampleNewSigchain() {
@@ -154,7 +208,7 @@ func ExampleNewSigchain() {
 	sc := keys.NewSigchain(alice.ID())
 
 	// Create root statement
-	st, err := keys.NewSigchainStatement(sc, []byte("hi! 🤓"), alice, "", clock.Now())
+	st, err := keys.NewSigchainStatement(sc, []byte("hi! 🤓"), alice, "example", clock.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -163,7 +217,7 @@ func ExampleNewSigchain() {
 	}
 
 	// Add 2nd statement
-	st2, err := keys.NewSigchainStatement(sc, []byte("2nd message"), alice, "", clock.Now())
+	st2, err := keys.NewSigchainStatement(sc, []byte("2nd message"), alice, "example", clock.Now())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,5 +233,8 @@ func ExampleNewSigchain() {
 
 	// Spew
 	spew := sc.Spew()
-	fmt.Println(spew.String())
+	log.Println(spew.String())
+
+	// Output:
+	//
 }
