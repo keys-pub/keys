@@ -33,9 +33,10 @@ func TestEvents(t *testing.T) {
 		values = append(values, []byte(str))
 		strs = append(strs, str)
 	}
-	out, err := eds.EventsAdd(ctx, path, values)
+	out, idx, err := eds.EventsAdd(ctx, path, values)
 	require.NoError(t, err)
 	require.Equal(t, 40, len(out))
+	require.Equal(t, int64(40), idx)
 	for i, event := range out {
 		require.NotEmpty(t, event.Timestamp)
 		require.Equal(t, int64(i+1), event.Index)
