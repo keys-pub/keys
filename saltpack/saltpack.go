@@ -107,7 +107,6 @@ func (s *saltpack) LookupBoxPublicKey(kid []byte) ksaltpack.BoxPublicKey {
 // GetAllBoxSecretKeys returns all keys, needed if we want to support "hidden"
 // receivers via trial and error.
 func (s *saltpack) GetAllBoxSecretKeys() []ksaltpack.BoxSecretKey {
-	logger.Infof("List x25519 keys...")
 	if s.kr == nil {
 		return []ksaltpack.BoxSecretKey{}
 	}
