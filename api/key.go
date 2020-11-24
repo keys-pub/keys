@@ -12,7 +12,9 @@ import (
 	"github.com/vmihailenco/msgpack/v4"
 )
 
-// Key is a serializable format for keys.Key.
+// Key is a concrete type for the keys.Key interface, which can be serialized
+// and converted to specific key types like keys.EdX25519Key.
+// It also includes additional fields and metadata.
 type Key struct {
 	ID   keys.ID `json:"id" msgpack:"id,omitempty"`
 	Data []byte  `json:"data" msgpack:"data,omitempty"`
@@ -25,7 +27,7 @@ type Key struct {
 	UpdatedAt time.Time `json:"updatedAt,omitempty" msgpack:"updatedAt,omitempty"`
 }
 
-// NewKey from keys.Key interface.
+// NewKey creates api.Key from keys.Key interface.
 func NewKey(k keys.Key) *Key {
 	return &Key{
 		ID:   k.ID(),
