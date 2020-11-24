@@ -42,6 +42,9 @@ func EncodeKey(key Key, enc Encoding, password string) (string, error) {
 // DecodeKey decodes a key using the specified encoding.
 // If you don't know the encoding you can try ParseKey instead.
 func DecodeKey(s string, enc Encoding, password string) (Key, error) {
+	if s == "" {
+		return nil, errors.Errorf("failed to decode %s key: empty string", enc)
+	}
 	switch enc {
 	case SaltpackEncoding:
 		return DecodeSaltpackKey(s, password, false)
@@ -75,6 +78,11 @@ func EncodeSSHKey(key Key, password string) (string, error) {
 	default:
 		return "", errors.Errorf("unsupported key type")
 	}
+}
+
+// DecodeSSHKey decodes SSH key.
+func DecodeSSHKey(s string, password string) (Key, error) {
+	return DecodeKey(s, SSHEncoding, password)
 }
 
 // Brand is saltpack brand.

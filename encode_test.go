@@ -1,6 +1,7 @@
 package keys_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"testing"
@@ -25,20 +26,21 @@ func TestEncodeKeyToSaltpack(t *testing.T) {
 }
 
 func ExampleDecodeSaltpackKey() {
-	key := `BEGIN X25519 KEY MESSAGE.
-	umCRo9iHIudLWoz 4Ugt0hUXQVJ7lhV p7A9mb3kOTg6PeV fhqetAc9ZOUjagi
-	91gENEkp0xfjF2E Tyakwe90kzo1FNT gRacWRL5B59strN OoZYHQooqvlMKM.
-	END X25519 KEY MESSAGE.`
-	bob, err := keys.DecodeSaltpackKey(key, "", true)
+	msg := `BEGIN EDX25519 KEY MESSAGE.
+	AY6gPAVx9JSUsLg 3K8CNqUyNY87qiL FNNp7UBsIcvObJK mRtDzpcwQU1XpYa
+	64FF0g4O0sDrhV4 qlp52vdQ5PG77D8 046ZdckukUl6reZ inOEqkDuOg5hynz
+	k95BEExR31Sqenh rdqT3ADIdPu8f4f aXQaFejAp3Cb.
+	END EDX25519 KEY MESSAGE.`
+	key, err := keys.DecodeSaltpackKey(msg, "testpassword", true)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("bob: %s\n", bob.ID())
-	// Output: bob: kbx18x22l7nemmxcj76f9l3aaflc5487lp5u5q778gpe3t3wzhlqvu8qxa9z07
+	fmt.Printf("%s\n", key.ID())
+	// Output: kex10x6fdaazp2zy85m6cj7w57y4u0cc99xa3nmwjdldk9l4ajm3yadq70g0js
 }
 
 func TestEncodeKeyDecodeKey(t *testing.T) {
-	sk := keys.GenerateEdX25519Key()
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	// Saltpack (password)
 	msg, err := keys.EncodeKey(sk, keys.SaltpackEncoding, "testpassword")
@@ -76,6 +78,14 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	require.Equal(t, sk.Type(), out.Type())
 	require.Equal(t, sk.Bytes(), out.Bytes())
 
+	// SSH (password, helper)
+	msg, err = keys.EncodeSSHKey(sk, "testpassword")
+	require.NoError(t, err)
+	out, err = keys.DecodeSSHKey(msg, "testpassword")
+	require.NoError(t, err)
+	require.Equal(t, sk.Type(), out.Type())
+	require.Equal(t, sk.Bytes(), out.Bytes())
+
 	// SSH (no password)
 	msg, err = keys.EncodeKey(sk, keys.SSHEncoding, "")
 	require.NoError(t, err)
@@ -83,4 +93,51 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
 	require.Equal(t, sk.Bytes(), out.Bytes())
+
+	// SSH (no password, helper)
+	msg, err = keys.EncodeSSHKey(sk, "")
+	require.NoError(t, err)
+	out, err = keys.DecodeSSHKey(msg, "")
+	require.NoError(t, err)
+	require.Equal(t, sk.Type(), out.Type())
+	require.Equal(t, sk.Bytes(), out.Bytes())
+
+	// SSH
+	pk, err := keys.DecodeSSHKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c", "")
+	require.NoError(t, err)
+	require.Equal(t, "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c", hex.EncodeToString(pk.Bytes()))
+
+	// Errors
+	_, err = keys.DecodeKey("", keys.SSHEncoding, "")
+	require.EqualError(t, err, "failed to decode ssh key: empty string")
+	_, err = keys.DecodeKey("", keys.SaltpackEncoding, "")
+	require.EqualError(t, err, "failed to decode saltpack key: empty string")
+}
+
+func ExampleEncodeSSHKey() {
+	sk := keys.GenerateEdX25519Key()
+
+	privateKey, err := keys.EncodeSSHKey(sk, "testpassword")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%s\n", privateKey)
+
+	publicKey, err := keys.EncodeSSHKey(sk.PublicKey(), "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%s\n", publicKey)
+
+	// Output:
+	//
+}
+
+func ExampleDecodeSSHKey() {
+	pk, err := keys.DecodeSSHKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n", pk.ID())
+	// Output: kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077
 }
