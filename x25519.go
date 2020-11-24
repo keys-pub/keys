@@ -115,13 +115,13 @@ func NewX25519PublicKeyFromID(id ID) (*X25519PublicKey, error) {
 	}
 }
 
-// Seal encrypts message with nacl.box Seal.
-func (k *X25519Key) Seal(b []byte, nonce *[24]byte, recipient *X25519PublicKey) []byte {
+// BoxSeal encrypts message with nacl.box Seal.
+func (k *X25519Key) BoxSeal(b []byte, nonce *[24]byte, recipient *X25519PublicKey) []byte {
 	return box.Seal(nil, b, nonce, recipient.Bytes32(), k.privateKey)
 }
 
-// Open decrypts message with nacl.box Open.
-func (k *X25519Key) Open(b []byte, nonce *[24]byte, sender *X25519PublicKey) ([]byte, bool) {
+// BoxOpen decrypts message with nacl.box Open.
+func (k *X25519Key) BoxOpen(b []byte, nonce *[24]byte, sender *X25519PublicKey) ([]byte, bool) {
 	return box.Open(nil, b, nonce, sender.Bytes32(), k.privateKey)
 }
 

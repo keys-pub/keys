@@ -62,6 +62,6 @@ func TestBox(t *testing.T) {
 	require.Equal(t, alice.PublicKey().Bytes32(), kpa)
 	require.Equal(t, bob.PublicKey().Bytes32(), kpb)
 
-	encrypted := alice.Seal(plain, nonce, bob.PublicKey())
+	encrypted := alice.BoxSeal(plain, nonce, bob.PublicKey())
 	require.Equal(t, cipher, encrypted)
 }
