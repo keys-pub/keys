@@ -193,11 +193,11 @@ func x25519Keys(ks []keys.Key) []*keys.X25519Key {
 }
 
 func x25519Key(k keys.Key) *keys.X25519Key {
-	switch k.Type() {
-	case keys.EdX25519:
-		return k.(*keys.EdX25519Key).X25519Key()
-	case keys.X25519:
-		return k.(*keys.X25519Key)
+	switch sk := k.(type) {
+	case *keys.EdX25519Key:
+		return sk.X25519Key()
+	case *keys.X25519Key:
+		return sk
 	default:
 		return nil
 	}

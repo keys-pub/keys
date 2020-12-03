@@ -123,11 +123,13 @@ func TestEdX25519JSON(t *testing.T) {
 	var out test
 	err = json.Unmarshal(b, &out)
 	require.NoError(t, err)
-	require.Equal(t, key.Bytes(), out.Key.Bytes())
+	require.Equal(t, key.Private(), out.Key.Private())
+	require.Equal(t, key.Public(), out.Key.Public())
 
 	// 64 byte private key
 	old := `{"key":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXA=="}`
 	err = json.Unmarshal([]byte(old), &out)
 	require.NoError(t, err)
-	require.Equal(t, key.Bytes(), out.Key.Bytes())
+	require.Equal(t, key.Private(), out.Key.Private())
+	require.Equal(t, key.Public(), out.Key.Public())
 }

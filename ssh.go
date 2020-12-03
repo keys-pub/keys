@@ -107,7 +107,7 @@ func ParseSSHKey(pemBytes []byte, passphrase []byte, trim bool) (Key, error) {
 
 // EncodeToSSH encodes a EdX25519Key for SSH.
 func (k *EdX25519Key) EncodeToSSH(password []byte) ([]byte, error) {
-	key := ed25519.PrivateKey(k.Bytes())
+	key := ed25519.PrivateKey(k.Private())
 	return sshkeys.Marshal(key, &sshkeys.MarshalOptions{
 		Passphrase: password,
 	})

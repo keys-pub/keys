@@ -3,8 +3,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/saltpack"
@@ -13,106 +11,29 @@ import (
 )
 
 // Key is a concrete type for the keys.Key interface, which can be serialized
-// and converted to specific key types like keys.EdX25519Key.
+// and converted to concrete key types like keys.EdX25519Key.
 // It also includes additional fields and metadata.
 type Key struct {
-	ID   keys.ID `json:"id" msgpack:"id,omitempty"`
-	Data []byte  `json:"data" msgpack:"data,omitempty"`
-	Type string  `json:"type" msgpack:"type,omitempty"`
+	ID   keys.ID `json:"id,omitempty" msgpack:"id,omitempty"`
+	Type string  `json:"type,omitempty" msgpack:"type,omitempty"`
+
+	Private []byte `json:"priv,omitempty" msgpack:"priv,omitempty"`
+	Public  []byte `json:"pub,omitempty" msgpack:"pub,omitempty"`
 
 	// Optional fields
 	Notes string `json:"notes,omitempty" msgpack:"notes,omitempty"`
 
-	CreatedAt time.Time `json:"createdAt,omitempty" msgpack:"createdAt,omitempty"`
-	UpdatedAt time.Time `json:"updatedAt,omitempty" msgpack:"updatedAt,omitempty"`
+	CreatedAt int64 `json:"cts,omitempty" msgpack:"cts,omitempty"`
+	UpdatedAt int64 `json:"uts,omitempty" msgpack:"uts,omitempty"`
 }
 
 // NewKey creates api.Key from keys.Key interface.
 func NewKey(k keys.Key) *Key {
 	return &Key{
-		ID:   k.ID(),
-		Data: k.Bytes(),
-		Type: string(k.Type()),
-	}
-}
-
-// AsEdX25519 returns a *EdX25519Key.
-// Returns nil if we can't convert.
-func (k *Key) AsEdX25519() (*keys.EdX25519Key, error) {
-	if k.Type != string(keys.EdX25519) {
-		return nil, nil
-	}
-	b := k.Data
-	if len(b) != 64 {
-		return nil, errors.Errorf("invalid number of bytes for ed25519 private key")
-	}
-	out := keys.NewEdX25519KeyFromPrivateKey(keys.Bytes64(b))
-	if out.ID() != k.ID {
-		return nil, errors.Errorf("key id mismatch")
-	}
-	return out, nil
-}
-
-// AsX25519 returns a X25519Key.
-// If key is a EdX25519Key, it's converted to a X25519Key.
-// Returns nil if we can't convert.
-func (k *Key) AsX25519() (*keys.X25519Key, error) {
-	switch k.Type {
-	case string(keys.X25519):
-		bk := keys.NewX25519KeyFromPrivateKey(keys.Bytes32(k.Data))
-		return bk, nil
-	case string(keys.EdX25519):
-		sk, err := k.AsEdX25519()
-		if err != nil {
-			return nil, err
-		}
-		return sk.X25519Key(), nil
-	default:
-		return nil, nil
-	}
-}
-
-// AsEdX25519Public returns a *EdX25519PublicKey.
-// Returns nil if we can't convert.
-func (k *Key) AsEdX25519Public() (*keys.EdX25519PublicKey, error) {
-	switch k.Type {
-	case string(keys.EdX25519):
-		sk, err := k.AsEdX25519()
-		if err != nil {
-			return nil, err
-		}
-		return sk.PublicKey(), nil
-	case string(keys.EdX25519Public):
-		b := k.Data
-		if len(b) != 32 {
-			return nil, errors.Errorf("invalid number of bytes for ed25519 public key")
-		}
-		out := keys.NewEdX25519PublicKey(keys.Bytes32(b))
-		return out, nil
-	default:
-		return nil, nil
-	}
-}
-
-// AsX25519Public returns a X25519PublicKey.
-// Returns nil if we can't convert.
-func (k *Key) AsX25519Public() (*keys.X25519PublicKey, error) {
-	switch k.Type {
-	case string(keys.X25519):
-		sk, err := k.AsX25519()
-		if err != nil {
-			return nil, err
-		}
-		return sk.PublicKey(), nil
-	case string(keys.X25519Public):
-		b := k.Data
-		if len(b) != 32 {
-			return nil, errors.Errorf("invalid number of bytes for x25519 public key")
-		}
-		out := keys.NewX25519PublicKey(keys.Bytes32(b))
-		return out, nil
-	default:
-		return nil, nil
+		ID:      k.ID(),
+		Public:  k.Public(),
+		Private: k.Private(),
+		Type:    string(k.Type()),
 	}
 }
 
@@ -129,7 +50,7 @@ func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID) ([]byte, 
 	return enc, nil
 }
 
-// DecryptKey decrypts a key and sender.
+// DecryptKey decrypts a key from a sender.
 func DecryptKey(b []byte, kr saltpack.Keyring) (*Key, *keys.EdX25519PublicKey, error) {
 	dec, pk, err := saltpack.SigncryptOpen(b, true, kr)
 	if err != nil {

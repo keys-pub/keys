@@ -29,7 +29,7 @@ func (s *Sigchains) SetClock(clock tsutil.Clock) {
 	s.clock = clock
 }
 
-// KIDs returns all keys.
+// KIDs returns all key ids.
 func (s *Sigchains) KIDs() ([]ID, error) {
 	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", dstore.NoData())
 	if err != nil {
@@ -166,7 +166,8 @@ func (s *Sigchains) Exists(kid ID) (bool, error) {
 // indexRKL is collection for reverse key lookups.
 const indexRKL = "rkl"
 
-// Lookup key identifier.
+// Lookup key.
+// Returns key associated with the specified key.
 func (s *Sigchains) Lookup(kid ID) (ID, error) {
 	path := dstore.Path(indexRKL, kid.String())
 	doc, err := s.ds.Get(context.TODO(), path)
@@ -183,13 +184,15 @@ func (s *Sigchains) Lookup(kid ID) (ID, error) {
 	return rkid, nil
 }
 
-// Index key identifier.
+// Index key.
+// Adds reverse key lookup for EdX25519 to X25519 public key.
 func (s *Sigchains) Index(key Key) error {
-	if key.Type() == EdX25519Public {
-		rk, err := Convert(key, X25519Public)
+	if key.Type() == EdX25519 {
+		pk, err := NewEdX25519PublicKeyFromID(key.ID())
 		if err != nil {
 			return err
 		}
+		rk := pk.X25519PublicKey()
 		rklPath := dstore.Path(indexRKL, rk.ID())
 		// TODO: Store this as a string not as data.
 		if err := s.ds.Set(context.TODO(), rklPath, dstore.Data([]byte(key.ID().String()))); err != nil {

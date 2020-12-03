@@ -116,26 +116,6 @@ func (i ID) IsX25519() bool {
 	return hrp == x25519KeyHRP
 }
 
-func hrpToKeyType(hrp string) KeyType {
-	switch hrp {
-	case edx25519KeyHRP:
-		return EdX25519Public
-	case x25519KeyHRP:
-		return X25519Public
-	default:
-		return ""
-	}
-}
-
-// PublicKeyType returns public key type that ID represents or empty string if unknown.
-func (i ID) PublicKeyType() KeyType {
-	hrp, _, err := i.Decode()
-	if err != nil {
-		return ""
-	}
-	return hrpToKeyType(hrp)
-}
-
 // ID for Keys interface.
 func (i ID) ID() ID {
 	return i
@@ -149,16 +129,21 @@ func (i ID) Type() KeyType {
 	}
 	switch hrp {
 	case edx25519KeyHRP:
-		return EdX25519Public
+		return EdX25519
 	case x25519KeyHRP:
-		return X25519Public
+		return X25519
 	default:
 		return ""
 	}
 }
 
-// Bytes are public key data (for Key interface).
-func (i ID) Bytes() []byte {
+// Private returns nil (for Key interface).
+func (i ID) Private() []byte {
+	return nil
+}
+
+// Public key data (for Key interface).
+func (i ID) Public() []byte {
 	_, b, err := i.Decode()
 	if err != nil {
 		return nil

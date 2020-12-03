@@ -22,7 +22,8 @@ func TestEncodeKeyToSaltpack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, sk.Type(), skOut.Type())
-	require.Equal(t, sk.Bytes(), skOut.Bytes())
+	require.Equal(t, sk.Private(), skOut.Private())
+	require.Equal(t, sk.Public(), skOut.Public())
 }
 
 func ExampleDecodeSaltpackKey() {
@@ -48,7 +49,8 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err := keys.DecodeKey(msg, keys.SaltpackEncoding, "testpassword")
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
-	require.Equal(t, sk.Bytes(), out.Bytes())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
 
 	// Saltpack (no password)
 	msg, err = keys.EncodeKey(sk, keys.SaltpackEncoding, "")
@@ -56,11 +58,12 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err = keys.DecodeKey(msg, keys.SaltpackEncoding, "")
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
-	require.Equal(t, sk.Bytes(), out.Bytes())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
 
 	// Saltpack (public)
 	_, err = keys.EncodeKey(sk.PublicKey(), keys.SaltpackEncoding, "")
-	require.EqualError(t, err, "failed to encode to saltpack: unsupported key ed25519-public")
+	require.EqualError(t, err, "no private key")
 
 	// SSH (public)
 	msg, err = keys.EncodeKey(sk.PublicKey(), keys.SSHEncoding, "")
@@ -68,7 +71,7 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err = keys.DecodeKey(msg, keys.SSHEncoding, "")
 	require.NoError(t, err)
 	require.Equal(t, sk.PublicKey().Type(), out.Type())
-	require.Equal(t, sk.PublicKey().Bytes(), out.Bytes())
+	require.Equal(t, sk.PublicKey().Public(), out.Public())
 
 	// SSH (password)
 	msg, err = keys.EncodeKey(sk, keys.SSHEncoding, "testpassword")
@@ -76,7 +79,8 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err = keys.DecodeKey(msg, keys.SSHEncoding, "testpassword")
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
-	require.Equal(t, sk.Bytes(), out.Bytes())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
 
 	// SSH (password, helper)
 	msg, err = keys.EncodeSSHKey(sk, "testpassword")
@@ -84,7 +88,8 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err = keys.DecodeSSHKey(msg, "testpassword")
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
-	require.Equal(t, sk.Bytes(), out.Bytes())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
 
 	// SSH (no password)
 	msg, err = keys.EncodeKey(sk, keys.SSHEncoding, "")
@@ -92,7 +97,8 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err = keys.DecodeKey(msg, keys.SSHEncoding, "")
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
-	require.Equal(t, sk.Bytes(), out.Bytes())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
 
 	// SSH (no password, helper)
 	msg, err = keys.EncodeSSHKey(sk, "")
@@ -100,12 +106,13 @@ func TestEncodeKeyDecodeKey(t *testing.T) {
 	out, err = keys.DecodeSSHKey(msg, "")
 	require.NoError(t, err)
 	require.Equal(t, sk.Type(), out.Type())
-	require.Equal(t, sk.Bytes(), out.Bytes())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
 
 	// SSH
 	pk, err := keys.DecodeSSHKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c", "")
 	require.NoError(t, err)
-	require.Equal(t, "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c", hex.EncodeToString(pk.Bytes()))
+	require.Equal(t, "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c", hex.EncodeToString(pk.Public()))
 
 	// Errors
 	_, err = keys.DecodeKey("", keys.SSHEncoding, "")
