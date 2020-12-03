@@ -11,7 +11,7 @@ import (
 )
 
 // Key is a concrete type for the keys.Key interface, which can be serialized
-// and converted to specific key types like keys.EdX25519Key.
+// and converted to concrete key types like keys.EdX25519Key.
 // It also includes additional fields and metadata.
 type Key struct {
 	ID   keys.ID `json:"id,omitempty" msgpack:"id,omitempty"`

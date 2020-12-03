@@ -328,6 +328,8 @@ func (u *Users) Find(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	if res != nil {
 		return res, nil
 	}
+
+	// If user is not found, try related keys.
 	rkid, err := u.scs.Lookup(kid)
 	if err != nil {
 		return nil, err

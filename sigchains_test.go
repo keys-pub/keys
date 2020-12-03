@@ -133,3 +133,22 @@ func TestSigchainsSpew(t *testing.T) {
 	spew := sc.Spew()
 	require.Equal(t, string(testdata(t, "testdata/sc1.spew")), spew.String())
 }
+
+func TestSigchainsLookup(t *testing.T) {
+	clock := tsutil.NewTestClock()
+	scs := testSigchains(t, clock)
+
+	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	sc := keys.NewSigchain(alice.ID())
+
+	st, err := keys.NewSigchainStatement(sc, []byte("test1"), alice, "", clock.Now())
+	require.NoError(t, err)
+	err = sc.Add(st)
+	require.NoError(t, err)
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	rk, err := scs.Lookup(keys.ID("kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"))
+	require.NoError(t, err)
+	require.Equal(t, alice.ID(), rk)
+}
