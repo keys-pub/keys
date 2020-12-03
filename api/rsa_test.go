@@ -3,7 +3,6 @@ package api_test
 import (
 	"crypto/rsa"
 	"encoding/json"
-	"io/ioutil"
 	"math/big"
 	"testing"
 
@@ -38,13 +37,13 @@ func TestRSAMarshal(t *testing.T) {
 
 	b, err := msgpack.Marshal(key)
 	require.NoError(t, err)
-	expected, err := ioutil.ReadFile("testdata/rsa.msgpack")
-	require.NoError(t, err)
+	expected := testdata(t, "testdata/rsa.msgpack")
+
 	require.Equal(t, string(expected), spew.Sdump(b))
 
 	b, err = json.MarshalIndent(key, "", "  ")
 	require.NoError(t, err)
-	expected, err = ioutil.ReadFile("testdata/rsa.json")
+	expected = testdata(t, "testdata/rsa.json")
 	require.NoError(t, err)
 	require.Equal(t, string(expected), string(b))
 }

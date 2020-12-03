@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"bytes"
+	"io/ioutil"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -106,4 +107,11 @@ func TestEncryptKeyWithPassword(t *testing.T) {
 
 func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
+}
+
+func testdata(t *testing.T, path string) []byte {
+	b, err := ioutil.ReadFile(path)
+	require.NoError(t, err)
+	b = bytes.ReplaceAll(b, []byte{'\r'}, []byte{})
+	return b
 }
