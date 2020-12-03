@@ -166,7 +166,7 @@ func (s *Sigchains) Exists(kid ID) (bool, error) {
 // indexRKL is collection for reverse key lookups.
 const indexRKL = "rkl"
 
-// Lookup key identifier.
+// Lookup key.
 func (s *Sigchains) Lookup(kid ID) (ID, error) {
 	path := dstore.Path(indexRKL, kid.String())
 	doc, err := s.ds.Get(context.TODO(), path)
@@ -183,10 +183,10 @@ func (s *Sigchains) Lookup(kid ID) (ID, error) {
 	return rkid, nil
 }
 
-// Index key identifier.
+// Index key.
 func (s *Sigchains) Index(key Key) error {
-	if key.Type() == EdX25519Public {
-		rk, err := Convert(key, X25519Public)
+	if key.Type() == EdX25519 {
+		rk, err := Convert(key, X25519, true)
 		if err != nil {
 			return err
 		}

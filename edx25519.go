@@ -14,10 +14,6 @@ import (
 const EdX25519 KeyType = "edx25519"
 const edx25519KeyHRP string = "kex"
 
-// EdX25519Public public key type.
-// TODO: Public key type name should be edx25519-public?
-const EdX25519Public KeyType = "ed25519-public"
-
 // EdX25519PublicKey is the public part of EdX25519 key pair.
 type EdX25519PublicKey struct {
 	id        ID
@@ -81,19 +77,19 @@ func (k *EdX25519Key) Type() KeyType {
 	return EdX25519
 }
 
-// Bytes for key.
-func (k *EdX25519Key) Bytes() []byte {
+// Private ...
+func (k *EdX25519Key) Private() []byte {
 	return k.privateKey[:]
 }
 
-// Bytes64 for key.
-func (k *EdX25519Key) Bytes64() *[64]byte {
-	return k.privateKey
+// Public ...
+func (k *EdX25519Key) Public() []byte {
+	return k.PublicKey().Public()
 }
 
 // Signer interface.
 func (k *EdX25519Key) Signer() crypto.Signer {
-	return ed25519.PrivateKey(k.Bytes())
+	return ed25519.PrivateKey(k.Private())
 }
 
 // MarshalText for encoding.TextMarshaler interface.
@@ -121,7 +117,7 @@ func (k *EdX25519Key) UnmarshalText(s []byte) error {
 
 // Equal returns true if equal to key.
 func (k *EdX25519Key) Equal(o *EdX25519Key) bool {
-	return subtle.ConstantTimeCompare(k.Bytes(), o.Bytes()) == 1
+	return subtle.ConstantTimeCompare(k.Private(), o.Private()) == 1
 }
 
 // NewEdX25519PublicKey creates a EdX25519PublicKey.
@@ -177,32 +173,37 @@ func X25519Match(expected ID, kid ID) bool {
 }
 
 // ID for EdX25519Key.
-func (s *EdX25519PublicKey) ID() ID {
-	return s.id
+func (k *EdX25519PublicKey) ID() ID {
+	return k.id
 }
 
-func (s *EdX25519PublicKey) String() string {
-	return s.id.String()
+func (k *EdX25519PublicKey) String() string {
+	return k.id.String()
 }
 
 // Type ...
-func (s *EdX25519PublicKey) Type() KeyType {
-	return EdX25519Public
+func (k *EdX25519PublicKey) Type() KeyType {
+	return EdX25519
 }
 
-// Bytes for key.
-func (s *EdX25519PublicKey) Bytes() []byte {
-	return s.publicKey[:]
+// Bytes ...
+func (k *EdX25519PublicKey) Bytes() []byte {
+	return k.publicKey[:]
 }
 
-// Bytes32 for key.
-func (s *EdX25519PublicKey) Bytes32() *[32]byte {
-	return s.publicKey
+// Public ...
+func (k *EdX25519PublicKey) Public() []byte {
+	return k.Bytes()
+}
+
+// Private returns nil.
+func (k *EdX25519PublicKey) Private() []byte {
+	return nil
 }
 
 // X25519PublicKey converts the ed25519 public key to a x25519 public key.
-func (s *EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
-	edpk := ed25519.PublicKey(s.publicKey[:])
+func (k *EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
+	edpk := ed25519.PublicKey(k.publicKey[:])
 	bpk := ed25519PublicKeyToCurve25519(edpk)
 	if len(bpk) != 32 {
 		panic("unable to convert key: invalid public key bytes")
@@ -214,11 +215,11 @@ func (s *EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 }
 
 // Verify verifies a message and signature with public key.
-func (s *EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
+func (k *EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
 	if l := len(b); l < sign.Overhead {
 		return nil, errors.Errorf("not enough data for signature")
 	}
-	_, ok := sign.Open(nil, b, s.publicKey)
+	_, ok := sign.Open(nil, b, k.publicKey)
 	if !ok {
 		return nil, ErrVerifyFailed
 	}
@@ -226,7 +227,7 @@ func (s *EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
 }
 
 // VerifyDetached verifies a detached message.
-func (s *EdX25519PublicKey) VerifyDetached(sig []byte, b []byte) error {
+func (k *EdX25519PublicKey) VerifyDetached(sig []byte, b []byte) error {
 	if len(sig) != sign.Overhead {
 		return errors.Errorf("invalid sig bytes length")
 	}
@@ -234,7 +235,7 @@ func (s *EdX25519PublicKey) VerifyDetached(sig []byte, b []byte) error {
 		return errors.Errorf("no bytes")
 	}
 	msg := bytesJoin(sig, b)
-	_, err := s.Verify(msg)
+	_, err := k.Verify(msg)
 	return err
 }
 

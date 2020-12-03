@@ -98,14 +98,16 @@ func TestSSHEncode(t *testing.T) {
 	out, err := keys.ParseSSHKey(sout, nil, false)
 	require.NoError(t, err)
 	require.NotNil(t, out)
-	require.Equal(t, out.Bytes(), alice.Bytes())
+	require.Equal(t, out.Private(), alice.Private())
+	require.Equal(t, out.Public(), alice.Public())
 
 	sout, err = alice.EncodeToSSH([]byte{})
 	require.NoError(t, err)
 	out, err = keys.ParseSSHKey(sout, nil, false)
 	require.NoError(t, err)
 	require.NotNil(t, out)
-	require.Equal(t, out.Bytes(), alice.Bytes())
+	require.Equal(t, out.Private(), alice.Private())
+	require.Equal(t, out.Public(), alice.Public())
 
 	sout, err = alice.EncodeToSSH(nil)
 	require.NoError(t, err)
@@ -120,7 +122,8 @@ func TestSSHEncode(t *testing.T) {
 	out, err = keys.ParseSSHKey(sout, []byte("testpassword"), false)
 	require.NoError(t, err)
 	require.NotNil(t, out)
-	require.Equal(t, out.Bytes(), alice.Bytes())
+	require.Equal(t, out.Private(), alice.Private())
+	require.Equal(t, out.Public(), alice.Public())
 
 	sout, err = alice.EncodeToSSH([]byte("testpassword"))
 	require.NoError(t, err)
@@ -134,5 +137,5 @@ func TestSSHEncodePublic(t *testing.T) {
 	b := alice.PublicKey().EncodeToSSHAuthorized()
 	out, err := keys.ParseSSHPublicKey(string(b))
 	require.NoError(t, err)
-	require.Equal(t, out.Bytes(), alice.PublicKey().Bytes())
+	require.Equal(t, out.Public(), alice.PublicKey().Bytes())
 }

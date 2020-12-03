@@ -3,8 +3,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/saltpack"
@@ -16,104 +14,115 @@ import (
 // and converted to specific key types like keys.EdX25519Key.
 // It also includes additional fields and metadata.
 type Key struct {
-	ID   keys.ID `json:"id" msgpack:"id,omitempty"`
-	Data []byte  `json:"data" msgpack:"data,omitempty"`
-	Type string  `json:"type" msgpack:"type,omitempty"`
+	ID   keys.ID `json:"id,omitempty" msgpack:"id,omitempty"`
+	Type string  `json:"type,omitempty" msgpack:"type,omitempty"`
+
+	Private []byte `json:"priv,omitempty" msgpack:"priv,omitempty"`
+	Public  []byte `json:"pub,omitempty" msgpack:"pub,omitempty"`
 
 	// Optional fields
 	Notes string `json:"notes,omitempty" msgpack:"notes,omitempty"`
 
-	CreatedAt time.Time `json:"createdAt,omitempty" msgpack:"createdAt,omitempty"`
-	UpdatedAt time.Time `json:"updatedAt,omitempty" msgpack:"updatedAt,omitempty"`
+	CreatedAt int64 `json:"cts,omitempty" msgpack:"cts,omitempty"`
+	UpdatedAt int64 `json:"uts,omitempty" msgpack:"uts,omitempty"`
 }
 
 // NewKey creates api.Key from keys.Key interface.
 func NewKey(k keys.Key) *Key {
 	return &Key{
-		ID:   k.ID(),
-		Data: k.Bytes(),
-		Type: string(k.Type()),
+		ID:      k.ID(),
+		Public:  k.Public(),
+		Private: k.Private(),
+		Type:    string(k.Type()),
 	}
 }
 
 // AsEdX25519 returns a *EdX25519Key.
-// Returns nil if we can't convert.
-func (k *Key) AsEdX25519() (*keys.EdX25519Key, error) {
+// Returns nil if we can't resolve.
+func (k *Key) AsEdX25519() *keys.EdX25519Key {
 	if k.Type != string(keys.EdX25519) {
-		return nil, nil
+		return nil
 	}
-	b := k.Data
+	if k.Private == nil {
+		return nil
+	}
+	b := k.Private
 	if len(b) != 64 {
-		return nil, errors.Errorf("invalid number of bytes for ed25519 private key")
+		return nil
 	}
 	out := keys.NewEdX25519KeyFromPrivateKey(keys.Bytes64(b))
 	if out.ID() != k.ID {
-		return nil, errors.Errorf("key id mismatch")
+		return nil
 	}
-	return out, nil
+	return out
 }
 
 // AsX25519 returns a X25519Key.
 // If key is a EdX25519Key, it's converted to a X25519Key.
-// Returns nil if we can't convert.
-func (k *Key) AsX25519() (*keys.X25519Key, error) {
+// Returns nil if we can't resolve.
+func (k *Key) AsX25519() *keys.X25519Key {
+	if k.Private == nil {
+		return nil
+	}
 	switch k.Type {
 	case string(keys.X25519):
-		bk := keys.NewX25519KeyFromPrivateKey(keys.Bytes32(k.Data))
-		return bk, nil
+		bk := keys.NewX25519KeyFromPrivateKey(keys.Bytes32(k.Private))
+		return bk
 	case string(keys.EdX25519):
-		sk, err := k.AsEdX25519()
-		if err != nil {
-			return nil, err
+		sk := k.AsEdX25519()
+		if sk == nil {
+			return nil
 		}
-		return sk.X25519Key(), nil
+		return sk.X25519Key()
 	default:
-		return nil, nil
+		return nil
 	}
 }
 
 // AsEdX25519Public returns a *EdX25519PublicKey.
-// Returns nil if we can't convert.
-func (k *Key) AsEdX25519Public() (*keys.EdX25519PublicKey, error) {
-	switch k.Type {
-	case string(keys.EdX25519):
-		sk, err := k.AsEdX25519()
-		if err != nil {
-			return nil, err
-		}
-		return sk.PublicKey(), nil
-	case string(keys.EdX25519Public):
-		b := k.Data
+// Returns nil if we can't resolve.
+func (k *Key) AsEdX25519Public() *keys.EdX25519PublicKey {
+	if k.Type != string(keys.EdX25519) {
+		return nil
+	}
+
+	if k.Private == nil {
+		b := k.Public
 		if len(b) != 32 {
-			return nil, errors.Errorf("invalid number of bytes for ed25519 public key")
+			return nil
 		}
 		out := keys.NewEdX25519PublicKey(keys.Bytes32(b))
-		return out, nil
-	default:
-		return nil, nil
+		return out
 	}
+
+	sk := k.AsEdX25519()
+	if sk == nil {
+		return nil
+	}
+	return sk.PublicKey()
 }
 
 // AsX25519Public returns a X25519PublicKey.
-// Returns nil if we can't convert.
-func (k *Key) AsX25519Public() (*keys.X25519PublicKey, error) {
-	switch k.Type {
-	case string(keys.X25519):
-		sk, err := k.AsX25519()
-		if err != nil {
-			return nil, err
-		}
-		return sk.PublicKey(), nil
-	case string(keys.X25519Public):
-		b := k.Data
+// Returns nil if we can't resolve.
+func (k *Key) AsX25519Public() *keys.X25519PublicKey {
+	if k.Type != string(keys.X25519) {
+		return nil
+	}
+
+	if k.Private == nil {
+		b := k.Public
 		if len(b) != 32 {
-			return nil, errors.Errorf("invalid number of bytes for x25519 public key")
+			return nil
 		}
 		out := keys.NewX25519PublicKey(keys.Bytes32(b))
-		return out, nil
-	default:
-		return nil, nil
+		return out
 	}
+
+	sk := k.AsX25519()
+	if sk == nil {
+		return nil
+	}
+	return sk.PublicKey()
 }
 
 // EncryptKey creates encrypted key from a sender to a recipient.
@@ -193,4 +202,20 @@ func DecryptKeyWithPassword(s string, password string) (*Key, error) {
 		return nil, err
 	}
 	return &key, nil
+}
+
+// AsRSA returns a RSAKey.
+// Returns nil if we can't resolve.
+func (k *Key) AsRSA() *keys.RSAKey {
+	if k.Private == nil {
+		return nil
+	}
+	if k.Type != string(keys.RSA) {
+		return nil
+	}
+	bk, err := keys.NewRSAKeyFromPrivateKey(k.Private)
+	if err != nil {
+		return nil
+	}
+	return bk
 }

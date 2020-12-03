@@ -99,16 +99,19 @@ func EncodeSaltpackKey(key Key, password string) (string, error) {
 	if key == nil {
 		return "", errors.Errorf("no key to encode")
 	}
+	if key.Private() == nil {
+		return "", errors.Errorf("no private key")
+	}
 	var brand Brand
-	b := key.Bytes()
 	switch key.Type() {
 	case EdX25519:
 		brand = EdX25519Brand
 	case X25519:
 		brand = X25519Brand
 	default:
-		return "", errors.Errorf("failed to encode to saltpack: unsupported key %s", key.Type())
+		return "", errors.Errorf("unsupported key %s", key.Type())
 	}
+	b := key.Private()
 	out := EncryptWithPassword(b, password)
 	return encoding.EncodeSaltpack(out, string(brand)), nil
 }

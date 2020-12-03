@@ -8,8 +8,11 @@ type Key interface {
 	// Type of key.
 	Type() KeyType
 
-	// Bytes are key data.
-	Bytes() []byte
+	// Private key data.
+	Private() []byte
+
+	// Public key data.
+	Public() []byte
 }
 
 // KeyType ...
@@ -20,3 +23,6 @@ var _ Key = &EdX25519PublicKey{}
 var _ Key = &X25519Key{}
 var _ Key = &X25519PublicKey{}
 var _ Key = ID("")
+
+var _ Key = &RSAKey{}
+var _ Key = &RSAPublicKey{}

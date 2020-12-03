@@ -18,9 +18,6 @@ type X25519PublicKey struct {
 const X25519 KeyType = "x25519"
 const x25519KeyHRP string = "kbx"
 
-// X25519Public public key type.
-const X25519Public KeyType = "x25519-public"
-
 // X25519Key is a X25519 assymmetric encryption key.
 type X25519Key struct {
 	id         ID
@@ -38,14 +35,14 @@ func (k *X25519Key) Type() KeyType {
 	return X25519
 }
 
-// Bytes for key.
-func (k *X25519Key) Bytes() []byte {
-	return k.privateKey[:]
+// Public key bytes.
+func (k *X25519Key) Public() []byte {
+	return k.PublicKey().Public()
 }
 
-// Bytes32 for key.
-func (k *X25519Key) Bytes32() *[32]byte {
-	return k.privateKey
+// Private key bytes.
+func (k *X25519Key) Private() []byte {
+	return k.privateKey[:]
 }
 
 // PrivateKey returns private part of this X25519Key.
@@ -145,15 +142,25 @@ func (k *X25519PublicKey) ID() ID {
 
 // Type of key.
 func (k *X25519PublicKey) Type() KeyType {
-	return X25519Public
+	return X25519
 }
 
-// Bytes for key.
+// Bytes ...
 func (k *X25519PublicKey) Bytes() []byte {
 	return k.publicKey[:]
 }
 
-// Bytes32 for key.
+// Public ...
+func (k *X25519PublicKey) Public() []byte {
+	return k.Bytes()
+}
+
+// Bytes32 ...
 func (k *X25519PublicKey) Bytes32() *[32]byte {
 	return k.publicKey
+}
+
+// Private returns nil.
+func (k *X25519PublicKey) Private() []byte {
+	return nil
 }
