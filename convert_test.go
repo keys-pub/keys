@@ -18,6 +18,6 @@ func TestConvert(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, keys.ID("kbx1rvd43h2sag2tvrdp0duse5p82nvhpjd6hpjwhv7q7vqklega8atshec5ws"), bpk.ID())
 
-	bpk, err = keys.Convert(alice, keys.X25519, false)
+	_, err = keys.Convert(alice, keys.X25519, false)
 	require.EqualError(t, err, "failed to convert")
 }

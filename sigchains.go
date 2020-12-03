@@ -29,7 +29,7 @@ func (s *Sigchains) SetClock(clock tsutil.Clock) {
 	s.clock = clock
 }
 
-// KIDs returns all keys.
+// KIDs returns all key ids.
 func (s *Sigchains) KIDs() ([]ID, error) {
 	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", dstore.NoData())
 	if err != nil {

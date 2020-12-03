@@ -37,94 +37,6 @@ func NewKey(k keys.Key) *Key {
 	}
 }
 
-// AsEdX25519 returns a *EdX25519Key.
-// Returns nil if we can't resolve.
-func (k *Key) AsEdX25519() *keys.EdX25519Key {
-	if k.Type != string(keys.EdX25519) {
-		return nil
-	}
-	if k.Private == nil {
-		return nil
-	}
-	b := k.Private
-	if len(b) != 64 {
-		return nil
-	}
-	out := keys.NewEdX25519KeyFromPrivateKey(keys.Bytes64(b))
-	if out.ID() != k.ID {
-		return nil
-	}
-	return out
-}
-
-// AsX25519 returns a X25519Key.
-// If key is a EdX25519Key, it's converted to a X25519Key.
-// Returns nil if we can't resolve.
-func (k *Key) AsX25519() *keys.X25519Key {
-	if k.Private == nil {
-		return nil
-	}
-	switch k.Type {
-	case string(keys.X25519):
-		bk := keys.NewX25519KeyFromPrivateKey(keys.Bytes32(k.Private))
-		return bk
-	case string(keys.EdX25519):
-		sk := k.AsEdX25519()
-		if sk == nil {
-			return nil
-		}
-		return sk.X25519Key()
-	default:
-		return nil
-	}
-}
-
-// AsEdX25519Public returns a *EdX25519PublicKey.
-// Returns nil if we can't resolve.
-func (k *Key) AsEdX25519Public() *keys.EdX25519PublicKey {
-	if k.Type != string(keys.EdX25519) {
-		return nil
-	}
-
-	if k.Private == nil {
-		b := k.Public
-		if len(b) != 32 {
-			return nil
-		}
-		out := keys.NewEdX25519PublicKey(keys.Bytes32(b))
-		return out
-	}
-
-	sk := k.AsEdX25519()
-	if sk == nil {
-		return nil
-	}
-	return sk.PublicKey()
-}
-
-// AsX25519Public returns a X25519PublicKey.
-// Returns nil if we can't resolve.
-func (k *Key) AsX25519Public() *keys.X25519PublicKey {
-	if k.Type != string(keys.X25519) {
-		return nil
-	}
-
-	if k.Private == nil {
-		b := k.Public
-		if len(b) != 32 {
-			return nil
-		}
-		out := keys.NewX25519PublicKey(keys.Bytes32(b))
-		return out
-	}
-
-	sk := k.AsX25519()
-	if sk == nil {
-		return nil
-	}
-	return sk.PublicKey()
-}
-
 // EncryptKey creates encrypted key from a sender to a recipient.
 func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID) ([]byte, error) {
 	b, err := msgpack.Marshal(key)
@@ -138,7 +50,7 @@ func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID) ([]byte, 
 	return enc, nil
 }
 
-// DecryptKey decrypts a key and sender.
+// DecryptKey decrypts a key from a sender.
 func DecryptKey(b []byte, kr saltpack.Keyring) (*Key, *keys.EdX25519PublicKey, error) {
 	dec, pk, err := saltpack.SigncryptOpen(b, true, kr)
 	if err != nil {
@@ -202,20 +114,4 @@ func DecryptKeyWithPassword(s string, password string) (*Key, error) {
 		return nil, err
 	}
 	return &key, nil
-}
-
-// AsRSA returns a RSAKey.
-// Returns nil if we can't resolve.
-func (k *Key) AsRSA() *keys.RSAKey {
-	if k.Private == nil {
-		return nil
-	}
-	if k.Type != string(keys.RSA) {
-		return nil
-	}
-	bk, err := keys.NewRSAKeyFromPrivateKey(k.Private)
-	if err != nil {
-		return nil
-	}
-	return bk
 }

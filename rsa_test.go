@@ -13,6 +13,10 @@ func TestRSAKey(t *testing.T) {
 	key := keys.NewRSAKey(test2048RSAKey)
 	require.Equal(t, keys.ID("rsa1lg8lhzpatgmakvrkz866fehw64lkdtly3t2q7d36kfyhmaauyg2sgkhan4"), key.ID())
 	require.Equal(t, "rsa", string(key.Type()))
+
+	pk := keys.NewRSAPublicKey(&test2048RSAKey.PublicKey)
+	require.Equal(t, keys.ID("rsa1lg8lhzpatgmakvrkz866fehw64lkdtly3t2q7d36kfyhmaauyg2sgkhan4"), pk.ID())
+	require.Equal(t, "rsa", string(pk.Type()))
 }
 
 func fromBase10(base10 string) *big.Int {
