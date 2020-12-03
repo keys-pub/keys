@@ -60,26 +60,26 @@ func DecryptKey(b []byte, kr saltpack.Keyring) (*Key, *keys.EdX25519PublicKey, e
 	if err := msgpack.Unmarshal(dec, &key); err != nil {
 		return nil, nil, err
 	}
-	if err := Check(&key); err != nil {
+	if err := key.Check(); err != nil {
 		return nil, nil, err
 	}
 	return &key, pk, nil
 }
 
 // Check if key is valid (has valid ID and type).
-func Check(key *Key) error {
-	if _, err := keys.ParseID(string(key.ID)); err != nil {
+func (k *Key) Check() error {
+	if _, err := keys.ParseID(string(k.ID)); err != nil {
 		return err
 	}
-	if key.Type == "" {
+	if k.Type == "" {
 		return errors.Errorf("invalid key type")
 	}
 	return nil
 }
 
-// EncryptKeyWithPassword creates an encrypted key using a password.
-func EncryptKeyWithPassword(key *Key, password string) (string, error) {
-	b, err := msgpack.Marshal(key)
+// EncryptWithPassword creates an encrypted key using a password.
+func (k *Key) EncryptWithPassword(password string) (string, error) {
+	b, err := msgpack.Marshal(k)
 	if err != nil {
 		return "", err
 	}
@@ -110,7 +110,7 @@ func DecryptKeyWithPassword(s string, password string) (*Key, error) {
 	if err := msgpack.Unmarshal(decrypted, &key); err != nil {
 		return nil, err
 	}
-	if err := Check(&key); err != nil {
+	if err := key.Check(); err != nil {
 		return nil, err
 	}
 	return &key, nil

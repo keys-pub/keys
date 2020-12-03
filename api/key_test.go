@@ -93,7 +93,7 @@ func TestEncryptKeyWithPassword(t *testing.T) {
 	key.CreatedAt = clock.NowMillis()
 	key.UpdatedAt = clock.NowMillis()
 
-	out, err := api.EncryptKeyWithPassword(key, "testpassword")
+	out, err := key.EncryptWithPassword("testpassword")
 	require.NoError(t, err)
 
 	dec, err := api.DecryptKeyWithPassword(out, "testpassword")
