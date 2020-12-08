@@ -1,10 +1,15 @@
 package saltpack
 
 import (
+	"errors"
+
 	"github.com/keys-pub/keys"
 
 	ksaltpack "github.com/keybase/saltpack"
 )
+
+// ErrInvalidData if data was invalid.
+var ErrInvalidData = errors.New("invalid data")
 
 func convertSignKeyErr(err error) error {
 	if kerr, ok := err.(ksaltpack.ErrNoSenderKey); ok {

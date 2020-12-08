@@ -75,6 +75,14 @@ func Decrypt(b []byte, armored bool, kr Keyring) ([]byte, *keys.X25519PublicKey,
 		info, out, err = ksaltpack.Open(encryptVersionValidator, b, s)
 	}
 	if err != nil {
+		switch err.(type) {
+		case ksaltpack.ErrBadFrame:
+			return nil, nil, ErrInvalidData
+		}
+		switch err {
+		case io.ErrUnexpectedEOF:
+			return nil, nil, ErrInvalidData
+		}
 		return nil, nil, convertBoxKeyErr(err)
 	}
 	sender, err := x25519SenderKey(info)

@@ -53,6 +53,14 @@ func SigncryptOpen(b []byte, armored bool, kr Keyring) ([]byte, *keys.EdX25519Pu
 		spk, out, err = ksaltpack.SigncryptOpen(b, s, nil)
 	}
 	if err != nil {
+		switch err.(type) {
+		case ksaltpack.ErrBadFrame:
+			return nil, nil, ErrInvalidData
+		}
+		switch err {
+		case io.ErrUnexpectedEOF:
+			return nil, nil, ErrInvalidData
+		}
 		return nil, nil, convertSignKeyErr(err)
 	}
 	sender, err := edx25519SenderKey(spk)

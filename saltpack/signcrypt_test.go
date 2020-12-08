@@ -129,4 +129,7 @@ func TestSigncryptOpenError(t *testing.T) {
 
 	_, _, err = saltpack.SigncryptOpen(encrypted, false, saltpack.NewKeyring())
 	require.EqualError(t, err, "no decryption key found for message")
+
+	_, _, err = saltpack.SigncryptOpen(encrypted, true, saltpack.NewKeyring(bob))
+	require.Equal(t, err, saltpack.ErrInvalidData)
 }

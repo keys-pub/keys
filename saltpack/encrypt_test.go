@@ -175,6 +175,9 @@ func TestEncryptOpenError(t *testing.T) {
 
 	_, _, err = saltpack.Decrypt(encrypted, false, saltpack.NewKeyring())
 	require.EqualError(t, err, "no decryption key found for message")
+
+	_, _, err = saltpack.Decrypt(encrypted, true, saltpack.NewKeyring(bob))
+	require.Equal(t, err, saltpack.ErrInvalidData)
 }
 
 func TestEncryptWithEdX25519Key(t *testing.T) {
