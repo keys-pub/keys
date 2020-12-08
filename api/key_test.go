@@ -73,16 +73,19 @@ func TestEncryptKey(t *testing.T) {
 	key.CreatedAt = clock.NowMillis()
 	key.UpdatedAt = clock.NowMillis()
 
-	out, err := api.EncryptKey(key, alice, bob.ID())
+	out, err := api.EncryptKey(key, alice, bob.ID(), false)
 	require.NoError(t, err)
 
-	dec, pk, err := api.DecryptKey(out, saltpack.NewKeyring(bob))
+	dec, pk, err := api.DecryptKey(out, saltpack.NewKeyring(bob), false)
 	require.NoError(t, err)
 	require.Equal(t, alice.ID(), pk.ID())
 	assert.ObjectsAreEqual(dec, key)
 
-	_, _, err = api.DecryptKey(out, saltpack.NewKeyring())
-	require.EqualError(t, err, "no decryption key found for message")
+	_, _, err = api.DecryptKey(out, saltpack.NewKeyring(), false)
+	require.EqualError(t, err, "failed to decrypt key: no decryption key found for message")
+
+	_, _, err = api.DecryptKey(out, saltpack.NewKeyring(bob), true)
+	require.EqualError(t, err, "failed to decrypt key: invalid data")
 }
 
 func TestEncryptKeyWithPassword(t *testing.T) {

@@ -38,12 +38,12 @@ func NewKey(k keys.Key) *Key {
 }
 
 // EncryptKey creates encrypted key from a sender to a recipient.
-func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID) ([]byte, error) {
+func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID, armored bool) ([]byte, error) {
 	b, err := msgpack.Marshal(key)
 	if err != nil {
 		return nil, err
 	}
-	enc, err := saltpack.Signcrypt(b, true, sender, recipient, sender.ID())
+	enc, err := saltpack.Signcrypt(b, armored, sender, recipient, sender.ID())
 	if err != nil {
 		return nil, err
 	}
@@ -51,10 +51,10 @@ func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID) ([]byte, 
 }
 
 // DecryptKey decrypts a key from a sender.
-func DecryptKey(b []byte, kr saltpack.Keyring) (*Key, *keys.EdX25519PublicKey, error) {
-	dec, pk, err := saltpack.SigncryptOpen(b, true, kr)
+func DecryptKey(b []byte, kr saltpack.Keyring, armored bool) (*Key, *keys.EdX25519PublicKey, error) {
+	dec, pk, err := saltpack.SigncryptOpen(b, armored, kr)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrapf(err, "failed to decrypt key")
 	}
 	var key Key
 	if err := msgpack.Unmarshal(dec, &key); err != nil {
