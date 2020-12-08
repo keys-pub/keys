@@ -51,7 +51,7 @@ func (u *Users) Requestor() request.Requestor {
 	return u.req
 }
 
-// Update index for sigchain KID.
+// Update index for key.
 func (u *Users) Update(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
@@ -90,7 +90,7 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 	if usr == nil {
 		return nil, nil
 	}
-	result, err := u.result(ctx, sc.KID())
+	result, err := u.Get(ctx, sc.KID())
 	if err != nil {
 		return nil, err
 	}
@@ -133,14 +133,14 @@ func ValidateStatement(st *keys.Statement) error {
 // Retrieves cached result. If Update(kid) has not been called or there is no
 // user statement, this will return nil.
 func (u *Users) Get(ctx context.Context, kid keys.ID) (*user.Result, error) {
-	res, err := u.get(ctx, indexKID, kid.String())
+	keyDoc, err := u.get(ctx, indexKID, kid.String())
 	if err != nil {
 		return nil, err
 	}
-	if res == nil {
+	if keyDoc == nil {
 		return nil, nil
 	}
-	return res.Result, nil
+	return keyDoc.Result, nil
 }
 
 // User result for user name@service.
@@ -174,17 +174,6 @@ func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument
 		return nil, err
 	}
 	return &keyDoc, nil
-}
-
-func (u *Users) result(ctx context.Context, kid keys.ID) (*user.Result, error) {
-	doc, err := u.get(ctx, indexKID, kid.String())
-	if err != nil {
-		return nil, err
-	}
-	if doc == nil {
-		return nil, nil
-	}
-	return doc.Result, nil
 }
 
 func (u *Users) indexUser(ctx context.Context, user *user.User, data []byte, skipSearch bool) error {
@@ -233,10 +222,8 @@ const indexUser = "user"
 // indexUser is collection for user@service for search.
 const indexSearch = "search"
 
-// indexService is collection for user by service.
+// indexService is collection for service@user.
 const indexService = "service"
-
-// TODO: Remove document from indexes if failed for a long time?
 
 func isNewResultDifferent(new *user.Result, old *user.Result) bool {
 	if old != nil && (new == nil || new.User == nil) {
@@ -408,8 +395,8 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 	return kids, nil
 }
 
-// CheckForExisting returns key ID of exsiting user in sigchain different from this
-// sigchain key.
+// CheckForExisting returns key ID of existing user in sigchain different from
+// the specified sigchain.
 func (u *Users) CheckForExisting(ctx context.Context, sc *keys.Sigchain) (keys.ID, error) {
 	usr, err := user.FindInSigchain(sc)
 	if err != nil {
