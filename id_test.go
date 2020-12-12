@@ -1,26 +1,29 @@
 package keys_test
 
 import (
-	"bytes"
+	"encoding/hex"
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/encoding"
 	"github.com/stretchr/testify/require"
 )
 
 func TestID(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	sid := keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077")
+	require.Equal(t, sid, sk.ID())
+	require.Equal(t, sk.Public(), sid.Public())
+	require.Equal(t, keys.KeyType("edx25519"), sid.Type())
+
+	bk := keys.NewX25519KeyFromSeed(testSeed(0x01))
+	bid := keys.ID("kbx15nsf9y4k28p83wth93tf7hafhvfajp45d2mge80ems45gz0c5gys57cytk")
+	require.Equal(t, bid, bk.ID())
+	require.Equal(t, bk.Public(), bid.Public())
+	require.Equal(t, keys.KeyType("x25519"), bid.Type())
+}
+
+func TestIDErrors(t *testing.T) {
 	var err error
-
-	b := bytes.Repeat([]byte{0xFF}, 32)
-	s := encoding.MustEncode(b[:], encoding.Base58)
-	require.Equal(t, "osEoy933LkHyyBcgjE7v81KvmcNKioeUVktgzXLJ1B3t", s)
-	require.Equal(t, 44, len(s))
-
-	b = bytes.Repeat([]byte{0x00}, 32)
-	s = encoding.MustEncode(b[:], encoding.Base58)
-	require.Equal(t, "11111111111111111111111111111111111111111111", s)
-	require.Equal(t, 44, len(s))
 
 	_, err = keys.ParseID("")
 	require.EqualError(t, err, "failed to parse id: empty string")
@@ -29,18 +32,9 @@ func TestID(t *testing.T) {
 	require.EqualError(t, err, "failed to parse id: separator '1' at invalid position: pos=-1, len=3")
 }
 
-func TestNewID(t *testing.T) {
-	n := 10000
-	m := make(map[keys.ID]bool, n)
-	for i := 0; i < n; i++ {
-		b := keys.Rand32()
-		id, err := keys.NewID("test", b[:])
-		require.NoError(t, err)
-		if _, ok := m[id]; ok {
-			t.Fatalf("id collision %s", id)
-		}
-		m[id] = true
-	}
+func TestIDUUID(t *testing.T) {
+	id := keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077")
+	require.Equal(t, "34750f98bd59fcfc946da45aaabe933b", hex.EncodeToString(id.UUID()[:]))
 }
 
 func TestIDSet(t *testing.T) {

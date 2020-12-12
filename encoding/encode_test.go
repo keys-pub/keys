@@ -78,6 +78,18 @@ func TestEncodeBase64(t *testing.T) {
 	require.EqualError(t, err, "invalid option: lowercase")
 }
 
+func TestEncodeBase58(t *testing.T) {
+	b := bytes.Repeat([]byte{0xFF}, 32)
+	s := encoding.MustEncode(b[:], encoding.Base58)
+	require.Equal(t, "osEoy933LkHyyBcgjE7v81KvmcNKioeUVktgzXLJ1B3t", s)
+	require.Equal(t, 44, len(s))
+
+	b = bytes.Repeat([]byte{0x00}, 32)
+	s = encoding.MustEncode(b[:], encoding.Base58)
+	require.Equal(t, "11111111111111111111111111111111111111111111", s)
+	require.Equal(t, 44, len(s))
+}
+
 func TestEncodeBIP39(t *testing.T) {
 	var b []byte
 	var out string

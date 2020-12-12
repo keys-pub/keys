@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -149,6 +150,12 @@ func (i ID) Public() []byte {
 		return nil
 	}
 	return b
+}
+
+// UUID returns a 16 byte hash of the public bytes.
+func (i ID) UUID() *[16]byte {
+	hash := sha256.Sum256(i.Public())
+	return Bytes16(hash[:16])
 }
 
 // IDSet is a set of strings.
