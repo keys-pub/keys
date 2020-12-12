@@ -12,8 +12,8 @@ import (
 )
 
 // Encrypt to recipients.
-// Sender can be nil, if you want it to be anonymous.
-// https://saltpack.org/encryption-format-v2
+// Sender can be nil.
+// See https://saltpack.org/encryption-format-v2.
 func Encrypt(b []byte, armored bool, sender *keys.X25519Key, recipients ...keys.ID) ([]byte, error) {
 	recs, err := boxPublicKeys(recipients)
 	if err != nil {
