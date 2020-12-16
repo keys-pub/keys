@@ -195,3 +195,8 @@ type Collection struct {
 	// Path for collection.
 	Path string
 }
+
+// Empty document.
+func Empty() map[string]interface{} {
+	return map[string]interface{}{}
+}
