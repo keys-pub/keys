@@ -11,7 +11,7 @@ const (
 	RFC3339Milli = "2006-01-02T15:04:05.000Z07:00"
 )
 
-// Millis returns milliseconds since epoch from time.Time.
+// Millis returns milliseconds since epoch to t.
 // Returns 0 if t.IsZero().
 func Millis(t time.Time) int64 {
 	if t.IsZero() {
@@ -41,4 +41,10 @@ func ConvertMillis(n int64) time.Time {
 		return time.Time{}
 	}
 	return time.Unix(0, n*int64(time.Millisecond)).UTC()
+}
+
+// Days returns milliseconds since epoch to t.
+func Days(t time.Time) int {
+	ms := Millis(t)
+	return int(ms / 1000 / 60 / 60 / 24)
 }

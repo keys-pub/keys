@@ -1,6 +1,7 @@
 package tsutil_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -41,4 +42,10 @@ func TestRFC3339Milli(t *testing.T) {
 	tout, err := time.Parse(tsutil.RFC3339Milli, s1)
 	require.NoError(t, err)
 	require.Equal(t, tsutil.Millis(t1), tsutil.Millis(tout))
+}
+
+func TestDays(t *testing.T) {
+	t1 := tsutil.ConvertMillis(1234567890001)
+	days := tsutil.Days(t1)
+	require.Equal(t, "14288", fmt.Sprintf("%d", days))
 }
