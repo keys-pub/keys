@@ -23,7 +23,7 @@ func TestAuth(t *testing.T) {
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077:K0KnYYnx+VnhpRS0lBJVfwSaYa3zweapGtc87Uh4h1pfv/VeVMaS/YRD/d+Y+U3ANFMkR+OFGRYniWirFK3sBg==", auth.Header())
 	require.Equal(t, "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123&nonce=0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29&ts=1234567890001", auth.URL.String())
 
-	req, err := newRequest("GET", urs, nil, "", tm, nonce, Authorization(alice))
+	req, err := newRequest("GET", urs, nil, "", tm, nonce, alice)
 	require.NoError(t, err)
 	require.Equal(t, "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123&nonce=0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29&ts=1234567890001", req.URL.String())
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077:K0KnYYnx+VnhpRS0lBJVfwSaYa3zweapGtc87Uh4h1pfv/VeVMaS/YRD/d+Y+U3ANFMkR+OFGRYniWirFK3sBg==", req.Header.Get("Authorization"))
@@ -118,7 +118,7 @@ func TestNewRequest(t *testing.T) {
 	mem := NewMem(tsutil.NewTestClock())
 
 	// GET
-	req, err := NewAuthRequest("GET", "https://keys.pub/test", nil, "", clock.Now(), Authorization(key))
+	req, err := NewAuthRequest("GET", "https://keys.pub/test", nil, "", clock.Now(), key)
 	require.NoError(t, err)
 	check, err := Authorize(context.TODO(), &AuthRequest{
 		Method:     "GET",
@@ -134,7 +134,7 @@ func TestNewRequest(t *testing.T) {
 	// POST
 	body := []byte(`{\"test\": 1}`)
 	contentHash := ContentHash(body)
-	req, err = NewAuthRequest("POST", "https://keys.pub/test", bytes.NewReader(body), contentHash, clock.Now(), Authorization(key))
+	req, err = NewAuthRequest("POST", "https://keys.pub/test", bytes.NewReader(body), contentHash, clock.Now(), key)
 	require.NoError(t, err)
 	check, err = Authorize(context.TODO(), &AuthRequest{
 		Method:      "POST",
@@ -149,7 +149,7 @@ func TestNewRequest(t *testing.T) {
 	require.Equal(t, key.ID(), check.KID)
 
 	// POST (invalid content hash)
-	req, err = NewAuthRequest("POST", "https://keys.pub/test", bytes.NewReader([]byte(body)), contentHash, clock.Now(), Authorization(key))
+	req, err = NewAuthRequest("POST", "https://keys.pub/test", bytes.NewReader([]byte(body)), contentHash, clock.Now(), key)
 	require.NoError(t, err)
 	_, err = Authorize(context.TODO(), &AuthRequest{
 		Method:      "POST",
