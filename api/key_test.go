@@ -14,7 +14,7 @@ import (
 )
 
 func TestNewKey(t *testing.T) {
-	sk := keys.NewEdX25519KeyFromSeed(testSeed(0xef))
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	key := api.NewKey(sk)
 
 	require.Equal(t, sk.ID(), key.ID)
@@ -24,10 +24,22 @@ func TestNewKey(t *testing.T) {
 
 	require.Equal(t, sk, key.AsEdX25519())
 	require.Equal(t, sk.X25519Key(), key.AsX25519())
+	require.Equal(t, sk.X25519Key().PublicKey(), key.AsX25519Public())
+}
+
+func TestIDKey(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	kid := sk.ID()
+	key := api.NewKey(kid)
+
+	require.Equal(t, kid, key.ID)
+
+	require.Equal(t, sk.PublicKey(), key.AsEdX25519Public())
+	require.Equal(t, sk.X25519Key().PublicKey(), key.AsX25519Public())
 }
 
 func TestNewKeyPublic(t *testing.T) {
-	spk := keys.NewEdX25519KeyFromSeed(testSeed(0xef)).PublicKey()
+	spk := keys.NewEdX25519KeyFromSeed(testSeed(0x01)).PublicKey()
 	key := api.NewKey(spk)
 
 	require.Equal(t, spk.ID(), key.ID)
@@ -91,7 +103,7 @@ func TestEncryptKey(t *testing.T) {
 func TestEncryptKeyWithPassword(t *testing.T) {
 	clock := tsutil.NewTestClock()
 
-	key := api.NewKey(keys.NewEdX25519KeyFromSeed(testSeed(0xef)))
+	key := api.NewKey(keys.NewEdX25519KeyFromSeed(testSeed(0x01)))
 	key.Notes = "some test notes"
 	key.CreatedAt = clock.NowMillis()
 	key.UpdatedAt = clock.NowMillis()

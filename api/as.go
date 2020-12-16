@@ -101,24 +101,18 @@ func (k *Key) AsEdX25519Public() *keys.EdX25519PublicKey {
 // AsX25519Public returns a X25519PublicKey.
 // Returns nil if we can't resolve.
 func (k *Key) AsX25519Public() *keys.X25519PublicKey {
-	if k.Type != string(keys.X25519) {
-		return nil
-	}
-
-	if k.Private == nil {
+	switch k.Type {
+	case string(keys.X25519):
 		b := k.Public
 		if len(b) != 32 {
 			return nil
 		}
-		out := keys.NewX25519PublicKey(keys.Bytes32(b))
-		return out
-	}
-
-	sk := k.AsX25519()
-	if sk == nil {
+		return keys.NewX25519PublicKey(keys.Bytes32(b))
+	case string(keys.EdX25519):
+		return k.AsEdX25519Public().X25519PublicKey()
+	default:
 		return nil
 	}
-	return sk.PublicKey()
 }
 
 // AsRSA returns a RSAKey.
