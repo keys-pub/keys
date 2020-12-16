@@ -45,6 +45,11 @@ func (k *X25519Key) Private() []byte {
 	return k.privateKey[:]
 }
 
+// Bytes32 private key bytes.
+func (k *X25519Key) Bytes32() *[32]byte {
+	return k.privateKey
+}
+
 // PrivateKey returns private part of this X25519Key.
 func (k *X25519Key) PrivateKey() *[32]byte {
 	return k.privateKey

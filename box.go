@@ -5,7 +5,7 @@ import (
 	"golang.org/x/crypto/nacl/box"
 )
 
-// BoxSeal encrypts a message to a recipient.
+// BoxSeal uses nacl.box to encrypt.
 func BoxSeal(b []byte, recipient *X25519PublicKey, sender *X25519Key) []byte {
 	nonce := Rand24()
 	return sealBox(b, nonce, recipient, sender)
@@ -16,7 +16,7 @@ func sealBox(b []byte, nonce *[24]byte, recipient *X25519PublicKey, sender *X255
 	return append(nonce[:], encrypted...)
 }
 
-// BoxOpen decrypts a message from a sender.
+// BoxOpen uses nacl.box to decrypt.
 func BoxOpen(encrypted []byte, sender *X25519PublicKey, recipient *X25519Key) ([]byte, error) {
 	return openBox(encrypted, sender, recipient)
 }

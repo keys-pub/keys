@@ -6,6 +6,7 @@ require (
 	github.com/ScaleFT/sshkeys v0.0.0-20200327173127-6142f742bca5
 	github.com/danieljoos/wincred v1.1.0
 	github.com/davecgh/go-spew v1.1.1
+	github.com/dchest/blake2b v1.0.0
 	github.com/flynn/noise v0.0.0-20180327030543-2492fe189ae6
 	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/golang/protobuf v1.4.2 // indirect

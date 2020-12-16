@@ -214,7 +214,8 @@ func (k *EdX25519PublicKey) X25519PublicKey() *X25519PublicKey {
 	return key
 }
 
-// Verify verifies a message and signature with public key.
+// Verify verifies a message and signature with public key and returns the
+// signed bytes without the signature.
 func (k *EdX25519PublicKey) Verify(b []byte) ([]byte, error) {
 	if l := len(b); l < sign.Overhead {
 		return nil, errors.Errorf("not enough data for signature")
