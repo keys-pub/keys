@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/keys-pub/keys/request"
 	"github.com/pkg/errors"
 )
 
@@ -12,8 +13,10 @@ import (
 
 type reddit struct{}
 
-// Reddit service.
-var Reddit = &reddit{}
+// NewReddit service.
+func NewReddit() Service {
+	return &reddit{}
+}
 
 func (s *reddit) ID() string {
 	return "reddit"
@@ -80,7 +83,7 @@ func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
 	if err := json.Unmarshal(b, &posts); err != nil {
 		return nil, err
 	}
-	logger.Debugf("Umarshal posts: %+v", posts)
+	logger.Debugf("Reddit unmarshaled posts: %+v", posts)
 	if len(posts) == 0 {
 		return nil, errors.Errorf("no posts")
 	}
@@ -99,6 +102,16 @@ func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
 	}
 	selftext := posts[0].Data.Children[0].Data.Selftext
 	return []byte(selftext), nil
+}
+
+func (s *reddit) Headers(ur *url.URL) ([]request.Header, error) {
+	// Not sure if this is required anymore.
+	if strings.HasSuffix(ur.Host, ".reddit.com") {
+		return []request.Header{
+			request.Header{Name: "Host", Value: "reddit.com"},
+		}, nil
+	}
+	return nil, nil
 }
 
 type redditPosts []struct {

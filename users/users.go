@@ -88,6 +88,7 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 		return nil, err
 	}
 	if usr == nil {
+		logger.Debugf("User not found in sigchain %s", sc.KID())
 		return nil, nil
 	}
 	result, err := u.Get(ctx, sc.KID())
@@ -177,7 +178,7 @@ func (u *Users) get(ctx context.Context, index string, val string) (*keyDocument
 }
 
 func (u *Users) indexUser(ctx context.Context, user *user.User, data []byte, skipSearch bool) error {
-	logger.Infof("Indexing user %s %s", user.ID, user.KID)
+	logger.Infof("Indexing user %s %s", user.ID(), user.KID)
 	userPath := dstore.Path(indexUser, indexUserKey(user.Service, user.Name))
 	if err := u.ds.Set(ctx, userPath, dstore.Data(data)); err != nil {
 		return err

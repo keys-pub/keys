@@ -8,49 +8,53 @@ import (
 )
 
 func TestEchoNormalizeName(t *testing.T) {
-	name := link.Echo.NormalizeName("Gabriel")
+	echo := link.NewEcho()
+	name := echo.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestEchoValidateName(t *testing.T) {
-	err := link.Echo.ValidateName("gabriel01")
+	echo := link.NewEcho()
+	err := echo.ValidateName("gabriel01")
 	require.NoError(t, err)
 
-	err = link.Echo.ValidateName("gabriel-01")
+	err = echo.ValidateName("gabriel-01")
 	require.NoError(t, err)
 
-	err = link.Echo.ValidateName("gabriel_01")
+	err = echo.ValidateName("gabriel_01")
 	require.NoError(t, err)
 
-	err = link.Echo.ValidateName("Gabriel")
+	err = echo.ValidateName("Gabriel")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Echo.ValidateName("Gabriel++")
+	err = echo.ValidateName("Gabriel++")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Echo.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
+	err = echo.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "test name is too long, it must be less than 40 characters")
 }
 
 func TestEchoNormalizeURL(t *testing.T) {
-	testNormalizeURL(t, link.Echo,
+	echo := link.NewEcho()
+	testNormalizeURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel?",
 		"test://echo/gabriel")
 }
 
 func TestEchoValidateURL(t *testing.T) {
-	testValidateURL(t, link.Echo,
+	echo := link.NewEcho()
+	testValidateURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel",
 		"test://echo/gabriel")
 
-	testValidateURLErr(t, link.Echo,
+	testValidateURLErr(t, echo,
 		"gabriel",
 		"test://ech/gabriel",
 		"invalid host for url test://ech/gabriel")
 
-	testValidateURLErr(t, link.Echo,
+	testValidateURLErr(t, echo,
 		"gabriel",
 		"test://echo/gabrie",
 		"path invalid (name mismatch) gabrie != gabriel")

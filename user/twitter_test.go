@@ -1,9 +1,12 @@
 package user_test
 
 import (
+	"context"
+	"os"
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/link"
 	"github.com/keys-pub/keys/user"
 	"github.com/stretchr/testify/require"
 )
@@ -29,4 +32,22 @@ END MESSAGE.`
 
 	err = usr.Verify(msg)
 	require.NoError(t, err)
+}
+
+func TestMyTwitter(t *testing.T) {
+	// Requires twitter bearer token configured
+	if os.Getenv("TWITTER_BEARER_TOKEN") == "" {
+		t.Skip()
+	}
+	user.SetLogger(user.NewLogger(user.DebugLevel))
+	link.SetLogger(user.NewLogger(user.DebugLevel))
+
+	kid := keys.ID("kex1e26rq9vrhjzyxhep0c5ly6rudq7m2cexjlkgknl2z4lqf8ga3uasz3s48m")
+	urs := "https://twitter.com/gabrlh/status/1222706272849391616"
+
+	usr, err := user.New(kid, "twitter", "gabrlh", urs, 1)
+	require.NoError(t, err)
+	result := usr.RequestVerify(context.TODO())
+	require.Equal(t, user.StatusOK, result.Status)
+	t.Fatal("testing")
 }

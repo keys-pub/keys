@@ -40,7 +40,7 @@ func TestResultTwitter(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set error response
-	req.SetError("https://mobile.twitter.com/bob/status/1205589994380783616", errors.Errorf("testing"))
+	req.SetError("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", errors.Errorf("testing"))
 	require.NoError(t, err)
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
@@ -58,7 +58,7 @@ func TestResultTwitter(t *testing.T) {
 	require.EqualError(t, err, "user set in sigchain already")
 
 	// Set valid response
-	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdata(t, "testdata/twitter/1205589994380783616"))
+	req.SetResponse("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", testdata(t, "testdata/twitter/1205589994380783616.json"))
 
 	result, err = usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, int64(1234567890004), result.Timestamp)
 
 	// Set error response again
-	req.SetError("https://mobile.twitter.com/bob/status/1205589994380783616", errors.Errorf("testing2"))
+	req.SetError("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", errors.Errorf("testing2"))
 	require.NoError(t, err)
 
 	result, err = usrs.Update(context.TODO(), sk.ID())
@@ -128,7 +128,7 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	req.SetResponse("https://mobile.twitter.com/bob/status/1205589994380783616", testdata(t, "testdata/twitter/1205589994380783616"))
+	req.SetResponse("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", testdata(t, "testdata/twitter/1205589994380783616.json"))
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)

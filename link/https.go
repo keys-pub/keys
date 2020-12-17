@@ -2,17 +2,21 @@ package link
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/request"
 	"github.com/pkg/errors"
 )
 
 type https struct{}
 
-// HTTPS service.
-var HTTPS = &https{}
+// NewHTTPS service.
+func NewHTTPS() Service {
+	return &https{}
+}
 
 func (s *https) ID() string {
 	return "https"
@@ -72,6 +76,10 @@ func (s *https) ValidateURLString(name string, urs string) (string, error) {
 
 func (s *https) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
+}
+
+func (s *https) Headers(ur *url.URL) ([]request.Header, error) {
+	return nil, nil
 }
 
 var regexIP = regexp.MustCompile(`^[0-9].*\.[0-9].*\.[0-9].*\.[0-9].*$`)

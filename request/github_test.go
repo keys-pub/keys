@@ -12,7 +12,7 @@ import (
 func TestGithub(t *testing.T) {
 	req := request.NewHTTPRequestor()
 	urs := "https://gist.github.com/gabriel/ceea0f3b675bac03425472692273cf52"
-	res, err := req.RequestURLString(context.TODO(), urs)
+	res, err := req.RequestURLString(context.TODO(), urs, nil)
 	require.NoError(t, err)
 
 	out, brand := encoding.FindSaltpack(string(res), true)

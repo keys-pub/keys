@@ -8,59 +8,63 @@ import (
 )
 
 func TestGithubNormalizeName(t *testing.T) {
-	name := link.Github.NormalizeName("Gabriel")
+	github := link.NewGithub()
+	name := github.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestGithubValidateName(t *testing.T) {
-	err := link.Github.ValidateName("gabriel01")
+	github := link.NewGithub()
+	err := github.ValidateName("gabriel01")
 	require.NoError(t, err)
 
-	err = link.Github.ValidateName("gabriel-01")
+	err = github.ValidateName("gabriel-01")
 	require.NoError(t, err)
 
-	err = link.Github.ValidateName("gabriel_01")
+	err = github.ValidateName("gabriel_01")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Github.ValidateName("Gabriel")
+	err = github.ValidateName("Gabriel")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Github.ValidateName("Gabriel++")
+	err = github.ValidateName("Gabriel++")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Github.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
+	err = github.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")
 }
 
 func TestGithubNormalizeURL(t *testing.T) {
-	testNormalizeURL(t, link.Github,
+	github := link.NewGithub()
+	testNormalizeURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd?",
 		"https://gist.github.com/gabriel/abcd")
 
-	testNormalizeURL(t, link.Github,
+	testNormalizeURL(t, github,
 		"gabriel",
 		"https://gist.github.com/Gabriel/abcd",
 		"https://gist.github.com/gabriel/abcd")
 }
 
 func TestGithubValidateURL(t *testing.T) {
-	testValidateURL(t, link.Github,
+	github := link.NewGithub()
+	testValidateURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd",
 		"https://gist.github.com/gabriel/abcd")
 
-	testValidateURLErr(t, link.Github,
+	testValidateURLErr(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel",
 		"path invalid [gabriel] for url https://gist.github.com/gabriel")
 
-	testValidateURLErr(t, link.Github,
+	testValidateURLErr(t, github,
 		"gabriel",
 		"https://gis.github.com/gabriel/abcd",
 		"invalid host for url https://gis.github.com/gabriel/abcd")
 
-	testValidateURLErr(t, link.Github,
+	testValidateURLErr(t, github,
 		"gabriel",
 		"https://gist.github.com/gabrie/abcd",
 		"path invalid (name mismatch) gabrie != gabriel")
