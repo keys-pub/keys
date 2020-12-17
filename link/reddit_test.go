@@ -8,76 +8,80 @@ import (
 )
 
 func TestRedditNormalizeName(t *testing.T) {
-	name := link.Reddit.NormalizeName("Gabriel")
+	reddit := link.NewReddit()
+	name := reddit.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestRedditValidateName(t *testing.T) {
-	err := link.Reddit.ValidateName("gabriel01")
+	reddit := link.NewReddit()
+	err := reddit.ValidateName("gabriel01")
 	require.NoError(t, err)
 
-	err = link.Reddit.ValidateName("gabriel_01-")
+	err = reddit.ValidateName("gabriel_01-")
 	require.NoError(t, err)
 
-	err = link.Reddit.ValidateName("Gabriel")
+	err = reddit.ValidateName("Gabriel")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Reddit.ValidateName("Gabriel++")
+	err = reddit.ValidateName("Gabriel++")
 	require.EqualError(t, err, "name has an invalid character")
 
-	err = link.Reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
+	err = reddit.ValidateName("reallylongnamereallylongnamereallylongnamereallylongnamereallylongnamereallylongname")
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
 }
 
 func TestRedditNormalizeURL(t *testing.T) {
-	testNormalizeURL(t, link.Reddit,
+	reddit := link.NewReddit()
+	testNormalizeURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
 
-	testNormalizeURL(t, link.Reddit,
+	testNormalizeURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/Gabrlh/",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
 }
 
 func TestRedditValidateURL(t *testing.T) {
-	testValidateURL(t, link.Reddit,
+	reddit := link.NewReddit()
+	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
-	testValidateURL(t, link.Reddit,
+	testValidateURL(t, reddit,
 		"keys-pub",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub/",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub.json")
 
-	testValidateURL(t, link.Reddit,
+	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
-	testValidateURL(t, link.Reddit,
+	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
-	testValidateURL(t, link.Reddit,
+	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh?",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
-	testValidateURL(t, link.Reddit,
+	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
 
-	testValidateURLErr(t, link.Reddit,
+	testValidateURLErr(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/user/?",
 		"invalid path /r/keyspubmsgs/comments/f8g9vd/user/")
 
-	testValidateURLErr(t, link.Reddit,
+	testValidateURLErr(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/subreddit/comments/f8g9vd/gabrlh/?",
 		"invalid path /r/subreddit/comments/f8g9vd/gabrlh/")

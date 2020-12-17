@@ -12,7 +12,7 @@ import (
 func TestReddit(t *testing.T) {
 	req := request.NewHTTPRequestor()
 	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
-	res, err := req.RequestURLString(context.TODO(), urs)
+	res, err := req.RequestURLString(context.TODO(), urs, nil)
 	require.NoError(t, err)
 
 	var red reddit

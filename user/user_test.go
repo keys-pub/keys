@@ -201,7 +201,7 @@ func TestNewUser(t *testing.T) {
 	require.Nil(t, u6)
 
 	u7, uerr := user.New(sk.ID(), "git", "gabriel", "https://gist.github.com/gabriel/deadbeef", 1)
-	require.EqualError(t, uerr, "invalid service git")
+	require.EqualError(t, uerr, "service not found: git")
 	require.Nil(t, u7)
 
 	u8, uerr := user.New(sk.ID(), "github", "", "https://gist.github.com/gabriel/deadbeef", 1)

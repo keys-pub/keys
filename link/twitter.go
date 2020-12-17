@@ -1,19 +1,29 @@
 package link
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
 	"strings"
 
+	"github.com/keys-pub/keys/request"
 	"github.com/pkg/errors"
 )
 
-type twitter struct{}
+// TwitterID is the id for twitter.
+const TwitterID = "twitter"
 
-// Twitter service.
-var Twitter = &twitter{}
+type twitter struct {
+	bearerToken string
+}
+
+// NewTwitter twitter service.
+func NewTwitter(bearerToken string) Service {
+	return &twitter{bearerToken: bearerToken}
+}
 
 func (s *twitter) ID() string {
-	return "twitter"
+	return TwitterID
 }
 
 func (s *twitter) NormalizeURLString(name string, urs string) (string, error) {
@@ -45,8 +55,18 @@ func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
 		return "", errors.Errorf("path invalid (name mismatch) for url %s", u)
 	}
 
-	// Use mobile twitter url.
-	return "https://mobile.twitter.com/" + path, nil
+	status := paths[2]
+
+	return "https://api.twitter.com/2/tweets/" + status + "?expansions=author_id", nil
+}
+
+func (s *twitter) Headers(ur *url.URL) ([]request.Header, error) {
+	return []request.Header{
+		request.Header{
+			Name:  "Authorization",
+			Value: fmt.Sprintf("Bearer %s", s.bearerToken),
+		},
+	}, nil
 }
 
 func (s *twitter) NormalizeName(name string) string {
@@ -71,5 +91,42 @@ func (s *twitter) ValidateName(name string) error {
 }
 
 func (s *twitter) CheckContent(name string, b []byte) ([]byte, error) {
-	return b, nil
+	var tweet tweet
+	if err := json.Unmarshal(b, &tweet); err != nil {
+		return nil, err
+	}
+	logger.Debugf("Twitter unmarshaled tweet: %+v", tweet)
+
+	// TODO: Double check tweet it matches
+
+	found := false
+	authorID := tweet.Data.AuthorID
+	for _, user := range tweet.Includes.Users {
+		if authorID == user.ID {
+			if user.Username != name {
+				return nil, errors.Errorf("invalid tweet username %s", user.Username)
+			}
+			found = true
+		}
+	}
+	if !found {
+		return nil, errors.Errorf("tweet username not found")
+	}
+
+	return []byte(tweet.Data.Text), nil
+}
+
+type tweet struct {
+	Data struct {
+		ID       string `json:"id"`
+		Text     string `json:"text"`
+		AuthorID string `json:"author_id"`
+	} `json:"data"`
+	Includes struct {
+		Users []struct {
+			ID       string `json:"id"`
+			Name     string `json:"name"`
+			Username string `json:"username"`
+		} `json:"users"`
+	} `json:"includes"`
 }

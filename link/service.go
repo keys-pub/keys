@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/pkg/errors"
+	"github.com/keys-pub/keys/request"
 )
 
 // Service describes a user service.
@@ -34,24 +34,9 @@ type Service interface {
 	// For Twitter, Github there is no check since the user owns the URL location.
 	// For Reddit, we need to verify the listing, author and subreddit and return only the listing text.
 	CheckContent(name string, b []byte) ([]byte, error)
-}
 
-// NewService returns a service by name.
-func NewService(service string) (Service, error) {
-	switch service {
-	case Twitter.ID():
-		return Twitter, nil
-	case Github.ID():
-		return Github, nil
-	case Reddit.ID():
-		return Reddit, nil
-	case HTTPS.ID():
-		return HTTPS, nil
-	case Echo.ID():
-		return Echo, nil
-	default:
-		return nil, errors.Errorf("invalid service %s", service)
-	}
+	// Headers to include with request (for example, an auth header).
+	Headers(ur *url.URL) ([]request.Header, error)
 }
 
 var regAlphaNumericWithDash = regexp.MustCompile(`^[a-z0-9-]+$`)

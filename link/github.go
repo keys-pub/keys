@@ -4,16 +4,22 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/keys-pub/keys/request"
 	"github.com/pkg/errors"
 )
 
+// GithubID is id for github.
+const GithubID = "github"
+
 type github struct{}
 
-// Github service.
-var Github = &github{}
+// NewGithub service.
+func NewGithub() Service {
+	return &github{}
+}
 
 func (s *github) ID() string {
-	return "github"
+	return GithubID
 }
 
 func (s *github) NormalizeURLString(name string, urs string) (string, error) {
@@ -63,4 +69,8 @@ func (s *github) ValidateName(name string) error {
 
 func (s *github) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
+}
+
+func (s *github) Headers(ur *url.URL) ([]request.Header, error) {
+	return nil, nil
 }

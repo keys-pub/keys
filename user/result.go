@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/keys-pub/keys/link"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
@@ -49,7 +48,7 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 
 	r.Timestamp = tsutil.Millis(now)
 
-	service, err := link.NewService(r.User.Service)
+	service, err := lookupService(r.User.Service)
 	if err != nil {
 		r.Err = err.Error()
 		r.Status = StatusFailure
@@ -64,8 +63,14 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 		return
 	}
 
-	// For test requests
 	ur, err := url.Parse(urs)
+	if err != nil {
+		r.Err = err.Error()
+		r.Status = StatusFailure
+		return
+	}
+
+	headers, err := service.Headers(ur)
 	if err != nil {
 		r.Err = err.Error()
 		r.Status = StatusFailure
@@ -74,6 +79,7 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 
 	var body []byte
 	if ur.Scheme == "test" && ur.Host == "echo" {
+		// For test requests
 		logger.Infof("Test echo request %s", urs)
 		b, err := echoRequest(ur)
 		if err != nil {
@@ -84,7 +90,7 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 		body = b
 	} else {
 		logger.Infof("Requesting %s", urs)
-		b, err := req.RequestURLString(ctx, urs)
+		b, err := req.RequestURLString(ctx, urs, headers)
 		if err != nil {
 			logger.Warningf("Request failed: %v", err)
 			if errHTTP, ok := errors.Cause(err).(request.ErrHTTP); ok && errHTTP.StatusCode == 404 {

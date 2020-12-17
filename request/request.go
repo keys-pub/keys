@@ -57,7 +57,7 @@ func client() *http.Client {
 	return client
 }
 
-func doRequest(client *http.Client, method string, urs string, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
+func doRequest(client *http.Client, method string, urs string, headers []Header, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
 	logger.Debugf("Requesting %s %s", method, urs)
 	req, err := http.NewRequest(method, urs, bytes.NewReader(body))
 	if err != nil {
@@ -65,10 +65,8 @@ func doRequest(client *http.Client, method string, urs string, body []byte, opti
 	}
 
 	req.Header.Set("User-Agent", "keys.pub")
-
-	// Not sure if it is required anymore.
-	if strings.HasSuffix(req.URL.Host, ".reddit.com") {
-		req.Header.Set("Host", "reddit.com")
+	for _, header := range headers {
+		req.Header.Set(header.Name, header.Value)
 	}
 
 	for _, opt := range options {
@@ -135,9 +133,15 @@ func (e ErrTemporary) Temporary() bool {
 	return true
 }
 
+// Header for request.
+type Header struct {
+	Name  string
+	Value string
+}
+
 // Requestor defines how to get bytes from a URL.
 type Requestor interface {
-	RequestURLString(ctx context.Context, urs string) ([]byte, error)
+	RequestURLString(ctx context.Context, urs string, headers []Header) ([]byte, error)
 }
 
 type requestor struct{}
@@ -148,8 +152,8 @@ func NewHTTPRequestor() Requestor {
 }
 
 // RequestURLString requests an URL string.
-func (r requestor) RequestURLString(ctx context.Context, urs string) ([]byte, error) {
-	_, body, err := doRequest(client(), "GET", urs, nil)
+func (r requestor) RequestURLString(ctx context.Context, urs string, headers []Header) ([]byte, error) {
+	_, body, err := doRequest(client(), "GET", urs, headers, nil)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}
@@ -160,6 +164,8 @@ type mockResponse struct {
 	data []byte
 	err  error
 }
+
+var _ Requestor = &MockRequestor{}
 
 // MockRequestor ...
 type MockRequestor struct {
@@ -193,6 +199,6 @@ func (r *MockRequestor) SetError(url string, err error) {
 }
 
 // RequestURLString ...
-func (r *MockRequestor) RequestURLString(ctx context.Context, urs string) ([]byte, error) {
+func (r *MockRequestor) RequestURLString(ctx context.Context, urs string, headers []Header) ([]byte, error) {
 	return r.Response(urs)
 }

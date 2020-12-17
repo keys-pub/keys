@@ -19,7 +19,9 @@ import (
 )
 
 func TestSearchUsers(t *testing.T) {
-	// SetLogger(NewLogger(DebugLevel))
+	// users.SetLogger(users.NewLogger(users.DebugLevel))
+	// user.SetLogger(users.NewLogger(users.DebugLevel))
+	// link.SetLogger(users.NewLogger(users.DebugLevel))
 
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
@@ -116,8 +118,10 @@ func TestSearchUsers(t *testing.T) {
 	// Add alice@twitter
 	alice2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32)))
 	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, req)
-	_, err = usrs.Update(ctx, alice2.ID())
+	res, err := usrs.Update(ctx, alice2.ID())
 	require.NoError(t, err)
+	require.NotNil(t, res)
+	require.Equal(t, user.StatusOK, res.Status)
 
 	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alic"})
 	require.NoError(t, err)
@@ -523,13 +527,14 @@ func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *ke
 func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
 	url := ""
 	murl := ""
+
 	switch service {
 	case "github":
 		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
 		murl = url
 	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
-		murl = fmt.Sprintf("https://mobile.twitter.com/%s/status/1", name)
+		murl = fmt.Sprintf("https://api.twitter.com/2/tweets/1?expansions=author_id")
 	case "reddit":
 		url = fmt.Sprintf("https://reddit.com/r/keyspubmsgs/comments/%s", name)
 		murl = url
@@ -550,6 +555,11 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 		return nil, err
 	}
 
+	msg, err := usr.Sign(key)
+	if err != nil {
+		return nil, err
+	}
+
 	st, err := user.NewSigchainStatement(sc, usr, key, clock.Now())
 	if err != nil {
 		return nil, err
@@ -562,13 +572,34 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 		return nil, err
 	}
 
-	msg, err := usr.Sign(key)
-	if err != nil {
-		return nil, err
+	resp := msg
+	switch service {
+	case "twitter":
+		resp = newTwitterMock(name, "1", msg)
 	}
-	mock.SetResponse(murl, []byte(msg))
+
+	mock.SetResponse(murl, []byte(resp))
 
 	return st, nil
+}
+
+func newTwitterMock(name string, status string, msg string) string {
+	msg = strings.ReplaceAll(msg, "\n", "")
+	return `{
+		"data": {
+		  "author_id": "1",
+		  "id": "` + status + `",
+		  "text": "` + msg + `"
+		},
+		"includes": {
+		  "users": [
+			{
+			  "id": "1",
+			  "username": "` + name + `"
+			}
+		  ]
+		}
+	  }`
 }
 
 func TestNewSigchainUserStatement(t *testing.T) {

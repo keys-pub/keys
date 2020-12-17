@@ -4,13 +4,16 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/keys-pub/keys/request"
 	"github.com/pkg/errors"
 )
 
 type echo struct{}
 
-// Echo service (for testing).
-var Echo = &echo{}
+// NewEcho service (for testing).
+func NewEcho() Service {
+	return &echo{}
+}
 
 func (s *echo) ID() string {
 	return "echo"
@@ -63,4 +66,8 @@ func (s *echo) ValidateName(name string) error {
 
 func (s *echo) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
+}
+
+func (s *echo) Headers(ur *url.URL) ([]request.Header, error) {
+	return nil, nil
 }

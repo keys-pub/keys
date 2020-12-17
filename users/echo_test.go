@@ -89,6 +89,9 @@ func TestRequestVerifyEcho(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
+	echo := link.NewEcho()
+	user.AddService(echo)
+
 	usrSign, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
 	msg, err := usrSign.Sign(sk)
@@ -97,7 +100,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 
 	urs := "test://echo/alice/" + sk.ID().String() + "/" + msg
 
-	norm, err := link.Echo.NormalizeURLString("alice", urs)
+	norm, err := echo.NormalizeURLString("alice", urs)
 	require.NoError(t, err)
 
 	usr := &user.User{
