@@ -15,8 +15,8 @@ func cryptoBoxSealNonce(ephemeralPk, publicKey *[32]byte) *[24]byte {
 	if err != nil {
 		panic("failed to create blake2b hash function")
 	}
-	hashFn.Write(ephemeralPk[0:32])
-	hashFn.Write(publicKey[0:32])
+	_, _ = hashFn.Write(ephemeralPk[0:32])
+	_, _ = hashFn.Write(publicKey[0:32])
 	nonceSum := hashFn.Sum(nil)
 	copy(nonce[:], nonceSum[0:24])
 	return nonce

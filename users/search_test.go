@@ -534,7 +534,7 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 		murl = url
 	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
-		murl = fmt.Sprintf("https://api.twitter.com/2/tweets/1?expansions=author_id")
+		murl = "https://api.twitter.com/2/tweets/1?expansions=author_id"
 	case "reddit":
 		url = fmt.Sprintf("https://reddit.com/r/keyspubmsgs/comments/%s", name)
 		murl = url

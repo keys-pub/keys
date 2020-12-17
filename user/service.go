@@ -6,8 +6,8 @@ import (
 )
 
 func lookupService(service string) (link.Service, error) {
-	s, _ := services[service]
-	if s == nil {
+	s, ok := services[service]
+	if !ok || s == nil {
 		return nil, errors.Errorf("service not found: %s", service)
 	}
 	return s, nil
