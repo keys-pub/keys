@@ -14,6 +14,9 @@ import (
 const EdX25519 KeyType = "edx25519"
 const edx25519KeyHRP string = "kex"
 
+// SignOverhead alias for (nacl) sign.Overhead.
+const SignOverhead = sign.Overhead
+
 // EdX25519PublicKey is the public part of EdX25519 key pair.
 type EdX25519PublicKey struct {
 	id        ID
