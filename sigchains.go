@@ -89,7 +89,7 @@ func statementFromDocument(doc *dstore.Document) (*Statement, error) {
 
 // Sigchain returns sigchain for key.
 func (s *Sigchains) Sigchain(kid ID) (*Sigchain, error) {
-	logger.Debugf("Loading sigchain %s", kid)
+	// logger.Debugf("Loading sigchain %s", kid)
 	iter, err := s.ds.DocumentIterator(context.TODO(), "sigchain", dstore.Prefix(kid.String()))
 	if err != nil {
 		return nil, err
