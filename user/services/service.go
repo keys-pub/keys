@@ -1,5 +1,5 @@
-// Package link defines services capable of linking keys to users.
-package link
+// Package services defines services capable of linking a key to a user.
+package services
 
 import (
 	"fmt"
@@ -30,8 +30,8 @@ type Service interface {
 	// For example, on reddit ".json" is appended.
 	ValidateURLString(name string, urs string) (string, error)
 
-	// CheckContent returns data with statement.
-	// For Twitter, Github there is no check since the user owns the URL location.
+	// CheckContent checks content and returns signed statement
+	// For Github there is no check since the user owns the URL location.
 	// For Reddit, we need to verify the listing, author and subreddit and return only the listing text.
 	CheckContent(name string, b []byte) ([]byte, error)
 

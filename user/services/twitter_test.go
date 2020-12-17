@@ -1,20 +1,20 @@
-package link_test
+package services_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTwitterNormalizeName(t *testing.T) {
-	twitter := link.NewTwitter("")
+	twitter := services.NewTwitter("")
 	name := twitter.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestTwitterValidateName(t *testing.T) {
-	twitter := link.NewTwitter("")
+	twitter := services.NewTwitter("")
 	err := twitter.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestTwitterValidateName(t *testing.T) {
 }
 
 func TestTwitterNormalizeURL(t *testing.T) {
-	twitter := link.NewTwitter("")
+	twitter := services.NewTwitter("")
 	testNormalizeURL(t, twitter,
 		"boboloblaw",
 		"https://twitter.com/Boboloblaw/status/1250914920146669568?",
@@ -48,7 +48,7 @@ func TestTwitterNormalizeURL(t *testing.T) {
 }
 
 func TestTwitterValidateURL(t *testing.T) {
-	twitter := link.NewTwitter("")
+	twitter := services.NewTwitter("")
 	testValidateURL(t, twitter,
 		"boboloblaw",
 		"https://twitter.com/boboloblaw/status/1250914920146669568",

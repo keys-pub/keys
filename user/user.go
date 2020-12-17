@@ -11,9 +11,9 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/json"
-	"github.com/keys-pub/keys/link"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/pkg/errors"
 )
 
@@ -142,7 +142,7 @@ func New(kid keys.ID, service string, name string, urs string, seq int) (*User, 
 	return usr, nil
 }
 
-func newUser(kid keys.ID, service link.Service, name string, urs string) (*User, error) {
+func newUser(kid keys.ID, service services.Service, name string, urs string) (*User, error) {
 	usr := &User{
 		KID:     kid,
 		Service: service.ID(),
@@ -173,7 +173,7 @@ func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
 	}, nil
 }
 
-func validateServiceAndName(service link.Service, name string) error {
+func validateServiceAndName(service services.Service, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}

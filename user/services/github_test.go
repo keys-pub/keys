@@ -1,20 +1,20 @@
-package link_test
+package services_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGithubNormalizeName(t *testing.T) {
-	github := link.NewGithub()
+	github := services.NewGithub()
 	name := github.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestGithubValidateName(t *testing.T) {
-	github := link.NewGithub()
+	github := services.NewGithub()
 	err := github.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestGithubValidateName(t *testing.T) {
 }
 
 func TestGithubNormalizeURL(t *testing.T) {
-	github := link.NewGithub()
+	github := services.NewGithub()
 	testNormalizeURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd?",
@@ -48,7 +48,7 @@ func TestGithubNormalizeURL(t *testing.T) {
 }
 
 func TestGithubValidateURL(t *testing.T) {
-	github := link.NewGithub()
+	github := services.NewGithub()
 	testValidateURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd",

@@ -1,22 +1,22 @@
-package link_test
+package services_test
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHTTPSNormalizeName(t *testing.T) {
-	https := link.NewHTTPS()
+	https := services.NewHTTPS()
 	name := https.NormalizeName("Keys.pub")
 	require.Equal(t, "keys.pub", name)
 }
 
 func TestHTTPSValidateName(t *testing.T) {
 	var err error
-	https := link.NewHTTPS()
+	https := services.NewHTTPS()
 
 	err = https.ValidateName("keys.pub")
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestHTTPSValidateName(t *testing.T) {
 }
 
 func TestHTTPSValidateURL(t *testing.T) {
-	https := link.NewHTTPS()
+	https := services.NewHTTPS()
 	testValidateURL(t, https,
 		"keys.pub",
 		"https://keys.pub/keyspub.txt",

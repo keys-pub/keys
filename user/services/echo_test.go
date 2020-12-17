@@ -1,20 +1,20 @@
-package link_test
+package services_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEchoNormalizeName(t *testing.T) {
-	echo := link.NewEcho()
+	echo := services.NewEcho()
 	name := echo.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestEchoValidateName(t *testing.T) {
-	echo := link.NewEcho()
+	echo := services.NewEcho()
 	err := echo.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestEchoValidateName(t *testing.T) {
 }
 
 func TestEchoNormalizeURL(t *testing.T) {
-	echo := link.NewEcho()
+	echo := services.NewEcho()
 	testNormalizeURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel?",
@@ -43,7 +43,7 @@ func TestEchoNormalizeURL(t *testing.T) {
 }
 
 func TestEchoValidateURL(t *testing.T) {
-	echo := link.NewEcho()
+	echo := services.NewEcho()
 	testValidateURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel",
