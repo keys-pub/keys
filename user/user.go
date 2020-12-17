@@ -126,7 +126,7 @@ func (u *User) UnmarshalJSON(b []byte) error {
 // New creates a User.
 // Name and URL string are NOT normalized.
 func New(kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
-	svc, err := lookupService(service)
+	svc, err := LookupService(service)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func newUser(kid keys.ID, service link.Service, name string, urs string) (*User,
 // NewForSigning returns User for signing (doesn't have remote URL yet).
 // The name is normalized, for example for twitter "@Username" => "username".
 func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
-	svc, err := lookupService(service)
+	svc, err := LookupService(service)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func validateServiceAndName(service link.Service, name string) error {
 // Validate service and name and URL.
 // If you want to request the URL and verify the remote statement, use RequestVerify.
 func (u *User) Validate() error {
-	service, err := lookupService(u.Service)
+	service, err := LookupService(u.Service)
 	if err != nil {
 		return err
 	}

@@ -61,6 +61,9 @@ func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
 }
 
 func (s *twitter) Headers(ur *url.URL) ([]request.Header, error) {
+	if s.bearerToken == "" {
+		return nil, nil
+	}
 	return []request.Header{
 		request.Header{
 			Name:  "Authorization",

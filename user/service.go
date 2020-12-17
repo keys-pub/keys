@@ -5,7 +5,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func lookupService(service string) (link.Service, error) {
+// LookupService returns service (added by AddService).
+func LookupService(service string) (link.Service, error) {
 	s, ok := services[service]
 	if !ok || s == nil {
 		return nil, errors.Errorf("service not found: %s", service)

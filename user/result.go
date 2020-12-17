@@ -48,7 +48,7 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 
 	r.Timestamp = tsutil.Millis(now)
 
-	service, err := lookupService(r.User.Service)
+	service, err := LookupService(r.User.Service)
 	if err != nil {
 		r.Err = err.Error()
 		r.Status = StatusFailure
