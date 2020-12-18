@@ -136,12 +136,11 @@ type Header struct {
 // Client for HTTP.
 type Client interface {
 	Request(ctx context.Context, req *Request, headers []Header) ([]byte, error)
-	SetProxy(fn ProxyFn)
-	Proxy() ProxyFn
+	SetProxy(urs string, fn ProxyFn)
 }
 
 type client struct {
-	proxy ProxyFn
+	proxies map[string]ProxyFn
 }
 
 // NewClient creates a Requestor for HTTP URLs.
@@ -159,22 +158,30 @@ type ProxyResponse struct {
 	Err  error
 }
 
-// SetProxy on client.
-func (c *client) SetProxy(fn ProxyFn) {
-	c.proxy = fn
-}
-
-// Proxy returns current proxy if any.
-func (c *client) Proxy() ProxyFn {
-	return c.proxy
+// ProxyAdd on client.
+func (c *client) SetProxy(urs string, fn ProxyFn) {
+	if c.proxies == nil {
+		c.proxies = map[string]ProxyFn{}
+	}
+	c.proxies[urs] = fn
 }
 
 // Request an URL.
 func (c *client) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
-	if c.proxy != nil {
-		pr := c.proxy(ctx, req, headers)
-		if !pr.Skip {
-			return pr.Body, pr.Err
+	if c.proxies != nil {
+		fn := c.proxies[req.URL.String()]
+		if fn != nil {
+			pr := fn(ctx, req, headers)
+			if !pr.Skip {
+				return pr.Body, pr.Err
+			}
+		}
+		fn = c.proxies[""]
+		if fn != nil {
+			pr := fn(ctx, req, headers)
+			if !pr.Skip {
+				return pr.Body, pr.Err
+			}
 		}
 	}
 	_, body, err := doRequest(httpClient(), req, headers)

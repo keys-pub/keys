@@ -40,7 +40,7 @@ func TestResultReddit(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Body: testdata(t, "testdata/reddit/charlie.json")}
 	})
 

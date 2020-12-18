@@ -145,7 +145,7 @@ func TestSearchUsers(t *testing.T) {
 	// Revoke alicenew@github
 	sc, err = scs.Sigchain(alice.ID())
 	require.NoError(t, err)
-	_, err = sc.Revoke(aliceNewSt.Seq, alice)
+	_, err = sc.Revoke(aliceNewSt.Statement.Seq, alice)
 	require.NoError(t, err)
 	err = scs.Save(sc)
 	require.NoError(t, err)
@@ -278,7 +278,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	}
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("Testing", smsg, "keyspubmsgs"))}
 	})
 
@@ -337,7 +337,7 @@ func TestReddit(t *testing.T) {
 
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs"))}
 	})
 
@@ -346,7 +346,7 @@ func TestReddit(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 
 	// Different name
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("alice2", smsg, "keyspubmsgs"))}
 	})
 	result, err = usrs.Update(ctx, key.ID())
@@ -354,7 +354,7 @@ func TestReddit(t *testing.T) {
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs2"))}
 	})
 	result, err = usrs.Update(ctx, key.ID())
@@ -380,8 +380,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, usrs.Client())
-	okProxy := usrs.Client().Proxy()
+	aliceUser := testSaveUser(t, usrs, scs, alice, "alice", "github", clock, usrs.Client())
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -394,7 +393,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
 	// Set 500 error for alice@github
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Err: http.Error{StatusCode: 500}}
 	})
 	_, err = usrs.Update(ctx, alice.ID())
@@ -425,7 +424,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
-	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Err: http.Error{StatusCode: 404}}
 	})
 	_, err = usrs.Update(ctx, alice.ID())
@@ -449,7 +448,9 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, "", spew.String())
 
 	// Reset proxy
-	usrs.Client().SetProxy(okProxy)
+	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(aliceUser.Response)}
+	})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -510,28 +511,35 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, 0, len(ids))
 }
 
-func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, client http.Client) *keys.Statement {
+type mockUser struct {
+	Statement *keys.Statement
+	Message   string
+	URL       string
+	Response  string
+}
+
+func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, client http.Client) *mockUser {
 	st, err := saveUser(users, scs, key, name, service, clock, client)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, client http.Client) (*keys.Statement, error) {
+func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, client http.Client) (*mockUser, error) {
 	url := ""
-	// murl := ""
+	murl := ""
 
 	id := hex.EncodeToString(sha256.New().Sum([]byte(service + "/" + name)))
 
 	switch service {
 	case "github":
 		url = fmt.Sprintf("https://gist.github.com/%s/%s", name, id)
-		// murl = "https://api.github.com/gists/" + id
+		murl = "https://api.github.com/gists/" + id
 	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/%s", name, id)
-		// murl = "https://api.twitter.com/2/tweets/" + id + "?expansions=author_id"
+		murl = "https://api.twitter.com/2/tweets/" + id + "?expansions=author_id"
 	case "reddit":
 		url = fmt.Sprintf("https://reddit.com/r/keyspubmsgs/comments/%s", name)
-		// murl = url
+		murl = url
 	default:
 		return nil, errors.Errorf("unsupported service in test")
 	}
@@ -549,11 +557,6 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 		return nil, err
 	}
 
-	msg, err := usr.Sign(key)
-	if err != nil {
-		return nil, err
-	}
-
 	st, err := user.NewSigchainStatement(sc, usr, key, clock.Now())
 	if err != nil {
 		return nil, err
@@ -565,6 +568,10 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	if err = scs.Save(sc); err != nil {
 		return nil, err
 	}
+	msg, err := usr.Sign(key)
+	if err != nil {
+		return nil, err
+	}
 
 	resp := msg
 	switch service {
@@ -574,12 +581,11 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 		resp = githubMock(name, id, msg)
 	}
 
-	client.SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
-		// Only respond if url matches
+	client.SetProxy(murl, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(resp)}
 	})
 
-	return st, nil
+	return &mockUser{Statement: st, Message: msg, URL: murl, Response: resp}, nil
 }
 
 func twitterMock(name string, id string, msg string) string {
