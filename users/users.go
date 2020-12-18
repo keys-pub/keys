@@ -8,7 +8,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/pkg/errors"
@@ -16,10 +16,10 @@ import (
 
 // Users keeps track of sigchain user links.
 type Users struct {
-	ds    dstore.Documents
-	scs   *keys.Sigchains
-	req   request.Requestor
-	clock tsutil.Clock
+	ds     dstore.Documents
+	scs    *keys.Sigchains
+	client http.Client
+	clock  tsutil.Clock
 }
 
 type keyDocument struct {
@@ -30,25 +30,25 @@ type keyDocument struct {
 // New creates Users lookup.
 func New(ds dstore.Documents, scs *keys.Sigchains, opt ...Option) *Users {
 	opts := newOptions(opt...)
-	req := opts.Req
-	if req == nil {
-		req = request.NewHTTPRequestor()
+	client := opts.Client
+	if client == nil {
+		client = http.NewClient()
 	}
 	clock := opts.Clock
 	if clock == nil {
 		clock = tsutil.NewClock()
 	}
 	return &Users{
-		ds:    ds,
-		scs:   scs,
-		req:   req,
-		clock: clock,
+		ds:     ds,
+		scs:    scs,
+		client: client,
+		clock:  clock,
 	}
 }
 
-// Requestor ...
-func (u *Users) Requestor() request.Requestor {
-	return u.req
+// Client ...
+func (u *Users) Client() http.Client {
+	return u.client
 }
 
 // Update index for key.
@@ -91,6 +91,10 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 		logger.Debugf("User not found in sigchain %s", sc.KID())
 		return nil, nil
 	}
+	if usr.KID != sc.KID() {
+		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
+	}
+
 	result, err := u.Get(ctx, sc.KID())
 	if err != nil {
 		return nil, err
@@ -101,18 +105,14 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 	// Set or update user (in case user changed)
 	result.User = usr
 
-	if usr.KID != sc.KID() {
-		return nil, errors.Errorf("user sigchain kid mismatch %s != %s", usr.KID, sc.KID())
-	}
-
-	result.Update(ctx, u.req, u.clock.Now())
+	result.Update(ctx, u.client, u.clock.Now())
 
 	return result, nil
 }
 
 // RequestVerify requests and verifies a user. Doesn't index result.
 func (u *Users) RequestVerify(ctx context.Context, usr *user.User) *user.Result {
-	return usr.RequestVerify(ctx, user.Requestor(u.req), user.Clock(u.clock))
+	return usr.RequestVerify(ctx, user.Client(u.client), user.Clock(u.clock))
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.

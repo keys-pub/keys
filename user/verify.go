@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
@@ -18,14 +18,14 @@ func (u *User) RequestVerify(ctx context.Context, opt ...VerifyOption) *Result {
 	res := &Result{
 		User: u,
 	}
-	res.Update(ctx, opts.Requestor, opts.Clock.Now())
+	res.Update(ctx, opts.Client, opts.Clock.Now())
 	return res
 }
 
 // VerifyOptions ...
 type VerifyOptions struct {
-	Requestor request.Requestor
-	Clock     tsutil.Clock
+	Client http.Client
+	Clock  tsutil.Clock
 }
 
 // VerifyOption ...
@@ -34,8 +34,8 @@ type VerifyOption func(*VerifyOptions)
 // newVerifyOptions parses VerifyOptions.
 func newVerifyOptions(opts ...VerifyOption) VerifyOptions {
 	options := VerifyOptions{
-		Requestor: request.NewHTTPRequestor(),
-		Clock:     tsutil.NewClock(),
+		Client: http.NewClient(),
+		Clock:  tsutil.NewClock(),
 	}
 	for _, o := range opts {
 		o(&options)
@@ -43,10 +43,10 @@ func newVerifyOptions(opts ...VerifyOption) VerifyOptions {
 	return options
 }
 
-// Requestor ...
-func Requestor(req request.Requestor) VerifyOption {
+// Client ...
+func Client(client http.Client) VerifyOption {
 	return func(o *VerifyOptions) {
-		o.Requestor = req
+		o.Client = client
 	}
 }
 
@@ -58,18 +58,18 @@ func Clock(clock tsutil.Clock) VerifyOption {
 }
 
 // findVerify finds and verifies content in bytes.
-func findVerify(usr *User, b []byte) (Status, error) {
+func findVerify(usr *User, b []byte) (Status, string, error) {
 	msg, _ := encoding.FindSaltpack(string(b), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
-		return StatusContentNotFound, errors.Errorf("user signed message content not found")
+		return StatusContentNotFound, "", errors.Errorf("user signed message content not found")
 	}
 
 	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
 	if err := usr.Verify(verifyMsg); err != nil {
 		logger.Warningf("Failed to verify statement: %s", err)
-		return StatusStatementInvalid, err
+		return StatusStatementInvalid, "", err
 	}
 
-	return StatusOK, nil
+	return StatusOK, verifyMsg, nil
 }

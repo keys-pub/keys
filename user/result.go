@@ -3,24 +3,28 @@ package user
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
-	"github.com/pkg/errors"
 )
 
 // Result describes the status of a User.
 // TODO: Make Err/Status more explicit, it can be confusing.
 type Result struct {
-	Err    string `json:"err,omitempty"`
+	// Err if error occured.
+	// See Status for type of error.
+	Err string `json:"err,omitempty"`
+	// Status for result. StatusOK if ok, otherwise an error type.
 	Status Status `json:"status"`
 	// Timestamp is the when the status was last updated.
 	Timestamp int64 `json:"ts"`
-	User      *User `json:"user"`
+	// User.
+	User *User `json:"user"`
+	// Statement we found at User.URL.
+	Statement string `json:"statement,omitempty"`
 	// VerifiedAt is when the status was last OK.
-	VerifiedAt int64 `json:"vts"`
+	VerifiedAt int64 `json:"vts,omitempty"`
 }
 
 func (r Result) String() string {
@@ -42,87 +46,23 @@ func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
-// Update result using Requestor.
-func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Time) {
+// Update result using client.
+// If there is an error, it is set on the result.
+func (r *Result) Update(ctx context.Context, client http.Client, now time.Time) {
 	logger.Infof("Update user %s", r.User.String())
 
 	r.Timestamp = tsutil.Millis(now)
-
-	service, err := LookupService(r.User.Service)
+	st, msg, err := requestVerify(ctx, client, r.User)
 	if err != nil {
-		r.Err = err.Error()
-		r.Status = StatusFailure
-		return
-	}
-
-	logger.Debugf("Validate user name: %s, url: %s", r.User.Name, r.User.URL)
-	urs, err := service.ValidateURLString(r.User.Name, r.User.URL)
-	if err != nil {
-		r.Err = err.Error()
-		r.Status = StatusFailure
-		return
-	}
-
-	ur, err := url.Parse(urs)
-	if err != nil {
-		r.Err = err.Error()
-		r.Status = StatusFailure
-		return
-	}
-
-	headers, err := service.Headers(ur)
-	if err != nil {
-		r.Err = err.Error()
-		r.Status = StatusFailure
-		return
-	}
-
-	var body []byte
-	if ur.Scheme == "test" && ur.Host == "echo" {
-		// For test requests
-		logger.Infof("Test echo request %s", urs)
-		b, err := echoRequest(ur)
-		if err != nil {
-			r.Err = err.Error()
-			r.Status = StatusFailure
-			return
-		}
-		body = b
-	} else {
-		logger.Infof("Requesting %s", urs)
-		b, err := req.RequestURLString(ctx, urs, headers)
-		if err != nil {
-			logger.Warningf("Request failed: %v", err)
-			if errHTTP, ok := errors.Cause(err).(request.ErrHTTP); ok && errHTTP.StatusCode == 404 {
-				r.Err = err.Error()
-				r.Status = StatusResourceNotFound
-				return
-			}
-			r.Err = err.Error()
-			r.Status = StatusConnFailure
-			return
-		}
-		body = b
-	}
-
-	b, err := service.CheckContent(r.User.Name, body)
-	if err != nil {
-		logger.Warningf("Failed to check content: %s", err)
-		r.Err = err.Error()
-		r.Status = StatusContentInvalid
-		return
-	}
-
-	st, err := findVerify(r.User, b)
-	if err != nil {
-		logger.Warningf("Failed to find and verify: %s", err)
 		r.Err = err.Error()
 		r.Status = st
+		r.Statement = ""
 		return
 	}
 
 	logger.Infof("Verified %s", r.User.KID)
 	r.Err = ""
-	r.Status = StatusOK
+	r.Statement = msg
+	r.Status = st
 	r.VerifiedAt = tsutil.Millis(now)
 }

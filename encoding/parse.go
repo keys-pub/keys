@@ -31,9 +31,10 @@ func stripTags(body string) string {
 	return re.ReplaceAllString(body, "")
 }
 
+var regexSpaces = regexp.MustCompile(`[ ]+`)
+
 // FindSaltpack finds saltpack message in a string starting with "BEGIN {BRAND }MESSAGE."
 // and ending with "END {BRAND }MESSAGE". {BRAND } is optional.
-// Characters not in the range a-zA-Z0-9 are ignored (expecting base62).
 // If isHTML is true, we html unescape the string first.
 func FindSaltpack(msg string, isHTML bool) (string, string) {
 	if isHTML {
@@ -45,7 +46,7 @@ func FindSaltpack(msg string, isHTML bool) (string, string) {
 
 	brand, out := "", ""
 	if len(s) >= 2 {
-		brand = strings.TrimSpace(TrimSaltpack(s[1], true))
+		brand = strings.TrimSpace(TrimSaltpack(s[1], []rune{' '}))
 	}
 	if len(s) >= 3 {
 		out = s[2]
@@ -55,7 +56,9 @@ func FindSaltpack(msg string, isHTML bool) (string, string) {
 	if isHTML {
 		out = stripTags(out)
 	}
-
-	out = TrimSaltpack(out, false)
+	out = TrimSaltpack(out, []rune{' ', '\n', '.'})
+	out = regexSpaces.ReplaceAllString(out, " ")
+	out = strings.TrimSpace(out)
+	out = strings.Trim(out, "\n")
 	return out, brand
 }

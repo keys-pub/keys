@@ -8,7 +8,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/keys-pub/keys/user/services"
@@ -20,10 +20,10 @@ func TestResultEcho(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
@@ -84,13 +84,10 @@ func TestRequestVerifyEcho(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
-
-	echo := services.NewEcho()
-	user.AddService(echo)
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	usrSign, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
@@ -100,7 +97,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 
 	urs := "test://echo/alice/" + sk.ID().String() + "/" + msg
 
-	norm, err := echo.NormalizeURLString("alice", urs)
+	norm, err := services.Echo.NormalizeURL("alice", urs)
 	require.NoError(t, err)
 
 	usr := &user.User{

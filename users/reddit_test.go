@@ -6,7 +6,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/keys-pub/keys/users"
@@ -17,10 +17,10 @@ func TestResultReddit(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "reddit", "charlie")
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestResultReddit(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	req.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdata(t, "testdata/reddit/charlie.json"))
+	client.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdata(t, "testdata/reddit/charlie.json"))
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)

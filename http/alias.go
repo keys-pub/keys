@@ -2,14 +2,8 @@ package http
 
 import "net/http"
 
-// Client alias
-type Client = http.Client
-
 // Transport alias
 type Transport = http.Transport
-
-// Header alias
-type Header = http.Header
 
 // Request alias
 type Request = http.Request

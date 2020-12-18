@@ -9,14 +9,14 @@ import (
 )
 
 func TestHTTPSNormalizeName(t *testing.T) {
-	https := services.NewHTTPS()
+	https := services.HTTPS
 	name := https.NormalizeName("Keys.pub")
 	require.Equal(t, "keys.pub", name)
 }
 
 func TestHTTPSValidateName(t *testing.T) {
 	var err error
-	https := services.NewHTTPS()
+	https := services.HTTPS
 
 	err = https.ValidateName("keys.pub")
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestHTTPSValidateName(t *testing.T) {
 }
 
 func TestHTTPSValidateURL(t *testing.T) {
-	https := services.NewHTTPS()
+	https := services.HTTPS
 	testValidateURL(t, https,
 		"keys.pub",
 		"https://keys.pub/keyspub.txt",

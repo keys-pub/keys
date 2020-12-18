@@ -1,22 +1,20 @@
 package services
 
 import (
+	"context"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/pkg/errors"
 )
 
 type https struct{}
 
-// NewHTTPS service.
-func NewHTTPS() Service {
-	return &https{}
-}
+// HTTPS service.
+var HTTPS = &https{}
 
 func (s *https) ID() string {
 	return "https"
@@ -51,11 +49,11 @@ func (s *https) ValidateName(name string) error {
 	return nil
 }
 
-func (s *https) NormalizeURLString(name string, urs string) (string, error) {
+func (s *https) NormalizeURL(name string, urs string) (string, error) {
 	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *https) ValidateURLString(name string, urs string) (string, error) {
+func (s *https) ValidateURL(name string, urs string) (string, error) {
 	if err := s.ValidateName(name); err != nil {
 		return "", errors.Wrapf(err, "invalid url")
 	}
@@ -78,8 +76,19 @@ func (s *https) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (s *https) Headers(ur *url.URL) ([]request.Header, error) {
-	return nil, nil
+func (s *https) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
+	req, err := http.NewRequest("GET", urs, nil)
+	if err != nil {
+		return nil, err
+	}
+	b, err := client.Request(ctx, req, nil)
+	if err != nil {
+		if errHTTP, ok := errors.Cause(err).(http.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return b, nil
 }
 
 var regexIP = regexp.MustCompile(`^[0-9].*\.[0-9].*\.[0-9].*\.[0-9].*$`)

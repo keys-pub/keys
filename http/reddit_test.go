@@ -1,18 +1,20 @@
-package request_test
+package http_test
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/stretchr/testify/require"
 )
 
 func TestReddit(t *testing.T) {
-	req := request.NewHTTPRequestor()
+	client := http.NewClient()
 	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
-	res, err := req.RequestURLString(context.TODO(), urs, nil)
+	req, err := http.NewRequest("GET", urs, nil)
+	require.NoError(t, err)
+	res, err := client.Request(context.TODO(), req, nil)
 	require.NoError(t, err)
 
 	var red reddit

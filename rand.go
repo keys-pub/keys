@@ -2,6 +2,7 @@ package keys
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -75,6 +76,11 @@ func RandUsername(length int) string {
 		r = append(r, rune(n))
 	}
 	return string(r)
+}
+
+// RandHex returns random hex.
+func RandHex(numBytes int) string {
+	return hex.EncodeToString(RandBytes(numBytes))
 }
 
 // RandTempPath returns a unique random file name in os.TempDir.

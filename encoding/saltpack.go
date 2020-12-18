@@ -8,14 +8,16 @@ import (
 )
 
 // TrimSaltpack removes non base63 characters from a string.
-func TrimSaltpack(msg string, allowSpace bool) string {
+func TrimSaltpack(msg string, allow []rune) string {
 	charsOnly := func(r rune) rune {
 		// 0-9, A-Z, a-z
 		if (r >= 0x30 && r <= 0x39) || (r >= 0x41 && r <= 0x5A) || (r >= 0x61 && r <= 0x7A) {
 			return r
 		}
-		if allowSpace && r == ' ' {
-			return r
+		for _, a := range allow {
+			if r == a {
+				return r
+			}
 		}
 		return -1
 	}
@@ -33,6 +35,7 @@ func DecodeSaltpack(msg string, isHTML bool) ([]byte, string, error) {
 	if s == "" {
 		return nil, "", nil
 	}
+	s = TrimSaltpack(s, nil)
 	b, err := Decode(s, Base62)
 	if err != nil {
 		return nil, "", errors.Wrapf(err, "failed to decode saltpack message")
@@ -47,7 +50,7 @@ func encodeSaltpack(b []byte) string {
 }
 
 func decodeSaltpack(s string) ([]byte, error) {
-	s = TrimSaltpack(s, false)
+	s = TrimSaltpack(s, nil)
 	return Decode(s, Base62)
 }
 

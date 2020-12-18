@@ -10,21 +10,12 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/user/services"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/keys-pub/keys/users"
 	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	user.AddService(services.NewTwitter(""))
-	user.AddService(services.NewGithub())
-	user.AddService(services.NewEcho())
-	user.AddService(services.NewHTTPS())
-	user.AddService(services.NewReddit())
-}
 
 func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
@@ -41,11 +32,11 @@ func TestCheckNoUsers(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc := keys.NewSigchain(sk.ID())
 
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	result, err := usrs.CheckSigchain(context.TODO(), sc)
 	require.NoError(t, err)
@@ -58,14 +49,14 @@ func TestCheckNoUsers(t *testing.T) {
 }
 
 func TestCheckFailure(t *testing.T) {
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
-	req.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
+	client.SetResponse("https://mobile.twitter.com/boboloblaw/status/1259188857846632448", []byte(msg))
 
 	usr := &user.User{
 		Name:    "gabriel",
@@ -99,12 +90,12 @@ func TestSigchainUsersUpdate(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	msg := testdata(t, "testdata/twitter/1222706272849391616.json")
 	require.NoError(t, err)
-	req.SetResponse("https://api.twitter.com/2/tweets/1222706272849391616?expansions=author_id", []byte(msg))
+	client.SetResponse("https://api.twitter.com/2/tweets/1222706272849391616?expansions=author_id", []byte(msg))
 
 	err = scs.Save(sc)
 	require.NoError(t, err)
@@ -120,8 +111,8 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	sk := keys.GenerateEdX25519Key()
 	kid := sk.ID()
@@ -140,7 +131,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	req.SetResponse("https://api.twitter.com/2/tweets/1?expansions=author_id", []byte(newTwitterMock("gabriel", "1", msg)))
+	client.SetResponse("https://api.twitter.com/2/tweets/1?expansions=author_id", []byte(twitterMock("gabriel", "1", msg)))
 
 	err = scs.Save(sc)
 	require.NoError(t, err)
@@ -164,7 +155,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	req.SetResponse("https://api.twitter.com/2/tweets/2?expansions=author_id", []byte(newTwitterMock("gabriel", "2", msg)))
+	client.SetResponse("https://api.twitter.com/2/tweets/2?expansions=author_id", []byte(twitterMock("gabriel", "2", msg)))
 
 	err = scs.Save(sc)
 	require.NoError(t, err)
@@ -179,14 +170,14 @@ func TestCheckForExisting(t *testing.T) {
 	var err error
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	sk1 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	sc1 := keys.NewSigchain(sk1.ID())
-	_, err = user.MockStatement(sk1, sc1, "alice", "echo", req, clock)
+	_, err = user.MockStatement(sk1, sc1, "alice", "echo", client, clock)
 	require.NoError(t, err)
 	kid, err := usrs.CheckForExisting(context.TODO(), sc1)
 	require.NoError(t, err)
@@ -198,7 +189,7 @@ func TestCheckForExisting(t *testing.T) {
 
 	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 	sc2 := keys.NewSigchain(sk2.ID())
-	_, err = user.MockStatement(sk2, sc2, "alice", "echo", req, clock)
+	_, err = user.MockStatement(sk2, sc2, "alice", "echo", client, clock)
 	require.NoError(t, err)
 	kid, err = usrs.CheckForExisting(context.TODO(), sc2)
 	require.NoError(t, err)

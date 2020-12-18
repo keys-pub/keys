@@ -2,16 +2,18 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"regexp"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
+	"github.com/pkg/errors"
 )
 
 // Service describes a user service.
 type Service interface {
-	// Identifier of the service, e.g. "github", "twitter".
+	// Identifier of the service, e.g. "github", "twitter", "reddit", "https", etc.
 	ID() string
 
 	// Normalize the service user name.
@@ -22,21 +24,37 @@ type Service interface {
 	// ValidateName validates the service user name.
 	ValidateName(name string) error
 
-	// NormalizeURLString normalizes an url string.
-	NormalizeURLString(name string, urs string) (string, error)
+	// NormalizeURL normalizes an url string.
+	NormalizeURL(name string, urs string) (string, error)
 
-	// ValidateURLString validates the URL string and returns where to find the
+	// ValidateURL validates the URL string and returns where to find the
 	// signed statement.
 	// For example, on reddit ".json" is appended.
-	ValidateURLString(name string, urs string) (string, error)
+	ValidateURL(name string, urs string) (string, error)
 
-	// CheckContent checks content and returns signed statement
-	// For Github there is no check since the user owns the URL location.
-	// For Reddit, we need to verify the listing, author and subreddit and return only the listing text.
+	// Request resource with client.
+	Request(ctx context.Context, client http.Client, urs string) ([]byte, error)
+
+	// CheckContent checks content and returns signed statement.
 	CheckContent(name string, b []byte) ([]byte, error)
+}
 
-	// Headers to include with request (for example, an auth header).
-	Headers(ur *url.URL) ([]request.Header, error)
+// Lookup service by name.
+func Lookup(service string) (Service, error) {
+	switch service {
+	case Twitter.ID():
+		return Twitter, nil
+	case Github.ID():
+		return Github, nil
+	case Reddit.ID():
+		return Reddit, nil
+	case HTTPS.ID():
+		return HTTPS, nil
+	case Echo.ID():
+		return Echo, nil
+	default:
+		return nil, errors.Errorf("service not found: %s", service)
+	}
 }
 
 var regAlphaNumericWithDash = regexp.MustCompile(`^[a-z0-9-]+$`)
