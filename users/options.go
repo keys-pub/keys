@@ -1,14 +1,14 @@
 package users
 
 import (
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 )
 
 // Options are options for Users.
 type Options struct {
-	Req   request.Requestor
-	Clock tsutil.Clock
+	Client http.Client
+	Clock  tsutil.Clock
 }
 
 // Option ...
@@ -22,10 +22,10 @@ func newOptions(opts ...Option) Options {
 	return options
 }
 
-// Requestor to use.
-func Requestor(req request.Requestor) Option {
+// Client to use.
+func Client(client http.Client) Option {
 	return func(o *Options) {
-		o.Req = req
+		o.Client = client
 	}
 }
 

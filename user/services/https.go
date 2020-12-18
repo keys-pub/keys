@@ -1,21 +1,20 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/pkg/errors"
 )
 
 type https struct{}
 
-// NewHTTPS service.
-func NewHTTPS() Service {
-	return &https{}
-}
+// HTTPS service.
+var HTTPS = &https{}
 
 func (s *https) ID() string {
 	return "https"
@@ -77,8 +76,19 @@ func (s *https) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (s *https) Headers(urs string) ([]request.Header, error) {
-	return nil, nil
+func (s *https) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
+	req, err := http.NewRequest("GET", urs, nil)
+	if err != nil {
+		return nil, err
+	}
+	b, err := client.Request(ctx, req, nil)
+	if err != nil {
+		if errHTTP, ok := errors.Cause(err).(http.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return b, nil
 }
 
 var regexIP = regexp.MustCompile(`^[0-9].*\.[0-9].*\.[0-9].*\.[0-9].*$`)

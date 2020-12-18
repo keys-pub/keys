@@ -1,12 +1,14 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
+
 	"github.com/pkg/errors"
 )
 
@@ -15,10 +17,8 @@ const GithubID = "github"
 
 type github struct{}
 
-// NewGithub service.
-func NewGithub() Service {
-	return &github{}
-}
+// Github service.
+var Github = &github{}
 
 func (s *github) ID() string {
 	return GithubID
@@ -89,13 +89,28 @@ func (s *github) CheckContent(name string, b []byte) ([]byte, error) {
 	return nil, errors.Errorf("no gist files")
 }
 
-func (s *github) Headers(urs string) ([]request.Header, error) {
-	return []request.Header{
-		request.Header{
+func (s *github) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
+	req, err := http.NewRequest("GET", urs, nil)
+	if err != nil {
+		return nil, err
+	}
+	b, err := client.Request(ctx, req, s.headers())
+	if err != nil {
+		if errHTTP, ok := errors.Cause(err).(http.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return b, nil
+}
+
+func (s *github) headers() []http.Header {
+	return []http.Header{
+		http.Header{
 			Name:  "Accept",
 			Value: "application/vnd.github.v3+json",
 		},
-	}, nil
+	}
 }
 
 type file struct {

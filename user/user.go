@@ -10,8 +10,8 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/json"
-	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user/services"
 	"github.com/pkg/errors"
@@ -126,7 +126,7 @@ func (u *User) UnmarshalJSON(b []byte) error {
 // New creates a User.
 // Name and URL string are NOT normalized.
 func New(kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
-	svc, err := LookupService(service)
+	svc, err := services.Lookup(service)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func newUser(kid keys.ID, service services.Service, name string, urs string) (*U
 // NewForSigning returns User for signing (doesn't have remote URL yet).
 // The name is normalized, for example for twitter "@Username" => "username".
 func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
-	svc, err := LookupService(service)
+	svc, err := services.Lookup(service)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func validateServiceAndName(service services.Service, name string) error {
 // Validate service and name and URL.
 // If you want to request the URL and verify the remote statement, use RequestVerify.
 func (u *User) Validate() error {
-	service, err := LookupService(u.Service)
+	service, err := services.Lookup(u.Service)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 }
 
 // MockStatement for testing.
-func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, service string, req *request.MockRequestor, clock tsutil.Clock) (*keys.Statement, error) {
+func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, service string, client *http.Mock, clock tsutil.Clock) (*keys.Statement, error) {
 	us, err := NewForSigning(key.ID(), service, name)
 	if err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, servic
 		return nil, err
 	}
 
-	req.SetResponse(urs, []byte(msg))
+	client.SetResponse(urs, []byte(msg))
 
 	if err := sc.Add(st); err != nil {
 		return nil, err

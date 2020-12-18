@@ -8,13 +8,13 @@ import (
 )
 
 func TestRedditNormalizeName(t *testing.T) {
-	reddit := services.NewReddit()
+	reddit := services.Reddit
 	name := reddit.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestRedditValidateName(t *testing.T) {
-	reddit := services.NewReddit()
+	reddit := services.Reddit
 	err := reddit.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -32,7 +32,7 @@ func TestRedditValidateName(t *testing.T) {
 }
 
 func TestRedditNormalizeURL(t *testing.T) {
-	reddit := services.NewReddit()
+	reddit := services.Reddit
 	testNormalizeURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
@@ -45,7 +45,7 @@ func TestRedditNormalizeURL(t *testing.T) {
 }
 
 func TestRedditValidateURL(t *testing.T) {
-	reddit := services.NewReddit()
+	reddit := services.Reddit
 	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",

@@ -1,19 +1,18 @@
 package services
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/pkg/errors"
 )
 
 type echo struct{}
 
-// NewEcho service (for testing).
-func NewEcho() Service {
-	return &echo{}
-}
+// Echo service.
+var Echo = &echo{}
 
 func (s *echo) ID() string {
 	return "echo"
@@ -64,10 +63,31 @@ func (s *echo) ValidateName(name string) error {
 	return nil
 }
 
-func (s *echo) CheckContent(name string, b []byte) ([]byte, error) {
-	return b, nil
+func (s *echo) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
+	ur, err := url.Parse(urs)
+	if err != nil {
+		return nil, err
+	}
+	if ur.Scheme != "test" {
+		return nil, errors.Errorf("invalid scheme for echo")
+	}
+	if ur.Host != "echo" {
+		return nil, errors.Errorf("invalid host for echo")
+	}
+
+	path := ur.Path
+	path = strings.TrimPrefix(path, "/")
+	paths := strings.Split(path, "/")
+	if len(paths) != 3 {
+		return nil, errors.Errorf("path invalid %s", path)
+	}
+	msg, err := url.QueryUnescape(paths[2])
+	if err != nil {
+		return nil, err
+	}
+	return []byte(msg), nil
 }
 
-func (s *echo) Headers(urs string) ([]request.Header, error) {
-	return nil, nil
+func (s *echo) CheckContent(name string, b []byte) ([]byte, error) {
+	return b, nil
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/keys-pub/keys/users"
@@ -29,8 +29,8 @@ func TestSearchUsers(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 	ctx := context.TODO()
 
 	results, err := usrs.Search(ctx, &users.SearchRequest{})
@@ -43,7 +43,7 @@ func TestSearchUsers(t *testing.T) {
 	for i := 10; i < 15; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("name%d", i)
-		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
+		testSaveUser(t, usrs, scs, key, name, "github", clock, client)
 		res, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 		require.NotNil(t, res)
@@ -51,7 +51,7 @@ func TestSearchUsers(t *testing.T) {
 	}
 
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
 
 	res, err := usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 0, len(results))
 
 	// Add alicenew@github
-	aliceNewSt := testSaveUser(t, usrs, scs, alice, "alicenew", "github", clock, req)
+	aliceNewSt := testSaveUser(t, usrs, scs, alice, "alicenew", "github", clock, client)
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -121,7 +121,7 @@ func TestSearchUsers(t *testing.T) {
 
 	// Add alice@twitter
 	alice2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32)))
-	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, req)
+	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, client)
 	res, err = usrs.Update(ctx, alice2.ID())
 	require.NoError(t, err)
 	require.NotNil(t, res)
@@ -175,15 +175,15 @@ func TestFind(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 	ctx := context.TODO()
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	require.NoError(t, err)
 
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -214,8 +214,8 @@ func TestUsersEmpty(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	users := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	users := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -237,25 +237,25 @@ func TestUserValidateName(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x20}, 32)))
 
 	// Test MixedCase
-	_, err := saveUser(usrs, scs, key, "MixedCase", "github", clock, req)
+	_, err := saveUser(usrs, scs, key, "MixedCase", "github", clock, client)
 	require.EqualError(t, err, "name has an invalid character")
-	_, err = saveUser(usrs, scs, key, "MixedCase", "twitter", clock, req)
+	_, err = saveUser(usrs, scs, key, "MixedCase", "twitter", clock, client)
 	require.EqualError(t, err, "name has an invalid character")
-	_, err = saveUser(usrs, scs, key, "MixedCase", "reddit", clock, req)
+	_, err = saveUser(usrs, scs, key, "MixedCase", "reddit", clock, client)
 	require.EqualError(t, err, "name has an invalid character")
 
 	// Long length
-	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, req)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, client)
 	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")
-	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, req)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, client)
 	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")
-	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, req)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, client)
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
 }
 
@@ -266,8 +266,8 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	users := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	users := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	// Unvalidated user to sigchain
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x021}, 32)))
@@ -282,7 +282,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
 	msg := mockRedditMessage("Testing", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL(testingURL), []byte(msg))
+	client.SetResponse(mockRedditURL(testingURL), []byte(msg))
 
 	sc := keys.NewSigchain(key.ID())
 
@@ -316,8 +316,8 @@ func TestReddit(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
@@ -341,7 +341,7 @@ func TestReddit(t *testing.T) {
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
 	msg := mockRedditMessage("alice", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL("alice"), []byte(msg))
+	client.SetResponse(mockRedditURL("alice"), []byte(msg))
 
 	result, err := usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
@@ -349,14 +349,14 @@ func TestReddit(t *testing.T) {
 
 	// Different name
 	msg = mockRedditMessage("alice2", smsg, "keyspubmsgs")
-	req.SetResponse(mockRedditURL("alice"), []byte(msg))
+	client.SetResponse(mockRedditURL("alice"), []byte(msg))
 	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
 	msg = mockRedditMessage("alice", smsg, "keyspubmsgs2")
-	req.SetResponse(mockRedditURL("alice"), []byte(msg))
+	client.SetResponse(mockRedditURL("alice"), []byte(msg))
 	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
@@ -371,8 +371,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 	ctx := context.TODO()
 
 	results, err := usrs.Search(ctx, &users.SearchRequest{})
@@ -381,7 +381,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -393,11 +393,11 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, int64(1234567890004), results[0].Result.Timestamp)
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
-	data, err := req.Response("https://api.github.com/gists/1")
+	data, err := client.Response("https://api.github.com/gists/1")
 	require.NoError(t, err)
 
 	// Set 500 error for alice@github
-	req.SetError("https://api.github.com/gists/1", request.ErrHTTP{StatusCode: 500})
+	client.SetError("https://api.github.com/gists/1", http.ErrHTTP{StatusCode: 500})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -426,7 +426,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
-	req.SetError("https://api.github.com/gists/1", request.ErrHTTP{StatusCode: 404})
+	client.SetError("https://api.github.com/gists/1", http.ErrHTTP{StatusCode: 404})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -448,7 +448,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, "", spew.String())
 
 	// Unset error
-	req.SetResponse("https://api.github.com/gists/1", data)
+	client.SetResponse("https://api.github.com/gists/1", data)
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -464,8 +464,8 @@ func TestExpired(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 	ctx := context.TODO()
 
 	ids, err := usrs.Expired(ctx, time.Hour, time.Hour*24*60)
@@ -474,7 +474,7 @@ func TestExpired(t *testing.T) {
 
 	// Add alice@github
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -509,13 +509,13 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, 0, len(ids))
 }
 
-func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) *keys.Statement {
+func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *http.Mock) *keys.Statement {
 	st, err := saveUser(users, scs, key, name, service, clock, mock)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *request.MockRequestor) (*keys.Statement, error) {
+func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *http.Mock) (*keys.Statement, error) {
 	url := ""
 	murl := ""
 
@@ -631,21 +631,21 @@ func TestSearch(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	req := request.NewMockRequestor()
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	client := http.NewMock()
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("a%d", i)
-		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
+		testSaveUser(t, usrs, scs, key, name, "github", clock, client)
 		_, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 	for i := 10; i < 20; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("b%d", i)
-		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
+		testSaveUser(t, usrs, scs, key, name, "github", clock, client)
 		_, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}

@@ -1,18 +1,20 @@
-package request_test
+package http_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGithub(t *testing.T) {
-	req := request.NewHTTPRequestor()
+	client := http.NewClient()
 	urs := "https://gist.github.com/gabriel/ceea0f3b675bac03425472692273cf52"
-	res, err := req.Get(context.TODO(), urs, nil)
+	req, err := http.NewRequest("GET", urs, nil)
+	require.NoError(t, err)
+	res, err := client.Request(context.TODO(), req, nil)
 	require.NoError(t, err)
 
 	out, brand := encoding.FindSaltpack(string(res), true)

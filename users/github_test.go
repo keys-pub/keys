@@ -7,7 +7,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/keys-pub/keys/users"
@@ -18,10 +18,10 @@ func TestResultGithub(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice")
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestResultGithub(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	req.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+	client.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -80,10 +80,10 @@ func TestResultGithubWrongName(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice2")
 	require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	sc := keys.NewSigchain(sk.ID())
 
-	req.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+	client.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
 
 	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
@@ -116,17 +116,17 @@ func TestResultGithubWrongService(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	req := request.NewMockRequestor()
+	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
 	sc := keys.NewSigchain(sk.ID())
 
 	invalid := &user.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}
 	msg, err := invalid.Sign(sk)
 	require.NoError(t, err)
 
-	req.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+	client.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
 
 	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)

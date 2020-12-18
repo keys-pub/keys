@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/json"
-	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
 )
@@ -27,8 +27,8 @@ type userStatus struct {
 
 // UpdateViaProxy looks at key.pub instead of requesting from the service
 // directly.
-func (r *Result) UpdateViaProxy(ctx context.Context, req request.Requestor, now time.Time) {
-	usr, err := updateViaProxy(ctx, req, r.User)
+func (r *Result) UpdateViaProxy(ctx context.Context, client http.Client, now time.Time) {
+	usr, err := updateViaProxy(ctx, client, r.User)
 	if err != nil {
 		r.Err = err.Error()
 		r.Status = StatusFailure
@@ -40,14 +40,18 @@ func (r *Result) UpdateViaProxy(ctx context.Context, req request.Requestor, now 
 	r.VerifiedAt = usr.VerifiedAt
 }
 
-func updateViaProxy(ctx context.Context, req request.Requestor, user *User) (*userStatus, error) {
+func updateViaProxy(ctx context.Context, client http.Client, user *User) (*userStatus, error) {
 	urs := "https://keys.pub/user/" + user.KID.String()
-	b, err := req.Get(ctx, urs, nil)
+	req, err := http.NewRequest("GET", urs, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Request(ctx, req, nil)
 	if err != nil {
 		return nil, err
 	}
 	var status userStatus
-	if err := json.Unmarshal(b, &status); err != nil {
+	if err := json.Unmarshal(res, &status); err != nil {
 		return nil, err
 	}
 	if user.KID != status.KID {

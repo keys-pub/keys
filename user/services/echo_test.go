@@ -8,13 +8,13 @@ import (
 )
 
 func TestEchoNormalizeName(t *testing.T) {
-	echo := services.NewEcho()
+	echo := services.Echo
 	name := echo.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestEchoValidateName(t *testing.T) {
-	echo := services.NewEcho()
+	echo := services.Echo
 	err := echo.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestEchoValidateName(t *testing.T) {
 }
 
 func TestEchoNormalizeURL(t *testing.T) {
-	echo := services.NewEcho()
+	echo := services.Echo
 	testNormalizeURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel?",
@@ -43,7 +43,7 @@ func TestEchoNormalizeURL(t *testing.T) {
 }
 
 func TestEchoValidateURL(t *testing.T) {
-	echo := services.NewEcho()
+	echo := services.Echo
 	testValidateURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel",

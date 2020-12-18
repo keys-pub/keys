@@ -1,11 +1,12 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 	"strings"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/pkg/errors"
 )
 
@@ -13,10 +14,8 @@ import (
 
 type reddit struct{}
 
-// NewReddit service.
-func NewReddit() Service {
-	return &reddit{}
-}
+// Reddit service.
+var Reddit = &reddit{}
 
 func (s *reddit) ID() string {
 	return "reddit"
@@ -104,15 +103,34 @@ func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
 	return []byte(selftext), nil
 }
 
-func (s *reddit) Headers(urs string) ([]request.Header, error) {
+func (s *reddit) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
+	req, err := http.NewRequest("GET", urs, nil)
+	if err != nil {
+		return nil, err
+	}
+	headers, err := s.headers(urs)
+	if err != nil {
+		return nil, err
+	}
+	b, err := client.Request(ctx, req, headers)
+	if err != nil {
+		if errHTTP, ok := errors.Cause(err).(http.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return b, nil
+}
+
+func (s *reddit) headers(urs string) ([]http.Header, error) {
 	ur, err := url.Parse(urs)
 	if err != nil {
 		return nil, err
 	}
 	// Not sure if this is required anymore.
 	if strings.HasSuffix(ur.Host, ".reddit.com") {
-		return []request.Header{
-			request.Header{Name: "Host", Value: "reddit.com"},
+		return []http.Header{
+			http.Header{Name: "Host", Value: "reddit.com"},
 		}, nil
 	}
 	return nil, nil

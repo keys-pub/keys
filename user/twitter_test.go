@@ -36,7 +36,7 @@ END MESSAGE.`
 func TestMyTwitter(t *testing.T) {
 	// Requires twitter bearer token configured
 	if os.Getenv("TWITTER_BEARER_TOKEN") == "" {
-		t.Skip()
+		t.Skip("no auth")
 	}
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	// services.SetLogger(user.NewLogger(user.DebugLevel))

@@ -1,12 +1,14 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
-	"github.com/keys-pub/keys/request"
+	"github.com/keys-pub/keys/http"
 	"github.com/pkg/errors"
 )
 
@@ -17,9 +19,14 @@ type twitter struct {
 	bearerToken string
 }
 
-// NewTwitter twitter service.
-func NewTwitter(bearerToken string) Service {
-	return &twitter{bearerToken: bearerToken}
+// Twitter ..
+var Twitter = &twitter{
+	bearerToken: os.Getenv("TWITTER_BEARER_TOKEN"),
+}
+
+// SetBearerToken for auth.
+func (s *twitter) SetBearerToken(bearerToken string) {
+	s.bearerToken = bearerToken
 }
 
 func (s *twitter) ID() string {
@@ -60,18 +67,6 @@ func (s *twitter) ValidateURL(name string, urs string) (string, error) {
 	return "https://api.twitter.com/2/tweets/" + status + "?expansions=author_id", nil
 }
 
-func (s *twitter) Headers(urs string) ([]request.Header, error) {
-	if s.bearerToken == "" {
-		return nil, nil
-	}
-	return []request.Header{
-		request.Header{
-			Name:  "Authorization",
-			Value: fmt.Sprintf("Bearer %s", s.bearerToken),
-		},
-	}, nil
-}
-
 func (s *twitter) NormalizeName(name string) string {
 	name = strings.ToLower(name)
 	if len(name) > 0 && name[0] == '@' {
@@ -91,6 +86,33 @@ func (s *twitter) ValidateName(name string) error {
 	}
 
 	return nil
+}
+
+func (s *twitter) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
+	req, err := http.NewRequest("GET", urs, nil)
+	if err != nil {
+		return nil, err
+	}
+	b, err := client.Request(ctx, req, s.headers())
+	if err != nil {
+		if errHTTP, ok := errors.Cause(err).(http.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return b, nil
+}
+
+func (s *twitter) headers() []http.Header {
+	if s.bearerToken == "" {
+		return nil
+	}
+	return []http.Header{
+		http.Header{
+			Name:  "Authorization",
+			Value: fmt.Sprintf("Bearer %s", s.bearerToken),
+		},
+	}
 }
 
 func (s *twitter) CheckContent(name string, b []byte) ([]byte, error) {

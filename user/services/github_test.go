@@ -8,13 +8,13 @@ import (
 )
 
 func TestGithubNormalizeName(t *testing.T) {
-	github := services.NewGithub()
+	github := services.Github
 	name := github.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestGithubValidateName(t *testing.T) {
-	github := services.NewGithub()
+	github := services.Github
 	err := github.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestGithubValidateName(t *testing.T) {
 }
 
 func TestGithubNormalizeURL(t *testing.T) {
-	github := services.NewGithub()
+	github := services.Github
 	testNormalizeURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd?",
@@ -48,7 +48,7 @@ func TestGithubNormalizeURL(t *testing.T) {
 }
 
 func TestGithubValidateURL(t *testing.T) {
-	github := services.NewGithub()
+	github := services.Github
 	testValidateURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd",

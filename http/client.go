@@ -1,8 +1,7 @@
-// Package request provides clients for requesting data.
-package request
+// Package http provides a http client.
+package http
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -29,7 +28,7 @@ func (e ErrHTTP) Error() string {
 	return fmt.Sprintf("http error %d", e.StatusCode)
 }
 
-func client() *http.Client {
+func httpClient() *http.Client {
 	// TODO: Longer timeout?
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
@@ -57,12 +56,8 @@ func client() *http.Client {
 	return client
 }
 
-func doRequest(client *http.Client, method string, urs string, headers []Header, body []byte, options ...func(*http.Request)) (http.Header, []byte, error) {
-	logger.Debugf("Requesting %s %s", method, urs)
-	req, err := http.NewRequest(method, urs, bytes.NewReader(body))
-	if err != nil {
-		return nil, nil, err
-	}
+func doRequest(client *http.Client, req *Request, headers []Header, options ...func(*http.Request)) (http.Header, []byte, error) {
+	logger.Debugf("Requesting %s %s", req.Method, req.URL)
 
 	req.Header.Set("User-Agent", "keys.pub")
 	for _, header := range headers {
@@ -139,21 +134,21 @@ type Header struct {
 	Value string
 }
 
-// Requestor defines how to request a resource.
-type Requestor interface {
-	Get(ctx context.Context, urs string, headers []Header) ([]byte, error)
+// Client defines how to request a resource.
+type Client interface {
+	Request(ctx context.Context, req *Request, headers []Header) ([]byte, error)
 }
 
-type requestor struct{}
+type client struct{}
 
-// NewHTTPRequestor creates a Requestor for HTTP URLs.
-func NewHTTPRequestor() Requestor {
-	return requestor{}
+// NewClient creates a Requestor for HTTP URLs.
+func NewClient() Client {
+	return client{}
 }
 
-// Get an URL.
-func (r requestor) Get(ctx context.Context, urs string, headers []Header) ([]byte, error) {
-	_, body, err := doRequest(client(), "GET", urs, headers, nil)
+// Request an URL.
+func (c client) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
+	_, body, err := doRequest(httpClient(), req, headers)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}
@@ -165,25 +160,26 @@ type mockResponse struct {
 	err  error
 }
 
-var _ Requestor = &MockRequestor{}
+var _ Client = &Mock{}
 
-// MockRequestor ...
-type MockRequestor struct {
+// Mock ...
+type Mock struct {
 	resp map[string]*mockResponse
 }
 
-// NewMockRequestor with mocked responses.
-func NewMockRequestor() *MockRequestor {
-	return &MockRequestor{resp: map[string]*mockResponse{}}
+// NewMock with mocked responses.
+func NewMock() *Mock {
+	return &Mock{resp: map[string]*mockResponse{}}
 }
 
 // SetResponse ...
-func (r *MockRequestor) SetResponse(url string, b []byte) {
+func (r *Mock) SetResponse(url string, b []byte) {
 	r.resp[url] = &mockResponse{data: b}
 }
 
 // Response returns mocked response.
-func (r *MockRequestor) Response(url string) ([]byte, error) {
+func (r *Mock) Response(url string) ([]byte, error) {
+	// TODO: Match on method without params, etc.
 	resp, ok := r.resp[url]
 	if !ok {
 		return nil, errors.Errorf("no mock response for %s", url)
@@ -194,11 +190,11 @@ func (r *MockRequestor) Response(url string) ([]byte, error) {
 }
 
 // SetError sets response error for ur
-func (r *MockRequestor) SetError(url string, err error) {
+func (r *Mock) SetError(url string, err error) {
 	r.resp[url] = &mockResponse{err: err}
 }
 
-// Get mock response.
-func (r *MockRequestor) Get(ctx context.Context, urs string, headers []Header) ([]byte, error) {
-	return r.Response(urs)
+// Request mock response.
+func (r *Mock) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
+	return r.Response(req.URL.String())
 }
