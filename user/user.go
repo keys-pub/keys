@@ -2,6 +2,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -317,7 +318,7 @@ func FindInSigchain(sc *keys.Sigchain) (*User, error) {
 }
 
 // MockStatement for testing.
-func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, service string, client *http.Mock, clock tsutil.Clock) (*keys.Statement, error) {
+func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, service string, client http.Client, clock tsutil.Clock) (*keys.Statement, error) {
 	us, err := NewForSigning(key.ID(), service, name)
 	if err != nil {
 		return nil, err
@@ -348,7 +349,9 @@ func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, servic
 		return nil, err
 	}
 
-	client.SetResponse(urs, []byte(msg))
+	client.SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(msg)}
+	})
 
 	if err := sc.Add(st); err != nil {
 		return nil, err

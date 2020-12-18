@@ -1,4 +1,5 @@
-// Package http provides a http client.
+// Package http provides an http client for use with checking remote signed
+// statements.
 package http
 
 import (
@@ -10,8 +11,6 @@ import (
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // ErrTimeout is a timeout error.
@@ -19,12 +18,12 @@ type ErrTimeout struct {
 	error
 }
 
-// ErrHTTP is an HTTP Error.
-type ErrHTTP struct {
+// Error is an HTTP Error.
+type Error struct {
 	StatusCode int
 }
 
-func (e ErrHTTP) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("http error %d", e.StatusCode)
 }
 
@@ -97,7 +96,7 @@ func doRequest(client *http.Client, req *Request, headers []Header, options ...f
 
 	defer resp.Body.Close()
 	if resp.StatusCode/200 != 1 {
-		return resp.Header, nil, ErrHTTP{StatusCode: resp.StatusCode}
+		return resp.Header, nil, Error{StatusCode: resp.StatusCode}
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -134,67 +133,53 @@ type Header struct {
 	Value string
 }
 
-// Client defines how to request a resource.
+// Client for HTTP.
 type Client interface {
 	Request(ctx context.Context, req *Request, headers []Header) ([]byte, error)
+	SetProxy(fn ProxyFn)
+	Proxy() ProxyFn
 }
 
-type client struct{}
+type client struct {
+	proxy ProxyFn
+}
 
 // NewClient creates a Requestor for HTTP URLs.
 func NewClient() Client {
-	return client{}
+	return &client{}
+}
+
+// ProxyFn for proxy.
+type ProxyFn func(ctx context.Context, req *Request, headers []Header) ProxyResponse
+
+// ProxyResponse ...
+type ProxyResponse struct {
+	Skip bool
+	Body []byte
+	Err  error
+}
+
+// SetProxy on client.
+func (c *client) SetProxy(fn ProxyFn) {
+	c.proxy = fn
+}
+
+// Proxy returns current proxy if any.
+func (c *client) Proxy() ProxyFn {
+	return c.proxy
 }
 
 // Request an URL.
-func (c client) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
+func (c *client) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
+	if c.proxy != nil {
+		pr := c.proxy(ctx, req, headers)
+		if !pr.Skip {
+			return pr.Body, pr.Err
+		}
+	}
 	_, body, err := doRequest(httpClient(), req, headers)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}
 	return body, err
-}
-
-type mockResponse struct {
-	data []byte
-	err  error
-}
-
-var _ Client = &Mock{}
-
-// Mock ...
-type Mock struct {
-	resp map[string]*mockResponse
-}
-
-// NewMock with mocked responses.
-func NewMock() *Mock {
-	return &Mock{resp: map[string]*mockResponse{}}
-}
-
-// SetResponse ...
-func (r *Mock) SetResponse(url string, b []byte) {
-	r.resp[url] = &mockResponse{data: b}
-}
-
-// Response returns mocked response.
-func (r *Mock) Response(url string) ([]byte, error) {
-	// TODO: Match on method without params, etc.
-	resp, ok := r.resp[url]
-	if !ok {
-		panic(errors.Errorf("no mock response for %s", url))
-	}
-	logger.Debugf("Mock response %s, data=%d; err=%s", url, len(resp.data), resp.err)
-	// logger.Debugf("Mock data: %s", string(resp.data))
-	return resp.data, resp.err
-}
-
-// SetError sets response error for ur
-func (r *Mock) SetError(url string, err error) {
-	r.resp[url] = &mockResponse{err: err}
-}
-
-// Request mock response.
-func (r *Mock) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
-	return r.Response(req.URL.String())
 }

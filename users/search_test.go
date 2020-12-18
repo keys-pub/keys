@@ -3,6 +3,8 @@ package users_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"testing"
@@ -29,8 +31,7 @@ func TestSearchUsers(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 	ctx := context.TODO()
 
 	results, err := usrs.Search(ctx, &users.SearchRequest{})
@@ -43,7 +44,7 @@ func TestSearchUsers(t *testing.T) {
 	for i := 10; i < 15; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("name%d", i)
-		testSaveUser(t, usrs, scs, key, name, "github", clock, client)
+		testSaveUser(t, usrs, scs, key, name, "github", clock, usrs.Client())
 		res, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 		require.NotNil(t, res)
@@ -51,7 +52,7 @@ func TestSearchUsers(t *testing.T) {
 	}
 
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, usrs.Client())
 
 	res, err := usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -66,7 +67,7 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 	require.Equal(t, "alice", results[0].Result.User.Name)
 	require.Equal(t, "github", results[0].Result.User.Service)
-	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
+	require.Equal(t, "https://gist.github.com/alice/6769746875622f616c696365e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
 	require.Equal(t, int64(1234567890044), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890044), results[0].Result.Timestamp)
@@ -105,7 +106,7 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, 0, len(results))
 
 	// Add alicenew@github
-	aliceNewSt := testSaveUser(t, usrs, scs, alice, "alicenew", "github", clock, client)
+	aliceNewSt := testSaveUser(t, usrs, scs, alice, "alicenew", "github", clock, usrs.Client())
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -116,12 +117,12 @@ func TestSearchUsers(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, "alicenew", results[0].Result.User.Name)
 	require.Equal(t, "github", results[0].Result.User.Service)
-	require.Equal(t, "https://gist.github.com/alicenew/1", results[0].Result.User.URL)
+	require.Equal(t, "https://gist.github.com/alicenew/6769746875622f616c6963656e6577e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", results[0].Result.User.URL)
 	require.Equal(t, 3, results[0].Result.User.Seq)
 
 	// Add alice@twitter
 	alice2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32)))
-	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, client)
+	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, usrs.Client())
 	res, err = usrs.Update(ctx, alice2.ID())
 	require.NoError(t, err)
 	require.NotNil(t, res)
@@ -175,15 +176,14 @@ func TestFind(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 	ctx := context.TODO()
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	require.NoError(t, err)
 
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, usrs.Client())
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -214,8 +214,7 @@ func TestUsersEmpty(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	users := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	users := users.New(ds, scs, users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
@@ -237,25 +236,24 @@ func TestUserValidateName(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x20}, 32)))
 
 	// Test MixedCase
-	_, err := saveUser(usrs, scs, key, "MixedCase", "github", clock, client)
+	_, err := saveUser(usrs, scs, key, "MixedCase", "github", clock, usrs.Client())
 	require.EqualError(t, err, "name has an invalid character")
-	_, err = saveUser(usrs, scs, key, "MixedCase", "twitter", clock, client)
+	_, err = saveUser(usrs, scs, key, "MixedCase", "twitter", clock, usrs.Client())
 	require.EqualError(t, err, "name has an invalid character")
-	_, err = saveUser(usrs, scs, key, "MixedCase", "reddit", clock, client)
+	_, err = saveUser(usrs, scs, key, "MixedCase", "reddit", clock, usrs.Client())
 	require.EqualError(t, err, "name has an invalid character")
 
 	// Long length
-	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, client)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "github", clock, usrs.Client())
 	require.EqualError(t, err, "github name is too long, it must be less than 40 characters")
-	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, client)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "twitter", clock, usrs.Client())
 	require.EqualError(t, err, "twitter name is too long, it must be less than 16 characters")
-	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, client)
+	_, err = saveUser(usrs, scs, key, "reallylongusernamereallylongusernamereallylongusername", "reddit", clock, usrs.Client())
 	require.EqualError(t, err, "reddit name is too long, it must be less than 21 characters")
 }
 
@@ -266,8 +264,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	users := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	// Unvalidated user to sigchain
 	key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x021}, 32)))
@@ -281,8 +278,9 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	}
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
-	msg := mockRedditMessage("Testing", smsg, "keyspubmsgs")
-	client.SetResponse(mockRedditURL(testingURL), []byte(msg))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(redditMock("Testing", smsg, "keyspubmsgs"))}
+	})
 
 	sc := keys.NewSigchain(key.ID())
 
@@ -300,11 +298,11 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.TODO()
-	result, err := users.Update(ctx, key.ID())
+	result, err := usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Nil(t, result)
 
-	res, err := users.Get(ctx, key.ID())
+	res, err := usrs.Get(ctx, key.ID())
 	require.NoError(t, err)
 	require.Nil(t, res)
 }
@@ -316,8 +314,7 @@ func TestReddit(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
@@ -340,23 +337,26 @@ func TestReddit(t *testing.T) {
 
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
-	msg := mockRedditMessage("alice", smsg, "keyspubmsgs")
-	client.SetResponse(mockRedditURL("alice"), []byte(msg))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs"))}
+	})
 
 	result, err := usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, result.Status)
 
 	// Different name
-	msg = mockRedditMessage("alice2", smsg, "keyspubmsgs")
-	client.SetResponse(mockRedditURL("alice"), []byte(msg))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(redditMock("alice2", smsg, "keyspubmsgs"))}
+	})
 	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
-	msg = mockRedditMessage("alice", smsg, "keyspubmsgs2")
-	client.SetResponse(mockRedditURL("alice"), []byte(msg))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs2"))}
+	})
 	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
 	require.Equal(t, user.StatusContentInvalid, result.Status)
@@ -371,8 +371,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	scs.SetClock(clock)
 
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 	ctx := context.TODO()
 
 	results, err := usrs.Search(ctx, &users.SearchRequest{})
@@ -381,7 +380,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, usrs.Client())
+	okProxy := usrs.Client().Proxy()
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -393,11 +393,10 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, int64(1234567890004), results[0].Result.Timestamp)
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
-	data, err := client.Response("https://api.github.com/gists/1")
-	require.NoError(t, err)
-
 	// Set 500 error for alice@github
-	client.SetError("https://api.github.com/gists/1", http.ErrHTTP{StatusCode: 500})
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Err: http.Error{StatusCode: 500}}
+	})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -426,7 +425,9 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
-	client.SetError("https://api.github.com/gists/1", http.ErrHTTP{StatusCode: 404})
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Err: http.Error{StatusCode: 404}}
+	})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -447,8 +448,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "", spew.String())
 
-	// Unset error
-	client.SetResponse("https://api.github.com/gists/1", data)
+	// Reset proxy
+	usrs.Client().SetProxy(okProxy)
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -464,8 +465,8 @@ func TestExpired(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+
+	usrs := users.New(ds, scs, users.Clock(clock))
 	ctx := context.TODO()
 
 	ids, err := usrs.Expired(ctx, time.Hour, time.Hour*24*60)
@@ -474,7 +475,7 @@ func TestExpired(t *testing.T) {
 
 	// Add alice@github
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, client)
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, usrs.Client())
 
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -484,7 +485,7 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 	require.Equal(t, "alice", results[0].Result.User.Name)
 	require.Equal(t, "github", results[0].Result.User.Service)
-	require.Equal(t, "https://gist.github.com/alice/1", results[0].Result.User.URL)
+	require.Equal(t, "https://gist.github.com/alice/6769746875622f616c696365e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
 	require.Equal(t, int64(1234567890002), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), results[0].Result.Timestamp)
@@ -509,26 +510,28 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, 0, len(ids))
 }
 
-func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *http.Mock) *keys.Statement {
-	st, err := saveUser(users, scs, key, name, service, clock, mock)
+func testSaveUser(t *testing.T, users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, client http.Client) *keys.Statement {
+	st, err := saveUser(users, scs, key, name, service, clock, client)
 	require.NoError(t, err)
 	return st
 }
 
-func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, mock *http.Mock) (*keys.Statement, error) {
+func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, name string, service string, clock tsutil.Clock, client http.Client) (*keys.Statement, error) {
 	url := ""
-	murl := ""
+	// murl := ""
+
+	id := hex.EncodeToString(sha256.New().Sum([]byte(service + "/" + name)))
 
 	switch service {
 	case "github":
-		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
-		murl = "https://api.github.com/gists/1"
+		url = fmt.Sprintf("https://gist.github.com/%s/%s", name, id)
+		// murl = "https://api.github.com/gists/" + id
 	case "twitter":
-		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
-		murl = "https://api.twitter.com/2/tweets/1?expansions=author_id"
+		url = fmt.Sprintf("https://twitter.com/%s/status/%s", name, id)
+		// murl = "https://api.twitter.com/2/tweets/" + id + "?expansions=author_id"
 	case "reddit":
 		url = fmt.Sprintf("https://reddit.com/r/keyspubmsgs/comments/%s", name)
-		murl = url
+		// murl = url
 	default:
 		return nil, errors.Errorf("unsupported service in test")
 	}
@@ -566,12 +569,15 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	resp := msg
 	switch service {
 	case "twitter":
-		resp = twitterMock(name, "1", msg)
+		resp = twitterMock(name, id, msg)
 	case "github":
-		resp = githubMock(name, "1", msg)
+		resp = githubMock(name, id, msg)
 	}
 
-	mock.SetResponse(murl, []byte(resp))
+	client.SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		// Only respond if url matches
+		return http.ProxyResponse{Body: []byte(resp)}
+	})
 
 	return st, nil
 }
@@ -631,21 +637,21 @@ func TestSearch(t *testing.T) {
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	client := http.NewMock()
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+
+	usrs := users.New(ds, scs, users.Clock(clock))
 	ctx := context.TODO()
 
 	for i := 0; i < 10; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("a%d", i)
-		testSaveUser(t, usrs, scs, key, name, "github", clock, client)
+		testSaveUser(t, usrs, scs, key, name, "github", clock, usrs.Client())
 		_, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
 	for i := 10; i < 20; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("b%d", i)
-		testSaveUser(t, usrs, scs, key, name, "github", clock, client)
+		testSaveUser(t, usrs, scs, key, name, "github", clock, usrs.Client())
 		_, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
 	}
@@ -663,7 +669,7 @@ func TestSearch(t *testing.T) {
 	require.Equal(t, "kex18d4z00xwk6jz6c4r4rgz5mcdwdjny9thrh3y8f36cpy2rz6emg5s0v3alm", results[0].KID.String())
 }
 
-func mockRedditMessage(author string, msg string, subreddit string) string {
+func redditMock(author string, msg string, subreddit string) string {
 	msg = strings.ReplaceAll(msg, "\n", " ")
 	return `[{   
 		"kind": "Listing",
@@ -682,6 +688,6 @@ func mockRedditMessage(author string, msg string, subreddit string) string {
     }]`
 }
 
-func mockRedditURL(name string) string {
-	return "https://www.reddit.com/r/keyspubmsgs/comments/123/" + name + ".json"
-}
+// func mockRedditURL(name string) string {
+// 	return "https://www.reddit.com/r/keyspubmsgs/comments/123/" + name + ".json"
+// }

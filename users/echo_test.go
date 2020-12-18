@@ -8,7 +8,6 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
 	"github.com/keys-pub/keys/user/services"
@@ -20,10 +19,9 @@ func TestResultEcho(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)
@@ -84,10 +82,9 @@ func TestRequestVerifyEcho(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	usrSign, err := user.NewForSigning(sk.ID(), "echo", "alice")
 	require.NoError(t, err)

@@ -18,10 +18,9 @@ func TestResultGithub(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice")
 	require.NoError(t, err)
@@ -44,7 +43,9 @@ func TestResultGithub(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	client.SetResponse("https://api.github.com/gists/1", []byte(githubMock("alice", "1", msg)))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
+	})
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -80,10 +81,9 @@ func TestResultGithubWrongName(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice2")
 	require.NoError(t, err)
@@ -94,7 +94,9 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	sc := keys.NewSigchain(sk.ID())
 
-	client.SetResponse("https://api.github.com/gists/1", []byte(githubMock("alice", "1", msg)))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
+	})
 
 	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
@@ -116,17 +118,18 @@ func TestResultGithubWrongService(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 	sc := keys.NewSigchain(sk.ID())
 
 	invalid := &user.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}
 	msg, err := invalid.Sign(sk)
 	require.NoError(t, err)
 
-	client.SetResponse("https://api.github.com/gists/1", []byte(githubMock("alice", "1", msg)))
+	usrs.Client().SetProxy(func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
+	})
 
 	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
