@@ -1,20 +1,20 @@
-package link_test
+package services_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRedditNormalizeName(t *testing.T) {
-	reddit := link.NewReddit()
+	reddit := services.NewReddit()
 	name := reddit.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestRedditValidateName(t *testing.T) {
-	reddit := link.NewReddit()
+	reddit := services.NewReddit()
 	err := reddit.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -32,7 +32,7 @@ func TestRedditValidateName(t *testing.T) {
 }
 
 func TestRedditNormalizeURL(t *testing.T) {
-	reddit := link.NewReddit()
+	reddit := services.NewReddit()
 	testNormalizeURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
@@ -45,7 +45,7 @@ func TestRedditNormalizeURL(t *testing.T) {
 }
 
 func TestRedditValidateURL(t *testing.T) {
-	reddit := link.NewReddit()
+	reddit := services.NewReddit()
 	testValidateURL(t, reddit,
 		"gabrlh",
 		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",

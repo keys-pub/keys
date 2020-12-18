@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/link"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,7 +40,7 @@ func TestMyTwitter(t *testing.T) {
 		t.Skip()
 	}
 	user.SetLogger(user.NewLogger(user.DebugLevel))
-	link.SetLogger(user.NewLogger(user.DebugLevel))
+	services.SetLogger(user.NewLogger(user.DebugLevel))
 
 	kid := keys.ID("kex1e26rq9vrhjzyxhep0c5ly6rudq7m2cexjlkgknl2z4lqf8ga3uasz3s48m")
 	urs := "https://twitter.com/gabrlh/status/1222706272849391616"

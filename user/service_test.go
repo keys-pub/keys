@@ -3,14 +3,14 @@ package user_test
 import (
 	"os"
 
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/keys-pub/keys/user"
 )
 
 func init() {
-	user.AddService(link.NewTwitter(os.Getenv("TWITTER_BEARER_TOKEN")))
-	user.AddService(link.NewGithub())
-	user.AddService(link.NewEcho())
-	user.AddService(link.NewHTTPS())
-	user.AddService(link.NewReddit())
+	user.AddService(services.NewTwitter(os.Getenv("TWITTER_BEARER_TOKEN")))
+	user.AddService(services.NewGithub())
+	user.AddService(services.NewEcho())
+	user.AddService(services.NewHTTPS())
+	user.AddService(services.NewReddit())
 }

@@ -1,4 +1,4 @@
-package link
+package services
 
 import (
 	"net/url"

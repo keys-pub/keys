@@ -1,13 +1,13 @@
 package user
 
 import (
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/pkg/errors"
 )
 
 // LookupService returns service (added by AddService).
-func LookupService(service string) (link.Service, error) {
-	s, ok := services[service]
+func LookupService(service string) (services.Service, error) {
+	s, ok := enabledServices[service]
 	if !ok || s == nil {
 		return nil, errors.Errorf("service not found: %s", service)
 	}
@@ -15,8 +15,8 @@ func LookupService(service string) (link.Service, error) {
 }
 
 // AddService enables a service.
-func AddService(service link.Service) {
-	services[service.ID()] = service
+func AddService(service services.Service) {
+	enabledServices[service.ID()] = service
 }
 
-var services = map[string]link.Service{}
+var enabledServices = map[string]services.Service{}

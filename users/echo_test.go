@@ -8,10 +8,10 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/link"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/keys-pub/keys/users"
 	"github.com/stretchr/testify/require"
 )
@@ -89,7 +89,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
-	echo := link.NewEcho()
+	echo := services.NewEcho()
 	user.AddService(echo)
 
 	usrSign, err := user.NewForSigning(sk.ID(), "echo", "alice")

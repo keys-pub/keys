@@ -10,7 +10,7 @@ import (
 
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/dstore"
-	"github.com/keys-pub/keys/link"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/keys-pub/keys/request"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -19,11 +19,11 @@ import (
 )
 
 func init() {
-	user.AddService(link.NewTwitter(""))
-	user.AddService(link.NewGithub())
-	user.AddService(link.NewEcho())
-	user.AddService(link.NewHTTPS())
-	user.AddService(link.NewReddit())
+	user.AddService(services.NewTwitter(""))
+	user.AddService(services.NewGithub())
+	user.AddService(services.NewEcho())
+	user.AddService(services.NewHTTPS())
+	user.AddService(services.NewReddit())
 }
 
 func testSeed(b byte) *[32]byte {
