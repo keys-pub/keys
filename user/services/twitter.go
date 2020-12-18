@@ -26,11 +26,11 @@ func (s *twitter) ID() string {
 	return TwitterID
 }
 
-func (s *twitter) NormalizeURLString(name string, urs string) (string, error) {
+func (s *twitter) NormalizeURL(name string, urs string) (string, error) {
 	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
+func (s *twitter) ValidateURL(name string, urs string) (string, error) {
 	u, err := url.Parse(urs)
 	if err != nil {
 		return "", err
@@ -60,7 +60,7 @@ func (s *twitter) ValidateURLString(name string, urs string) (string, error) {
 	return "https://api.twitter.com/2/tweets/" + status + "?expansions=author_id", nil
 }
 
-func (s *twitter) Headers(ur *url.URL) ([]request.Header, error) {
+func (s *twitter) Headers(urs string) ([]request.Header, error) {
 	if s.bearerToken == "" {
 		return nil, nil
 	}

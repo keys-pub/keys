@@ -21,7 +21,7 @@ import (
 func TestSearchUsers(t *testing.T) {
 	// users.SetLogger(users.NewLogger(users.DebugLevel))
 	// user.SetLogger(users.NewLogger(users.DebugLevel))
-	// link.SetLogger(users.NewLogger(users.DebugLevel))
+	// services.SetLogger(users.NewLogger(users.DebugLevel))
 
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
@@ -40,19 +40,23 @@ func TestSearchUsers(t *testing.T) {
 	alice := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	require.NoError(t, err)
 
-	// Add alice@github
-	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
-
 	for i := 10; i < 15; i++ {
 		key := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{byte(i)}, 32)))
 		name := fmt.Sprintf("name%d", i)
 		testSaveUser(t, usrs, scs, key, name, "github", clock, req)
-		_, err = usrs.Update(ctx, key.ID())
+		res, err := usrs.Update(ctx, key.ID())
 		require.NoError(t, err)
+		require.NotNil(t, res)
+		require.Equal(t, user.StatusOK, res.Status)
 	}
 
-	_, err = usrs.Update(ctx, alice.ID())
+	// Add alice@github
+	testSaveUser(t, usrs, scs, alice, "alice", "github", clock, req)
+
+	res, err := usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
+	require.NotNil(t, res)
+	require.Equal(t, user.StatusOK, res.Status)
 
 	// Search "alic"
 	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alic"})
@@ -118,7 +122,7 @@ func TestSearchUsers(t *testing.T) {
 	// Add alice@twitter
 	alice2 := keys.NewEdX25519KeyFromSeed(keys.Bytes32(bytes.Repeat([]byte{0x03}, 32)))
 	testSaveUser(t, usrs, scs, alice2, "alice", "twitter", clock, req)
-	res, err := usrs.Update(ctx, alice2.ID())
+	res, err = usrs.Update(ctx, alice2.ID())
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Equal(t, user.StatusOK, res.Status)
@@ -160,19 +164,6 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, alice2.ID(), results[0].Result.User.KID)
 	require.Equal(t, "alice", results[0].Result.User.Name)
 	require.Equal(t, "twitter", results[0].Result.User.Service)
-
-	// Check Documents
-	iter, err := ds.DocumentIterator(context.TODO(), "kid")
-	require.NoError(t, err)
-	spew, err := dstore.Spew(iter)
-	require.NoError(t, err)
-	require.Equal(t, string(testdata(t, "testdata/kid.spew")), spew.String())
-
-	iter, err = ds.DocumentIterator(context.TODO(), "user")
-	require.NoError(t, err)
-	spew, err = dstore.Spew(iter)
-	require.NoError(t, err)
-	require.Equal(t, string(testdata(t, "testdata/user.spew")), spew.String())
 }
 
 func TestFind(t *testing.T) {
@@ -402,11 +393,11 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, int64(1234567890004), results[0].Result.Timestamp)
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
-	data, err := req.Response("https://gist.github.com/alice/1")
+	data, err := req.Response("https://api.github.com/gists/1")
 	require.NoError(t, err)
 
 	// Set 500 error for alice@github
-	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 500})
+	req.SetError("https://api.github.com/gists/1", request.ErrHTTP{StatusCode: 500})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -435,7 +426,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
-	req.SetError("https://gist.github.com/alice/1", request.ErrHTTP{StatusCode: 404})
+	req.SetError("https://api.github.com/gists/1", request.ErrHTTP{StatusCode: 404})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -457,7 +448,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, "", spew.String())
 
 	// Unset error
-	req.SetResponse("https://gist.github.com/alice/1", data)
+	req.SetResponse("https://api.github.com/gists/1", data)
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
 
@@ -531,7 +522,7 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	switch service {
 	case "github":
 		url = fmt.Sprintf("https://gist.github.com/%s/1", name)
-		murl = url
+		murl = "https://api.github.com/gists/1"
 	case "twitter":
 		url = fmt.Sprintf("https://twitter.com/%s/status/1", name)
 		murl = "https://api.twitter.com/2/tweets/1?expansions=author_id"
@@ -576,6 +567,8 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	switch service {
 	case "twitter":
 		resp = newTwitterMock(name, "1", msg)
+	case "github":
+		resp = newGithubMock(name, "1", msg)
 	}
 
 	mock.SetResponse(murl, []byte(resp))
@@ -583,12 +576,12 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	return st, nil
 }
 
-func newTwitterMock(name string, status string, msg string) string {
+func newTwitterMock(name string, id string, msg string) string {
 	msg = strings.ReplaceAll(msg, "\n", "")
 	return `{
 		"data": {
 		  "author_id": "1",
-		  "id": "` + status + `",
+		  "id": "` + id + `",
 		  "text": "` + msg + `"
 		},
 		"includes": {
@@ -598,6 +591,21 @@ func newTwitterMock(name string, status string, msg string) string {
 			  "username": "` + name + `"
 			}
 		  ]
+		}
+	  }`
+}
+
+func newGithubMock(name string, id string, msg string) string {
+	msg = strings.ReplaceAll(msg, "\n", "")
+	return `{
+		"id": "` + id + `",
+		"files": {
+			"gistfile1.txt": {
+				"content": "` + msg + `"
+			}		  
+		},
+		"owner": {
+			"login": "` + name + `"
 		}
 	  }`
 }

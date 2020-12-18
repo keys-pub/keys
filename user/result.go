@@ -43,6 +43,7 @@ func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
 }
 
 // Update result using Requestor.
+// If there is an error, it is set on the result.
 func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Time) {
 	logger.Infof("Update user %s", r.User.String())
 
@@ -56,7 +57,14 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 	}
 
 	logger.Debugf("Validate user name: %s, url: %s", r.User.Name, r.User.URL)
-	urs, err := service.ValidateURLString(r.User.Name, r.User.URL)
+	urs, err := service.ValidateURL(r.User.Name, r.User.URL)
+	if err != nil {
+		r.Err = err.Error()
+		r.Status = StatusFailure
+		return
+	}
+
+	headers, err := service.Headers(urs)
 	if err != nil {
 		r.Err = err.Error()
 		r.Status = StatusFailure
@@ -64,13 +72,6 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 	}
 
 	ur, err := url.Parse(urs)
-	if err != nil {
-		r.Err = err.Error()
-		r.Status = StatusFailure
-		return
-	}
-
-	headers, err := service.Headers(ur)
 	if err != nil {
 		r.Err = err.Error()
 		r.Status = StatusFailure
@@ -90,7 +91,7 @@ func (r *Result) Update(ctx context.Context, req request.Requestor, now time.Tim
 		body = b
 	} else {
 		logger.Infof("Requesting %s", urs)
-		b, err := req.RequestURLString(ctx, urs, headers)
+		b, err := req.Get(ctx, urs, headers)
 		if err != nil {
 			logger.Warningf("Request failed: %v", err)
 			if errHTTP, ok := errors.Cause(err).(request.ErrHTTP); ok && errHTTP.StatusCode == 404 {

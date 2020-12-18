@@ -52,7 +52,7 @@ func TestGithubValidateURL(t *testing.T) {
 	testValidateURL(t, github,
 		"gabriel",
 		"https://gist.github.com/gabriel/abcd",
-		"https://gist.github.com/gabriel/abcd")
+		"https://api.github.com/gists/abcd")
 
 	testValidateURLErr(t, github,
 		"gabriel",

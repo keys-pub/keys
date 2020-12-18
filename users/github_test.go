@@ -23,18 +23,16 @@ func TestResultGithub(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 
-	req.SetResponse("https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", testdata(t, "testdata/github/70281cc427850c272a8574af4d8564d9"))
-
 	usr, err := user.NewForSigning(sk.ID(), "github", "alice")
 	require.NoError(t, err)
 	msg, err := usr.Sign(sk)
 	require.NoError(t, err)
-	t.Logf(msg)
+
 	err = usr.Verify(msg)
 	require.NoError(t, err)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/70281cc427850c272a8574af4d8564d9", sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)
@@ -45,6 +43,8 @@ func TestResultGithub(t *testing.T) {
 
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
+
+	req.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -93,8 +93,10 @@ func TestResultGithubWrongName(t *testing.T) {
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	req.SetResponse("https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", testdata(t, "testdata/github/a7b1370270e2672d4ae88fa5d0c6ade7"))
-	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/a7b1370270e2672d4ae88fa5d0c6ade7", 1)
+
+	req.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+
+	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
 	b2, err := json.Marshal(user2)
 	require.NoError(t, err)
@@ -120,13 +122,13 @@ func TestResultGithubWrongService(t *testing.T) {
 	usrs := users.New(ds, scs, users.Requestor(req), users.Clock(clock))
 	sc := keys.NewSigchain(sk.ID())
 
-	muser := &user.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}
-	msg, err := muser.Sign(sk)
+	invalid := &user.User{KID: sk.ID(), Service: "github2", Name: "gabriel"}
+	msg, err := invalid.Sign(sk)
 	require.NoError(t, err)
-	t.Logf(msg)
 
-	req.SetResponse("https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", testdata(t, "testdata/github/bd679134acba688cbcc0a65fa0890d76"))
-	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/bd679134acba688cbcc0a65fa0890d76", 1)
+	req.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+
+	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
 	b, err := json.Marshal(usr)
 	require.NoError(t, err)

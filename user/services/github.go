@@ -1,8 +1,10 @@
 package services
 
 import (
+	"encoding/json"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/keys-pub/keys/request"
 	"github.com/pkg/errors"
@@ -22,11 +24,11 @@ func (s *github) ID() string {
 	return GithubID
 }
 
-func (s *github) NormalizeURLString(name string, urs string) (string, error) {
+func (s *github) NormalizeURL(name string, urs string) (string, error) {
 	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *github) ValidateURLString(name string, urs string) (string, error) {
+func (s *github) ValidateURL(name string, urs string) (string, error) {
 	u, err := url.Parse(urs)
 	if err != nil {
 		return "", err
@@ -46,7 +48,10 @@ func (s *github) ValidateURLString(name string, urs string) (string, error) {
 	if paths[0] != name {
 		return "", errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
 	}
-	return u.String(), nil
+	id := paths[1]
+
+	api := "https://api.github.com/gists/" + id
+	return api, nil
 }
 
 func (s *github) NormalizeName(name string) string {
@@ -68,9 +73,51 @@ func (s *github) ValidateName(name string) error {
 }
 
 func (s *github) CheckContent(name string, b []byte) ([]byte, error) {
-	return b, nil
+	var gist gist
+	if err := json.Unmarshal(b, &gist); err != nil {
+		return nil, err
+	}
+
+	if gist.Owner.Login != name {
+		return nil, errors.Errorf("invalid gist owner login %s", gist.Owner.Login)
+	}
+
+	for _, f := range gist.Files {
+		return []byte(f.Content), nil
+	}
+
+	return nil, errors.Errorf("no gist files")
 }
 
-func (s *github) Headers(ur *url.URL) ([]request.Header, error) {
-	return nil, nil
+func (s *github) Headers(urs string) ([]request.Header, error) {
+	return []request.Header{
+		request.Header{
+			Name:  "Accept",
+			Value: "application/vnd.github.v3+json",
+		},
+	}, nil
+}
+
+type file struct {
+	Filename  string `json:"filename"`
+	Type      string `json:"type"`
+	Language  string `json:"language"`
+	RawURL    string `json:"raw_url"`
+	Size      int    `json:"size"`
+	Truncated bool   `json:"truncated"`
+	Content   string `json:"content"`
+}
+
+type gist struct {
+	ID        string           `json:"id"`
+	Files     map[string]*file `json:"files"`
+	CreatedAt time.Time        `json:"created_at"`
+	UpdatedAt time.Time        `json:"updated_at"`
+	Owner     struct {
+		Login      string `json:"login"`
+		ID         int    `json:"id"`
+		AvatarURL  string `json:"avatar_url"`
+		GravatarID string `json:"gravatar_id"`
+		URL        string `json:"url"`
+	} `json:"owner"`
 }

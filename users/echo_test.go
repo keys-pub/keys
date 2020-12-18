@@ -100,7 +100,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 
 	urs := "test://echo/alice/" + sk.ID().String() + "/" + msg
 
-	norm, err := echo.NormalizeURLString("alice", urs)
+	norm, err := echo.NormalizeURL("alice", urs)
 	require.NoError(t, err)
 
 	usr := &user.User{

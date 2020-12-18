@@ -139,9 +139,9 @@ type Header struct {
 	Value string
 }
 
-// Requestor defines how to get bytes from a URL.
+// Requestor defines how to request a resource.
 type Requestor interface {
-	RequestURLString(ctx context.Context, urs string, headers []Header) ([]byte, error)
+	Get(ctx context.Context, urs string, headers []Header) ([]byte, error)
 }
 
 type requestor struct{}
@@ -151,8 +151,8 @@ func NewHTTPRequestor() Requestor {
 	return requestor{}
 }
 
-// RequestURLString requests an URL string.
-func (r requestor) RequestURLString(ctx context.Context, urs string, headers []Header) ([]byte, error) {
+// Get an URL.
+func (r requestor) Get(ctx context.Context, urs string, headers []Header) ([]byte, error) {
 	_, body, err := doRequest(client(), "GET", urs, headers, nil)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
@@ -193,12 +193,12 @@ func (r *MockRequestor) Response(url string) ([]byte, error) {
 	return resp.data, resp.err
 }
 
-// SetError ...
+// SetError sets response error for ur
 func (r *MockRequestor) SetError(url string, err error) {
 	r.resp[url] = &mockResponse{err: err}
 }
 
-// RequestURLString ...
-func (r *MockRequestor) RequestURLString(ctx context.Context, urs string, headers []Header) ([]byte, error) {
+// Get mock response.
+func (r *MockRequestor) Get(ctx context.Context, urs string, headers []Header) ([]byte, error) {
 	return r.Response(urs)
 }

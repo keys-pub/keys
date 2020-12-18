@@ -19,11 +19,11 @@ func (s *echo) ID() string {
 	return "echo"
 }
 
-func (s *echo) NormalizeURLString(name string, urs string) (string, error) {
+func (s *echo) NormalizeURL(name string, urs string) (string, error) {
 	return basicURLString(urs)
 }
 
-func (s *echo) ValidateURLString(name string, urs string) (string, error) {
+func (s *echo) ValidateURL(name string, urs string) (string, error) {
 	u, err := url.Parse(urs)
 	if err != nil {
 		return "", err
@@ -68,6 +68,6 @@ func (s *echo) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (s *echo) Headers(ur *url.URL) ([]request.Header, error) {
+func (s *echo) Headers(urs string) ([]request.Header, error) {
 	return nil, nil
 }

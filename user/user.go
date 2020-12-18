@@ -192,7 +192,7 @@ func (u *User) Validate() error {
 		return err
 	}
 
-	if _, err := service.ValidateURLString(u.Name, u.URL); err != nil {
+	if _, err := service.ValidateURL(u.Name, u.URL); err != nil {
 		return err
 	}
 	return nil
@@ -331,8 +331,6 @@ func MockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, servic
 	switch service {
 	case "github":
 		urs = fmt.Sprintf("https://gist.github.com/%s/1", name)
-	case "twitter":
-		urs = fmt.Sprintf("https://mobile.twitter.com/%s/status/1", name)
 	case "echo":
 		urs = "test://echo/" + name + "/" + key.ID().String() + "/" + url.QueryEscape(strings.ReplaceAll(msg, "\n", " "))
 	case "https":

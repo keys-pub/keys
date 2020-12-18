@@ -22,13 +22,13 @@ type Service interface {
 	// ValidateName validates the service user name.
 	ValidateName(name string) error
 
-	// NormalizeURLString normalizes an url string.
-	NormalizeURLString(name string, urs string) (string, error)
+	// NormalizeURL normalizes an url string.
+	NormalizeURL(name string, urs string) (string, error)
 
-	// ValidateURLString validates the URL string and returns where to find the
+	// ValidateURL validates the URL string and returns where to find the
 	// signed statement.
 	// For example, on reddit ".json" is appended.
-	ValidateURLString(name string, urs string) (string, error)
+	ValidateURL(name string, urs string) (string, error)
 
 	// CheckContent checks content and returns signed statement
 	// For Github there is no check since the user owns the URL location.
@@ -36,7 +36,7 @@ type Service interface {
 	CheckContent(name string, b []byte) ([]byte, error)
 
 	// Headers to include with request (for example, an auth header).
-	Headers(ur *url.URL) ([]request.Header, error)
+	Headers(urs string) ([]request.Header, error)
 }
 
 var regAlphaNumericWithDash = regexp.MustCompile(`^[a-z0-9-]+$`)

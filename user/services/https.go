@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -51,11 +50,11 @@ func (s *https) ValidateName(name string) error {
 	return nil
 }
 
-func (s *https) NormalizeURLString(name string, urs string) (string, error) {
+func (s *https) NormalizeURL(name string, urs string) (string, error) {
 	return basicURLString(strings.ToLower(urs))
 }
 
-func (s *https) ValidateURLString(name string, urs string) (string, error) {
+func (s *https) ValidateURL(name string, urs string) (string, error) {
 	if err := s.ValidateName(name); err != nil {
 		return "", errors.Wrapf(err, "invalid url")
 	}
@@ -78,7 +77,7 @@ func (s *https) CheckContent(name string, b []byte) ([]byte, error) {
 	return b, nil
 }
 
-func (s *https) Headers(ur *url.URL) ([]request.Header, error) {
+func (s *https) Headers(urs string) ([]request.Header, error) {
 	return nil, nil
 }
 
