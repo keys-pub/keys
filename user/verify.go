@@ -58,18 +58,18 @@ func Clock(clock tsutil.Clock) VerifyOption {
 }
 
 // findVerify finds and verifies content in bytes.
-func findVerify(usr *User, b []byte) (Status, error) {
+func findVerify(usr *User, b []byte) (Status, string, error) {
 	msg, _ := encoding.FindSaltpack(string(b), true)
 	if msg == "" {
 		logger.Warningf("User statement content not found")
-		return StatusContentNotFound, errors.Errorf("user signed message content not found")
+		return StatusContentNotFound, "", errors.Errorf("user signed message content not found")
 	}
 
 	verifyMsg := fmt.Sprintf("BEGIN MESSAGE.\n%s\nEND MESSAGE.", msg)
 	if err := usr.Verify(verifyMsg); err != nil {
 		logger.Warningf("Failed to verify statement: %s", err)
-		return StatusStatementInvalid, err
+		return StatusStatementInvalid, "", err
 	}
 
-	return StatusOK, nil
+	return StatusOK, verifyMsg, nil
 }

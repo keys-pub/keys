@@ -29,7 +29,7 @@ func TestBreakString(t *testing.T) {
 }
 
 func TestTrimSaltpack(t *testing.T) {
-	msg := encoding.TrimSaltpack(">> abcdefghijklmnopqrstuvwxyz @@@ ABCXDEFGHIJKLMNOPQRSTUVWXYZ\n > 0123456789.    ", false)
+	msg := encoding.TrimSaltpack(">> abcdefghijklmnopqrstuvwxyz @@@ ABCXDEFGHIJKLMNOPQRSTUVWXYZ\n > 0123456789.    ", nil)
 	expected := "abcdefghijklmnopqrstuvwxyzABCXDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	require.Equal(t, expected, msg)
 }
@@ -56,7 +56,7 @@ func TestFindSaltpack(t *testing.T) {
 	xxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.
 	END MESSAGE.`
 	out, brand := encoding.FindSaltpack(msg, false)
-	require.Equal(t, "l0eEt9tsSRb8xzEXvvgqPrizO9VJe9AcsbRmIt5NoSP8AjLpClFdJJ1upFbIxxnKzSyXt6ltPcXWkaseWW5coa1e5VXvEMPpyt5IQii1Q5ox8p3recj6hVN", out)
+	require.Equal(t, "l0eEt9tsSRb8xzE XvvgqPrizO9VJe9 AcsbRmIt5NoSP8A jLpClFdJJ1upFbI\nxxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.", out)
 	require.Equal(t, "", brand)
 
 	msg = `This is a saltpack encoded message... BEGIN EDX25519 KEY MESSAGE.
@@ -64,7 +64,7 @@ func TestFindSaltpack(t *testing.T) {
 	xxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.
 	END EDX25519 KEY MESSAGE. --`
 	out, brand = encoding.FindSaltpack(msg, false)
-	require.Equal(t, "l0eEt9tsSRb8xzEXvvgqPrizO9VJe9AcsbRmIt5NoSP8AjLpClFdJJ1upFbIxxnKzSyXt6ltPcXWkaseWW5coa1e5VXvEMPpyt5IQii1Q5ox8p3recj6hVN", out)
+	require.Equal(t, "l0eEt9tsSRb8xzE XvvgqPrizO9VJe9 AcsbRmIt5NoSP8A jLpClFdJJ1upFbI\nxxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.", out)
 	require.Equal(t, "EDX25519 KEY", brand)
 
 	msg = `This is a saltpack encoded message... BEGIN EDX25519 
@@ -74,14 +74,14 @@ func TestFindSaltpack(t *testing.T) {
 	END EDX25519
 	 KEY MESSAGE. --`
 	out, brand = encoding.FindSaltpack(msg, false)
-	require.Equal(t, "l0eEt9tsSRb8xzEXvvgqPrizO9VJe9AcsbRmIt5NoSP8AjLpClFdJJ1upFbIxxnKzSyXt6ltPcXWkaseWW5coa1e5VXvEMPpyt5IQii1Q5ox8p3recj6hVN", out)
+	require.Equal(t, "l0eEt9tsSRb8xzE XvvgqPrizO9VJe9 AcsbRmIt5NoSP8A jLpClFdJJ1upFbI\nxxnKzSyXt6ltPcX WkaseWW5coa1e5V XvEMPpyt5IQii1Q 5ox8p3recj6hVN.", out)
 	require.Equal(t, "EDX25519 KEY", brand)
 }
 
 func TestFindSaltpackInTwitter(t *testing.T) {
 	data := testdata(t, "../testdata/twitter/1205589994380783616")
 	s, brand := encoding.FindSaltpack(string(data), true)
-	expected := `FD0Lv2C2AtvqD1XEwqDo1tOTkv8LKisQMlS6gluxz0npc1S2MuNVOfTph934h1xXQqj5EtueEBntfhbDceoOBETCKq6Xr2MZHgg4UNRDbZy2loGoGN3Mvxd4r7FIwpZOJPE1JEqD2gGjkgLByR9CFG2aCgRgZZwl5UAa46bmBzjE5yyl9oNKSO6lAVCOrl3JBganxnssAnkQt3vM3TdJOf`
+	expected := `FD0Lv2C2AtvqD1X EwqDo1tOTkv8LKi sQMlS6gluxz0npc 1S2MuNVOfTph934 h1xXQqj5EtueEBn tfhbDceoOBETCKq 6Xr2MZHgg4UNRDb Zy2loGoGN3Mvxd4 r7FIwpZOJPE1JEq D2gGjkgLByR9CFG 2aCgRgZZwl5UAa4 6bmBzjE5yyl9oNK SO6lAVCOrl3JBga nxnssAnkQt3vM3T dJOf.`
 	require.Equal(t, expected, s)
 	require.Equal(t, "", brand)
 }
