@@ -182,7 +182,7 @@ func (r *Mock) Response(url string) ([]byte, error) {
 	// TODO: Match on method without params, etc.
 	resp, ok := r.resp[url]
 	if !ok {
-		return nil, errors.Errorf("no mock response for %s", url)
+		panic(errors.Errorf("no mock response for %s", url))
 	}
 	logger.Debugf("Mock response %s, data=%d; err=%s", url, len(resp.data), resp.err)
 	// logger.Debugf("Mock data: %s", string(resp.data))

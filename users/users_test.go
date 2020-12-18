@@ -131,7 +131,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	client.SetResponse("https://api.twitter.com/2/tweets/1?expansions=author_id", []byte(newTwitterMock("gabriel", "1", msg)))
+	client.SetResponse("https://api.twitter.com/2/tweets/1?expansions=author_id", []byte(twitterMock("gabriel", "1", msg)))
 
 	err = scs.Save(sc)
 	require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	client.SetResponse("https://api.twitter.com/2/tweets/2?expansions=author_id", []byte(newTwitterMock("gabriel", "2", msg)))
+	client.SetResponse("https://api.twitter.com/2/tweets/2?expansions=author_id", []byte(twitterMock("gabriel", "2", msg)))
 
 	err = scs.Save(sc)
 	require.NoError(t, err)

@@ -44,7 +44,7 @@ func TestResultGithub(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	client.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+	client.SetResponse("https://api.github.com/gists/1", []byte(githubMock("alice", "1", msg)))
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	sc := keys.NewSigchain(sk.ID())
 
-	client.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+	client.SetResponse("https://api.github.com/gists/1", []byte(githubMock("alice", "1", msg)))
 
 	user2, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	msg, err := invalid.Sign(sk)
 	require.NoError(t, err)
 
-	client.SetResponse("https://api.github.com/gists/1", []byte(newGithubMock("alice", "1", msg)))
+	client.SetResponse("https://api.github.com/gists/1", []byte(githubMock("alice", "1", msg)))
 
 	usr, err := user.New(sk.ID(), "github", "alice", "https://gist.github.com/alice/1", 1)
 	require.NoError(t, err)

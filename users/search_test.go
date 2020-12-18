@@ -566,9 +566,9 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	resp := msg
 	switch service {
 	case "twitter":
-		resp = newTwitterMock(name, "1", msg)
+		resp = twitterMock(name, "1", msg)
 	case "github":
-		resp = newGithubMock(name, "1", msg)
+		resp = githubMock(name, "1", msg)
 	}
 
 	mock.SetResponse(murl, []byte(resp))
@@ -576,7 +576,7 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	return st, nil
 }
 
-func newTwitterMock(name string, id string, msg string) string {
+func twitterMock(name string, id string, msg string) string {
 	msg = strings.ReplaceAll(msg, "\n", "")
 	return `{
 		"data": {
@@ -595,7 +595,7 @@ func newTwitterMock(name string, id string, msg string) string {
 	  }`
 }
 
-func newGithubMock(name string, id string, msg string) string {
+func githubMock(name string, id string, msg string) string {
 	msg = strings.ReplaceAll(msg, "\n", "")
 	return `{
 		"id": "` + id + `",
