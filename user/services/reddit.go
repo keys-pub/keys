@@ -114,7 +114,7 @@ func (s *reddit) Request(ctx context.Context, client http.Client, urs string) ([
 	}
 	b, err := client.Request(ctx, req, headers)
 	if err != nil {
-		if errHTTP, ok := errors.Cause(err).(http.ErrHTTP); ok && errHTTP.StatusCode == 404 {
+		if errHTTP, ok := errors.Cause(err).(http.Error); ok && errHTTP.StatusCode == 404 {
 			return nil, nil
 		}
 		return nil, err

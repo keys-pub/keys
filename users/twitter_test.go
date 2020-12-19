@@ -18,10 +18,10 @@ func TestResultTwitter(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
+
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	// usr, err := user.NewForSigning(sk.ID(), "twitter", "bob")
 	// require.NoError(t, err)
@@ -40,8 +40,9 @@ func TestResultTwitter(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set error response
-	client.SetError("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", errors.Errorf("testing"))
-	require.NoError(t, err)
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Err: errors.Errorf("testing")}
+	})
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -58,7 +59,9 @@ func TestResultTwitter(t *testing.T) {
 	require.EqualError(t, err, "user set in sigchain already")
 
 	// Set valid response
-	client.SetResponse("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", testdata(t, "testdata/twitter/1205589994380783616.json"))
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: testdata(t, "testdata/twitter/1205589994380783616.json")}
+	})
 
 	result, err = usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -71,8 +74,9 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, int64(1234567890004), result.Timestamp)
 
 	// Set error response again
-	client.SetError("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", errors.Errorf("testing2"))
-	require.NoError(t, err)
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Err: errors.Errorf("testing2")}
+	})
 
 	result, err = usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -113,10 +117,10 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x02))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
+
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	sc := keys.NewSigchain(sk.ID())
 	stu, err := user.New(sk.ID(), "twitter", "bob", "https://twitter.com/bob/status/1205589994380783616", sc.LastSeq()+1)
@@ -128,7 +132,9 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	client.SetResponse("https://api.twitter.com/2/tweets/1205589994380783616?expansions=author_id", testdata(t, "testdata/twitter/1205589994380783616.json"))
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: testdata(t, "testdata/twitter/1205589994380783616.json")}
+	})
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)

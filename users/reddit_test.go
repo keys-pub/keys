@@ -17,10 +17,9 @@ func TestResultReddit(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	clock := tsutil.NewTestClock()
-	client := http.NewMock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
-	usrs := users.New(ds, scs, users.Client(client), users.Clock(clock))
+	usrs := users.New(ds, scs, users.Clock(clock))
 
 	usr, err := user.NewForSigning(sk.ID(), "reddit", "charlie")
 	require.NoError(t, err)
@@ -41,7 +40,9 @@ func TestResultReddit(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	client.SetResponse("https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie.json", testdata(t, "testdata/reddit/charlie.json"))
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+		return http.ProxyResponse{Body: testdata(t, "testdata/reddit/charlie.json")}
+	})
 
 	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
