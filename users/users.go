@@ -11,6 +11,7 @@ import (
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/request"
 	"github.com/pkg/errors"
 )
 
@@ -105,14 +106,18 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 	// Set or update user (in case user changed)
 	result.User = usr
 
-	result.Update(ctx, u.client, u.clock.Now())
+	request.UpdateResult(ctx, result, u.client, u.clock.Now())
 
 	return result, nil
 }
 
 // RequestVerify requests and verifies a user. Doesn't index result.
 func (u *Users) RequestVerify(ctx context.Context, usr *user.User) *user.Result {
-	return usr.RequestVerify(ctx, user.Client(u.client), user.Clock(u.clock))
+	result := &user.Result{
+		User: usr,
+	}
+	request.UpdateResult(ctx, result, u.client, u.clock.Now())
+	return result
 }
 
 // ValidateStatement returns error if statement is not a valid user statement.

@@ -1,20 +1,20 @@
-package services_test
+package validate_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/user/services"
+	"github.com/keys-pub/keys/user/validate"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRedditNormalizeName(t *testing.T) {
-	reddit := services.Reddit
+	reddit := validate.Reddit
 	name := reddit.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestRedditValidateName(t *testing.T) {
-	reddit := services.Reddit
+	reddit := validate.Reddit
 	err := reddit.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -32,7 +32,7 @@ func TestRedditValidateName(t *testing.T) {
 }
 
 func TestRedditNormalizeURL(t *testing.T) {
-	reddit := services.Reddit
+	reddit := validate.Reddit
 	testNormalizeURL(t, reddit,
 		"gabrlh",
 		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
@@ -45,36 +45,30 @@ func TestRedditNormalizeURL(t *testing.T) {
 }
 
 func TestRedditValidateURL(t *testing.T) {
-	reddit := services.Reddit
+	reddit := validate.Reddit
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
 
 	testValidateURL(t, reddit,
 		"keys-pub",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub/",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub.json")
+		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub/")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh?",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh?")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json")
+		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?")
 
 	testValidateURLErr(t, reddit,
 		"gabrlh",

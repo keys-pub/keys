@@ -1,4 +1,4 @@
-package user_test
+package request_test
 
 import (
 	"context"
@@ -6,13 +6,15 @@ import (
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/request"
 	"github.com/stretchr/testify/require"
 )
 
 // TODO: more tests are in users package
 
-func TestNewUserForTwitterSigning(t *testing.T) {
+func TestTwitterNewUserForSigning(t *testing.T) {
 	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 
 	usr, err := user.NewForSigning(sk.ID(), "twitter", "123456789012345")
@@ -33,7 +35,7 @@ END MESSAGE.`
 	require.NoError(t, err)
 }
 
-func TestMyTwitter(t *testing.T) {
+func TestTwitter(t *testing.T) {
 	// Requires twitter bearer token configured
 	if os.Getenv("TWITTER_BEARER_TOKEN") == "" {
 		t.Skip("no auth")
@@ -46,6 +48,9 @@ func TestMyTwitter(t *testing.T) {
 
 	usr, err := user.New(kid, "twitter", "gabrlh", urs, 1)
 	require.NoError(t, err)
-	result := usr.RequestVerify(context.TODO())
-	require.Equal(t, user.StatusOK, result.Status)
+	client := http.NewClient()
+	st, _, err := request.Verify(context.TODO(), client, usr)
+	require.NoError(t, err)
+	require.Equal(t, user.StatusOK, st)
+	// TODO: Require msg
 }

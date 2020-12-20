@@ -3,11 +3,11 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/keys-pub/keys/http"
+	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/validate"
 
 	"github.com/pkg/errors"
 )
@@ -24,84 +24,29 @@ func (s *github) ID() string {
 	return GithubID
 }
 
-func (s *github) NormalizeURL(name string, urs string) (string, error) {
-	return basicURLString(strings.ToLower(urs))
-}
-
-func (s *github) ValidateURL(name string, urs string) (string, error) {
-	u, err := url.Parse(urs)
+func (s *github) Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error) {
+	apiURL, err := validate.Github.APIURL(usr.Name, usr.URL)
 	if err != nil {
-		return "", err
+		return user.StatusFailure, nil, err
 	}
-	if u.Scheme != "https" {
-		return "", errors.Errorf("invalid scheme for url %s", u)
-	}
-	if u.Host != "gist.github.com" {
-		return "", errors.Errorf("invalid host for url %s", u)
-	}
-	path := u.Path
-	path = strings.TrimPrefix(path, "/")
-	paths := strings.Split(path, "/")
-	if len(paths) != 2 {
-		return "", errors.Errorf("path invalid %s for url %s", paths, u)
-	}
-	if paths[0] != name {
-		return "", errors.Errorf("path invalid (name mismatch) %s != %s", paths[0], name)
-	}
-	id := paths[1]
-
-	api := "https://api.github.com/gists/" + id
-	return api, nil
+	return Request(ctx, client, apiURL, nil)
 }
 
-func (s *github) NormalizeName(name string) string {
-	name = strings.ToLower(name)
-	return name
-}
-
-func (s *github) ValidateName(name string) error {
-	ok := isAlphaNumericWithDash(name)
-	if !ok {
-		return errors.Errorf("name has an invalid character")
-	}
-
-	if len(name) > 39 {
-		return errors.Errorf("github name is too long, it must be less than 40 characters")
-	}
-
-	return nil
-}
-
-func (s *github) CheckContent(name string, b []byte) ([]byte, error) {
+func (s *github) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
 	var gist gist
 	if err := json.Unmarshal(b, &gist); err != nil {
-		return nil, err
+		return user.StatusContentInvalid, "", err
 	}
 
-	if gist.Owner.Login != name {
-		return nil, errors.Errorf("invalid gist owner login %s", gist.Owner.Login)
+	if gist.Owner.Login != usr.Name {
+		return user.StatusContentInvalid, "", errors.Errorf("invalid gist owner login %s", gist.Owner.Login)
 	}
 
 	for _, f := range gist.Files {
-		return []byte(f.Content), nil
+		return user.FindVerify(usr, []byte(f.Content), false)
 	}
 
-	return nil, errors.Errorf("no gist files")
-}
-
-func (s *github) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
-	req, err := http.NewRequest("GET", urs, nil)
-	if err != nil {
-		return nil, err
-	}
-	b, err := client.Request(ctx, req, s.headers())
-	if err != nil {
-		if errHTTP, ok := errors.Cause(err).(http.Error); ok && errHTTP.StatusCode == 404 {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return b, nil
+	return user.StatusContentInvalid, "", errors.Errorf("no gist files")
 }
 
 func (s *github) headers() []http.Header {

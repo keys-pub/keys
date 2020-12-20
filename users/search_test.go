@@ -67,7 +67,7 @@ func TestSearchUsers(t *testing.T) {
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 	require.Equal(t, "alice", results[0].Result.User.Name)
 	require.Equal(t, "github", results[0].Result.User.Service)
-	require.Equal(t, "https://gist.github.com/alice/6769746875622f616c696365e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", results[0].Result.User.URL)
+	require.Equal(t, "https://gist.github.com/alice/6769746875622f61", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
 	require.Equal(t, int64(1234567890044), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890044), results[0].Result.Timestamp)
@@ -117,7 +117,7 @@ func TestSearchUsers(t *testing.T) {
 	require.NotNil(t, results[0].Result)
 	require.Equal(t, "alicenew", results[0].Result.User.Name)
 	require.Equal(t, "github", results[0].Result.User.Service)
-	require.Equal(t, "https://gist.github.com/alicenew/6769746875622f616c6963656e6577e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", results[0].Result.User.URL)
+	require.Equal(t, "https://gist.github.com/alicenew/6769746875622f61", results[0].Result.User.URL)
 	require.Equal(t, 3, results[0].Result.User.Seq)
 
 	// Add alice@twitter
@@ -427,25 +427,14 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
 		return http.ProxyResponse{Err: http.Error{StatusCode: 404}}
 	})
-	_, err = usrs.Update(ctx, alice.ID())
+	res, err := usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
+	require.Equal(t, user.StatusResourceNotFound, res.Status)
+	require.Equal(t, "resource not found", res.Err)
 
 	results, err = usrs.Search(ctx, &users.SearchRequest{Query: "alice@github"})
 	require.NoError(t, err)
 	require.Equal(t, 0, len(results))
-
-	// Check Documents
-	iter, err := ds.DocumentIterator(context.TODO(), "kid")
-	require.NoError(t, err)
-	spew, err := dstore.Spew(iter)
-	require.NoError(t, err)
-	require.Equal(t, string(testdata(t, "testdata/kid2.spew")), spew.String())
-
-	iter, err = ds.DocumentIterator(context.TODO(), "user")
-	require.NoError(t, err)
-	spew, err = dstore.Spew(iter)
-	require.NoError(t, err)
-	require.Equal(t, "", spew.String())
 
 	// Reset proxy
 	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
@@ -486,7 +475,7 @@ func TestExpired(t *testing.T) {
 	require.Equal(t, alice.ID(), results[0].Result.User.KID)
 	require.Equal(t, "alice", results[0].Result.User.Name)
 	require.Equal(t, "github", results[0].Result.User.Service)
-	require.Equal(t, "https://gist.github.com/alice/6769746875622f616c696365e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", results[0].Result.User.URL)
+	require.Equal(t, "https://gist.github.com/alice/6769746875622f61", results[0].Result.User.URL)
 	require.Equal(t, 1, results[0].Result.User.Seq)
 	require.Equal(t, int64(1234567890002), results[0].Result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), results[0].Result.Timestamp)
@@ -528,7 +517,7 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 	url := ""
 	murl := ""
 
-	id := hex.EncodeToString(sha256.New().Sum([]byte(service + "/" + name)))
+	id := hex.EncodeToString(sha256.New().Sum([]byte(service + "/" + name))[:8])
 
 	switch service {
 	case "github":

@@ -8,7 +8,7 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/json"
-	"github.com/keys-pub/keys/user/services"
+	"github.com/keys-pub/keys/user/validate"
 	"github.com/pkg/errors"
 )
 
@@ -121,12 +121,7 @@ func (u *User) UnmarshalJSON(b []byte) error {
 // New creates a User.
 // Name and URL string are NOT normalized.
 func New(kid keys.ID, service string, name string, urs string, seq int) (*User, error) {
-	svc, err := services.Lookup(service)
-	if err != nil {
-		return nil, err
-	}
-
-	usr, err := newUser(kid, svc, name, urs)
+	usr, err := newUser(kid, service, name, urs)
 	if err != nil {
 		return nil, err
 	}
@@ -137,10 +132,10 @@ func New(kid keys.ID, service string, name string, urs string, seq int) (*User, 
 	return usr, nil
 }
 
-func newUser(kid keys.ID, service services.Service, name string, urs string) (*User, error) {
+func newUser(kid keys.ID, service string, name string, urs string) (*User, error) {
 	usr := &User{
 		KID:     kid,
-		Service: service.ID(),
+		Service: service,
 		Name:    name,
 		URL:     urs,
 	}
@@ -153,7 +148,7 @@ func newUser(kid keys.ID, service services.Service, name string, urs string) (*U
 // NewForSigning returns User for signing (doesn't have remote URL yet).
 // The name is normalized, for example for twitter "@Username" => "username".
 func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
-	svc, err := services.Lookup(service)
+	svc, err := validate.Lookup(service)
 	if err != nil {
 		return nil, err
 	}
@@ -163,12 +158,12 @@ func NewForSigning(kid keys.ID, service string, name string) (*User, error) {
 	}
 	return &User{
 		KID:     kid,
-		Service: svc.ID(),
+		Service: service,
 		Name:    name,
 	}, nil
 }
 
-func validateServiceAndName(service services.Service, name string) error {
+func validateServiceAndName(service validate.Validator, name string) error {
 	if len(name) == 0 {
 		return errors.Errorf("name is empty")
 	}
@@ -178,7 +173,11 @@ func validateServiceAndName(service services.Service, name string) error {
 // Validate service and name and URL.
 // If you want to request the URL and verify the remote statement, use RequestVerify.
 func (u *User) Validate() error {
-	service, err := services.Lookup(u.Service)
+	if _, err := keys.ParseID(u.KID.String()); err != nil {
+		return err
+	}
+
+	service, err := validate.Lookup(u.Service)
 	if err != nil {
 		return err
 	}
@@ -187,7 +186,7 @@ func (u *User) Validate() error {
 		return err
 	}
 
-	if _, err := service.ValidateURL(u.Name, u.URL); err != nil {
+	if err := service.ValidateURL(u.Name, u.URL); err != nil {
 		return err
 	}
 	return nil

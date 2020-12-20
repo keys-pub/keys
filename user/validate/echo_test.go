@@ -1,20 +1,20 @@
-package services_test
+package validate_test
 
 import (
 	"testing"
 
-	"github.com/keys-pub/keys/user/services"
+	"github.com/keys-pub/keys/user/validate"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEchoNormalizeName(t *testing.T) {
-	echo := services.Echo
+	echo := validate.Echo
 	name := echo.NormalizeName("Gabriel")
 	require.Equal(t, "gabriel", name)
 }
 
 func TestEchoValidateName(t *testing.T) {
-	echo := services.Echo
+	echo := validate.Echo
 	err := echo.ValidateName("gabriel01")
 	require.NoError(t, err)
 
@@ -35,7 +35,7 @@ func TestEchoValidateName(t *testing.T) {
 }
 
 func TestEchoNormalizeURL(t *testing.T) {
-	echo := services.Echo
+	echo := validate.Echo
 	testNormalizeURL(t, echo,
 		"gabriel",
 		"test://echo/gabriel?",
@@ -43,10 +43,9 @@ func TestEchoNormalizeURL(t *testing.T) {
 }
 
 func TestEchoValidateURL(t *testing.T) {
-	echo := services.Echo
+	echo := validate.Echo
 	testValidateURL(t, echo,
 		"gabriel",
-		"test://echo/gabriel",
 		"test://echo/gabriel")
 
 	testValidateURLErr(t, echo,

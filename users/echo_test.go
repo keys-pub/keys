@@ -10,7 +10,7 @@ import (
 	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/user/services"
+	"github.com/keys-pub/keys/user/validate"
 	"github.com/keys-pub/keys/users"
 	"github.com/stretchr/testify/require"
 )
@@ -94,7 +94,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 
 	urs := "test://echo/alice/" + sk.ID().String() + "/" + msg
 
-	norm, err := services.Echo.NormalizeURL("alice", urs)
+	norm, err := validate.Echo.NormalizeURL("alice", urs)
 	require.NoError(t, err)
 
 	usr := &user.User{

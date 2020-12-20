@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/keys-pub/keys/http"
+	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/validate"
 	"github.com/pkg/errors"
 )
 
@@ -33,74 +33,39 @@ func (s *twitter) ID() string {
 	return TwitterID
 }
 
-func (s *twitter) NormalizeURL(name string, urs string) (string, error) {
-	return basicURLString(strings.ToLower(urs))
-}
-
-func (s *twitter) ValidateURL(name string, urs string) (string, error) {
-	u, err := url.Parse(urs)
+func (s *twitter) Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error) {
+	apiURL, err := validate.Twitter.APIURL(usr.Name, usr.URL)
 	if err != nil {
-		return "", err
+		return user.StatusFailure, nil, err
 	}
-	if u.Scheme != "https" {
-		return "", errors.Errorf("invalid scheme for url %s", u)
-	}
-	switch u.Host {
-	case "twitter.com", "mobile.twitter.com":
-		// OK
-	default:
-		return "", errors.Errorf("invalid host for url %s", u)
-	}
-
-	path := u.Path
-	path = strings.TrimPrefix(path, "/")
-	paths := strings.Split(path, "/")
-	if len(paths) != 3 {
-		return "", errors.Errorf("path invalid %s for url %s", paths, u)
-	}
-	if paths[0] != name {
-		return "", errors.Errorf("path invalid (name mismatch) for url %s", u)
-	}
-
-	status := paths[2]
-
-	return "https://api.twitter.com/2/tweets/" + status + "?expansions=author_id", nil
+	return Request(ctx, client, apiURL, nil)
 }
 
-func (s *twitter) NormalizeName(name string) string {
-	name = strings.ToLower(name)
-	if len(name) > 0 && name[0] == '@' {
-		name = name[1:]
+func (s *twitter) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
+	var tweet tweet
+	if err := json.Unmarshal(b, &tweet); err != nil {
+		return user.StatusContentInvalid, "", err
 	}
-	return name
-}
+	logger.Debugf("Twitter unmarshaled tweet: %+v", tweet)
 
-func (s *twitter) ValidateName(name string) error {
-	ok := isAlphaNumericWithUnderscore(name)
-	if !ok {
-		return errors.Errorf("name has an invalid character")
-	}
+	// TODO: Double check tweet id matches
 
-	if len(name) > 15 {
-		return errors.Errorf("twitter name is too long, it must be less than 16 characters")
-	}
-
-	return nil
-}
-
-func (s *twitter) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
-	req, err := http.NewRequest("GET", urs, nil)
-	if err != nil {
-		return nil, err
-	}
-	b, err := client.Request(ctx, req, s.headers())
-	if err != nil {
-		if errHTTP, ok := errors.Cause(err).(http.Error); ok && errHTTP.StatusCode == 404 {
-			return nil, nil
+	found := false
+	authorID := tweet.Data.AuthorID
+	for _, tweetUser := range tweet.Includes.Users {
+		if authorID == tweetUser.ID {
+			if tweetUser.Username != usr.Name {
+				return user.StatusContentInvalid, "", errors.Errorf("invalid tweet username %s", tweetUser.Username)
+			}
+			found = true
 		}
-		return nil, err
 	}
-	return b, nil
+	if !found {
+		return user.StatusContentInvalid, "", errors.Errorf("tweet username not found")
+	}
+
+	msg := tweet.Data.Text
+	return user.FindVerify(usr, []byte(msg), false)
 }
 
 func (s *twitter) headers() []http.Header {
@@ -113,32 +78,6 @@ func (s *twitter) headers() []http.Header {
 			Value: fmt.Sprintf("Bearer %s", s.bearerToken),
 		},
 	}
-}
-
-func (s *twitter) CheckContent(name string, b []byte) ([]byte, error) {
-	var tweet tweet
-	if err := json.Unmarshal(b, &tweet); err != nil {
-		return nil, err
-	}
-	logger.Debugf("Twitter unmarshaled tweet: %+v", tweet)
-
-	// TODO: Double check tweet it matches
-
-	found := false
-	authorID := tweet.Data.AuthorID
-	for _, user := range tweet.Includes.Users {
-		if authorID == user.ID {
-			if user.Username != name {
-				return nil, errors.Errorf("invalid tweet username %s", user.Username)
-			}
-			found = true
-		}
-	}
-	if !found {
-		return nil, errors.Errorf("tweet username not found")
-	}
-
-	return []byte(tweet.Data.Text), nil
 }
 
 type tweet struct {

@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/keys-pub/keys/http"
+	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/validate"
 	"github.com/pkg/errors"
 )
-
-// TODO Normalize spaces, check a-zA-Z0-9 instead of ASCII
 
 type reddit struct{}
 
@@ -21,62 +21,19 @@ func (s *reddit) ID() string {
 	return "reddit"
 }
 
-func (s *reddit) NormalizeURL(name string, urs string) (string, error) {
-	return basicURLString(strings.ToLower(urs))
-}
-
-func (s *reddit) ValidateURL(name string, urs string) (string, error) {
-	u, err := url.Parse(urs)
+func (s *reddit) Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error) {
+	apiURL, err := validate.Reddit.APIURL(usr.Name, usr.URL)
 	if err != nil {
-		return "", err
+		return user.StatusFailure, nil, err
 	}
-	if u.Scheme != "https" {
-		return "", errors.Errorf("invalid scheme for url %s", u)
+	headers, err := s.headers(apiURL)
+	if err != nil {
+		return user.StatusFailure, nil, err
 	}
-	switch u.Host {
-	case "reddit.com", "old.reddit.com", "www.reddit.com":
-		// OK
-	default:
-		return "", errors.Errorf("invalid host for url %s", u)
-	}
-	path := u.Path
-	path = strings.TrimPrefix(path, "/")
-	paths := strings.Split(path, "/")
-
-	// URL from https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/ to
-	//          https://www.reddit.com/r/keyspubmsgs/comments/{id}/{username}.json
-
-	prunedName := strings.ReplaceAll(name, "-", "")
-
-	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == prunedName {
-		// Request json
-		ursj, err := url.Parse("https://www.reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
-		if err != nil {
-			return "", err
-		}
-		return ursj.String(), nil
-	}
-
-	return "", errors.Errorf("invalid path %s", u.Path)
+	return Request(ctx, client, apiURL, headers)
 }
 
-func (s *reddit) NormalizeName(name string) string {
-	name = strings.ToLower(name)
-	return name
-}
-
-func (s *reddit) ValidateName(name string) error {
-	ok := isAlphaNumericWithDashUnderscore(name)
-	if !ok {
-		return errors.Errorf("name has an invalid character")
-	}
-	if len(name) > 20 {
-		return errors.Errorf("reddit name is too long, it must be less than 21 characters")
-	}
-	return nil
-}
-
-func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
+func (s *reddit) checkContent(name string, b []byte) ([]byte, error) {
 	var posts redditPosts
 
 	if err := json.Unmarshal(b, &posts); err != nil {
@@ -103,23 +60,12 @@ func (s *reddit) CheckContent(name string, b []byte) ([]byte, error) {
 	return []byte(selftext), nil
 }
 
-func (s *reddit) Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
-	req, err := http.NewRequest("GET", urs, nil)
+func (s *reddit) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
+	msg, err := s.checkContent(usr.Name, b)
 	if err != nil {
-		return nil, err
+		return user.StatusContentInvalid, "", err
 	}
-	headers, err := s.headers(urs)
-	if err != nil {
-		return nil, err
-	}
-	b, err := client.Request(ctx, req, headers)
-	if err != nil {
-		if errHTTP, ok := errors.Cause(err).(http.Error); ok && errHTTP.StatusCode == 404 {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return b, nil
+	return user.FindVerify(usr, msg, false)
 }
 
 func (s *reddit) headers(urs string) ([]http.Header, error) {

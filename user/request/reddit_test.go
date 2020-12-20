@@ -1,11 +1,13 @@
-package user_test
+package request_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/keys-pub/keys"
+	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/request"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,10 +19,12 @@ func TestReddit(t *testing.T) {
 
 	usr, err := user.New(kid, "reddit", "gabrlh", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/", 1)
 	require.NoError(t, err)
-	result := usr.RequestVerify(context.TODO())
-	require.Equal(t, user.StatusOK, result.Status)
+	client := http.NewClient()
+	st, msg, err := request.Verify(context.TODO(), client, usr)
+	require.NoError(t, err)
+	require.Equal(t, user.StatusOK, st)
 	expected := `BEGIN MESSAGE.
 tm8882H30GKybLj cOvOw3ezalNCV4z HIeF7ZIDa53DM5l m43v3AdpuM5xtqTZDGIhyQbA863bYk fiIRdpUYVzMTCKq 6Xr2MZHgg4bh2Wj m5fbDX2FnO9rt6TWzS6zMQo6Pf4PXS De2cdyxT0J3mPah X4cThM1A4yFIFaF lo99DSnDd3LOLwUrP9mdKCnNdvKkl1 WLZZaBlQZWXAisM CCwny21.
 END MESSAGE.`
-	require.Equal(t, expected, result.Statement)
+	require.Equal(t, expected, msg)
 }

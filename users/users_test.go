@@ -54,7 +54,6 @@ func TestCheckNoUsers(t *testing.T) {
 }
 
 func TestCheckFailure(t *testing.T) {
-
 	clock := tsutil.NewTestClock()
 	ds := dstore.NewMem()
 	scs := keys.NewSigchains(ds)
@@ -218,7 +217,7 @@ func mockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, servic
 		return nil, err
 	}
 
-	id := hex.EncodeToString(sha256.New().Sum([]byte(service + "/" + name)))
+	id := hex.EncodeToString(sha256.New().Sum([]byte(service + "/" + name))[:8])
 
 	urs := ""
 	switch service {

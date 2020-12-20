@@ -1,11 +1,9 @@
 package user
 
 import (
-	"context"
 	"fmt"
 	"time"
 
-	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 )
 
@@ -44,25 +42,4 @@ func (r Result) IsTimestampExpired(now time.Time, dt time.Duration) bool {
 func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
 	ts := tsutil.ConvertMillis(r.VerifiedAt)
 	return (ts.IsZero() || now.Sub(ts) > dt)
-}
-
-// Update result using client.
-// If there is an error, it is set on the result.
-func (r *Result) Update(ctx context.Context, client http.Client, now time.Time) {
-	logger.Infof("Update user %s", r.User.String())
-
-	r.Timestamp = tsutil.Millis(now)
-	st, msg, err := requestVerify(ctx, client, r.User)
-	if err != nil {
-		r.Err = err.Error()
-		r.Status = st
-		r.Statement = ""
-		return
-	}
-
-	logger.Infof("Verified %s", r.User.KID)
-	r.Err = ""
-	r.Statement = msg
-	r.Status = st
-	r.VerifiedAt = tsutil.Millis(now)
 }
