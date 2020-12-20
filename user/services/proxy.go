@@ -1,23 +1,19 @@
 package services
 
-import (
-	"github.com/keys-pub/keys"
-)
-
-type userStatus struct {
-	ID         string  `json:"id,omitempty"`
-	Name       string  `json:"name,omitempty"`
-	KID        keys.ID `json:"kid,omitempty"`
-	Seq        int     `json:"seq,omitempty"`
-	Service    string  `json:"service,omitempty"`
-	URL        string  `json:"url,omitempty"`
-	Status     string  `json:"status,omitempty"`
-	Statement  string  `json:"statement,omitempty"`
-	VerifiedAt int64   `json:"verifiedAt,omitempty"`
-	Timestamp  int64   `json:"ts,omitempty"`
-	MatchField string  `json:"mf,omitempty"`
-	Err        string  `json:"err,omitempty"`
-}
+// type userStatus struct {
+// 	ID         string  `json:"id,omitempty"`
+// 	Name       string  `json:"name,omitempty"`
+// 	KID        keys.ID `json:"kid,omitempty"`
+// 	Seq        int     `json:"seq,omitempty"`
+// 	Service    string  `json:"service,omitempty"`
+// 	URL        string  `json:"url,omitempty"`
+// 	Status     string  `json:"status,omitempty"`
+// 	Statement  string  `json:"statement,omitempty"`
+// 	VerifiedAt int64   `json:"verifiedAt,omitempty"`
+// 	Timestamp  int64   `json:"ts,omitempty"`
+// 	MatchField string  `json:"mf,omitempty"`
+// 	Err        string  `json:"err,omitempty"`
+// }
 
 // func CheckContent(name string, b []byte) ([]byte, error) {
 // 	var status userStatus

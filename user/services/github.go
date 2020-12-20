@@ -29,7 +29,8 @@ func (s *github) Request(ctx context.Context, client http.Client, usr *user.User
 	if err != nil {
 		return user.StatusFailure, nil, err
 	}
-	return Request(ctx, client, apiURL, nil)
+	headers := s.headers()
+	return Request(ctx, client, apiURL, headers)
 }
 
 func (s *github) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {

@@ -38,7 +38,8 @@ func (s *twitter) Request(ctx context.Context, client http.Client, usr *user.Use
 	if err != nil {
 		return user.StatusFailure, nil, err
 	}
-	return Request(ctx, client, apiURL, nil)
+	headers := s.headers()
+	return Request(ctx, client, apiURL, headers)
 }
 
 func (s *twitter) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
