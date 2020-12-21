@@ -1,51 +1,33 @@
 package services
 
-// type userStatus struct {
-// 	ID         string  `json:"id,omitempty"`
-// 	Name       string  `json:"name,omitempty"`
-// 	KID        keys.ID `json:"kid,omitempty"`
-// 	Seq        int     `json:"seq,omitempty"`
-// 	Service    string  `json:"service,omitempty"`
-// 	URL        string  `json:"url,omitempty"`
-// 	Status     string  `json:"status,omitempty"`
-// 	Statement  string  `json:"statement,omitempty"`
-// 	VerifiedAt int64   `json:"verifiedAt,omitempty"`
-// 	Timestamp  int64   `json:"ts,omitempty"`
-// 	MatchField string  `json:"mf,omitempty"`
-// 	Err        string  `json:"err,omitempty"`
-// }
+import (
+	"context"
+	"fmt"
 
-// func CheckContent(name string, b []byte) ([]byte, error) {
-// 	var status userStatus
-// 	if err := json.Unmarshal(b, &status); err != nil {
-// 		return nil, err
-// 	}
-// 	if status.Status != "ok" {
-// 		return nil, errors.Errorf("status not ok")
-// 	}
+	"github.com/keys-pub/keys/http"
+	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/validate"
+	"github.com/pkg/errors"
+)
 
-// 	if name != status.Name {
-// 		return nil, errors.Errorf("invalid user name")
-// 	}
+type proxy struct{}
 
-// 	if "twitter" != status.Service {
-// 		return nil, errors.Errorf("invalid user service")
-// 	}
+// Proxy uses keys.pub user cache instead of the service directly.
+var Proxy = &proxy{}
 
-// 	return []byte(status.Statement), nil
-// }
+func (s *proxy) Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error) {
+	if usr.Service != "twitter" {
+		return user.StatusFailure, nil, errors.Errorf("invalid service")
+	}
+	name, id, err := validate.Twitter.NameStatusForURL(usr.URL)
+	if err != nil {
+		return user.StatusFailure, nil, errors.Errorf("invalid url")
+	}
 
-// func Request(ctx context.Context, client http.Client, urs string) ([]byte, error) {
-// 	req, err := http.NewRequest("GET", urs, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	b, err := client.Request(ctx, req, nil)
-// 	if err != nil {
-// 		if errHTTP, ok := errors.Cause(err).(http.Error); ok && errHTTP.StatusCode == 404 {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	return b, nil
-// }
+	url := fmt.Sprintf("https://keys.pub/twitter/%s/%s/%s", usr.KID, name, id)
+	return Request(ctx, client, url, nil)
+}
+
+func (s *proxy) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
+	return user.FindVerify(usr, b, false)
+}

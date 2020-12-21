@@ -10,6 +10,7 @@ import (
 	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/keys-pub/keys/user/validate"
 	"github.com/keys-pub/keys/users"
 	"github.com/stretchr/testify/require"
@@ -104,7 +105,7 @@ func TestRequestVerifyEcho(t *testing.T) {
 		URL:     norm,
 	}
 
-	result := usrs.RequestVerify(context.TODO(), usr)
+	result := usrs.RequestVerify(context.TODO(), services.Echo, usr)
 	t.Logf("result: %+v", result)
 	require.Equal(t, user.StatusOK, result.Status)
 }

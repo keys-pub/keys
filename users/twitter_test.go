@@ -2,6 +2,7 @@ package users_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -146,4 +147,44 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	require.Equal(t, "bob", result.User.Name)
 	require.Equal(t, int64(0), result.VerifiedAt)
 	require.Equal(t, int64(1234567890002), result.Timestamp)
+}
+
+func TestResultTwitterProxy(t *testing.T) {
+	kid := keys.ID("kex1e26rq9vrhjzyxhep0c5ly6rudq7m2cexjlkgknl2z4lqf8ga3uasz3s48m")
+	sc := keys.NewSigchain(kid)
+
+	b := testdata(t, "testdata/twitter/statement.json")
+	var st keys.Statement
+	err := json.Unmarshal(b, &st)
+	require.NoError(t, err)
+
+	err = sc.Add(&st)
+	require.NoError(t, err)
+
+	clock := tsutil.NewTestClock()
+	ds := dstore.NewMem()
+	scs := keys.NewSigchains(ds)
+
+	usrs := users.New(ds, scs, users.Clock(clock))
+
+	err = scs.Save(sc)
+	require.NoError(t, err)
+
+	// Proxy, IsCreate
+	result, err := usrs.Update(context.TODO(), kid, users.UseTwitterProxy(), users.IsCreate())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, user.StatusOK, result.Status)
+
+	// Proxy
+	result, err = usrs.Update(context.TODO(), kid, users.UseTwitterProxy())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, user.StatusOK, result.Status)
+
+	// Fails without proxy
+	// result, err = usrs.Update(context.TODO(), kid)
+	// require.NoError(t, err)
+	// require.NotNil(t, result)
+	// require.Equal(t, user.StatusOK, result.Status)
 }

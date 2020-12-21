@@ -18,6 +18,7 @@ import (
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/keys-pub/keys/users"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -59,11 +60,6 @@ func TestCheckFailure(t *testing.T) {
 	scs := keys.NewSigchains(ds)
 	usrs := users.New(ds, scs, users.Clock(clock))
 
-	msg := "BEGIN MESSAGE.HWNhu0mATP1TJvQ 2MsM6UREvrdpmJL mlr4taMzxi0olt7 nV35Vkco9gjJ3wyZ0z9hiq2OxrlFUT QVAdNgSZPX3TCKq 6Xr2MZHgg6PbuKB KKAcQRbMCMprx0eQ9AAmF37oSytfuD ekFhesy6sjWc4kJ XA4C6PAxTFwtO14 CEXTYQyBxGH2CYAsm4w2O9xq9TNTZw lo0e7ydqx99UXE8 Qivwr0VNs5.END MESSAGE."
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
-		return http.ProxyResponse{Body: []byte(msg)}
-	})
-
 	usr := &user.User{
 		Name:    "gabriel",
 		KID:     keys.ID("kex1d69g7mzjjn8cfm3ssdr9u8z8mh2d35cvjzsrwrndt4d006uhh69qyx2k5x"),
@@ -71,7 +67,7 @@ func TestCheckFailure(t *testing.T) {
 		Service: "twitter",
 		URL:     "https://twitter.com/boboloblaw/status/1259188857846632448",
 	}
-	result := usrs.RequestVerify(context.TODO(), usr)
+	result := usrs.RequestVerify(context.TODO(), services.Twitter, usr)
 	require.Equal(t, usr.Name, result.User.Name)
 	require.Equal(t, result.Status, user.StatusFailure)
 	require.Equal(t, result.Err, "path invalid (name mismatch) for url https://twitter.com/boboloblaw/status/1259188857846632448")

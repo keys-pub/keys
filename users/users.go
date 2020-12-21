@@ -11,16 +11,15 @@ import (
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/user/request"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/pkg/errors"
 )
 
 // Users keeps track of sigchain user links.
 type Users struct {
-	ds     dstore.Documents
-	scs    *keys.Sigchains
-	client http.Client
-	clock  tsutil.Clock
+	ds   dstore.Documents
+	scs  *keys.Sigchains
+	opts Options
 }
 
 type keyDocument struct {
@@ -31,29 +30,20 @@ type keyDocument struct {
 // New creates Users lookup.
 func New(ds dstore.Documents, scs *keys.Sigchains, opt ...Option) *Users {
 	opts := newOptions(opt...)
-	client := opts.Client
-	if client == nil {
-		client = http.NewClient()
-	}
-	clock := opts.Clock
-	if clock == nil {
-		clock = tsutil.NewClock()
-	}
 	return &Users{
-		ds:     ds,
-		scs:    scs,
-		client: client,
-		clock:  clock,
+		ds:   ds,
+		scs:  scs,
+		opts: opts,
 	}
 }
 
 // Client ...
 func (u *Users) Client() http.Client {
-	return u.client
+	return u.opts.Client
 }
 
 // Update index for key.
-func (u *Users) Update(ctx context.Context, kid keys.ID) (*user.Result, error) {
+func (u *Users) Update(ctx context.Context, kid keys.ID, opt ...UpdateOption) (*user.Result, error) {
 	logger.Infof("Updating user index for %s", kid)
 	sc, err := u.scs.Sigchain(kid)
 	if err != nil {
@@ -64,7 +54,7 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*user.Result, error) {
 	}
 
 	logger.Infof("Checking users %s", kid)
-	result, err := u.CheckSigchain(ctx, sc)
+	result, err := u.CheckSigchain(ctx, sc, opt...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +73,7 @@ func (u *Users) Update(ctx context.Context, kid keys.ID) (*user.Result, error) {
 
 // CheckSigchain looks for user in a Sigchain and creates a result or updates
 // the current result.
-func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Result, error) {
+func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain, opt ...UpdateOption) (*user.Result, error) {
 	usr, err := user.FindInSigchain(sc)
 	if err != nil {
 		return nil, err
@@ -106,17 +96,22 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain) (*user.Res
 	// Set or update user (in case user changed)
 	result.User = usr
 
-	request.UpdateResult(ctx, result, u.client, u.clock.Now())
+	service, err := LookupService(usr.Service, opt...)
+	if err != nil {
+		return nil, err
+	}
+
+	services.UpdateResult(ctx, service, result, u.opts.Client, u.opts.Clock.Now())
 
 	return result, nil
 }
 
 // RequestVerify requests and verifies a user. Doesn't index result.
-func (u *Users) RequestVerify(ctx context.Context, usr *user.User) *user.Result {
+func (u *Users) RequestVerify(ctx context.Context, service services.Service, usr *user.User) *user.Result {
 	result := &user.Result{
 		User: usr,
 	}
-	request.UpdateResult(ctx, result, u.client, u.clock.Now())
+	services.UpdateResult(ctx, service, result, u.opts.Client, u.opts.Clock.Now())
 	return result
 }
 
@@ -278,7 +273,7 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 				index = true
 			case user.StatusConnFailure:
 				// If connection failure is recent, still index.
-				if u.clock.Now().Sub(tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)) < time.Hour*24*2 {
+				if u.opts.Clock.Now().Sub(tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)) < time.Hour*24*2 {
 					index = true
 				}
 			}
@@ -387,11 +382,11 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 
 			// If verifiedAt age is too old skip it
 			vts := tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)
-			if !vts.IsZero() && u.clock.Now().Sub(vts) > maxAge {
+			if !vts.IsZero() && u.opts.Clock.Now().Sub(vts) > maxAge {
 				continue
 			}
 
-			if ts.IsZero() || u.clock.Now().Sub(ts) > dt {
+			if ts.IsZero() || u.opts.Clock.Now().Sub(ts) > dt {
 				kids = append(kids, keyDoc.Result.User.KID)
 			}
 		}

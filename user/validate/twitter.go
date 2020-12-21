@@ -49,31 +49,44 @@ func (s *twitter) ValidateURL(name string, urs string) error {
 	return err
 }
 
-func (s *twitter) APIURL(name string, urs string) (string, error) {
+func (s *twitter) NameStatusForURL(urs string) (string, string, error) {
 	u, err := url.Parse(urs)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if u.Scheme != "https" {
-		return "", errors.Errorf("invalid scheme for url %s", u)
+		return "", "", errors.Errorf("invalid scheme for url %s", u)
 	}
 	switch u.Host {
 	case "twitter.com", "mobile.twitter.com":
 		// OK
 	default:
-		return "", errors.Errorf("invalid host for url %s", u)
+		return "", "", errors.Errorf("invalid host for url %s", u)
 	}
 
 	path := u.Path
 	path = strings.TrimPrefix(path, "/")
 	paths := strings.Split(path, "/")
 	if len(paths) != 3 {
-		return "", errors.Errorf("path invalid %s for url %s", paths, u)
+		return "", "", errors.Errorf("path invalid %s for url %s", paths, u)
 	}
-	if paths[0] != name {
-		return "", errors.Errorf("path invalid (name mismatch) for url %s", u)
-	}
+	// if paths[0] != name {
+	// 	return "", "", errors.Errorf("path invalid (name mismatch) for url %s", u)
+	// }
 
+	name := paths[0]
 	status := paths[2]
+
+	return name, status, nil
+}
+
+func (s *twitter) APIURL(name string, urs string) (string, error) {
+	uname, status, err := s.NameStatusForURL(urs)
+	if err != nil {
+		return "", err
+	}
+	if uname != name {
+		return "", errors.Errorf("path invalid (name mismatch) for url %s", urs)
+	}
 	return "https://api.twitter.com/2/tweets/" + status + "?expansions=author_id", nil
 }
