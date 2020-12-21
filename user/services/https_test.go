@@ -20,14 +20,13 @@ func TestHTTPS(t *testing.T) {
 	usr, err := user.New(kid, "https", "keys.pub", "https://keys.pub/keyspub.txt", 1)
 	require.NoError(t, err)
 	client := http.NewClient()
-	st, msg, err := services.RequestVerify(context.TODO(), services.HTTPS, client, usr)
-	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, st)
+	result := services.Verify(context.TODO(), services.HTTPS, client, usr)
+	require.Equal(t, user.StatusOK, result.Status)
 	expected := `BEGIN MESSAGE.
 7PPiOMcdjhvnXzM 1uVwr224ccgiOKt I5vwzYoRY3xgUdL 86O3X1DnuZwCTIP
 ACnuZKXBB4y39qQ f7sq7eoQs8oTCKq 6Xr2MZHgg7F8Mca NbI7en6mNzlIVvQ
 zIh84hprPPEByeP D9s1xc5HURCNFcv rsOvrUoV0oHQfyi 89aehuNSV2AP9hp
 8dGT8SwS3TEo3FP b1X8S32XyBenWKF aJv7L2IP.
 END MESSAGE.`
-	require.Equal(t, expected, msg)
+	require.Equal(t, expected, result.Statement)
 }

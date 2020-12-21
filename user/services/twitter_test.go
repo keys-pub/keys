@@ -49,8 +49,7 @@ func TestTwitter(t *testing.T) {
 	usr, err := user.New(kid, "twitter", "gabrlh", urs, 1)
 	require.NoError(t, err)
 	client := http.NewClient()
-	st, _, err := services.RequestVerify(context.TODO(), services.Twitter, client, usr)
-	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, st)
+	result := services.Verify(context.TODO(), services.Twitter, client, usr)
+	require.Equal(t, user.StatusOK, result.Status)
 	// TODO: Require msg
 }
