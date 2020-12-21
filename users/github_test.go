@@ -47,7 +47,7 @@ func TestResultGithub(t *testing.T) {
 		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
 	})
 
-	result, err := usrs.Update(context.TODO(), sk.ID())
+	result, err := usrs.Update(context.TODO(), sk.ID(), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
@@ -107,7 +107,7 @@ func TestResultGithubWrongName(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	result, err := usrs.CheckSigchain(context.TODO(), sc)
+	result, err := usrs.CheckSigchain(context.TODO(), sc, nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusStatementInvalid, result.Status)
@@ -140,7 +140,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	result, err := usrs.CheckSigchain(context.TODO(), sc)
+	result, err := usrs.CheckSigchain(context.TODO(), sc, nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusStatementInvalid, result.Status)

@@ -1,4 +1,4 @@
-package request_test
+package services_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/user/request"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +49,7 @@ func TestTwitter(t *testing.T) {
 	usr, err := user.New(kid, "twitter", "gabrlh", urs, 1)
 	require.NoError(t, err)
 	client := http.NewClient()
-	st, _, err := request.Verify(context.TODO(), client, usr)
+	st, _, err := services.RequestVerify(context.TODO(), services.Twitter, client, usr)
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, st)
 	// TODO: Require msg

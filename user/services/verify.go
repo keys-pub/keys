@@ -1,4 +1,4 @@
-package request
+package services
 
 import (
 	"context"
@@ -7,18 +7,12 @@ import (
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/user/services"
 	"github.com/pkg/errors"
 )
 
-// Verify get user URL using client and verifies it.
+// RequestVerify get user URL using client and verifies it.
 // If there is an error, it is set on the result.
-func Verify(ctx context.Context, client http.Client, usr *user.User) (user.Status, string, error) {
-	service, err := services.Lookup(usr.Service)
-	if err != nil {
-		return user.StatusFailure, "", err
-	}
-
+func RequestVerify(ctx context.Context, service Service, client http.Client, usr *user.User) (user.Status, string, error) {
 	st, body, err := service.Request(ctx, client, usr)
 	if err != nil {
 		return st, "", err
@@ -42,11 +36,11 @@ func Verify(ctx context.Context, client http.Client, usr *user.User) (user.Statu
 // UpdateResult updates a user.Result using client.
 // The result.Status is success (StatusOK) or type of failure.
 // If a failure, result.Err has the error message.
-func UpdateResult(ctx context.Context, result *user.Result, client http.Client, now time.Time) {
+func UpdateResult(ctx context.Context, service Service, result *user.Result, client http.Client, now time.Time) {
 	logger.Infof("Update user %s", result.User.String())
 
 	result.Timestamp = tsutil.Millis(now)
-	st, msg, err := Verify(ctx, client, result.User)
+	st, msg, err := RequestVerify(ctx, service, client, result.User)
 	if err != nil {
 		result.Err = err.Error()
 		result.Status = st

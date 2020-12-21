@@ -1,4 +1,4 @@
-package request_test
+package services_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/keys-pub/keys"
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/user"
-	"github.com/keys-pub/keys/user/request"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +20,7 @@ func TestReddit(t *testing.T) {
 	usr, err := user.New(kid, "reddit", "gabrlh", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/", 1)
 	require.NoError(t, err)
 	client := http.NewClient()
-	st, msg, err := request.Verify(context.TODO(), client, usr)
+	st, msg, err := services.RequestVerify(context.TODO(), services.Reddit, client, usr)
 	require.NoError(t, err)
 	require.Equal(t, user.StatusOK, st)
 	expected := `BEGIN MESSAGE.

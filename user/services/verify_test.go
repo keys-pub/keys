@@ -1,4 +1,4 @@
-package request_test
+package services_test
 
 import (
 	"bytes"
