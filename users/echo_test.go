@@ -45,7 +45,7 @@ func TestResultEcho(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	result, err := usrs.Update(context.TODO(), sk.ID(), nil)
+	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	t.Logf("Result: %+v", result)

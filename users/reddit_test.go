@@ -44,7 +44,7 @@ func TestResultReddit(t *testing.T) {
 		return http.ProxyResponse{Body: testdata(t, "testdata/reddit/charlie.json")}
 	})
 
-	result, err := usrs.Update(context.TODO(), sk.ID(), nil)
+	result, err := usrs.Update(context.TODO(), sk.ID())
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.NotNil(t, result.User)
