@@ -22,14 +22,13 @@ func TestGithub(t *testing.T) {
 
 	usr, err := user.New(kid, "github", "gabriel", urs, 1)
 	require.NoError(t, err)
-	st, msg, err := services.RequestVerify(context.TODO(), services.Github, client, usr)
-	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, st)
+	result := services.Verify(context.TODO(), services.Github, client, usr)
+	require.Equal(t, user.StatusOK, result.Status)
 	expected := `BEGIN MESSAGE.
 kdZaJI1U5AS7G6i VoUxdP8OtPzEoM6 pYhVl0YQZJnotVE wLg9BDb5SUO05pm
 abUSeCvBfdPoRpP J8wrcF5PP3wTCKq 6Xr2MZHgg6m2Qal gJCD6vMqlBQfIg6
 QsfB27aP5DMuXlJ AUVIAvMDHIoptmS riNMzfpwBjRShVL WH70a0GOEqD6L8b
 kC5EFOwCedvHFpc AQVqULHjcSpeCfZ EIOaQ2IP.
 END MESSAGE.`
-	require.Equal(t, expected, msg)
+	require.Equal(t, expected, result.Statement)
 }

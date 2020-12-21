@@ -20,11 +20,10 @@ func TestReddit(t *testing.T) {
 	usr, err := user.New(kid, "reddit", "gabrlh", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/", 1)
 	require.NoError(t, err)
 	client := http.NewClient()
-	st, msg, err := services.RequestVerify(context.TODO(), services.Reddit, client, usr)
-	require.NoError(t, err)
-	require.Equal(t, user.StatusOK, st)
+	result := services.Verify(context.TODO(), services.Reddit, client, usr)
+	require.Equal(t, user.StatusOK, result.Status)
 	expected := `BEGIN MESSAGE.
 tm8882H30GKybLj cOvOw3ezalNCV4z HIeF7ZIDa53DM5l m43v3AdpuM5xtqTZDGIhyQbA863bYk fiIRdpUYVzMTCKq 6Xr2MZHgg4bh2Wj m5fbDX2FnO9rt6TWzS6zMQo6Pf4PXS De2cdyxT0J3mPah X4cThM1A4yFIFaF lo99DSnDd3LOLwUrP9mdKCnNdvKkl1 WLZZaBlQZWXAisM CCwny21.
 END MESSAGE.`
-	require.Equal(t, expected, msg)
+	require.Equal(t, expected, result.Statement)
 }
