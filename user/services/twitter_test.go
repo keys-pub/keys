@@ -38,7 +38,7 @@ END MESSAGE.`
 func TestTwitter(t *testing.T) {
 	// Requires twitter bearer token configured
 	if os.Getenv("TWITTER_BEARER_TOKEN") == "" {
-		t.Skip("no auth")
+		t.Skip("no bearer token")
 	}
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	// services.SetLogger(user.NewLogger(user.DebugLevel))
@@ -47,6 +47,25 @@ func TestTwitter(t *testing.T) {
 	urs := "https://twitter.com/gabrlh/status/1222706272849391616"
 
 	usr, err := user.New(kid, "twitter", "gabrlh", urs, 1)
+	require.NoError(t, err)
+	client := http.NewClient()
+	result := services.Verify(context.TODO(), services.Twitter, client, usr)
+	require.Equal(t, user.StatusOK, result.Status)
+	// TODO: Require msg
+}
+
+func TestTwitterBoboloblaws(t *testing.T) {
+	// Requires twitter bearer token configured
+	if os.Getenv("TWITTER_BEARER_TOKEN") == "" {
+		t.Skip("no bearer token")
+	}
+	// user.SetLogger(user.NewLogger(user.DebugLevel))
+	// services.SetLogger(user.NewLogger(user.DebugLevel))
+
+	kid := keys.ID("kex109x2xh6tle8yls3quqpu9xuhlzffr9fakcv4ymc52cvq366qwnpqyyydgz")
+	urs := "https://twitter.com/boboloblaws/status/1308508138652315648"
+
+	usr, err := user.New(kid, "twitter", "boboloblaws", urs, 1)
 	require.NoError(t, err)
 	client := http.NewClient()
 	result := services.Verify(context.TODO(), services.Twitter, client, usr)

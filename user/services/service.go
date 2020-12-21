@@ -9,10 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Response from service request.
-type Response struct {
-	Status    user.Status
+// Verified results.
+type Verified struct {
 	Statement string
+	Timestamp int64
+	Proxied   bool
 }
 
 // Service describes a user service.
@@ -21,7 +22,7 @@ type Service interface {
 	Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error)
 
 	// Verify content.
-	Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error)
+	Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, *Verified, error)
 }
 
 var services = map[string]Service{

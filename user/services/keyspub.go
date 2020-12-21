@@ -11,25 +11,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-type kpUser struct{}
+type keyspub struct{}
 
 // KeysPub uses keys.pub user cache instead of the service directly.
-var KeysPub = &kpUser{}
+var KeysPub = &keyspub{}
 
-func (s *kpUser) Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error) {
+func (s *keyspub) Request(ctx context.Context, client http.Client, usr *user.User) (user.Status, []byte, error) {
 	url := fmt.Sprintf("https://keys.pub/user/%s@%s", usr.Name, usr.Service)
 	return Request(ctx, client, url, nil)
 }
 
-func (s *kpUser) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
-	msg, err := s.checkContent(usr, b)
+func (s *keyspub) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, *Verified, error) {
+	userStatus, err := s.checkContent(usr, b)
 	if err != nil {
-		return user.StatusContentInvalid, "", err
+		return user.StatusContentInvalid, nil, err
 	}
-	return user.FindVerify(usr, msg, false)
+	status, statement, err := user.FindVerify(usr, []byte(userStatus.Statement), false)
+	if err != nil {
+		return status, nil, err
+	}
+
+	verified := &Verified{Statement: statement, Timestamp: userStatus.VerifiedAt, Proxied: true}
+	return status, verified, nil
 }
 
-func (s *kpUser) checkContent(usr *user.User, b []byte) ([]byte, error) {
+func (s *keyspub) checkContent(usr *user.User, b []byte) (*userStatus, error) {
 	var status struct {
 		User userStatus `json:"user"`
 	}
@@ -61,7 +67,7 @@ func (s *kpUser) checkContent(usr *user.User, b []byte) ([]byte, error) {
 		return nil, errors.Errorf("invalid user url")
 	}
 
-	return []byte(us.Statement), nil
+	return &us, nil
 }
 
 type userStatus struct {

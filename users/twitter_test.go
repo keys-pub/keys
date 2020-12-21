@@ -10,6 +10,7 @@ import (
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
 	"github.com/keys-pub/keys/users"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -89,6 +90,7 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, "bob", result.User.Name)
 	require.Equal(t, int64(1234567890004), result.VerifiedAt)
 	require.Equal(t, int64(1234567890005), result.Timestamp)
+	require.False(t, result.Proxied)
 
 	result, err = usrs.Get(context.TODO(), sk.ID())
 	require.NoError(t, err)
@@ -170,17 +172,23 @@ func TestResultTwitterProxy(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	// Proxy, IsCreate
-	result, err := usrs.Update(context.TODO(), kid, users.UseTwitterProxy(), users.IsCreate())
+	// KeysPub
+	keysPub := func(usr *user.User) services.Service { return services.KeysPub }
+	result, err := usrs.Update(context.TODO(), kid, users.UseService(keysPub))
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
+	require.True(t, result.Proxied)
+	require.NotEqual(t, int64(1234567890002), result.VerifiedAt) // keys.pub VerifiedAt
 
 	// Proxy
-	result, err = usrs.Update(context.TODO(), kid, users.UseTwitterProxy())
+	proxy := func(usr *user.User) services.Service { return services.Proxy }
+	result, err = usrs.Update(context.TODO(), kid, users.UseService(proxy))
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, user.StatusOK, result.Status)
+	require.True(t, result.Proxied)
+	require.Equal(t, int64(1234567890002), result.VerifiedAt) // Our current (test) clock
 
 	// Fails without proxy
 	// result, err = usrs.Update(context.TODO(), kid)

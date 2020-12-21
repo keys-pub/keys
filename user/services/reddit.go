@@ -60,12 +60,16 @@ func (s *reddit) checkContent(name string, b []byte) ([]byte, error) {
 	return []byte(selftext), nil
 }
 
-func (s *reddit) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
+func (s *reddit) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, *Verified, error) {
 	msg, err := s.checkContent(usr.Name, b)
 	if err != nil {
-		return user.StatusContentInvalid, "", err
+		return user.StatusContentInvalid, nil, err
 	}
-	return user.FindVerify(usr, msg, false)
+	status, statement, err := user.FindVerify(usr, msg, false)
+	if err != nil {
+		return status, nil, err
+	}
+	return status, &Verified{Statement: statement}, nil
 }
 
 func (s *reddit) headers(urs string) ([]http.Header, error) {

@@ -33,21 +33,25 @@ func (s *github) Request(ctx context.Context, client http.Client, usr *user.User
 	return Request(ctx, client, apiURL, headers)
 }
 
-func (s *github) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
+func (s *github) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, *Verified, error) {
 	var gist gist
 	if err := json.Unmarshal(b, &gist); err != nil {
-		return user.StatusContentInvalid, "", err
+		return user.StatusContentInvalid, nil, err
 	}
-
-	if gist.Owner.Login != usr.Name {
-		return user.StatusContentInvalid, "", errors.Errorf("invalid gist owner login %s", gist.Owner.Login)
+	gistUserName := validate.Github.NormalizeName(gist.Owner.Login)
+	if gistUserName != usr.Name {
+		return user.StatusContentInvalid, nil, errors.Errorf("invalid gist owner login %s", gist.Owner.Login)
 	}
 
 	for _, f := range gist.Files {
-		return user.FindVerify(usr, []byte(f.Content), false)
+		status, statement, err := user.FindVerify(usr, []byte(f.Content), false)
+		if err != nil {
+			return status, nil, err
+		}
+		return status, &Verified{Statement: statement}, nil
 	}
 
-	return user.StatusContentInvalid, "", errors.Errorf("no gist files")
+	return user.StatusContentInvalid, nil, errors.Errorf("no gist files")
 }
 
 func (s *github) headers() []http.Header {

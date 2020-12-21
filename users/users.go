@@ -96,7 +96,7 @@ func (u *Users) CheckSigchain(ctx context.Context, sc *keys.Sigchain, opt ...Upd
 	// Set or update user (in case user changed)
 	result.User = usr
 
-	service, err := LookupService(usr.Service, opt...)
+	service, err := LookupService(usr, opt...)
 	if err != nil {
 		return nil, err
 	}

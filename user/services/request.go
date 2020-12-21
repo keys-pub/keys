@@ -10,6 +10,7 @@ import (
 
 // Request resource.
 func Request(ctx context.Context, client http.Client, urs string, headers []http.Header) (user.Status, []byte, error) {
+	logger.Infof("Requesting %s", urs)
 	req, err := http.NewRequest("GET", urs, nil)
 	if err != nil {
 		return user.StatusFailure, nil, err

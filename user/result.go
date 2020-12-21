@@ -21,6 +21,8 @@ type Result struct {
 	User *User `json:"user"`
 	// Statement we found at User.URL.
 	Statement string `json:"statement,omitempty"`
+	// Proxied if result was through a proxy.
+	Proxied bool `json:"proxied,omitempty"`
 	// VerifiedAt is when the status was last OK.
 	VerifiedAt int64 `json:"vts,omitempty"`
 }

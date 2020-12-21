@@ -3,6 +3,8 @@ package users
 import (
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
+	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
 )
 
 // Options are options for Users.
@@ -42,10 +44,14 @@ func Clock(clock tsutil.Clock) Option {
 	}
 }
 
+// ServiceLookupFn for custom service lookup.
+type ServiceLookupFn func(usr *user.User) services.Service
+
 // UpdateOptions ...
 type UpdateOptions struct {
-	UseTwitterProxy bool
-	IsCreate        bool
+	// Specify the service to use for the check.
+	// For twitter proxy, use services.Proxy.
+	Service ServiceLookupFn
 }
 
 // UpdateOption ...
@@ -59,16 +65,9 @@ func newUpdateOptions(opts ...UpdateOption) UpdateOptions {
 	return options
 }
 
-// UseTwitterProxy option.
-func UseTwitterProxy() UpdateOption {
+// UseService option.
+func UseService(service ServiceLookupFn) UpdateOption {
 	return func(o *UpdateOptions) {
-		o.UseTwitterProxy = true
-	}
-}
-
-// IsCreate option.
-func IsCreate() UpdateOption {
-	return func(o *UpdateOptions) {
-		o.IsCreate = true
+		o.Service = service
 	}
 }

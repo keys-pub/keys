@@ -1,19 +1,20 @@
 package users
 
-import "github.com/keys-pub/keys/user/services"
+import (
+	"github.com/keys-pub/keys/user"
+	"github.com/keys-pub/keys/user/services"
+)
 
-// LookupService finds service using options.
-func LookupService(service string, opt ...UpdateOption) (services.Service, error) {
+// LookupService finds service.
+func LookupService(usr *user.User, opt ...UpdateOption) (services.Service, error) {
 	opts := newUpdateOptions(opt...)
 
-	// If twitter proxy is enabled, we'll used cached values from keys.pub, or
-	// if creating a user, check with the proxy which returns realtime values.
-	if service == "twitter" && opts.UseTwitterProxy {
-		if opts.IsCreate {
-			return services.Proxy, nil
+	if opts.Service != nil {
+		service := opts.Service(usr)
+		if service != nil {
+			return service, nil
 		}
-		return services.KeysPub, nil
 	}
 
-	return services.Lookup(service)
+	return services.Lookup(usr.Service)
 }

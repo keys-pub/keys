@@ -42,12 +42,12 @@ func (s *twitter) Request(ctx context.Context, client http.Client, usr *user.Use
 	return Request(ctx, client, apiURL, headers)
 }
 
-func (s *twitter) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
+func (s *twitter) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, *Verified, error) {
 	var tweet tweet
 	if err := json.Unmarshal(b, &tweet); err != nil {
-		return user.StatusContentInvalid, "", err
+		return user.StatusContentInvalid, nil, err
 	}
-	logger.Debugf("Twitter unmarshaled tweet: %+v", tweet)
+	logger.Debugf("Tweet: %+v", tweet)
 
 	// TODO: Double check tweet id matches
 
@@ -55,18 +55,23 @@ func (s *twitter) Verify(ctx context.Context, b []byte, usr *user.User) (user.St
 	authorID := tweet.Data.AuthorID
 	for _, tweetUser := range tweet.Includes.Users {
 		if authorID == tweetUser.ID {
-			if tweetUser.Username != usr.Name {
-				return user.StatusContentInvalid, "", errors.Errorf("invalid tweet username %s", tweetUser.Username)
+			tweetUserName := validate.Twitter.NormalizeName(tweetUser.Username)
+			if tweetUserName != usr.Name {
+				return user.StatusContentInvalid, nil, errors.Errorf("invalid tweet username %s", tweetUser.Username)
 			}
 			found = true
 		}
 	}
 	if !found {
-		return user.StatusContentInvalid, "", errors.Errorf("tweet username not found")
+		return user.StatusContentInvalid, nil, errors.Errorf("tweet username not found")
 	}
 
 	msg := tweet.Data.Text
-	return user.FindVerify(usr, []byte(msg), false)
+	status, statement, err := user.FindVerify(usr, []byte(msg), false)
+	if err != nil {
+		return status, nil, err
+	}
+	return status, &Verified{Statement: statement}, nil
 }
 
 func (s *twitter) headers() []http.Header {

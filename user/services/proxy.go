@@ -28,6 +28,10 @@ func (s *proxy) Request(ctx context.Context, client http.Client, usr *user.User)
 	return Request(ctx, client, url, nil)
 }
 
-func (s *proxy) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, string, error) {
-	return user.FindVerify(usr, b, false)
+func (s *proxy) Verify(ctx context.Context, b []byte, usr *user.User) (user.Status, *Verified, error) {
+	status, statement, err := user.FindVerify(usr, b, false)
+	if err != nil {
+		return status, nil, err
+	}
+	return status, &Verified{Statement: statement, Proxied: true}, nil
 }
