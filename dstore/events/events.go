@@ -39,7 +39,7 @@ type Events interface {
 	EventsDelete(ctx context.Context, path string) (bool, error)
 
 	// EventPositions returns current positions of event logs at the specified paths.
-	EventPositions(ctx context.Context, paths []string) ([]*Position, error)
+	EventPositions(ctx context.Context, paths []string) (map[string]*Position, error)
 }
 
 // Direction is ascending or descending.

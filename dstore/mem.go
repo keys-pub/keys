@@ -325,8 +325,8 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 }
 
 // EventPositions returns positions for event logs at the specified paths.
-func (m *Mem) EventPositions(ctx context.Context, paths []string) ([]*events.Position, error) {
-	positions := []*events.Position{}
+func (m *Mem) EventPositions(ctx context.Context, paths []string) (map[string]*events.Position, error) {
+	positions := map[string]*events.Position{}
 	for _, path := range paths {
 		doc, err := m.Get(ctx, path)
 		if err != nil {
@@ -336,11 +336,11 @@ func (m *Mem) EventPositions(ctx context.Context, paths []string) ([]*events.Pos
 			continue
 		}
 		idx, _ := doc.Int64("idx")
-		positions = append(positions, &events.Position{
+		positions[path] = &events.Position{
 			Path:      path,
 			Index:     idx,
 			Timestamp: tsutil.Millis(doc.CreatedAt),
-		})
+		}
 	}
 	return positions, nil
 }
