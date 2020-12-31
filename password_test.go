@@ -1,6 +1,7 @@
 package keys_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -30,4 +31,14 @@ func TestRandPassword(t *testing.T) {
 
 	pass = keys.RandPassword(4096)
 	require.Equal(t, 4096, len(pass))
+}
+
+func ExampleRandPassword() {
+	pw := keys.RandPassword(16)
+	log.Println(pw)
+
+	pwNoSymbols := keys.RandPassword(16, keys.NoSymbols())
+	log.Println(pwNoSymbols)
+
+	// Output:
 }

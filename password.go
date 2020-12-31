@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"math/big"
 	mathRand "math/rand" // Only for shuffle
+	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/argon2"
@@ -12,31 +13,70 @@ import (
 const lower = "abcdefghijklmnopqrstuvwxyz"
 const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const numbers = "0123456789"
-const alphaNumeric = lower + upper + numbers
+const symbols = "~!@#$%^&*()_+`-={}|[]\\:\"<>?,./"
+
+// PasswordOptions for RandPassword.
+type PasswordOptions struct {
+	NoSymbols bool
+}
 
 // RandPassword returns a random password.
-// It uses a-zA-Z0-9. It will contain an uppercase, a lowercase and a number.
-// It will try not to repeat characters.
-func RandPassword(length int) string {
-	const maxRetry = 10
+// It will contain an uppercase (A-Z), lowercase (a-z), number (0-9) and symbol.
+// It will not to repeat characters.
+func RandPassword(length int, opt ...PasswordOption) string {
+	opts := newPasswordOptions(opt...)
+	charSet := lower + upper + numbers
+	if !opts.NoSymbols {
+		charSet += symbols
+	}
 
 	b := make([]byte, 0, length)
 	i := 0
-	for i < length-3 {
-		b = append(b, randUniqueChar(alphaNumeric, b, 0, maxRetry))
+	for i < length-4 {
+		b = append(b, randomChar(charSet, b))
 		i++
 	}
 
-	// Append uppercase, lowercase, number and then shuffle.
-	b = append(b, randUniqueChar(upper, b, 0, maxRetry))
-	b = append(b, randUniqueChar(lower, b, 0, maxRetry))
-	b = append(b, randUniqueChar(numbers, b, 0, maxRetry))
+	// To ensure we have at least an uppercase, lowercase, number, symbol
+	// append one of each and then shuffle.
+	b = append(b, randomChar(upper, b))
+	b = append(b, randomChar(lower, b))
+	b = append(b, randomChar(numbers, b))
 
+	if !opts.NoSymbols {
+		b = append(b, randomChar(symbols, b))
+	} else {
+		b = append(b, randomChar(charSet, b))
+	}
+
+	// Shuffle doesn't need to be secure random
+	mathRand.Seed(time.Now().UnixNano())
 	mathRand.Shuffle(len(b), func(i, j int) {
 		b[i], b[j] = b[j], b[i]
 	})
 
-	return string(b[:length])
+	// Ensure max length
+	b = b[:length]
+
+	return string(b)
+}
+
+// PasswordOption ...
+type PasswordOption func(*PasswordOptions)
+
+func newPasswordOptions(opts ...PasswordOption) PasswordOptions {
+	var options PasswordOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
+// NoSymbols password option.
+func NoSymbols() PasswordOption {
+	return func(o *PasswordOptions) {
+		o.NoSymbols = true
+	}
 }
 
 func randInt64(max int64) int64 {
@@ -47,27 +87,22 @@ func randInt64(max int64) int64 {
 	return n.Int64()
 }
 
-func randUniqueChar(charSet string, b []byte, retry int, maxRetry int) byte {
-	r := randomChar(alphaNumeric)
-	if hasByte(b, r) && retry < maxRetry {
-		retry++
-		return randUniqueChar(charSet, b, retry, maxRetry)
+func randomChar(charSet string, b []byte) byte {
+	var except byte
+	if len(b) > 0 {
+		except = b[len(b)-1]
 	}
-	return r
-}
-
-func randomChar(charSet string) byte {
-	n := randInt64(int64(len(charSet)))
-	return charSet[n]
-}
-
-func hasByte(ba []byte, b byte) bool {
-	for _, e := range ba {
-		if e == b {
-			return true
+	for {
+		r := randomCharFromSet(charSet)
+		if r != except {
+			return r
 		}
 	}
-	return false
+}
+
+func randomCharFromSet(charSet string) byte {
+	n := randInt64(int64(len(charSet)))
+	return charSet[n]
 }
 
 // KeyForPassword generates a key from a password and salt.
