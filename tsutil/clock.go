@@ -24,7 +24,7 @@ type testClock struct {
 // NewTestClock returns a test Clock starting at 1234567890000 millseconds since
 // epoch. Each access to Now() increases time by 1 millisecond.
 func NewTestClock() Clock {
-	t := ConvertMillis(1234567890000)
+	t := ParseMillis(1234567890000)
 	return &testClock{
 		t:    t,
 		tick: time.Millisecond,
@@ -53,7 +53,7 @@ func (c *testClock) Add(dt time.Duration) {
 
 // NewTestClockAt creates a Clock starting at timestamp (millis).
 func NewTestClockAt(ts int64) Clock {
-	t := ConvertMillis(ts)
+	t := ParseMillis(ts)
 	return &testClock{
 		t:    t,
 		tick: time.Millisecond,

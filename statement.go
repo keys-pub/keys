@@ -223,7 +223,7 @@ func unmarshalJSON(b []byte) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts := tsutil.ConvertMillis(stf.Timestamp)
+	ts := tsutil.ParseMillis(stf.Timestamp)
 
 	if !bytes.Equal(stf.Sig, sigBytes) {
 		return nil, errors.Errorf("sig bytes mismatch")

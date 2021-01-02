@@ -20,30 +20,38 @@ func Millis(t time.Time) int64 {
 	return int64(t.UnixNano() / int64(time.Millisecond))
 }
 
-// MillisNow returns now in milliseconds since epoch.
-func MillisNow() int64 {
+// NowMillis returns now in milliseconds since epoch.
+func NowMillis() int64 {
 	return Millis(time.Now())
 }
 
-// ParseMillis returns time.Time from milliseconds since epoch as string.
-func ParseMillis(s string) time.Time {
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
+// ParseMillis returns time.Time from milliseconds since epoch.
+func ParseMillis(i interface{}) time.Time {
+	switch v := i.(type) {
+	case string:
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return time.Time{}
+		}
+		return millis(n)
+	case int64:
+		return millis(v)
+	case int:
+		return millis(int64(v))
+	default:
 		return time.Time{}
 	}
-	return ConvertMillis(n)
-
 }
 
-// ConvertMillis returns time.Time from milliseconds since epoch.
-func ConvertMillis(n int64) time.Time {
+// millis returns time.Time from milliseconds since epoch.
+func millis(n int64) time.Time {
 	if n == 0 {
 		return time.Time{}
 	}
 	return time.Unix(0, n*int64(time.Millisecond)).UTC()
 }
 
-// Days returns milliseconds since epoch to t.
+// Days returns days since epoch to t.
 func Days(t time.Time) int {
 	ms := Millis(t)
 	return int(ms / 1000 / 60 / 60 / 24)
