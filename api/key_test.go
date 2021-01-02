@@ -72,6 +72,14 @@ func TestNewKeyX25519Public(t *testing.T) {
 	require.Equal(t, spk, key.AsX25519Public())
 }
 
+func TestKeyLabel(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	key := api.NewKey(sk)
+
+	key.WithLabel("channel").WithLabel("channel")
+	require.Equal(t, key.Labels, []string{"channel"})
+}
+
 func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
 }

@@ -54,6 +54,9 @@ func (k *Key) Updated(ts int64) *Key {
 
 // WithLabel returns key with label added.
 func (k *Key) WithLabel(label string) *Key {
+	if k.HasLabel(label) {
+		return k
+	}
 	k.Labels = append(k.Labels, label)
 	return k
 }
