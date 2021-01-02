@@ -147,3 +147,33 @@ func (k *EdX25519Key) SSHSigner() ssh.Signer {
 	}
 	return signer
 }
+
+// EncodeSSHKey encodes key to SSH.
+func EncodeSSHKey(key Key, password string) (string, error) {
+	switch k := key.(type) {
+	case *EdX25519Key:
+		out, err := k.EncodeToSSH([]byte(password))
+		if err != nil {
+			return "", err
+		}
+		return string(out), nil
+	case *EdX25519PublicKey:
+		if password != "" {
+			return "", errors.Errorf("password not supported when exporting public key")
+		}
+		return string(k.EncodeToSSHAuthorized()), nil
+	default:
+		return "", errors.Errorf("unsupported key type")
+	}
+}
+
+// DecodeSSHKey decodes SSH key.
+func DecodeSSHKey(s string, password string) (Key, error) {
+	if strings.HasPrefix(s, "ssh-ed25519 ") {
+		if password != "" {
+			return nil, errors.Errorf("password unsupported for ssh-ed25519 public key")
+		}
+		return ParseSSHPublicKey(s)
+	}
+	return ParseSSHKey([]byte(s), []byte(password), true)
+}

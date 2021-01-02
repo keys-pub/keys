@@ -4,8 +4,6 @@ package api
 
 import (
 	"github.com/keys-pub/keys"
-	"github.com/keys-pub/keys/encoding"
-	"github.com/keys-pub/keys/saltpack"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack/v4"
 )
@@ -20,11 +18,15 @@ type Key struct {
 	Private []byte `json:"priv,omitempty" msgpack:"priv,omitempty"`
 	Public  []byte `json:"pub,omitempty" msgpack:"pub,omitempty"`
 
-	// Optional fields
-	Notes string `json:"notes,omitempty" msgpack:"notes,omitempty"`
-
 	CreatedAt int64 `json:"cts,omitempty" msgpack:"cts,omitempty"`
 	UpdatedAt int64 `json:"uts,omitempty" msgpack:"uts,omitempty"`
+
+	// Optional fields
+	Labels []string `json:"labels,omitempty" msgpack:"labels,omitempty"`
+	Notes  string   `json:"notes,omitempty" msgpack:"notes,omitempty"`
+
+	// Application specific fields
+	Token string `json:"token,omitempty" msgpack:"token,omitempty"`
 }
 
 // NewKey creates api.Key from keys.Key interface.
@@ -37,81 +39,61 @@ func NewKey(k keys.Key) *Key {
 	}
 }
 
-// EncryptKey creates encrypted key from a sender to a recipient.
-func EncryptKey(key *Key, sender *keys.EdX25519Key, recipient keys.ID, armored bool) ([]byte, error) {
-	b, err := msgpack.Marshal(key)
-	if err != nil {
-		return nil, err
-	}
-	enc, err := saltpack.Signcrypt(b, armored, sender, recipient, sender.ID())
-	if err != nil {
-		return nil, err
-	}
-	return enc, nil
+// Created marks the key as created with the specified time.
+func (k *Key) Created(ts int64) *Key {
+	k.CreatedAt = ts
+	k.UpdatedAt = ts
+	return k
 }
 
-// DecryptKey decrypts a key from a sender.
-func DecryptKey(b []byte, kr saltpack.Keyring, armored bool) (*Key, *keys.EdX25519PublicKey, error) {
-	dec, pk, err := saltpack.SigncryptOpen(b, armored, kr)
+// Updated marks the key as created with the specified time.
+func (k *Key) Updated(ts int64) *Key {
+	k.UpdatedAt = ts
+	return k
+}
+
+// WithLabel returns key with label added.
+func (k *Key) WithLabel(label string) *Key {
+	k.Labels = append(k.Labels, label)
+	return k
+}
+
+// HasLabel returns true if key has label.
+func (k Key) HasLabel(label string) bool {
+	for _, l := range k.Labels {
+		if l == label {
+			return true
+		}
+	}
+	return false
+}
+
+// Copy creates a copy of the key.
+func (k *Key) Copy() *Key {
+	b, err := msgpack.Marshal(k)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to decrypt key")
+		return nil
 	}
-	var key Key
-	if err := msgpack.Unmarshal(dec, &key); err != nil {
-		return nil, nil, err
+	var out Key
+	if err := msgpack.Unmarshal(b, &out); err != nil {
+		return nil
 	}
-	if err := key.Check(); err != nil {
-		return nil, nil, err
-	}
-	return &key, pk, nil
+	return &out
 }
 
 // Check if key is valid (has valid ID and type).
 func (k *Key) Check() error {
+	if k.ID == "" {
+		return errors.Errorf("empty id")
+	}
 	if _, err := keys.ParseID(string(k.ID)); err != nil {
 		return err
 	}
 	if k.Type == "" {
-		return errors.Errorf("invalid key type")
+		return errors.Errorf("empty type")
+	}
+	if len(k.Public) == 0 && len(k.Private) == 0 {
+		return errors.Errorf("no key data")
 	}
 	return nil
-}
-
-// EncryptWithPassword creates an encrypted key using a password.
-func (k *Key) EncryptWithPassword(password string) (string, error) {
-	b, err := msgpack.Marshal(k)
-	if err != nil {
-		return "", err
-	}
-	out := keys.EncryptWithPassword(b, password)
-	return encoding.EncodeSaltpack(out, "KEY"), nil
-}
-
-// DecryptKeyWithPassword decrypts a key using a password.
-func DecryptKeyWithPassword(s string, password string) (*Key, error) {
-	decoded, brand, err := encoding.DecodeSaltpack(s, false)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse saltpack")
-	}
-	// Check if small format (from keys.EncodeSaltpackKey).
-	switch brand {
-	case string(keys.EdX25519Brand), string(keys.X25519Brand):
-		k, err := keys.DecodeSaltpackKey(s, password, false)
-		if err != nil {
-			return nil, err
-		}
-		return NewKey(k), nil
-	}
-	decrypted, err := keys.DecryptWithPassword(decoded, password)
-	if err != nil {
-		return nil, err
-	}
-	var key Key
-	if err := msgpack.Unmarshal(decrypted, &key); err != nil {
-		return nil, err
-	}
-	if err := key.Check(); err != nil {
-		return nil, err
-	}
-	return &key, nil
 }

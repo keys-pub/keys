@@ -137,7 +137,7 @@ func Authorize(ctx context.Context, auth *AuthRequest) (*AuthResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	tm := tsutil.ConvertMillis(i)
+	tm := tsutil.ParseMillis(i)
 	td := auth.Now.Sub(tm)
 	if td < 0 {
 		td = td * -1

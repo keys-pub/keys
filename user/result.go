@@ -36,12 +36,12 @@ func (r Result) String() string {
 
 // IsTimestampExpired returns true if result Timestamp is older than dt.
 func (r Result) IsTimestampExpired(now time.Time, dt time.Duration) bool {
-	ts := tsutil.ConvertMillis(r.Timestamp)
+	ts := tsutil.ParseMillis(r.Timestamp)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }
 
 // IsVerifyExpired returns true if result VerifiedAt is older than dt.
 func (r Result) IsVerifyExpired(now time.Time, dt time.Duration) bool {
-	ts := tsutil.ConvertMillis(r.VerifiedAt)
+	ts := tsutil.ParseMillis(r.VerifiedAt)
 	return (ts.IsZero() || now.Sub(ts) > dt)
 }

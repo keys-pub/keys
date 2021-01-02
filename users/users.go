@@ -273,7 +273,7 @@ func (u *Users) index(ctx context.Context, keyDoc *keyDocument) error {
 				index = true
 			case user.StatusConnFailure:
 				// If connection failure is recent, still index.
-				if u.opts.Clock.Now().Sub(tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)) < time.Hour*24*2 {
+				if u.opts.Clock.Now().Sub(tsutil.ParseMillis(keyDoc.Result.VerifiedAt)) < time.Hour*24*2 {
 					index = true
 				}
 			}
@@ -378,10 +378,10 @@ func (u *Users) Expired(ctx context.Context, dt time.Duration, maxAge time.Durat
 			return nil, err
 		}
 		if keyDoc.Result != nil {
-			ts := tsutil.ConvertMillis(keyDoc.Result.Timestamp)
+			ts := tsutil.ParseMillis(keyDoc.Result.Timestamp)
 
 			// If verifiedAt age is too old skip it
-			vts := tsutil.ConvertMillis(keyDoc.Result.VerifiedAt)
+			vts := tsutil.ParseMillis(keyDoc.Result.VerifiedAt)
 			if !vts.IsZero() && u.opts.Clock.Now().Sub(vts) > maxAge {
 				continue
 			}
