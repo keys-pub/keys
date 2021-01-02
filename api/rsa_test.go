@@ -81,10 +81,10 @@ func TestRSAMarshalPublic(t *testing.T) {
  00000120  6d 78 77 97 38 6d 50 fe  0c 97 34 be 96 7c 7d 84  |mxw.8mP...4..|}.|
  00000130  ae 5b 8f 34 9b 09 40 79  45 7c 0c 0c 6f ee 34 c4  |.[.4..@yE|..o.4.|
  00000140  2a 0b 83 26 03 80 4f 71  e4 9f 33 20 08 16 37 51  |*..&..Oq..3 ..7Q|
- 00000150  2c 6c bf 2b b8 1b 6f 6b  e2 39 84 6d 02 01 03 a5  |,l.+..ok.9.m....|
- 00000160  6e 6f 74 65 73 af 73 6f  6d 65 20 74 65 73 74 20  |notes.some test |
- 00000170  6e 6f 74 65 73 a3 63 74  73 d3 00 00 01 1f 71 fb  |notes.cts.....q.|
- 00000180  04 51 a3 75 74 73 d3 00  00 01 1f 71 fb 04 52     |.Q.uts.....q..R|
+ 00000150  2c 6c bf 2b b8 1b 6f 6b  e2 39 84 6d 02 01 03 a3  |,l.+..ok.9.m....|
+ 00000160  63 74 73 d3 00 00 01 1f  71 fb 04 51 a3 75 74 73  |cts.....q..Q.uts|
+ 00000170  d3 00 00 01 1f 71 fb 04  52 a5 6e 6f 74 65 73 af  |.....q..R.notes.|
+ 00000180  73 6f 6d 65 20 74 65 73  74 20 6e 6f 74 65 73     |some test notes|
 }
 `
 	require.Equal(t, expected, spew.Sdump(b))
@@ -95,9 +95,9 @@ func TestRSAMarshalPublic(t *testing.T) {
   "id": "rsa1lg8lhzpatgmakvrkz866fehw64lkdtly3t2q7d36kfyhmaauyg2sgkhan4",
   "type": "rsa",
   "pub": "MIIBBwKCAQBxY8hCshkKiXCUKydkrtQtQSRke28w4JotocDiVqou4k55DEDJakvWbXXDcakV4HA8R2tOGgbxvTjFo8EK470w9O9ipapPUSrRRaBsSOlkaaIs6OYh4FLwZpqMNBVVEtguVUR/C34Y2pS9kRrHs6q+cGhDZolkWT7nGy5eSEvPDHg0EBq11hu6HmPmI3r0BInONqJg2rcK3U++wk1lnbD3ysCZsKOqRUms3n/IWKeTqXXmz2XKJ2t0NSXwiDmA9q0Gm+w0bXh3lzhtUP4MlzS+lnx9hK5bjzSbCUB5RXwMDG/uNMQqC4MmA4BPceSfMyAIFjdRLGy/K7gbb2viOYRtAgED",
-  "notes": "some test notes",
   "cts": 1234567890001,
-  "uts": 1234567890002
+  "uts": 1234567890002,
+  "notes": "some test notes"
 }`
 	require.Equal(t, expected, string(b))
 }

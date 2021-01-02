@@ -1,6 +1,9 @@
 package keys_test
 
 import (
+	"encoding/hex"
+	"fmt"
+	"log"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -138,4 +141,89 @@ func TestSSHEncodePublic(t *testing.T) {
 	out, err := keys.ParseSSHPublicKey(string(b))
 	require.NoError(t, err)
 	require.Equal(t, out.Public(), alice.PublicKey().Bytes())
+}
+
+func TestEncodeDecodeSSHKey(t *testing.T) {
+	sk := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+
+	// SSH (public)
+	msg, err := keys.EncodeSSHKey(sk.PublicKey(), "")
+	require.NoError(t, err)
+	out, err := keys.DecodeSSHKey(msg, "")
+	require.NoError(t, err)
+	require.Equal(t, sk.PublicKey().Type(), out.Type())
+	require.Equal(t, sk.PublicKey().Public(), out.Public())
+
+	// SSH (password)
+	msg, err = keys.EncodeSSHKey(sk, "testpassword")
+	require.NoError(t, err)
+	out, err = keys.DecodeSSHKey(msg, "testpassword")
+	require.NoError(t, err)
+	require.Equal(t, sk.Type(), out.Type())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
+
+	// SSH (password, helper)
+	msg, err = keys.EncodeSSHKey(sk, "testpassword")
+	require.NoError(t, err)
+	out, err = keys.DecodeSSHKey(msg, "testpassword")
+	require.NoError(t, err)
+	require.Equal(t, sk.Type(), out.Type())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
+
+	// SSH (no password)
+	msg, err = keys.EncodeSSHKey(sk, "")
+	require.NoError(t, err)
+	out, err = keys.DecodeSSHKey(msg, "")
+	require.NoError(t, err)
+	require.Equal(t, sk.Type(), out.Type())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
+
+	// SSH (no password, helper)
+	msg, err = keys.EncodeSSHKey(sk, "")
+	require.NoError(t, err)
+	out, err = keys.DecodeSSHKey(msg, "")
+	require.NoError(t, err)
+	require.Equal(t, sk.Type(), out.Type())
+	require.Equal(t, sk.Private(), out.Private())
+	require.Equal(t, sk.Public(), out.Public())
+
+	// SSH
+	pk, err := keys.DecodeSSHKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c", "")
+	require.NoError(t, err)
+	require.Equal(t, "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c", hex.EncodeToString(pk.Public()))
+
+	// Errors
+	_, err = keys.DecodeSSHKey("", "")
+	require.EqualError(t, err, "failed to parse ssh key: ssh: no key found")
+}
+
+func ExampleEncodeSSHKey() {
+	sk := keys.GenerateEdX25519Key()
+
+	privateKey, err := keys.EncodeSSHKey(sk, "testpassword")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%s\n", privateKey)
+
+	publicKey, err := keys.EncodeSSHKey(sk.PublicKey(), "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%s\n", publicKey)
+
+	// Output:
+	//
+}
+
+func ExampleDecodeSSHKey() {
+	pk, err := keys.DecodeSSHKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29c", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n", pk.ID())
+	// Output: kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077
 }
