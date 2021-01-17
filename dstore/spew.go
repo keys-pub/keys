@@ -13,7 +13,7 @@ func Spew(iter Iterator) (string, error) {
 	if err := SpewOut(iter, &b); err != nil {
 		return "", err
 	}
-	return string(b.Bytes()), nil
+	return b.String(), nil
 }
 
 // SpewOut writes Iterator to io.Writer.
