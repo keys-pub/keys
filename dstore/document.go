@@ -5,10 +5,11 @@ import (
 	"bytes"
 	"time"
 
+	"github.com/keys-pub/keys/encoding"
 	"github.com/vmihailenco/msgpack/v4"
 )
 
-// Document is data at a path.
+// Document at a path.
 type Document struct {
 	// Path of document.
 	Path string
@@ -38,8 +39,8 @@ func (d *Document) Get(name string) (interface{}, bool) {
 	return i, ok
 }
 
-// Marshal uses msgpack with fallback to json tags.
-func Marshal(v interface{}) ([]byte, error) {
+// marshal uses msgpack with fallback to json tags.
+func marshal(v interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
 	enc.UseJSONTag(true)
@@ -49,8 +50,8 @@ func Marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Unmarshal uses msgpack with fallback to json tags.
-func Unmarshal(b []byte, i interface{}) error {
+// unmarshal uses msgpack with fallback to json tags.
+func unmarshal(b []byte, i interface{}) error {
 	dec := msgpack.NewDecoder(bytes.NewReader(b))
 	dec.UseJSONTag(true)
 	if err := dec.Decode(i); err != nil {
@@ -59,29 +60,29 @@ func Unmarshal(b []byte, i interface{}) error {
 	return nil
 }
 
-// From interface to map (for Create, Set).
+// From interface to map.
 // If error, nil is returned.
-// Uses msgpack.
+// Uses msgpack fallback to json tags to unmarshal into value.
 func From(i interface{}) map[string]interface{} {
-	b, err := Marshal(i)
+	b, err := marshal(i)
 	if err != nil {
 		return nil
 	}
 	var m map[string]interface{}
-	if err := Unmarshal(b, &m); err != nil {
+	if err := unmarshal(b, &m); err != nil {
 		return nil
 	}
 	return m
 }
 
-// To converts document to type.
+// To value.
 // Uses msgpack.
 func (d *Document) To(i interface{}) error {
-	b, err := Marshal(d.values)
+	b, err := marshal(d.values)
 	if err != nil {
 		return err
 	}
-	return Unmarshal(b, i)
+	return unmarshal(b, i)
 }
 
 // SetAll values on document. Overwrites any existing values.
@@ -99,6 +100,12 @@ func (d *Document) Bytes(name string) []byte {
 	switch v := i.(type) {
 	case []byte:
 		return v
+	case string:
+		b, err := encoding.Decode(v, encoding.Base64)
+		if err != nil {
+			return nil
+		}
+		return b
 	default:
 		return nil
 	}

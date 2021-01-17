@@ -1,7 +1,6 @@
 package dstore_test
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"testing"
@@ -96,26 +95,6 @@ func testDocuments(t *testing.T, ds dstore.Documents) {
 	ok, err = ds.Exists(ctx, "/test1/key10")
 	require.NoError(t, err)
 	require.False(t, ok)
-
-	expected := `/test0/key10 overwrite
-/test0/key20 value20
-/test0/key30 value30
-`
-	var b bytes.Buffer
-	iter, err = ds.DocumentIterator(context.TODO(), "test0")
-	require.NoError(t, err)
-	err = dstore.SpewOut(iter, &b)
-	require.NoError(t, err)
-	require.Equal(t, expected, b.String())
-	iter.Release()
-
-	iter, err = ds.DocumentIterator(context.TODO(), "test0")
-	require.NoError(t, err)
-	spew, err := dstore.Spew(iter)
-	require.NoError(t, err)
-	require.Equal(t, b.String(), spew.String())
-	require.Equal(t, expected, spew.String())
-	iter.Release()
 
 	iter, err = ds.DocumentIterator(context.TODO(), "test0", dstore.Prefix("key1"), dstore.NoData())
 	require.NoError(t, err)
@@ -216,17 +195,6 @@ func testDocumentsListOptions(t *testing.T, ds dstore.Documents) {
 		paths = append(paths, doc.Path)
 	}
 	require.Equal(t, []string{"/test/1", "/test/2", "/test/3"}, paths)
-	iter.Release()
-
-	iter, err = ds.DocumentIterator(context.TODO(), "test")
-	require.NoError(t, err)
-	b, err := dstore.Spew(iter)
-	require.NoError(t, err)
-	expected := `/test/1 val1
-/test/2 val2
-/test/3 val3
-`
-	require.Equal(t, expected, b.String())
 	iter.Release()
 
 	iter, err = ds.DocumentIterator(ctx, "b", dstore.Prefix("eb"))
