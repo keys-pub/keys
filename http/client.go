@@ -37,7 +37,7 @@ func httpClient() *http.Client {
 	}
 
 	client := &http.Client{
-		Timeout:   time.Second * 10,
+		Timeout:   time.Second * 30,
 		Transport: transport,
 		// Important not to follow redirects.
 		// Twitter may redirect invalid urls with a valid status.
