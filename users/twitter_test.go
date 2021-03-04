@@ -238,6 +238,8 @@ func TestMovedKeyTwitterProxy(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, res.Status, user.StatusOK)
 
+	// TODO: If services is services.Proxy (above) this will pass
+	// See: https://github.com/keys-pub/app/issues/44
 	res, err = usrs.Update(ctx, kid2, users.UseService(service))
 	require.NoError(t, err)
 	require.Equal(t, res.Status, user.StatusContentInvalid)
