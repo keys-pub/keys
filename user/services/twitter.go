@@ -79,7 +79,7 @@ func (s *twitter) headers() []http.Header {
 		return nil
 	}
 	return []http.Header{
-		http.Header{
+		{
 			Name:  "Authorization",
 			Value: fmt.Sprintf("Bearer %s", s.bearerToken),
 		},
