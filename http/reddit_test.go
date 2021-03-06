@@ -14,7 +14,7 @@ func TestReddit(t *testing.T) {
 	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
 	req, err := http.NewRequest("GET", urs, nil)
 	require.NoError(t, err)
-	res, err := client.Request(context.TODO(), req, nil)
+	res, err := client.Request(context.TODO(), req)
 	require.NoError(t, err)
 
 	var red reddit

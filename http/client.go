@@ -4,6 +4,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // ErrTimeout is a timeout error.
@@ -18,13 +20,17 @@ type ErrTimeout struct {
 	error
 }
 
-// Error is an HTTP Error.
-type Error struct {
-	StatusCode int
+// Err is an HTTP Error.
+type Err struct {
+	Code    int
+	Message string
 }
 
-func (e Error) Error() string {
-	return fmt.Sprintf("http error %d", e.StatusCode)
+func (e Err) Error() string {
+	if e.Message != "" {
+		return e.Message
+	}
+	return fmt.Sprintf("http error %d", e.Code)
 }
 
 func httpClient() *http.Client {
@@ -55,13 +61,28 @@ func httpClient() *http.Client {
 	return client
 }
 
-func doRequest(client *http.Client, req *Request, headers []Header, options ...func(*http.Request)) (http.Header, []byte, error) {
-	logger.Debugf("Requesting %s %s", req.Method, req.URL)
-
-	req.Header.Set("User-Agent", "keys.pub")
-	for _, header := range headers {
-		req.Header.Set(header.Name, header.Value)
+// JSON request.
+func JSON(req *Request, v interface{}) error {
+	hcl := &http.Client{
+		Timeout: time.Second * 30,
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout: 10 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout: 10 * time.Second,
+		},
 	}
+
+	b, err := doRequest(hcl, req)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, v)
+}
+
+// Do HTTP request.
+func doRequest(client *http.Client, req *Request, options ...func(*http.Request)) ([]byte, error) {
+	logger.Debugf("Requesting %s %s", req.Method, req.URL)
 
 	for _, opt := range options {
 		opt(req)
@@ -70,7 +91,7 @@ func doRequest(client *http.Client, req *Request, headers []Header, options ...f
 	resp, err := client.Do(req)
 	switch err := err.(type) {
 	default:
-		return nil, nil, err
+		return nil, err
 	case nil:
 		// no error
 
@@ -79,33 +100,44 @@ func doRequest(client *http.Client, req *Request, headers []Header, options ...f
 		// when exceeding it's `Transport`'s `ResponseHeadersTimeout`
 		e1, ok := err.Err.(net.Error)
 		if ok && e1.Timeout() {
-			return nil, nil, ErrTimeout{err}
+			return nil, ErrTimeout{err}
 		}
 
-		return nil, nil, err
+		return nil, err
 
 	case net.Error:
 		// `http.Client.Do` will return a `net.Error` directly when Dial times
 		// out, or when the Client's RoundTripper otherwise returns an err
 		if err.Timeout() {
-			return nil, nil, ErrTimeout{err}
+			return nil, ErrTimeout{err}
 		}
 
-		return nil, nil, err
+		return nil, err
 	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debugf("Response body (len=%d)", len(body))
 
 	defer resp.Body.Close()
 	if resp.StatusCode/200 != 1 {
-		return resp.Header, nil, Error{StatusCode: resp.StatusCode}
+		var errMsg string
+		if len(body) > 1024 {
+			body = body[0:1024]
+		}
+		if utf8.Valid(body) {
+			errMsg = string(body)
+		}
+
+		return nil, Err{
+			Code:    resp.StatusCode,
+			Message: errMsg,
+		}
 	}
 
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, err
-	}
-	logger.Debugf("Response body (len=%d)", len(respBody))
-
-	return resp.Header, respBody, nil
+	return body, nil
 }
 
 // ErrTemporary means there was a temporary error
@@ -135,7 +167,7 @@ type Header struct {
 
 // Client for HTTP.
 type Client interface {
-	Request(ctx context.Context, req *Request, headers []Header) ([]byte, error)
+	Request(ctx context.Context, req *Request) ([]byte, error)
 	SetProxy(urs string, fn ProxyFn)
 }
 
@@ -149,7 +181,7 @@ func NewClient() Client {
 }
 
 // ProxyFn for proxy.
-type ProxyFn func(ctx context.Context, req *Request, headers []Header) ProxyResponse
+type ProxyFn func(ctx context.Context, req *Request) ProxyResponse
 
 // ProxyResponse ...
 type ProxyResponse struct {
@@ -167,24 +199,26 @@ func (c *client) SetProxy(urs string, fn ProxyFn) {
 }
 
 // Request an URL.
-func (c *client) Request(ctx context.Context, req *Request, headers []Header) ([]byte, error) {
+func (c *client) Request(ctx context.Context, req *Request) ([]byte, error) {
 	if c.proxies != nil {
 		fn := c.proxies[req.URL.String()]
 		if fn != nil {
-			pr := fn(ctx, req, headers)
+			pr := fn(ctx, req)
 			if !pr.Skip {
 				return pr.Body, pr.Err
 			}
 		}
 		fn = c.proxies[""]
 		if fn != nil {
-			pr := fn(ctx, req, headers)
+			pr := fn(ctx, req)
 			if !pr.Skip {
 				return pr.Body, pr.Err
 			}
 		}
 	}
-	_, body, err := doRequest(httpClient(), req, headers)
+
+	req.Header.Set("User-Agent", "keys.pub")
+	body, err := doRequest(httpClient(), req)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}

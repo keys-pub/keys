@@ -14,7 +14,7 @@ func TestGithubRequest(t *testing.T) {
 	urs := "https://gist.github.com/gabriel/ceea0f3b675bac03425472692273cf52"
 	req, err := http.NewRequest("GET", urs, nil)
 	require.NoError(t, err)
-	res, err := client.Request(context.TODO(), req, nil)
+	res, err := client.Request(context.TODO(), req)
 	require.NoError(t, err)
 
 	out, brand := encoding.FindSaltpack(string(res), true)

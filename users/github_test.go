@@ -43,7 +43,7 @@ func TestResultGithub(t *testing.T) {
 	_, err = user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.EqualError(t, err, "user set in sigchain already")
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
 	})
 
@@ -94,7 +94,7 @@ func TestResultGithubWrongName(t *testing.T) {
 
 	sc := keys.NewSigchain(sk.ID())
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
 	})
 
@@ -127,7 +127,7 @@ func TestResultGithubWrongService(t *testing.T) {
 	msg, err := invalid.Sign(sk)
 	require.NoError(t, err)
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(githubMock("alice", "1", msg))}
 	})
 

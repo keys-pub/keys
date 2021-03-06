@@ -95,7 +95,7 @@ func TestSigchainUsersUpdate(t *testing.T) {
 
 	usrs := users.New(ds, scs, users.Clock(clock))
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(testdata(t, "testdata/twitter/1222706272849391616.json"))}
 	})
 
@@ -133,7 +133,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = sc.Add(st)
 	require.NoError(t, err)
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(twitterMock("gabriel", "1", msg))}
 	})
 
@@ -159,7 +159,7 @@ func TestSigchainRevokeUpdate(t *testing.T) {
 	err = sc.Add(st2)
 	require.NoError(t, err)
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(twitterMock("gabriel", "2", msg))}
 	})
 
@@ -236,7 +236,7 @@ func mockStatement(key *keys.EdX25519Key, sc *keys.Sigchain, name string, servic
 		return nil, err
 	}
 
-	client.SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	client.SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		// TODO: Set based on url
 		return http.ProxyResponse{Body: []byte(msg)}
 	})

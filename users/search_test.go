@@ -278,7 +278,7 @@ func TestUserValidateUpdateInvalid(t *testing.T) {
 	}
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("Testing", smsg, "keyspubmsgs"))}
 	})
 
@@ -337,7 +337,7 @@ func TestReddit(t *testing.T) {
 
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs"))}
 	})
 
@@ -346,7 +346,7 @@ func TestReddit(t *testing.T) {
 	require.Equal(t, user.StatusOK, result.Status)
 
 	// Different name
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("alice2", smsg, "keyspubmsgs"))}
 	})
 	result, err = usrs.Update(ctx, key.ID())
@@ -354,7 +354,7 @@ func TestReddit(t *testing.T) {
 	require.Equal(t, user.StatusContentInvalid, result.Status)
 
 	// Different subreddit
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs2"))}
 	})
 	result, err = usrs.Update(ctx, key.ID())
@@ -393,8 +393,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, int64(1234567890004), results[0].Result.VerifiedAt)
 
 	// Set 500 error for alice@github
-	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
-		return http.ProxyResponse{Err: http.Error{StatusCode: 500}}
+	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request) http.ProxyResponse {
+		return http.ProxyResponse{Err: http.Err{Code: 500}}
 	})
 	_, err = usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -424,8 +424,8 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, keys.ID("kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077"), fail[0])
 
 	// Set 404 error for alice@github
-	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
-		return http.ProxyResponse{Err: http.Error{StatusCode: 404}}
+	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request) http.ProxyResponse {
+		return http.ProxyResponse{Err: http.Err{Code: 404}}
 	})
 	res, err := usrs.Update(ctx, alice.ID())
 	require.NoError(t, err)
@@ -437,7 +437,7 @@ func TestSearchUsersRequestErrors(t *testing.T) {
 	require.Equal(t, 0, len(results))
 
 	// Reset proxy
-	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy(aliceUser.URL, func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(aliceUser.Response)}
 	})
 	_, err = usrs.Update(ctx, alice.ID())
@@ -570,7 +570,7 @@ func saveUser(users *users.Users, scs *keys.Sigchains, key *keys.EdX25519Key, na
 		resp = githubMock(name, id, msg)
 	}
 
-	client.SetProxy(murl, func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	client.SetProxy(murl, func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: []byte(resp)}
 	})
 

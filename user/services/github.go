@@ -55,12 +55,10 @@ func (s *github) Verify(ctx context.Context, b []byte, usr *user.User) (user.Sta
 }
 
 func (s *github) headers() []http.Header {
-	return []http.Header{
-		{
-			Name:  "Accept",
-			Value: "application/vnd.github.v3+json",
-		},
-	}
+	return []http.Header{{
+		Name:  "Accept",
+		Value: "application/vnd.github.v3+json",
+	}}
 }
 
 type file struct {

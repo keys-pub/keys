@@ -43,7 +43,7 @@ func TestResultTwitter(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set error response
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Err: errors.Errorf("testing")}
 	})
 
@@ -62,7 +62,7 @@ func TestResultTwitter(t *testing.T) {
 	require.EqualError(t, err, "user set in sigchain already")
 
 	// Set valid response
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: testdata(t, "testdata/twitter/1205589994380783616.json")}
 	})
 
@@ -77,7 +77,7 @@ func TestResultTwitter(t *testing.T) {
 	require.Equal(t, int64(1234567890004), result.Timestamp)
 
 	// Set error response again
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Err: errors.Errorf("testing2")}
 	})
 
@@ -136,7 +136,7 @@ func TestResultTwitterInvalidStatement(t *testing.T) {
 	err = scs.Save(sc)
 	require.NoError(t, err)
 
-	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request, headers []http.Header) http.ProxyResponse {
+	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
 		return http.ProxyResponse{Body: testdata(t, "testdata/twitter/1205589994380783616.json")}
 	})
 

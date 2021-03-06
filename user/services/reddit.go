@@ -79,9 +79,7 @@ func (s *reddit) headers(urs string) ([]http.Header, error) {
 	}
 	// Not sure if this is required anymore.
 	if strings.HasSuffix(ur.Host, ".reddit.com") {
-		return []http.Header{
-			{Name: "Host", Value: "reddit.com"},
-		}, nil
+		return []http.Header{{Name: "Host", Value: "reddit.com"}}, nil
 	}
 	return nil, nil
 }
