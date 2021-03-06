@@ -10,6 +10,14 @@ type Options struct {
 	Limit int
 	// NoData to only include only path in Document (no data).
 	NoData bool
+	// Where
+	Where *where
+}
+
+type where struct {
+	Name  string
+	Op    string
+	Value interface{}
 }
 
 // Option ...
@@ -28,6 +36,13 @@ func NewOptions(opts ...Option) Options {
 func Prefix(prefix string) Option {
 	return func(o *Options) {
 		o.Prefix = prefix
+	}
+}
+
+// Where name op value.
+func Where(name string, op string, value interface{}) Option {
+	return func(o *Options) {
+		o.Where = &where{Name: name, Op: op, Value: value}
 	}
 }
 

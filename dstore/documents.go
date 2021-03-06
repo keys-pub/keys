@@ -23,11 +23,18 @@ type Documents interface {
 	//
 	Create(ctx context.Context, path string, values map[string]interface{}) error
 
-	// Set (or create) document at path.
+	// Set (or create or update) document at path.
 	// This will overwrite any existing document data, unless you specify MergeAll() option.
 	//
 	// To marshal a value, use dstore.From(v) to convert to a map (using msgpack or json tags).
 	// If merging and using dstore.From(v), fields with omitempty will no overwrite existing values.
+	//
+	// To update a document:
+	//
+	// 		update := map[string]interface{}{
+	//		   "property1":        value1,
+	// 		}
+	// 		err := fi.Set(ctx, path, update, dstore.MergeAll())
 	//
 	// Paths can be nested as long as they are even length components.
 	// For example,
@@ -56,7 +63,7 @@ type Documents interface {
 
 	// Delete at path.
 	Delete(ctx context.Context, path string) (bool, error)
-	// If a path is not found, it is ignored.
+	// DeleteAll paths. If a path is not found, it is ignored.
 	DeleteAll(ctx context.Context, paths []string) error
 
 	// DocumentIterator.

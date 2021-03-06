@@ -161,6 +161,8 @@ func testDocumentsListOptions(t *testing.T, ds dstore.Documents) {
 	require.NoError(t, err)
 	err = ds.Create(ctx, "/test/3", dstore.Data([]byte("val3")))
 	require.NoError(t, err)
+	err = ds.Create(ctx, "/where/4", map[string]interface{}{"name": "val4"})
+	require.NoError(t, err)
 
 	for i := 1; i < 3; i++ {
 		err := ds.Create(ctx, dstore.Path("a", fmt.Sprintf("e%d", i)), dstore.Data([]byte("🤓")))
@@ -210,6 +212,10 @@ func testDocumentsListOptions(t *testing.T, ds dstore.Documents) {
 	}
 	iter.Release()
 	require.Equal(t, []string{"/b/eb1", "/b/eb2"}, paths)
+
+	docs, err := ds.Documents(ctx, "/where", dstore.Where("name", "==", "val4"))
+	require.NoError(t, err)
+	require.Equal(t, []string{"/where/4"}, dstore.Paths(docs))
 }
 
 func testMetadata(t *testing.T, ds dstore.Documents) {

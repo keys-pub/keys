@@ -50,6 +50,11 @@ func marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Values map.
+func (d *Document) Values() map[string]interface{} {
+	return d.values
+}
+
 // unmarshal uses msgpack with fallback to json tags.
 func unmarshal(b []byte, i interface{}) error {
 	dec := msgpack.NewDecoder(bytes.NewReader(b))

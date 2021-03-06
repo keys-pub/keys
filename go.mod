@@ -10,6 +10,7 @@ require (
 	github.com/flynn/noise v0.0.0-20180327030543-2492fe189ae6
 	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/keybase/go-keychain v0.0.0-20200502122510-cda31fe0c86d
 	github.com/keybase/saltpack v0.0.0-20200430135328-e19b1910c0c5
 	github.com/keys-pub/secretservice v0.0.0-20200519003656-26e44b8df47f

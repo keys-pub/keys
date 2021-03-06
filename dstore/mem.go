@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keys-pub/keys/dstore/events"
 	"github.com/keys-pub/keys/encoding"
 	"github.com/keys-pub/keys/tsutil"
@@ -218,6 +219,18 @@ func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Docume
 		doc := m.document(p)
 		if doc == nil {
 			return nil, errors.Errorf("missing document in List")
+		}
+		if opts.Where != nil {
+			if opts.Where.Op != "==" {
+				return nil, errors.Errorf("unsupported op")
+			}
+			v, ok := doc.Get(opts.Where.Name)
+			if !ok {
+				continue
+			}
+			if !cmp.Equal(v, opts.Where.Value) {
+				continue
+			}
 		}
 		if opts.NoData {
 			doc = &Document{Path: doc.Path, CreatedAt: doc.CreatedAt, UpdatedAt: doc.UpdatedAt}
