@@ -51,3 +51,11 @@ func TestRandTempPath(t *testing.T) {
 	p2 := keys.RandTempPath()
 	require.NotEqual(t, p, p2)
 }
+
+func TestRandDigits(t *testing.T) {
+	p := keys.RandDigits(10)
+	require.NotEmpty(t, p)
+	t.Logf("%s", p)
+	p2 := keys.RandDigits(10)
+	require.NotEqual(t, p, p2)
+}
