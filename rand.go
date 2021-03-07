@@ -83,6 +83,11 @@ func RandHex(numBytes int) string {
 	return hex.EncodeToString(RandBytes(numBytes))
 }
 
+// RandBase62 returns random base62.
+func RandBase62(numBytes int) string {
+	return encoding.MustEncode(RandBytes(numBytes), encoding.Base62)
+}
+
 // RandTempPath returns a unique random file name in os.TempDir.
 // RandTempPath() => "/tmp/CTGMMOLLZCXMGP7VR4BHKAI7PE"
 func RandTempPath() string {
