@@ -33,7 +33,7 @@ func (e Err) Error() string {
 	return fmt.Sprintf("http error %d", e.Code)
 }
 
-func httpClient() *http.Client {
+func defaultHTTPClient() *http.Client {
 	// TODO: Longer timeout?
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
@@ -172,12 +172,42 @@ type Client interface {
 }
 
 type client struct {
-	proxies map[string]ProxyFn
+	httpClient *http.Client
+	proxies    map[string]ProxyFn
 }
 
 // NewClient creates a Requestor for HTTP URLs.
-func NewClient() Client {
-	return &client{}
+func NewClient(opt ...ClientOption) Client {
+	opts := newClientOptions(opt...)
+	httpClient := opts.httpClient
+	if httpClient == nil {
+		httpClient = defaultHTTPClient()
+	}
+	return &client{httpClient: httpClient}
+}
+
+// ClientOptions ...
+type clientOptions struct {
+	httpClient *http.Client
+}
+
+// ClientOption ...
+type ClientOption func(*clientOptions)
+
+// NewClientOptions parses ClientOption.
+func newClientOptions(opts ...ClientOption) clientOptions {
+	var options clientOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
+// WithHTTPClient to override http.Client.
+func WithHTTPClient(httpClient *http.Client) ClientOption {
+	return func(o *clientOptions) {
+		o.httpClient = httpClient
+	}
 }
 
 // ProxyFn for proxy.
@@ -218,7 +248,7 @@ func (c *client) Request(ctx context.Context, req *Request) ([]byte, error) {
 	}
 
 	req.Header.Set("User-Agent", "keys.pub")
-	body, err := doRequest(httpClient(), req)
+	body, err := doRequest(c.httpClient, req)
 	if err != nil {
 		logger.Warningf("Failed request: %s", err)
 	}

@@ -1,6 +1,8 @@
 package users
 
 import (
+	nethttp "net/http"
+
 	"github.com/keys-pub/keys/http"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/keys-pub/keys/user"
@@ -32,6 +34,14 @@ func newOptions(opts ...Option) Options {
 
 // Client to use.
 func Client(client http.Client) Option {
+	return func(o *Options) {
+		o.Client = client
+	}
+}
+
+// HTTPClient to use.
+func HTTPClient(nhc *nethttp.Client) Option {
+	client := http.NewClient(http.WithHTTPClient(nhc))
 	return func(o *Options) {
 		o.Client = client
 	}
