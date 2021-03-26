@@ -67,7 +67,7 @@ func unmarshal(b []byte, i interface{}) error {
 
 // From interface to map.
 // If error, nil is returned.
-// Uses msgpack fallback to json tags to unmarshal into value.
+// Uses msgpack and will fallback to json tags if msgpack tags are missing.
 func From(i interface{}) map[string]interface{} {
 	b, err := marshal(i)
 	if err != nil {
