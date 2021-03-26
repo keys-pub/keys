@@ -16,7 +16,7 @@ func TestEncode(t *testing.T) {
 
 	key := api.NewKey(keys.GenerateEdX25519Key()).
 		Created(clock.NowMillis()).
-		WithLabel("test")
+		WithLabels("test")
 
 	encoded, err := api.EncodeKey(key, "")
 	require.NoError(t, err)

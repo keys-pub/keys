@@ -53,6 +53,11 @@ func (k *Key) AsEdX25519() *keys.EdX25519Key {
 	return out
 }
 
+// IsEdX25519 returns true if EdX25519Key.
+func (k *Key) IsEdX25519() bool {
+	return k.Type == string(keys.EdX25519)
+}
+
 // AsX25519 returns a X25519Key.
 // If key is a EdX25519Key, it's converted to a X25519Key.
 // Returns nil if we can't resolve.
@@ -73,6 +78,11 @@ func (k *Key) AsX25519() *keys.X25519Key {
 	default:
 		return nil
 	}
+}
+
+// IsEdX25519 returns true if EdX25519Key.
+func (k *Key) IsX25519() bool {
+	return k.Type == string(keys.X25519)
 }
 
 // AsEdX25519Public returns a *EdX25519PublicKey.
