@@ -96,7 +96,7 @@ func TestKeyLabelDB(t *testing.T) {
 	str := val.(string)
 
 	var out api.Labels
-	out.Scan(str)
+	_ = out.Scan(str)
 	require.Equal(t, labels, out)
 }
 

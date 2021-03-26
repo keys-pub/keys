@@ -29,7 +29,7 @@ func TestPhrase(t *testing.T) {
 
 	b, err = encoding.PhraseToBytes("shove quiz copper settle harvest victory shell fade soft neck awake churn", false)
 	require.EqualError(t, err, "invalid phrase")
-	require.EqualError(t, errors.Cause(err), "Checksum incorrect")
+	require.EqualError(t, errors.Cause(err), "Invalid mnenomic")
 	require.Nil(t, b)
 }
 
