@@ -29,7 +29,8 @@ type Key struct {
 	Notes  string `json:"notes,omitempty" msgpack:"notes,omitempty" db:"notes"`
 
 	// Application specific fields
-	Token string `json:"token,omitempty" msgpack:"token,omitempty" db:"token"`
+	Token   string `json:"token,omitempty" msgpack:"token,omitempty" db:"token"`
+	Deleted bool   `json:"del,omitempty" msgpack:"del,omitempty" db:"del"`
 }
 
 // NewKey creates api.Key from keys.Key interface.
