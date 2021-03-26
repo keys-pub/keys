@@ -23,11 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install golangci-lint
-        run: brew install golangci/tap/golangci-lint
-      - name: Run golangci-lint
-        shell: bash
-        run: ./lint.sh     
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v2.5.1
   test:
     strategy:
       matrix:
