@@ -40,6 +40,9 @@ type Events interface {
 
 	// EventPositions returns current positions of event logs at the specified paths.
 	EventPositions(ctx context.Context, paths []string) (map[string]*Position, error)
+
+	// Increment document name at path n amount.
+	Increment(ctx context.Context, path string, name string, n int64) (int64, error)
 }
 
 // Direction is ascending or descending.

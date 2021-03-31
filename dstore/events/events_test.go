@@ -191,3 +191,20 @@ func TestEventMarshal(t *testing.T) {
 `
 	require.Equal(t, expected, spew.Sdump(out))
 }
+
+func TestIncrement(t *testing.T) {
+	var err error
+
+	// keys.SetLogger(keys.NewLogger(keys.DebugLevel))
+	eds := dstore.NewMem()
+	clock := tsutil.NewTestClock()
+	eds.SetClock(clock)
+
+	n, err := eds.Increment(context.TODO(), "/test/doc1", "count", 1)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), n)
+
+	n, err = eds.Increment(context.TODO(), "/test/doc1", "count", 5)
+	require.NoError(t, err)
+	require.Equal(t, int64(6), n)
+}
