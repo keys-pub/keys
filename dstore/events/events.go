@@ -42,7 +42,8 @@ type Events interface {
 	EventPositions(ctx context.Context, paths []string) (map[string]*Position, error)
 
 	// Increment document name at path n amount.
-	Increment(ctx context.Context, path string, name string, n int64) (int64, error)
+	// Returns the new value and the start of the index.
+	Increment(ctx context.Context, path string, name string, n int64) (int64, int64, error)
 }
 
 // Direction is ascending or descending.

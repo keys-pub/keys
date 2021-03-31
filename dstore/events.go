@@ -47,16 +47,16 @@ func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*eve
 	return out, idx, nil
 }
 
-func (m *Mem) Increment(ctx context.Context, path string, name string, n int64) (int64, error) {
+func (m *Mem) Increment(ctx context.Context, path string, name string, n int64) (int64, int64, error) {
 	doc, err := m.Get(ctx, path)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	val := int64(0)
 	if doc != nil {
 		v, ok := doc.Get(name)
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		if !ok {
 			val = int64(0)
@@ -67,9 +67,9 @@ func (m *Mem) Increment(ctx context.Context, path string, name string, n int64) 
 
 	next := val + n
 	if err := m.Set(ctx, path, map[string]interface{}{name: next}, MergeAll()); err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return next, nil
+	return next, next - n + 1, nil
 }
 
 // EventPositions returns positions for event logs at the specified paths.
