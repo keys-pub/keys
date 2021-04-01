@@ -95,6 +95,14 @@ func (k *EdX25519Key) Signer() crypto.Signer {
 	return ed25519.PrivateKey(k.Private())
 }
 
+func (k *EdX25519Key) PaperKey() string {
+	s, err := encoding.BytesToPhrase(k.Seed()[:])
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
 // MarshalText for encoding.TextMarshaler interface.
 func (k *EdX25519Key) MarshalText() ([]byte, error) {
 	return []byte(encoding.MustEncode(k.Seed()[:], encoding.Base64)), nil

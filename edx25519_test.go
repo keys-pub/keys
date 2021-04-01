@@ -19,8 +19,14 @@ func TestEdX25519KeySeed(t *testing.T) {
 	require.Equal(t, sk.PrivateKey(), skOut.PrivateKey())
 	require.True(t, sk.Equal(skOut))
 
-	sk2 := keys.NewEdX25519KeyFromSeed(keys.Rand32())
+	sk2 := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
 	require.False(t, sk.Equal(sk2))
+}
+
+func TestEdX25519KeyPaperKey(t *testing.T) {
+	k := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
+	paperKey := k.PaperKey()
+	require.Equal(t, "absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter advice comic", paperKey)
 }
 
 func TestEdX25519KeySignVerify(t *testing.T) {
