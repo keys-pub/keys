@@ -22,7 +22,16 @@ type Mem struct {
 	paths  *StringSet
 	values map[string]*Document
 	clock  tsutil.Clock
+	mode   Mode
 }
+
+// Mode for any special behavior.
+type Mode string
+
+// Modes for compability
+const (
+	FirestoreCompatibilityMode Mode = "firestore"
+)
 
 // NewMem creates an in memory Documents implementation.
 func NewMem() *Mem {
@@ -41,6 +50,11 @@ func (m *Mem) Now() time.Time {
 // SetClock to use a custom Clock (for testing).
 func (m *Mem) SetClock(clock tsutil.Clock) {
 	m.clock = clock
+}
+
+// SetMode to set a mode.
+func (m *Mem) SetMode(mode Mode) {
+	m.mode = mode
 }
 
 // Create document at path.
@@ -184,6 +198,9 @@ func (m *Mem) DocumentIterator(ctx context.Context, parent string, opt ...Option
 func (m *Mem) Documents(ctx context.Context, parent string, opt ...Option) ([]*Document, error) {
 	m.RLock()
 	defer m.RUnlock()
+	if m.mode == FirestoreCompatibilityMode {
+		return nil, errors.Errorf("Use DocumentIterator instead (FirestoreCompatibilityMode)")
+	}
 
 	docs, err := m.list(ctx, parent, opt...)
 	if err != nil {
