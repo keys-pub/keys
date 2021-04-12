@@ -3,7 +3,6 @@ package users_test
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"testing"
 
 	"github.com/keys-pub/keys"
@@ -198,49 +197,50 @@ func TestResultTwitterProxy(t *testing.T) {
 	// require.Equal(t, user.StatusOK, result.Status)
 }
 
-func testSigchain(t *testing.T, kid keys.ID) *keys.Sigchain {
-	sc := keys.NewSigchain(kid)
-	b, err := ioutil.ReadFile("testdata/" + kid.String() + ".json")
-	require.NoError(t, err)
-	var sts []*keys.Statement
-	err = json.Unmarshal(b, &sts)
-	require.NoError(t, err)
-	err = sc.AddAll(sts)
-	require.NoError(t, err)
-	return sc
-}
+// func testSigchain(t *testing.T, kid keys.ID) *keys.Sigchain {
+// 	sc := keys.NewSigchain(kid)
+// 	b, err := ioutil.ReadFile("testdata/" + kid.String() + ".json")
+// 	require.NoError(t, err)
+// 	var sts []*keys.Statement
+// 	err = json.Unmarshal(b, &sts)
+// 	require.NoError(t, err)
+// 	err = sc.AddAll(sts)
+// 	require.NoError(t, err)
+// 	return sc
+// }
 
-func TestMovedKeyTwitterProxy(t *testing.T) {
-	// lg := users.NewLogger(users.DebugLevel)
-	// users.SetLogger(lg)
-	// services.SetLogger(lg)
+// func TestMovedKeyTwitterProxy(t *testing.T) {
+// 	// lg := users.NewLogger(users.DebugLevel)
+// 	// users.SetLogger(lg)
+// 	// services.SetLogger(lg)
 
-	kid1 := keys.ID("kex1s08uz8zqqrmzcek0pms0sjknv4wpz33f8p5t57y0d6xsf2sgmd2swgm7er")
-	sc1 := testSigchain(t, kid1)
+// 	kid1 := keys.ID("kex1s08uz8zqqrmzcek0pms0sjknv4wpz33f8p5t57y0d6xsf2sgmd2swgm7er")
+// 	sc1 := testSigchain(t, kid1)
 
-	kid2 := keys.ID("kex109x2xh6tle8yls3quqpu9xuhlzffr9fakcv4ymc52cvq366qwnpqyyydgz")
-	sc2 := testSigchain(t, kid2)
+// 	kid2 := keys.ID("kex109x2xh6tle8yls3quqpu9xuhlzffr9fakcv4ymc52cvq366qwnpqyyydgz")
+// 	sc2 := testSigchain(t, kid2)
 
-	clock := tsutil.NewTestClock()
-	ds := dstore.NewMem()
-	scs := keys.NewSigchains(ds)
-	err := scs.Save(sc1)
-	require.NoError(t, err)
-	err = scs.Save(sc2)
-	require.NoError(t, err)
+// 	clock := tsutil.NewTestClock()
+// 	ds := dstore.NewMem()
+// 	scs := keys.NewSigchains(ds)
+// 	err := scs.Save(sc1)
+// 	require.NoError(t, err)
+// 	err = scs.Save(sc2)
+// 	require.NoError(t, err)
 
-	usrs := users.New(ds, scs, users.Clock(clock))
-	service := func(usr *user.User) services.Service {
-		return services.KeysPub
-	}
-	ctx := context.TODO()
-	res, err := usrs.Update(ctx, kid1, users.UseService(service))
-	require.NoError(t, err)
-	require.Equal(t, res.Status, user.StatusOK)
+// 	usrs := users.New(ds, scs, users.Clock(clock))
+// 	service := func(usr *user.User) services.Service {
+// 		return services.KeysPub
+// 	}
+// 	ctx := context.TODO()
+// 	res, err := usrs.Update(ctx, kid1, users.UseService(service))
+// 	require.NoError(t, err)
 
-	// TODO: If services is services.Proxy (above) this will pass
-	// See: https://github.com/keys-pub/app/issues/44
-	res, err = usrs.Update(ctx, kid2, users.UseService(service))
-	require.NoError(t, err)
-	require.Equal(t, res.Status, user.StatusContentInvalid)
-}
+// 	require.Equal(t, res.Status, user.StatusOK)
+
+// 	// TODO: If services is services.Proxy (above) this will pass
+// 	// See: https://github.com/keys-pub/app/issues/44
+// 	res, err = usrs.Update(ctx, kid2, users.UseService(service))
+// 	require.NoError(t, err)
+// 	require.Equal(t, res.Status, user.StatusContentInvalid)
+// }
