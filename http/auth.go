@@ -143,7 +143,7 @@ func Authorize(ctx context.Context, auth *AuthRequest) (*AuthResult, error) {
 		td = td * -1
 	}
 	if td > 30*time.Minute {
-		return nil, errors.Errorf("timestamp is invalid, diff %s", td)
+		return nil, errors.Errorf("auth timestamp is invalid, diff %s", td)
 	}
 
 	fields := strings.Split(auth.Auth, ":")
