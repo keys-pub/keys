@@ -258,6 +258,15 @@ func NewEdX25519KeyFromSeed(seed *[ed25519.SeedSize]byte) *EdX25519Key {
 	return NewEdX25519KeyFromPrivateKey(Bytes64(privateKey))
 }
 
+// NewEdX25519KeyFromPaperKey constructs EdX25519Key from a paper key.
+func NewEdX25519KeyFromPaperKey(paperKey string) (*EdX25519Key, error) {
+	b, err := encoding.PhraseToBytes(paperKey, false)
+	if err != nil {
+		return nil, err
+	}
+	return NewEdX25519KeyFromSeed(b), nil
+}
+
 // Seed returns information on how to generate this key from ed25519 package seed.
 func (k *EdX25519Key) Seed() *[ed25519.SeedSize]byte {
 	pk := ed25519.PrivateKey(k.privateKey[:])
