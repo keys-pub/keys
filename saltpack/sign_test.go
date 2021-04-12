@@ -56,6 +56,14 @@ func TestSignVerifyArmored(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, message, out)
 	require.Equal(t, alice.PublicKey().ID(), signer)
+
+	sig2, err := saltpack.SignArmored(message, alice)
+	require.NoError(t, err)
+
+	out2, signer2, err := saltpack.VerifyArmored(sig2)
+	require.NoError(t, err)
+	require.Equal(t, message, out2)
+	require.Equal(t, alice.PublicKey().ID(), signer2)
 }
 
 func TestSignVerifyStream(t *testing.T) {

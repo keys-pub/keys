@@ -11,16 +11,25 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Sign ...
+// Sign bytes.
 func Sign(b []byte, armored bool, key *keys.EdX25519Key) ([]byte, error) {
 	if armored {
-		s, err := ksaltpack.SignArmor62(ksaltpack.Version2(), b, newSignKey(key), "")
+		s, err := SignArmored(b, key)
 		if err != nil {
 			return nil, err
 		}
 		return []byte(s), nil
 	}
 	return ksaltpack.Sign(ksaltpack.Version2(), b, newSignKey(key))
+}
+
+// Sign bytes (armored).
+func SignArmored(b []byte, key *keys.EdX25519Key) (string, error) {
+	s, err := ksaltpack.SignArmor62(ksaltpack.Version2(), b, newSignKey(key), "")
+	if err != nil {
+		return "", err
+	}
+	return s, nil
 }
 
 // SignDetached ...
@@ -37,7 +46,7 @@ func SignDetached(b []byte, armored bool, key *keys.EdX25519Key) ([]byte, error)
 
 // Verify ...
 func Verify(b []byte) ([]byte, keys.ID, error) {
-	s := &saltpack{}
+	sp := &saltpack{}
 	var spk ksaltpack.SigningPublicKey
 	var out []byte
 	var err error
@@ -45,13 +54,27 @@ func Verify(b []byte) ([]byte, keys.ID, error) {
 	switch enc {
 	case SignEncoding:
 		if armored {
-			spk, out, _, err = ksaltpack.Dearmor62Verify(signVersionValidator, string(b), s)
+			spk, out, _, err = ksaltpack.Dearmor62Verify(signVersionValidator, string(b), sp)
 		} else {
-			spk, out, err = ksaltpack.Verify(signVersionValidator, b, s)
+			spk, out, err = ksaltpack.Verify(signVersionValidator, b, sp)
 		}
 	default:
 		return nil, "", errors.Errorf("invalid data")
 	}
+	if err != nil {
+		return nil, "", convertSignKeyErr(err)
+	}
+	signer, err := edX25519KeyID(spk.ToKID())
+	if err != nil {
+		return nil, "", errors.Wrapf(err, "failed to verify")
+	}
+	return out, signer, nil
+}
+
+// VerifyArmored verified armored statement.
+func VerifyArmored(s string) ([]byte, keys.ID, error) {
+	sp := &saltpack{}
+	spk, out, _, err := ksaltpack.Dearmor62Verify(signVersionValidator, s, sp)
 	if err != nil {
 		return nil, "", convertSignKeyErr(err)
 	}
