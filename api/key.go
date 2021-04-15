@@ -4,6 +4,7 @@ package api
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"strings"
 
 	"github.com/keys-pub/keys"
@@ -29,8 +30,15 @@ type Key struct {
 	Notes  string `json:"notes,omitempty" msgpack:"notes,omitempty" db:"notes"`
 
 	// Application specific fields
-	Token   string `json:"token,omitempty" msgpack:"token,omitempty" db:"token"`
-	Deleted bool   `json:"del,omitempty" msgpack:"del,omitempty" db:"del"`
+	Token string `json:"token,omitempty" msgpack:"token,omitempty" db:"token"`
+	Email string `json:"email,omitempty" msgpack:"email,omitempty" db:"email"`
+	Org   string `json:"org,omitempty" msgpack:"org,omitempty" db:"org"`
+
+	// Extension (json marshalled to db)
+	Ext Ext `json:"ext,omitempty" msgpack:"ext,omitempty" db:"ext"`
+
+	// Deleted flag
+	Deleted bool `json:"del,omitempty" msgpack:"del,omitempty" db:"del"`
 }
 
 // NewKey creates api.Key from keys.Key interface.
@@ -138,7 +146,7 @@ func (p *Labels) Scan(src interface{}) error {
 // Value for sql.DB.
 func (p Labels) Value() (driver.Value, error) {
 	if len(p) == 0 {
-		return driver.Value(""), nil
+		return "", nil
 	}
 
 	out := []string{}
@@ -146,5 +154,30 @@ func (p Labels) Value() (driver.Value, error) {
 		out = append(out, "^"+l+"$")
 	}
 	str := strings.Join(out, ",")
-	return driver.Value(str), nil
+	return str, nil
+}
+
+// Extension
+type Ext map[string]interface{}
+
+func (e *Ext) Scan(val interface{}) error {
+	switch v := val.(type) {
+	case string:
+		if err := json.Unmarshal([]byte(v), &e); err != nil {
+			*e = Ext(nil)
+		}
+		return nil
+	default:
+		return errors.Errorf("unsupported type: %T", v)
+	}
+}
+func (e Ext) Value() (driver.Value, error) {
+	if e == nil {
+		return "", nil
+	}
+	b, err := json.Marshal(e)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }

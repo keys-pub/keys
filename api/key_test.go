@@ -96,8 +96,37 @@ func TestKeyLabelDB(t *testing.T) {
 	str := val.(string)
 
 	var out api.Labels
-	_ = out.Scan(str)
+	err = out.Scan(str)
+	require.NoError(t, err)
 	require.Equal(t, labels, out)
+}
+
+func TestKeyExtDB(t *testing.T) {
+	m := map[string]interface{}{"test": float64(1)}
+	ext := api.Ext(m)
+
+	val, err := ext.Value()
+	require.NoError(t, err)
+	require.Equal(t, `{"test":1}`, val.(string))
+	str := val.(string)
+
+	var out api.Ext
+	err = out.Scan(str)
+	require.NoError(t, err)
+	require.Equal(t, ext, out)
+}
+
+func TestKeyExtDBNil(t *testing.T) {
+	ext := api.Ext(nil)
+	val, err := ext.Value()
+	require.NoError(t, err)
+	require.Equal(t, ``, val.(string))
+	str := val.(string)
+
+	var out api.Ext
+	err = out.Scan(str)
+	require.NoError(t, err)
+	require.Equal(t, ext, out)
 }
 
 func testSeed(b byte) *[32]byte {
