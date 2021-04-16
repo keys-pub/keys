@@ -18,10 +18,25 @@ var NewRequestWithContext = http.NewRequestWithContext
 
 // NewAuthRequest returns new authorized/signed HTTP request using auth key.
 func NewAuthRequest(method string, urs string, body io.Reader, contentHash string, ts time.Time, key *keys.EdX25519Key) (*http.Request, error) {
-	return newRequest(method, urs, body, contentHash, ts, keys.RandBytes(24), key)
+	auths := []AuthHeader{{Header: "Authorization", Key: key}}
+	return NewAuthsRequest(method, urs, body, contentHash, ts, auths)
 }
 
-func newRequest(method string, urs string, body io.Reader, contentHash string, ts time.Time, nonce []byte, key *keys.EdX25519Key) (*http.Request, error) {
+type AuthHeader struct {
+	Header string
+	Key    *keys.EdX25519Key
+}
+
+func NewAuthsRequest(method string, urs string, body io.Reader, contentHash string, ts time.Time, auths []AuthHeader) (*http.Request, error) {
+	return newAuthsRequest(method, urs, body, contentHash, ts, keys.RandBytes(24), auths)
+}
+
+func newAuthRequest(method string, urs string, body io.Reader, contentHash string, ts time.Time, nonce []byte, key *keys.EdX25519Key) (*http.Request, error) {
+	auths := []AuthHeader{{Header: "Authorization", Key: key}}
+	return newAuthsRequest(method, urs, body, contentHash, ts, nonce, auths)
+}
+
+func newAuthsRequest(method string, urs string, body io.Reader, contentHash string, ts time.Time, nonce []byte, auths []AuthHeader) (*http.Request, error) {
 	ur, err := authURL(urs, ts, nonce)
 	if err != nil {
 		return nil, err
@@ -30,11 +45,13 @@ func newRequest(method string, urs string, body io.Reader, contentHash string, t
 	if err != nil {
 		return nil, err
 	}
-	a, err := newAuthWithURL(method, ur, contentHash, key)
-	if err != nil {
-		return nil, err
+	for _, auth := range auths {
+		a, err := newAuthWithURL(method, ur, contentHash, auth.Key)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set(auth.Header, a.Header())
 	}
-	req.Header.Set("Authorization", a.Header())
 	return req, nil
 }
 

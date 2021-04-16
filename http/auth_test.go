@@ -23,7 +23,7 @@ func TestAuth(t *testing.T) {
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077:K0KnYYnx+VnhpRS0lBJVfwSaYa3zweapGtc87Uh4h1pfv/VeVMaS/YRD/d+Y+U3ANFMkR+OFGRYniWirFK3sBg==", auth.Header())
 	require.Equal(t, "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123&nonce=0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29&ts=1234567890001", auth.URL.String())
 
-	req, err := newRequest("GET", urs, nil, "", tm, nonce, alice)
+	req, err := newAuthRequest("GET", urs, nil, "", tm, nonce, alice)
 	require.NoError(t, err)
 	require.Equal(t, "https://keys.pub/vault/kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077?idx=123&nonce=0El6XFXwsUFD8J2vGxsaboW7rZYnQRBP5d9erwRwd29&ts=1234567890001", req.URL.String())
 	require.Equal(t, "kex132yw8ht5p8cetl2jmvknewjawt9xwzdlrk2pyxlnwjyqrdq0dawqqph077:K0KnYYnx+VnhpRS0lBJVfwSaYa3zweapGtc87Uh4h1pfv/VeVMaS/YRD/d+Y+U3ANFMkR+OFGRYniWirFK3sBg==", req.Header.Get("Authorization"))
