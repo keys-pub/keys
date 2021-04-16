@@ -129,6 +129,17 @@ func TestKeyExtDBNil(t *testing.T) {
 	require.Equal(t, ext, out)
 }
 
+func TestKeyEqual(t *testing.T) {
+	k1 := api.NewKey(keys.NewEdX25519KeyFromSeed(testSeed(0x01)))
+	k1.Token = "token1"
+	k2 := api.NewKey(keys.NewEdX25519KeyFromSeed(testSeed(0x01)))
+	k2.Token = "token1"
+	require.True(t, k1.Equal(k2))
+
+	k2.Token = "token2"
+	require.False(t, k1.Equal(k2))
+}
+
 func testSeed(b byte) *[32]byte {
 	return keys.Bytes32(bytes.Repeat([]byte{b}, 32))
 }

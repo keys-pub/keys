@@ -3,6 +3,7 @@
 package api
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"strings"
@@ -119,6 +120,19 @@ func (k *Key) Check() error {
 		return errors.Errorf("no key data")
 	}
 	return nil
+}
+
+// Equal returns true if 2 keys are equal.
+func (k *Key) Equal(o *Key) bool {
+	b1, err := msgpack.Marshal(k)
+	if err != nil {
+		return true
+	}
+	b2, err := msgpack.Marshal(o)
+	if err != nil {
+		return true
+	}
+	return bytes.Equal(b1, b2)
 }
 
 // Labels for key.
