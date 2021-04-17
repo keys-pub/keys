@@ -195,3 +195,18 @@ func (e Ext) Value() (driver.Value, error) {
 	}
 	return string(b), nil
 }
+
+func (k *Key) ExtBool(key string) bool {
+	if k.Ext == nil {
+		return false
+	}
+	v, ok := k.Ext[key].(bool)
+	return ok && v
+}
+
+func (k *Key) SetExtBool(key string, val bool) {
+	if k.Ext == nil {
+		k.Ext = map[string]interface{}{}
+	}
+	k.Ext[key] = val
+}
