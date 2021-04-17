@@ -167,7 +167,7 @@ func (c *Client) Request(ctx context.Context, req *Request) (*Response, error) {
 	}
 
 	var httpReq *http.Request
-	if req.Key != nil {
+	if len(req.Auths) > 0 {
 		r, err := http.NewAuthsRequest(req.Method, urs, reader, http.ContentHash(req.Body), c.clock.Now(), req.Auths)
 		if err != nil {
 			return nil, err
