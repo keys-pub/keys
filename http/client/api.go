@@ -1,7 +1,9 @@
 package client
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -18,6 +20,11 @@ type Error struct {
 
 func (e Error) Error() string {
 	return fmt.Sprintf("%s (%d)", e.Message, e.Status)
+}
+
+func IsConflict(err error) bool {
+	var rerr Error
+	return errors.As(err, &rerr) && rerr.Status == http.StatusConflict
 }
 
 // Metadata ...
