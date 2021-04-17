@@ -241,3 +241,13 @@ func (c *Client) response(path string, resp *http.Response) (*Response, error) {
 	out.UpdatedAt = updatedAt
 	return out, nil
 }
+
+// GET request.
+func GET(path string, key *keys.EdX25519Key) *Request {
+	return &Request{Method: "GET", Path: path, Key: key}
+}
+
+// PUT request.
+func PUT(path string, body []byte, key *keys.EdX25519Key) *Request {
+	return &Request{Method: "PUT", Path: path, Body: body, Key: key}
+}
