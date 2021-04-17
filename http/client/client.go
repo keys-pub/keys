@@ -74,6 +74,10 @@ func (c *Client) SetClock(clock tsutil.Clock) {
 	c.clock = clock
 }
 
+func (c *Client) Clock() tsutil.Clock {
+	return c.clock
+}
+
 func checkResponse(resp *http.Response) error {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return nil
