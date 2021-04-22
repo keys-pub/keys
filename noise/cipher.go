@@ -20,12 +20,12 @@ func (n cipherState) Encrypt(out, ad, plaintext []byte) ([]byte, error) {
 		if n.csI0 == nil {
 			return nil, errors.Errorf("no cipher for encrypt (I)")
 		}
-		return n.csI0.Encrypt(out, ad, plaintext), nil
+		return n.csI0.Encrypt(out, ad, plaintext)
 	}
 	if n.csR1 == nil {
 		return nil, errors.Errorf("no cipher for encrypt (R)")
 	}
-	return n.csR1.Encrypt(out, ad, plaintext), nil
+	return n.csR1.Encrypt(out, ad, plaintext)
 }
 
 // Decrypt to out.
