@@ -153,6 +153,10 @@ func (c *Client) Request(ctx context.Context, req *Request) (*Response, error) {
 
 	logger.Debugf("Client req %s %s", req.Method, urs)
 
+	if req.Method == "GET" && len(req.Body) > 0 {
+		return nil, errors.Errorf("invalid body with GET")
+	}
+
 	var reader io.Reader
 	if req.Progress != nil {
 		pr := &progressReader{}
