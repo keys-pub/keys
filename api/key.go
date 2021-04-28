@@ -30,11 +30,6 @@ type Key struct {
 	Labels Labels `json:"labels,omitempty" msgpack:"labels,omitempty" db:"labels"`
 	Notes  string `json:"notes,omitempty" msgpack:"notes,omitempty" db:"notes"`
 
-	// Application specific fields
-	Token string `json:"token,omitempty" msgpack:"token,omitempty" db:"token"`
-	Email string `json:"email,omitempty" msgpack:"email,omitempty" db:"email"`
-	Org   string `json:"org,omitempty" msgpack:"org,omitempty" db:"org"`
-
 	// Extension (json marshalled to db)
 	Ext Ext `json:"ext,omitempty" msgpack:"ext,omitempty" db:"ext"`
 
@@ -205,6 +200,24 @@ func (k *Key) ExtBool(key string) bool {
 }
 
 func (k *Key) SetExtBool(key string, val bool) {
+	if k.Ext == nil {
+		k.Ext = map[string]interface{}{}
+	}
+	k.Ext[key] = val
+}
+
+func (k *Key) ExtString(key string) string {
+	if k.Ext == nil {
+		return ""
+	}
+	v, ok := k.Ext[key].(string)
+	if !ok {
+		return ""
+	}
+	return v
+}
+
+func (k *Key) SetExtString(key string, val string) {
 	if k.Ext == nil {
 		k.Ext = map[string]interface{}{}
 	}

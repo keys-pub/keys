@@ -131,12 +131,12 @@ func TestKeyExtDBNil(t *testing.T) {
 
 func TestKeyEqual(t *testing.T) {
 	k1 := api.NewKey(keys.NewEdX25519KeyFromSeed(testSeed(0x01)))
-	k1.Token = "token1"
+	k1.SetExtString("token", "token1")
 	k2 := api.NewKey(keys.NewEdX25519KeyFromSeed(testSeed(0x01)))
-	k2.Token = "token1"
+	k2.SetExtString("token", "token1")
 	require.True(t, k1.Equal(k2))
 
-	k2.Token = "token2"
+	k2.SetExtString("token", "token2")
 	require.False(t, k1.Equal(k2))
 }
 
