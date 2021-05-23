@@ -2,7 +2,6 @@ package dstore
 
 import (
 	"context"
-	"encoding/json"
 	"sort"
 	"strings"
 
@@ -11,43 +10,43 @@ import (
 	"github.com/keys-pub/keys/tsutil"
 )
 
+func (m *Mem) EventAdd(ctx context.Context, path string, doc events.Document) (int64, error) {
+	idx, err := m.EventsAdd(ctx, path, []events.Document{doc})
+	return idx, err
+}
+
 // EventsAdd adds events to path.
-func (m *Mem) EventsAdd(ctx context.Context, path string, data [][]byte) ([]*events.Event, int64, error) {
-	out := make([]*events.Event, 0, len(data))
+func (m *Mem) EventsAdd(ctx context.Context, path string, docs []events.Document) (int64, error) {
+	m.emtx.Lock()
+	defer m.emtx.Unlock()
 	doc, err := m.Get(ctx, path)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 	idx := int64(0)
 	if doc != nil {
 		idx, _ = doc.Int64("idx")
 	}
-	for _, b := range data {
+	for _, doc := range docs {
 		idx++
-		if err := m.Set(ctx, path, map[string]interface{}{"idx": idx}, MergeAll()); err != nil {
-			return nil, 0, err
-		}
-
+		doc["idx"] = idx
 		id := encoding.MustEncode(randBytes(32), encoding.Base62)
-		event := &events.Event{
-			Data:      b,
-			Index:     idx,
-			Timestamp: m.clock.NowMillis(),
+		lpath := Path(path, "log", id)
+		if err := m.Create(ctx, lpath, From(doc)); err != nil {
+			return 0, err
 		}
-		b, err := json.Marshal(event)
-		if err != nil {
-			return nil, 0, err
-		}
-		path := Path(path, "log", id)
-		if err := m.Create(ctx, path, Data(b)); err != nil {
-			return nil, 0, err
-		}
-		out = append(out, event)
 	}
-	return out, idx, nil
+
+	if err := m.Set(ctx, path, map[string]interface{}{"idx": idx}, MergeAll()); err != nil {
+		return 0, err
+	}
+
+	return idx, nil
 }
 
 func (m *Mem) Increment(ctx context.Context, path string, name string, n int64) (int64, int64, error) {
+	m.emtx.Lock()
+	defer m.emtx.Unlock()
 	doc, err := m.Get(ctx, path)
 	if err != nil {
 		return 0, 0, err
@@ -72,8 +71,28 @@ func (m *Mem) Increment(ctx context.Context, path string, name string, n int64) 
 	return next, next - n + 1, nil
 }
 
+func (m *Mem) EventPosition(ctx context.Context, path string) (*events.Position, error) {
+	m.emtx.Lock()
+	defer m.emtx.Unlock()
+	doc, err := m.Get(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	if doc == nil {
+		return nil, nil
+	}
+	idx, _ := doc.Int64("idx")
+	return &events.Position{
+		Path:      path,
+		Index:     idx,
+		Timestamp: tsutil.Millis(doc.CreatedAt),
+	}, nil
+}
+
 // EventPositions returns positions for event logs at the specified paths.
 func (m *Mem) EventPositions(ctx context.Context, paths []string) (map[string]*events.Position, error) {
+	m.emtx.Lock()
+	defer m.emtx.Unlock()
 	positions := map[string]*events.Position{}
 	for _, path := range paths {
 		doc, err := m.Get(ctx, path)
@@ -95,6 +114,8 @@ func (m *Mem) EventPositions(ctx context.Context, paths []string) (map[string]*e
 
 // EventsDelete removes all events at path.
 func (m *Mem) EventsDelete(ctx context.Context, path string) (bool, error) {
+	m.emtx.Lock()
+	defer m.emtx.Unlock()
 	ok, err := m.Delete(ctx, path)
 	if err != nil {
 		return false, err
@@ -125,6 +146,8 @@ func min(n1 int, n2 int) int {
 
 // Events ...
 func (m *Mem) Events(ctx context.Context, path string, opt ...events.Option) (events.Iterator, error) {
+	m.emtx.Lock()
+	defer m.emtx.Unlock()
 	opts := events.NewOptions(opt...)
 
 	out := make([]*events.Event, 0, m.paths.Size())
@@ -140,11 +163,13 @@ func (m *Mem) Events(ctx context.Context, path string, opt ...events.Option) (ev
 		if doc == nil {
 			return nil, NewErrNotFound(p)
 		}
-		var event events.Event
-		if err := json.Unmarshal(doc.Bytes("data"), &event); err != nil {
-			return nil, err
+		idx, _ := doc.Int64("idx")
+		event := &events.Event{
+			Document:  doc.Values(),
+			Index:     idx,
+			Timestamp: tsutil.Millis(doc.CreatedAt),
 		}
-		out = append(out, &event)
+		out = append(out, event)
 	}
 	switch opts.Direction {
 	case events.Ascending:

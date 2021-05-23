@@ -2,16 +2,14 @@ package events_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"sync"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/keys-pub/keys/dstore"
 	"github.com/keys-pub/keys/dstore/events"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/stretchr/testify/require"
-	"github.com/vmihailenco/msgpack/v4"
 )
 
 func TestEvents(t *testing.T) {
@@ -26,21 +24,16 @@ func TestEvents(t *testing.T) {
 	path := dstore.Path("test", "eds")
 
 	length := 40
-	values := [][]byte{}
+	values := []events.Document{}
 	strs := []string{}
 	for i := 0; i < length; i++ {
 		str := fmt.Sprintf("value%d", i)
-		values = append(values, []byte(str))
+		values = append(values, dstore.Data([]byte(str)))
 		strs = append(strs, str)
 	}
-	out, idx, err := eds.EventsAdd(ctx, path, values)
+	idx, err := eds.EventsAdd(ctx, path, values)
 	require.NoError(t, err)
-	require.Equal(t, 40, len(out))
 	require.Equal(t, int64(40), idx)
-	for i, event := range out {
-		require.NotEmpty(t, event.Timestamp)
-		require.Equal(t, int64(i+1), event.Index)
-	}
 
 	// Events (limit=10)
 	iter, err := eds.Events(ctx, path, events.Limit(10))
@@ -55,7 +48,7 @@ func TestEvents(t *testing.T) {
 		}
 		require.NotEmpty(t, event.Timestamp)
 		require.Equal(t, int64(i+1), event.Index)
-		eventsValues = append(eventsValues, string(event.Data))
+		eventsValues = append(eventsValues, string(event.Data()))
 		index = event.Index
 	}
 	iter.Release()
@@ -72,7 +65,7 @@ func TestEvents(t *testing.T) {
 		if event == nil {
 			break
 		}
-		eventsValues = append(eventsValues, string(event.Data))
+		eventsValues = append(eventsValues, string(event.Data()))
 		index = event.Index
 	}
 	iter.Release()
@@ -103,7 +96,7 @@ func TestEvents(t *testing.T) {
 		if event == nil {
 			break
 		}
-		eventsValues = append(eventsValues, string(event.Data))
+		eventsValues = append(eventsValues, string(event.Data()))
 		index = event.Index
 	}
 	iter.Release()
@@ -121,7 +114,7 @@ func TestEvents(t *testing.T) {
 		if event == nil {
 			break
 		}
-		eventsValues = append(eventsValues, string(event.Data))
+		eventsValues = append(eventsValues, string(event.Data()))
 		index = event.Index
 	}
 	iter.Release()
@@ -164,34 +157,6 @@ func reverseCopy(s []string) []string {
 	return a
 }
 
-func TestEventMarshal(t *testing.T) {
-	clock := tsutil.NewTestClock()
-	event := events.Event{
-		Data:      []byte{0x01, 0x02, 0x03},
-		Index:     123,
-		Timestamp: tsutil.Millis(clock.Now()),
-	}
-	out, err := msgpack.Marshal(event)
-	require.NoError(t, err)
-	expected := `([]uint8) (len=35 cap=64) {
- 00000000  83 a3 64 61 74 c4 03 01  02 03 a3 69 64 78 d3 00  |..dat......idx..|
- 00000010  00 00 00 00 00 00 7b a2  74 73 d3 00 00 01 1f 71  |......{.ts.....q|
- 00000020  fb 04 51                                          |..Q|
-}
-`
-	require.Equal(t, expected, spew.Sdump(out))
-
-	out, err = json.Marshal(event)
-	require.NoError(t, err)
-	expected = `([]uint8) (len=44 cap=48) {
- 00000000  7b 22 64 61 74 61 22 3a  22 41 51 49 44 22 2c 22  |{"data":"AQID","|
- 00000010  69 64 78 22 3a 31 32 33  2c 22 74 73 22 3a 31 32  |idx":123,"ts":12|
- 00000020  33 34 35 36 37 38 39 30  30 30 31 7d              |34567890001}|
-}
-`
-	require.Equal(t, expected, spew.Sdump(out))
-}
-
 func TestIncrement(t *testing.T) {
 	var err error
 
@@ -209,4 +174,49 @@ func TestIncrement(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(6), n)
 	require.Equal(t, int64(2), i)
+}
+
+func TestEventsConcurrent(t *testing.T) {
+	eds := dstore.NewMem()
+	ctx := context.TODO()
+	path := "test/doc1"
+
+	_, err := eds.EventAdd(ctx, path, dstore.Data([]byte("testing")))
+	require.NoError(t, err)
+
+	wg := sync.WaitGroup{}
+	wg.Add(4)
+
+	fn := func(group string) {
+		var ferr error
+		for i := 1; i < 5; i++ {
+			val := fmt.Sprintf("testing-%s-%d", group, i)
+			_, ferr = eds.EventAdd(ctx, path, dstore.Data([]byte(val)))
+			if ferr != nil {
+				break
+			}
+		}
+		wg.Done()
+		require.NoError(t, ferr)
+	}
+	go fn("a")
+	go fn("b")
+	go fn("c")
+	go fn("d")
+
+	wg.Wait()
+
+	idx := int64(1)
+	iter, err := eds.Events(ctx, path)
+	require.NoError(t, err)
+	defer iter.Release()
+	for {
+		event, err := iter.Next()
+		require.NoError(t, err)
+		if event == nil {
+			break
+		}
+		require.Equal(t, idx, event.Index)
+		idx++
+	}
 }

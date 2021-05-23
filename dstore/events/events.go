@@ -9,14 +9,21 @@ import (
 // If this format changes, you should also change in firestore and other
 // backends that don't directly use this struct on set.
 type Event struct {
-	// Data for event.
-	Data []byte `json:"data" msgpack:"dat" firestore:"data"`
+	Document map[string]interface{} `json:"doc" msgpack:"doc" firestore:"doc"`
 
 	// Index for event (read only).
 	Index int64 `json:"idx" msgpack:"idx" firestore:"idx"`
 	// Timestamp (read only). The time at which the event was created.
 	// Firestore sets this to the document create time.
 	Timestamp int64 `json:"ts" msgpack:"ts" firestore:"-"`
+}
+
+func (e Event) Data() []byte {
+	b, ok := e.Document["data"].([]byte)
+	if !ok {
+		return nil
+	}
+	return b
 }
 
 // Position describes a position in an event log.
@@ -26,17 +33,24 @@ type Position struct {
 	Timestamp int64  `json:"ts" msgpack:"ts"`
 }
 
+type Document map[string]interface{}
+
 // Events describes an append only event log.
 type Events interface {
-	// EventsAdd adds (appends) events (in a batch if multiple) to the log,
-	// and returns the resulting index.
-	EventsAdd(ctx context.Context, path string, data [][]byte) ([]*Event, int64, error)
+	// EventAdd adds (appends) event to the log.
+	EventAdd(ctx context.Context, path string, d Document) (int64, error)
+
+	// EventsAdd adds (appends) events (in a batch if multiple) to the log.
+	EventsAdd(ctx context.Context, path string, d []Document) (int64, error)
 
 	// Events retrives events from log with the specified options.
 	Events(ctx context.Context, path string, opt ...Option) (Iterator, error)
 
 	// EventsDelete deletes all events at the specified path.
 	EventsDelete(ctx context.Context, path string) (bool, error)
+
+	// EventPosition returns current position of event logs at the specified path.
+	EventPosition(ctx context.Context, path string) (*Position, error)
 
 	// EventPositions returns current positions of event logs at the specified paths.
 	EventPositions(ctx context.Context, paths []string) (map[string]*Position, error)

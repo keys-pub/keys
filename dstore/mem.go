@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/keys-pub/keys/dstore/events"
 	"github.com/keys-pub/keys/tsutil"
 	"github.com/pkg/errors"
@@ -23,6 +22,8 @@ type Mem struct {
 	values map[string]*Document
 	clock  tsutil.Clock
 	mode   Mode
+
+	emtx sync.Mutex
 }
 
 // Mode for any special behavior.
@@ -235,16 +236,18 @@ func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Docume
 			return nil, errors.Errorf("missing document in List")
 		}
 		if opts.Where != nil {
-			if opts.Where.Op != "==" {
-				return nil, errors.Errorf("unsupported op")
-			}
 			v, ok := doc.Get(opts.Where.Name)
 			if !ok {
 				continue
 			}
-			if !cmp.Equal(v, opts.Where.Value) {
+			match, err := compare(opts.Where.Op, v, opts.Where.Value)
+			if err != nil {
+				return nil, err
+			}
+			if !match {
 				continue
 			}
+
 		}
 		if opts.NoData {
 			doc = &Document{Path: doc.Path, CreatedAt: doc.CreatedAt, UpdatedAt: doc.UpdatedAt}
