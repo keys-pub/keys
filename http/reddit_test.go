@@ -10,6 +10,9 @@ import (
 )
 
 func TestReddit(t *testing.T) {
+	// TODO: Reddit sub currently banned, oops
+	t.Skip()
+
 	client := http.NewClient()
 	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
 	req, err := http.NewRequest("GET", urs, nil)
