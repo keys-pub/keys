@@ -224,10 +224,15 @@ func (m *Mem) list(ctx context.Context, parent string, opt ...Option) ([]*Docume
 		prefix = Path(path, opts.Prefix)
 	}
 
+	pc := len(PathComponents(path)) + 1
 	for _, p := range m.paths.Sorted() {
 		if !strings.HasPrefix(p, path+"/") {
 			continue
 		}
+		if len(PathComponents(p)) != pc {
+			continue
+		}
+
 		if prefix != "" && !strings.HasPrefix(p, prefix) {
 			continue
 		}
