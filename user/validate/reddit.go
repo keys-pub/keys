@@ -59,12 +59,11 @@ func (s *reddit) APIURL(name string, urs string) (string, error) {
 	path = strings.TrimPrefix(path, "/")
 	paths := strings.Split(path, "/")
 
-	// URL from https://reddit.com/r/keyspubmsgs/comments/{id}/{username}/ to
-	//          https://www.reddit.com/r/keyspubmsgs/comments/{id}/{username}.json
+	// URL from https://reddit.com/user/{username}/comments/{id}/{post}
 
 	prunedName := strings.ReplaceAll(name, "-", "")
 
-	if len(paths) >= 5 && paths[0] == "r" && paths[1] == "keyspubmsgs" && paths[2] == "comments" && paths[4] == prunedName {
+	if len(paths) >= 5 && paths[0] == "user" && paths[1] == prunedName && paths[2] == "comments" {
 		// Request json
 		ursj, err := url.Parse("https://www.reddit.com" + strings.TrimSuffix(u.Path, "/") + ".json")
 		if err != nil {

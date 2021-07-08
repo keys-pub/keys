@@ -48,35 +48,35 @@ func TestRedditValidateURL(t *testing.T) {
 	reddit := validate.Reddit
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
+		"https://www.reddit.com/user/gabrlh/comments/f8g9vd/keyspub/")
 
 	testValidateURL(t, reddit,
 		"keys-pub",
-		"https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/keyspub/")
+		"https://www.reddit.com/user/keyspub/comments/f8g9vd/keyspub/")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
+		"https://old.reddit.com/user/gabrlh/comments/f8g9vd/keyspub/")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/")
+		"https://reddit.com/user/gabrlh/comments/f8g9vd/keyspub/")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh?")
+		"https://reddit.com/user/gabrlh/comments/f8g9vd/keyspub?")
 
 	testValidateURL(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/?")
+		"https://reddit.com/user/gabrlh/comments/f8g9vd/keyspub/?")
 
 	testValidateURLErr(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/keyspubmsgs/comments/f8g9vd/user/?",
-		"invalid path /r/keyspubmsgs/comments/f8g9vd/user/")
+		"https://reddit.com/user/user/comments/f8g9vd/keyspub/?",
+		"invalid path /user/user/comments/f8g9vd/keyspub/")
 
 	testValidateURLErr(t, reddit,
 		"gabrlh",
-		"https://reddit.com/r/subreddit/comments/f8g9vd/gabrlh/?",
-		"invalid path /r/subreddit/comments/f8g9vd/gabrlh/")
+		"https://reddit.com/user/subreddit/comments/f8g9vd/keyspub/?",
+		"invalid path /user/subreddit/comments/f8g9vd/keyspub/")
 }

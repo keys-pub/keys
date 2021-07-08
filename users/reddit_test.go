@@ -28,7 +28,7 @@ func TestResultReddit(t *testing.T) {
 	t.Logf(msg)
 
 	sc := keys.NewSigchain(sk.ID())
-	stu, err := user.New(sk.ID(), "reddit", "charlie", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/charlie/", sc.LastSeq()+1)
+	stu, err := user.New(sk.ID(), "reddit", "charlie", "https://www.reddit.com/user/charlie/comments/ogdh94/keyspub.json", sc.LastSeq()+1)
 	require.NoError(t, err)
 	st, err := user.NewSigchainStatement(sc, stu, sk, clock.Now())
 	require.NoError(t, err)

@@ -12,15 +12,12 @@ import (
 )
 
 func TestReddit(t *testing.T) {
-	// TODO: Reddit sub currently banned, oops
-	t.Skip()
-
 	// user.SetLogger(user.NewLogger(user.DebugLevel))
 	// services.SetLogger(user.NewLogger(user.DebugLevel))
 
 	kid := keys.ID("kex164gsfjpcfcugtcv28hmv5jl8yl7nzs06l09aw2245phy06j7ygqs9u9zyd")
 
-	usr, err := user.New(kid, "reddit", "gabrlh", "https://www.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh/", 1)
+	usr, err := user.New(kid, "reddit", "gabrlh", "https://www.reddit.com/user/gabrlh/comments/ogdh94/keyspub/", 1)
 	require.NoError(t, err)
 	client := http.NewClient()
 	result := services.Verify(context.TODO(), services.Reddit, client, usr)

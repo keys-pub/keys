@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -48,12 +49,16 @@ func (s *reddit) checkContent(name string, b []byte) ([]byte, error) {
 		return nil, errors.Errorf("no listing children")
 	}
 
+	if posts[0].Data.Children[0].Data.SubredditType != "user" {
+		return nil, errors.Errorf("invalid subreddit type")
+	}
+
 	author := posts[0].Data.Children[0].Data.Author
 	if name != strings.ToLower(author) {
 		return nil, errors.Errorf("invalid author %s", author)
 	}
-	subreddit := posts[0].Data.Children[0].Data.Subreddit
-	if "keyspubmsgs" != subreddit {
+	subreddit := strings.ToLower(posts[0].Data.Children[0].Data.Subreddit)
+	if fmt.Sprintf("u_%s", name) != subreddit {
 		return nil, errors.Errorf("invalid subreddit %s", subreddit)
 	}
 	selftext := posts[0].Data.Children[0].Data.Selftext
@@ -92,9 +97,10 @@ type redditPosts []struct {
 		Children []struct {
 			Kind string `json:"kind"`
 			Data struct {
-				Subreddit string `json:"subreddit"`
-				Selftext  string `json:"selftext"`
-				Author    string `json:"author"`
+				Subreddit     string `json:"subreddit"`
+				SubredditType string `json:"subreddit_type"`
+				Selftext      string `json:"selftext"`
+				Author        string `json:"author"`
 			} `json:"data"`
 		} `json:"children"`
 		After  interface{} `json:"after"`

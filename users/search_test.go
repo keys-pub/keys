@@ -317,7 +317,7 @@ func TestReddit(t *testing.T) {
 	usrs := users.New(ds, scs, users.Clock(clock))
 
 	key := keys.NewEdX25519KeyFromSeed(testSeed(0x01))
-	redditURL := "https://reddit.com/r/keyspubmsgs/comments/123/alice"
+	redditURL := "https://reddit.com/user/alice/comments/123/keyspub"
 	usr := &user.User{
 		KID:     key.ID(),
 		Service: "reddit",
@@ -338,7 +338,7 @@ func TestReddit(t *testing.T) {
 	smsg, err := usr.Sign(key)
 	require.NoError(t, err)
 	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
-		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs"))}
+		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "u_alice"))}
 	})
 
 	result, err := usrs.Update(ctx, key.ID())
@@ -347,7 +347,7 @@ func TestReddit(t *testing.T) {
 
 	// Different name
 	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
-		return http.ProxyResponse{Body: []byte(redditMock("alice2", smsg, "keyspubmsgs"))}
+		return http.ProxyResponse{Body: []byte(redditMock("alice2", smsg, "u_alice"))}
 	})
 	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestReddit(t *testing.T) {
 
 	// Different subreddit
 	usrs.Client().SetProxy("", func(ctx context.Context, req *http.Request) http.ProxyResponse {
-		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "keyspubmsgs2"))}
+		return http.ProxyResponse{Body: []byte(redditMock("alice", smsg, "u_alice2"))}
 	})
 	result, err = usrs.Update(ctx, key.ID())
 	require.NoError(t, err)
@@ -675,7 +675,8 @@ func redditMock(author string, msg string, subreddit string) string {
 					"data": {
 						"author": "` + author + `",
 						"selftext": "` + msg + `",
-						"subreddit": "` + subreddit + `"
+						"subreddit": "` + subreddit + `",
+						"subreddit_type": "user"
 					}
 				}
 			]

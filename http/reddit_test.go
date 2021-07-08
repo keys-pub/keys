@@ -14,7 +14,7 @@ func TestReddit(t *testing.T) {
 	t.Skip()
 
 	client := http.NewClient()
-	urs := "https://old.reddit.com/r/keyspubmsgs/comments/f8g9vd/gabrlh.json"
+	urs := "https://www.reddit.com/user/gabrlh/comments/ogdh94/keyspub.json"
 	req, err := http.NewRequest("GET", urs, nil)
 	require.NoError(t, err)
 	res, err := client.Request(context.TODO(), req)
