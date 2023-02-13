@@ -2,6 +2,8 @@
 
 [![GoDoc](https://godoc.org/github.com/keys-pub/keys?status.svg)](https://godoc.org/github.com/keys-pub/keys)
 
+:warning: **Unfortunately, this project is not currently being maintained or worked on.** :warning:
+
 ☢ This project is in development and has not been audited or reviewed. Use at your own risk. ☢
 
 ## Documentation
