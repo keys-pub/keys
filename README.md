@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/keys-pub/keys?status.svg)](https://godoc.org/github.com/keys-pub/keys)
 
-:warning: **Unfortunately, this project is not currently being maintained or worked on.** :warning:
+:warning: **Unfortunately, this project is not currently being worked on. I may revisit this in the future, if you would like to sponsor development or hire me please reach out at gabriel@keys.pub.** (see keys-pub/keys#168 for more info) :warning:
 
 ☢ This project is in development and has not been audited or reviewed. Use at your own risk. ☢
 
